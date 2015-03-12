@@ -167,12 +167,12 @@ function! gita#interface#status#show(...) abort " {{{
         nmap <buffer> <F1>   :<C-u>help vim-gita-status-default-mappings<CR>
         nmap <buffer> <C-l>  <Plug>(gita-status-action-update)
         nmap <buffer> -      <Plug>(gita-status-action-toggle)
-        nmap <buffer> d      <Plug>(gita-status-action-diff)
-        nmap <buffer> C      <Plug>(gita-status-action-clear)
-        nmap <buffer> e      <Plug>(gita-status-action-open)
-        nmap <buffer> S      <Plug>(gita-status-action-split)
-        nmap <buffer> E      <Plug>(gita-status-action-vsplit)
-        nmap <buffer> b      <Plug>(gita-status-action-browse)
+        nmap <buffer> <C-c>  <Plug>(gita-status-action-clear)
+        nmap <buffer> <C-e>  <Plug>(gita-status-action-open)
+        nmap <buffer> <C-d>  <Plug>(gita-status-action-diff)
+        nmap <buffer> <C-s>  <Plug>(gita-status-action-split)
+        nmap <buffer> <C-v>  <Plug>(gita-status-action-vsplit)
+        nmap <buffer> <C-b>  <Plug>(gita-status-action-browse)
         nmap <buffer> <CR>   <Plug>(gita-status-action-open)
         nmap <buffer> <S-CR> <Plug>(gita-status-action-diff)
         nmap <buffer> q      :<C-u>q<CR>
@@ -200,7 +200,7 @@ function! gita#interface#status#update(...) abort " {{{
   " this function should be called on the gita:status window
   if bufname !=# expand('%')
     call gita#utils#call_on_buffer(bufname,
-          \ function('gita#interface#update_status'),
+          \ function('gita#interface#status#update'),
           \ settings)
     return
   endif
@@ -219,7 +219,7 @@ function! gita#interface#status#update(...) abort " {{{
     call add(linelinks, {})
   endfor
   for status in statuslist.all
-    call add(lines, status.sign . ' ' . status.path)
+    call add(lines, status.record)
     call add(linelinks, status)
   endfor
 
@@ -246,11 +246,11 @@ function! gita#interface#status#define_highlights() abort " {{{
 endfunction " }}}
 function! gita#interface#status#define_syntax() abort " {{{
   execute 'syntax match GitaStatusComment    /\v^#.*/'
-  execute 'syntax match GitaStatusConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\ze\s/'
-  execute 'syntax match GitaStatusUnstaged   /\v^%([ MARC][MD]|DM)\ze\s/'
-  execute 'syntax match GitaStatusStaged     /\v^[MADRC]\ze\s\s/'
-  execute 'syntax match GitaStatusUntracked  /\v^\?\?\ze\s/'
-  execute 'syntax match GitaStatusIgnored    /\v^!!\ze\s/'
+  execute 'syntax match GitaStatusConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*\ze/'
+  execute 'syntax match GitaStatusUnstaged   /\v^%([ MARC][MD]|DM)\s.*\ze/'
+  execute 'syntax match GitaStatusStaged     /\v^[MADRC]\s\s.*\ze/'
+  execute 'syntax match GitaStatusUntracked  /\v^\?\?\s.*\ze/'
+  execute 'syntax match GitaStatusIgnored    /\v^!!\s.*\ze/'
 endfunction " }}}
 
 let s:consts = {}
