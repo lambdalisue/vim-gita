@@ -243,6 +243,7 @@ function! gita#interface#status#define_highlights() abort " {{{
   highlight default link GitaStatusStaged       Question
   highlight default link GitaStatusUntracked    WarningMsg
   highlight default link GitaStatusIgnored      Question
+  highlight default link GitaStatusBranch       Title
 endfunction " }}}
 function! gita#interface#status#define_syntax() abort " {{{
   execute 'syntax match GitaStatusComment    /\v^#.*/'
@@ -251,6 +252,9 @@ function! gita#interface#status#define_syntax() abort " {{{
   execute 'syntax match GitaStatusStaged     /\v^[MADRC]\s\s.*\ze/'
   execute 'syntax match GitaStatusUntracked  /\v^\?\?\s.*\ze/'
   execute 'syntax match GitaStatusIgnored    /\v^!!\s.*\ze/'
+  " Branch name
+  execute 'syntax match GitaStatusComment /\v^# On branch/ contained'
+  execute 'syntax match GitaStatusBranch  /\v^# On branch .*$/hs=s+12 contains=GitaStatusComment'
 endfunction " }}}
 
 let s:consts = {}

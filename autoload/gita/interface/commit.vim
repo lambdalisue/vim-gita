@@ -134,9 +134,8 @@ function! gita#interface#commit#show(...) abort " {{{
         nmap <buffer> <S-CR> <Plug>(gita-commit-action-diff)
         nmap <buffer> q      :<C-u>q<CR>
       endif
-      " load contents
-      call gita#interface#commit#update(settings)
     endif
+    " Load content
   else
     " focus window
     execute winnum . 'wincmd w'
