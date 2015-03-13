@@ -1,24 +1,27 @@
 "******************************************************************************
-" vim-gita status window
+" vim-gita action
 "
 " Author:   Alisue <lambdalisue@hashnote.net>
 " URL:      http://hashnote.net/
 " License:  MIT license
 " (C) 2015, Alisue, hashnote.net
 "******************************************************************************
-if exists('b:current_syntax')
-  finish
-endif
-
 let s:save_cpo = &cpo
 set cpo&vim
 
-syntax clear
-call gita#interface#define_highlights()
-call gita#interface#status_define_syntax()
+let s:Git = gita#util#import('VCS.Git')
 
-let b:current_syntax = "gita-status"
+function! gita#action#add(...) " {{{
+  return call(s:Git.add, a:000, s:Git)
+endfunction " }}}
+function! gita#action#rm(...) " {{{
+  return call(s:Git.rm, a:000, s:Git)
+endfunction " }}}
+function! gita#action#checkout(...) " {{{
+  return call(s:Git.rm, a:000, s:Git)
+endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+

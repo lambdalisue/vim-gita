@@ -6,16 +6,16 @@
 " License:  MIT license
 " (C) 2015, Alisue, hashnote.net
 "******************************************************************************
-"if exists('b:current_syntax')
-"  finish
-"endif
+if exists('b:current_syntax')
+  finish
+endif
 
 let s:save_cpo = &cpo
 set cpo&vim
 
 syntax clear
-call gita#interface#commit#define_highlights()
-call gita#interface#commit#define_syntax()
+call gita#interface#define_highlights()
+call gita#interface#commit_define_syntax()
 
 let b:current_syntax = "gita-commit"
 

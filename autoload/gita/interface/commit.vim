@@ -11,14 +11,13 @@ set cpo&vim
 
 
 function! s:get_buffer_name(...) abort " {{{
-  return 'gita' . s:consts.DELIMITER . gita#utils#vital#Path().join(a:000)
+  return 'gita' . s:consts.DELIMITER . gita#vital#path_join(a:000)
 endfunction " }}}
 function! s:get_header_lines() abort " {{{
-  let Git = gita#utils#vital#Git()
-  let local_branch = Git.get_branch_name()
-  let remote_branch = Git.get_remote_branch_name()
-  let incoming = Git.count_incoming()
-  let outgoing = Git.count_outgoing()
+  let local_branch = gita#vital#git_get_branch_name()
+  let remote_branch = gita#vital#git_get_remote_branch_name()
+  let incoming = gita#vital#git_count_incoming()
+  let outgoing = gita#vital#git_count_outgoing()
 
   let lines = [
         \ '',
@@ -55,7 +54,7 @@ function! s:action(action, ...) abort " {{{
         \ 'action_opener': get(a:000, 0, b:settings.action_opener),
         \})
   let line = substitute(getline('.'), '^#\s', '', 'g')
-  let status = gita#utils#vital#GitStatusParser().parse_record(line, { 'fail_silently': 1 })
+  let status = gita#vital#git#status#parse_record(line, { 'fail_silently': 1 })
   echo status
   if empty(status)
     return
@@ -82,7 +81,7 @@ function! s:action_open(status, settings) " {{{
     else
       execute 'wincmd p'
     endif
-    call gita#utils#vital#Buffer().open(bufname, opener)
+    call gita#vital#buffer_open(bufname, opener)
   else
     execute winnum . 'wincmd w'
   endif
@@ -94,9 +93,10 @@ endfunction " }}}
 function! gita#interface#commit#show(...) abort " {{{
   let bufname = s:get_buffer_name('commit')
   let settings = extend({
+        \ 'openers': g:gita#interface#commit#openers,
         \ 'opener': g:gita#interface#commit#opener,
         \ 'action_opener': g:gita#interface#commit#action_opener,
-        \ 'openers': g:gita#interface#commit#openers,
+        \ 'options': {},
         \}, get(a:000, 0, {}))
 
   let opener = get(settings.openers, settings.opener, settings.opener)
@@ -104,32 +104,35 @@ function! gita#interface#commit#show(...) abort " {{{
   let winnum = bufwinnr(bufnum)
   let previous_bufnum = bufnr('')
   if winnum == -1
-    call gita#utils#vital#Buffer().open(bufname, opener)
+    call gita#vital#buffer_open(bufname, opener)
     if bufnum == -1
       " initialize list window
       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
       setlocal cursorline
       execute "setfiletype" s:consts.FILETYPE
 
-      noremap <silent><buffer> <Plug>(gita-commit-action-diff)       :call <SID>action('diff')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-browse)     :call <SID>action('browse')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-open)       :call <SID>action('open')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-edit)       :call <SID>action('open', 'edit')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-split)      :call <SID>action('open', 'split')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-vsplit)     :call <SID>action('open', 'vsplit')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-tabnew)     :call <SID>action('open', 'tabnew')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-open-left)  :call <SID>action('open', 'left')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-open-right) :call <SID>action('open', 'right')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-open-above) :call <SID>action('open', 'above')<CR>
-      noremap <silent><buffer> <Plug>(gita-commit-action-open-below) :call <SID>action('open', 'below')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-browse)      :call <SID>action('browse')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-diff-split)  :call <SID>action('diff', 'split')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-diff-vsplit) :call <SID>action('diff', 'vsplit')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-edit)   :call <SID>action('open', 'edit')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-split)  :call <SID>action('open', 'split')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-vsplit) :call <SID>action('open', 'vsplit')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-tabnew) :call <SID>action('open', 'tabnew')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-left)   :call <SID>action('open', 'left')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-right)  :call <SID>action('open', 'right')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-above)  :call <SID>action('open', 'above')<CR>
+      noremap <silent><buffer> <Plug>(gita-commit-action-open-below)  :call <SID>action('open', 'below')<CR>
+      " alias
+      nmap <silent><buffer> <Plug>(gita-commit-action-open) <Plug>(gita-commit-action-open-edit)
+      nmap <silent><buffer> <Plug>(gita-commit-action-diff) <Plug>(gita-commit-action-diff-vsplit)
 
       if get(g:, 'gita#interface#commit#enable_default_keymaps', 1)
         nmap <buffer> <F1>   :<C-u>help vim-gita-commit-default-mappings<CR>
+        nmap <buffer> <C-b>  <Plug>(gita-commit-action-browse)
         nmap <buffer> <C-e>  <Plug>(gita-commit-action-open)
         nmap <buffer> <C-d>  <Plug>(gita-commit-action-diff)
-        nmap <buffer> <C-s>  <Plug>(gita-commit-action-split)
-        nmap <buffer> <C-v>  <Plug>(gita-commit-action-vsplit)
-        nmap <buffer> <C-b>  <Plug>(gita-commit-action-browse)
+        nmap <buffer> <C-s>  <Plug>(gita-commit-action-open-split)
+        nmap <buffer> <C-v>  <Plug>(gita-commit-action-open-vsplit)
         nmap <buffer> <CR>   <Plug>(gita-commit-action-open)
         nmap <buffer> <S-CR> <Plug>(gita-commit-action-diff)
         nmap <buffer> q      :<C-u>q<CR>
@@ -146,6 +149,7 @@ function! gita#interface#commit#show(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#interface#commit#update(...) abort " {{{
+
   let bufname = s:get_buffer_name('commit')
   let settings = extend({
         \ 'opener': g:gita#interface#commit#opener,
@@ -160,8 +164,7 @@ function! gita#interface#commit#update(...) abort " {{{
     return
   endif
 
-  let Git = gita#utils#vital#Git()
-  let statuslist = Git.get_status()
+  let statuslist = gita#vital#git_get_status()
   if empty(statuslist) || empty(statuslist.all)
     bw!
     return

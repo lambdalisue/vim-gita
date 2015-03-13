@@ -10,15 +10,11 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-function! s:get_buffer_name(...) abort " {{{
-  return 'gita' . s:consts.DELIMITER . gita#utils#vital#Path().join(a:000)
-endfunction " }}}
 function! s:get_header_lines() abort " {{{
-  let Git = gita#utils#vital#Git()
-  let local_branch = Git.get_branch_name()
-  let remote_branch = Git.get_remote_branch_name()
-  let incoming = Git.count_incoming()
-  let outgoing = Git.count_outgoing()
+  let local_branch = gita#vital#git_get_branch_name()
+  let remote_branch = gita#vital#git_get_remote_branch_name()
+  let incoming = gita#vital#git_count_incoming()
+  let outgoing = gita#vital#git_count_outgoing()
 
   let lines = ['# On branch ' . local_branch]
   if incoming > 0 && outgoing > 0
@@ -60,11 +56,10 @@ function! s:action_update(status, settings) " {{{
   call gita#interface#status#update()
 endfunction " }}}
 function! s:action_toggle(status, settings) " {{{
-  let Git = gita#utils#vital#Git()
   if a:status.is_unstaged || a:status.is_untracked
-    call Git.add(a:status.path)
+    call gita#vital#git_add(a:status.path)
   elseif a:status.is_staged
-    call Git.rm(a:status.path, ['--cached'])
+    call gita#vital#git_rm(a:status.path, ['--cached'])
   endif
   call gita#interface#status#update()
 endfunction " }}}
@@ -72,7 +67,6 @@ function! s:action_diff(status, settings) " {{{
   echo "Not implemented yet"
 endfunction " }}}
 function! s:action_clear(status, settings) " {{{
-  let Git = gita#utils#vital#Git()
   if a:status.is_untracked
     redraw
     echohl GitaWarning
@@ -97,7 +91,7 @@ function! s:action_clear(status, settings) " {{{
           \ 'Are you sure that you want to discard the local changes?')
     echohl None
     if a
-      call Git.checkout(a:status.path, ['HEAD'])
+      call gita#vital#git_checkout(a:status.path, ['HEAD'])
     endif
   endif
   call gita#interface#status#update()
@@ -119,7 +113,7 @@ function! s:action_open(status, settings) " {{{
     else
       execute 'wincmd p'
     endif
-    call gita#utils#vital#Buffer().open(bufname, opener)
+    call gita#vital#buffer_open(bufname, opener)
   else
     execute winnum . 'wincmd w'
   endif
@@ -141,7 +135,7 @@ function! gita#interface#status#show(...) abort " {{{
   let winnum = bufwinnr(bufnum)
   let previous_bufnum = bufnr('')
   if winnum == -1
-    call gita#utils#vital#Buffer().open(bufname, opener)
+    call gita#vital#buffer_open(bufname, opener)
     if bufnum == -1
       " initialize list window
       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
@@ -205,8 +199,7 @@ function! gita#interface#status#update(...) abort " {{{
     return
   endif
 
-  let Git = gita#utils#vital#Git()
-  let statuslist = Git.get_status()
+  let statuslist = gita#vital#git_get_status()
   if empty(statuslist) || empty(statuslist.all)
     bw!
     return
