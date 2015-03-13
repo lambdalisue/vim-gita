@@ -14,7 +14,9 @@ let s:Path          = gita#util#import('System.Filepath')
 let s:Buffer        = gita#util#import('Vim.Buffer')
 let s:BufferManager = gita#util#import('Vim.BufferManager')
 let s:Cache         = gita#util#import('System.Cache.Simple')
+let s:FileCache     = gita#util#import('System.Cache')
 let s:Git           = gita#util#import('VCS.Git')
+let s:GitMisc       = gita#util#import('VCS.Git.Misc')
 
 " common features
 function! s:get_buffer_manager() abort " {{{
@@ -28,10 +30,10 @@ function! s:get_buffer_manager() abort " {{{
   return s:buffer_manager
 endfunction " }}}
 function! s:get_header_lines() abort " {{{
-  let b = substitute(s:Git.get_branch_name(), '\v^"|"$', '', 'g')
-  let r = substitute(s:Git.get_remote_branch_name(), '\v^"|"$', '', 'g')
-  let o = s:Git.count_outgoing()
-  let i = s:Git.count_incoming()
+  let b = substitute(s:GitMisc.get_local_branch_name(), '\v^"|"$', '', 'g')
+  let r = substitute(s:GitMisc.get_remote_branch_name(), '\v^"|"$', '', 'g')
+  let o = s:GitMisc.count_commits_ahead_of_remote()
+  let i = s:GitMisc.count_commits_behind_remote()
 
   let buflines = []
   if strlen(r) > 0
@@ -89,6 +91,33 @@ function! s:invoker_get_winnum(gita) abort " {{{
   return winnum <= winnr('$') ? winnum : -1
 endfunction " }}}
 
+function! s:commit_draft_get_filename() abort " {{{
+  return s:GitMisc.get_last_commit_hashref() . '.commitmsg'
+endfunction " }}}
+function! s:commit_draft_get_cache_dir() abort " {{{
+  return s:Path.join([s:Git.get_repository_path(), '.gita'])
+endfunction " }}}
+function! s:commit_draft_exists() abort " {{{
+  let filename = s:commit_draft_get_filename()
+  let cache_dir = s:commit_draft_get_cache_dir()
+  return s:FileCache.filereadable(cache_dir, filename)
+endfunction " }}}
+function! s:commit_draft_read() abort " {{{
+  let filename = s:commit_draft_get_filename()
+  let cache_dir = s:commit_draft_get_cache_dir()
+  return s:FileCache.readfile(cache_dir, filename)
+endfunction " }}}
+function! s:commit_draft_write(list) abort " {{{
+  let filename = s:commit_draft_get_filename()
+  let cache_dir = s:commit_draft_get_cache_dir()
+  return s:FileCache.writefile(cache_dir, filename, a:list)
+endfunction " }}}
+function! s:commit_draft_delete() abort " {{{
+  let filename = s:commit_draft_get_filename()
+  let cache_dir = s:commit_draft_get_cache_dir()
+  return s:FileCache.deletefile(cache_dir, filename)
+endfunction " }}}
+
 " gita-status buffer
 function! s:status_open(...) abort " {{{
   let options = extend({
@@ -117,7 +146,7 @@ function! s:status_open(...) abort " {{{
   setlocal textwidth=0
   setlocal cursorline
   setlocal winfixheight
-  execute 'setfiletype' s:const.status_filetype
+  execute 'setlocal filetype=' . s:const.status_filetype
 
   nnoremap <silent><buffer> <Plug>(gita-action-update)      :<C-u>call <SID>status_action('update')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>status_action('toggle')<CR>
@@ -166,7 +195,7 @@ function! s:status_update() abort " {{{
     throw 'vim-gita: s:status_update required to be executed on a proper buffer'
   endif
 
-  let status = s:Git.get_status()
+  let status = s:GitMisc.get_parsed_status()
   if empty(status)
     " the cwd is not inside of git work tree
     let manager = s:get_buffer_manager()
@@ -191,9 +220,11 @@ function! s:status_update() abort " {{{
   " remove the entire content and rewrite the buflines
   setlocal modifiable
   let saved_cur = getpos('.')
+  let saved_undolevels = &undolevels
   silent %delete _
   call setline(1, buflines)
   call setpos('.', saved_cur)
+  let &undolevels = saved_undolevels
   setlocal nomodified
   setlocal nomodifiable
 
@@ -253,6 +284,147 @@ function! s:status_action_diff(status, opener) abort " {{{
   call gita#util#error('the action has not been implemented yet.', 'Not implemented error:')
 endfunction " }}}
 
+" gita-commit buffer
+function! s:commit_open(...) abort " {{{
+  let options = extend({
+        \ 'force_construction': 0,
+        \ 'amend': 0,
+        \}, get(a:000, 0, {}))
+  let invoker_bufnum = bufnr('')
+  " open or move to the gita-commit buffer
+  let manager = s:get_buffer_manager()
+  let bufname = s:const.commit_bufname
+  let bufinfo = manager.open(bufname)
+  if bufinfo.bufnr == -1
+    call gita#util#error('vim-gita: failed to open a git commit window')
+    return
+  endif
+
+  if exists('b:gita') && !options.force_construction
+    call b:gita.set('invoker_bufnum', invoker_bufnum)
+    call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
+    return
+  endif
+  let b:gita = s:Cache.new()
+  call b:gita.set('invoker_bufnum', invoker_bufnum)
+  call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
+
+  " construction
+  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
+  setlocal winfixheight
+  execute 'setlocal filetype=' . s:const.commit_filetype
+
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-split)  :<C-u>call <SID>commit_action('diff', 'split')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>commit_action('diff', 'vsplit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-edit)   :<C-u>call <SID>commit_action('open', 'edit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-split)  :<C-u>call <SID>commit_action('open', 'split')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>commit_action('open', 'vsplit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-left)   :<C-u>call <SID>commit_action('open', 'left')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-right)  :<C-u>call <SID>commit_action('open', 'right')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-above)  :<C-u>call <SID>commit_action('open', 'above')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-below)  :<C-u>call <SID>commit_action('open', 'below')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>commit_action('open', 'tabnew')<CR>
+
+  " alias
+  nmap <silent><buffer> <Plug>(gita-action-open) <Plug>(gita-action-open-edit)
+  nmap <silent><buffer> <Plug>(gita-action-diff) <Plug>(gita-action-diff-vsplit)
+
+  if get(g:, 'gita#interface#enable_default_keymaps', 1)
+    nmap <buffer> q      :<C-u>q<CR>
+    nmap <buffer> <CR>   <Plug>(gita-action-open)
+    nmap <buffer> <S-CR> <Plug>(gita-action-diff)
+    nmap <buffer> <C-e>  <Plug>(gita-action-open)
+    nmap <buffer> <C-d>  <Plug>(gita-action-diff)
+    nmap <buffer> <C-s>  <Plug>(gita-action-open-split)
+    nmap <buffer> <C-v>  <Plug>(gita-action-open-vsplit)
+    vmap <buffer> -      <Plug>(gita-action-toggle)
+  endif
+
+  " automatically focus invoker when the buffer is closed
+  autocmd! * <buffer>
+  autocmd QuitPre <buffer> call s:commit_do_commit(b:gita)
+  autocmd BufWriteCmd <buffer> call s:commit_do_write(expand("<amatch>"), b:gita)
+
+  " update contents
+  let status = s:GitMisc.get_parsed_status()
+  if empty(status)
+    " the cwd is not inside of git work tree
+    let manager = s:get_buffer_manager()
+    call manager.close(s:const.status_bufname)
+    return
+  elseif empty(status.all)
+    let buflines = gita#util#flatten([
+          \ s:get_header_lines(),
+          \ '# nothing to commit (working directory clean)',
+          \])
+    let status_map = {}
+  else
+    let buflines = s:get_header_lines()
+    let status_map = {}
+    for s in status.all
+      let status_line = printf('# %s', s:get_status_line(s))
+      let status_map[status_line] = s
+      call add(buflines, status_line)
+    endfor
+
+    " update contents with amend/draft
+    if s:commit_draft_exists()
+      let default_commitmsg = s:commit_draft_read()
+      call s:commit_draft_delete()
+    elseif options.amend
+      let default_commitmsg = s:GitMisc.get_last_commit_message()
+    else
+      let default_commitmsg = ['']
+    endif
+    call filter(default_commitmsg, 'v:val !~# "^#"')
+    let buflines = default_commitmsg + buflines
+  endif
+
+  " remove the entire content and rewrite the buflines
+  setlocal modifiable
+  let saved_cur = getpos('.')
+  let save_undolevels = &undolevels
+  setlocal undolevels=-1
+  silent %delete _
+  call setline(1, buflines)
+  call setpos('.', saved_cur)
+  let &undolevels = save_undolevels
+  setlocal nomodified
+
+  call b:gita.set('status_map', status_map)
+  call b:gita.set('status', status)
+endfunction " }}}
+function! s:commit_do_write(filename, gita) abort " {{{
+  if a:filename != expand('%:p')
+    " a new filename is given. save the content to the new file
+    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
+    return
+  endif
+  " save a current commit message into a draft file (in case of sudden death or so on)
+  let contents = getline(1, '$')
+  call filter(contents, 'v:val !~# "^#"')
+  call s:commit_draft_write(contents)
+  setlocal nomodified
+endfunction " }}}
+function! s:commit_do_commit(gita) abort " {{{
+
+endfunction " }}}
+function! s:commit_action(name, ...) abort " {{{
+  if &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:status_action required to be executed on a proper buffer'
+  endif
+  let opener = get(g:gita#interface#opener_aliases, get(a:000, 0, ''), '')
+  let status_map = b:gita.get('status_map', {})
+  let selected_line = getline('.')
+  let selected_status = get(status_map, selected_line, {})
+  if empty(selected_status)
+    " the action is executed on invalid line so just do nothing
+    return
+  endif
+  let fname = printf('s:commit_action_%s', a:name)
+  call gita#util#debug(fname, selected_status, opener)
+  "call call(fname, [selected_status, opener])
+endfunction " }}}
 
 " Public
 function! gita#interface#status_open(...) abort " {{{
@@ -276,6 +448,9 @@ function! gita#interface#status_update() abort " {{{
   call s:status_update()
   " restore window focus
   silent execute bufwinnr(saved_bufnum) . 'wincmd w'
+endfunction " }}}
+function! gita#interface#commit_open(...) abort " {{{
+  call call('s:commit_open', a:000)
 endfunction " }}}
 
 function! gita#interface#define_highlights() abort " {{{
