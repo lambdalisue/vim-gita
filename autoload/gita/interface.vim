@@ -74,16 +74,7 @@ function! s:smart_map(lhs, rhs) abort " {{{
   return empty(selected_status) ? a:lhs : a:rhs
 endfunction " }}}
 
-function! s:invoker_focus(gita, ...) abort " {{{
-  let leaving = get(a:000, 0, 0)
-  if leaving
-    let status_bufnum = bufnr(s:const.status_bufname)
-    let commit_bufnum = bufnr(s:const.commit_bufname)
-    if bufwinnr(status_bufnum) != -1 || bufwinnr(commit_bufnum) != -1
-      " leaving but another buffer exists. ignore focusing invoker
-      return
-    endif
-  endif
+function! s:invoker_focus(gita) abort " {{{
   let winnum = a:gita.get('invoker_winnum', -1)
   if winnum <= winnr('$')
     silent execute winnum . 'wincmd w'
@@ -139,7 +130,7 @@ function! s:status_open(...) abort " {{{
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
   " construction
-  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
   setlocal textwidth=0
   setlocal cursorline
   setlocal winfixheight
@@ -149,8 +140,15 @@ function! s:status_open(...) abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-commit-amend):<C-u>call <SID>status_action('commit', 'amend')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-update)      :<C-u>call <SID>status_action('update')<CR>
 
-  nnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>status_action('toggle')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-add)         :<C-u>call <SID>status_action('add')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-ADD)         :<C-u>call <SID>status_action('add', 'force')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-rm)          :<C-u>call <SID>status_action('rm')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-RM)          :<C-u>call <SID>status_action('rm', 'force')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>status_action('rm_cached')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-checkout)    :<C-u>call <SID>status_action('checkout')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>status_action('checkout', 'force')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-revert)      :<C-u>call <SID>status_action('revert')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>status_action('toggle')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-split)  :<C-u>call <SID>status_action('diff', 'split')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>status_action('diff', 'vsplit')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-edit)   :<C-u>call <SID>status_action('open', 'edit')<CR>
@@ -162,16 +160,30 @@ function! s:status_open(...) abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-open-below)  :<C-u>call <SID>status_action('open', 'below')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>status_action('open', 'tabnew')<CR>
 
-  vnoremap <silent><buffer> <Plug>(gita-action-toggle)      :call <SID>status_action('toggle')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-add)         :call <SID>status_action('add')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-ADD)         :call <SID>status_action('add', 'force')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-rm)          :call <SID>status_action('rm')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-RM)          :call <SID>status_action('rm', 'force')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-rm-cached)   :call <SID>status_action('rm_cached')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-checkout)    :call <SID>status_action('checkout')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)    :call <SID>status_action('checkout', 'force')<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-revert)      :call <SID>status_action('revert')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-toggle)      :call <SID>status_action('toggle')<CR>
 
   if get(g:, 'gita#interface#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
     nmap <buffer>       <C-l>  <Plug>(gita-action-update)
     nmap <buffer>       cc     <Plug>(gita-action-commit)
     nmap <buffer>       ca     <Plug>(gita-action-commit-amend)
-    nmap <buffer><expr> -      <SID>smart_map('-', '<Plug>(gita-action-toggle)')
-    nmap <buffer><expr> R      <SID>smart_map('R', '<Plug>(gita-action-revert)')
+    nmap <buffer><expr> -a     <SID>smart_map('-a', '<Plug>(gita-action-add)')
+    nmap <buffer><expr> -A     <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
+    nmap <buffer><expr> -r     <SID>smart_map('-r', '<Plug>(gita-action-rm)')
+    nmap <buffer><expr> -R     <SID>smart_map('-R', '<Plug>(gita-action-RM)')
+    nmap <buffer><expr> -h     <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)')
+    nmap <buffer><expr> -c     <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
+    nmap <buffer><expr> -C     <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+    nmap <buffer><expr> -=     <SID>smart_map('-=', '<Plug>(gita-action-revert)')
+    nmap <buffer><expr> --     <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     nmap <buffer><expr> <CR>   <SID>smart_map('<CR>', '<Plug>(gita-action-open-edit)')
     nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)')
     nmap <buffer><expr> e      <SID>smart_map('e', '<Plug>(gita-action-open-edit)')
@@ -181,13 +193,17 @@ function! s:status_open(...) abort " {{{
     nmap <buffer><expr> D      <SID>smart_map('D', '<Plug>(gita-action-diff-vsplit)')
     nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>', '<Plug>(gita-action-diff-split)')
 
-    vmap <buffer><expr> -      <SID>smart_map('-', '<Plug>(gita-action-toggle)')
-    vmap <buffer><expr> R      <SID>smart_map('R', '<Plug>(gita-action-toggle)')
+    vmap <buffer><expr> -a     <SID>smart_map('-a', '<Plug>(gita-action-add)')
+    vmap <buffer><expr> -r     <SID>smart_map('-r', '<Plug>(gita-action-rm)')
+    vmap <buffer><expr> -c     <SID>smart_map('-c', '<Plug>(gita-action-rm-cached)')
+    vmap <buffer><expr> -C     <SID>smart_map('-C', '<Plug>(gita-action-checkout)')
+    vmap <buffer><expr> -R     <SID>smart_map('-R', '<Plug>(gita-action-revert)')
+    vmap <buffer><expr> --     <SID>smart_map('--', '<Plug>(gita-action-toggle)')
   endif
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
-  autocmd BufWinLeave <buffer> call s:invoker_focus(b:gita, 1)
+  autocmd WinLeave <buffer> call s:invoker_focus(b:gita)
 
   " update contents
   call s:status_update()
@@ -261,24 +277,103 @@ function! s:status_action_update(status, opener) abort " {{{
   call s:status_update()
   redraw!
 endfunction " }}}
-function! s:status_action_toggle(status, opener) abort " {{{
-  if a:status.is_conflicted || a:status.is_ignored
+function! s:status_action_add(status, opener) abort " {{{
+  let force = a:opener ==# 'force' ? '--force' : ''
+  if a:status.is_ignored && !strlen(force)
+    call gita#util#warn('ignored file could not be added. use <Plug>(gita-action-ADD) to add')
     return
-  elseif a:status.is_unstaged
-    if a:status.worktree == 'D'
-      call gita#action#rm(['--', a:status.path])
-    else
-      call gita#action#add(['--', a:status.path])
-    endif
-  elseif a:status.is_untracked
-    call gita#action#add(['--', a:status.path])
-  else
-    call gita#action#rm(['--cached', '--', a:status.path])
+  elseif !a:status.is_unstaged && !a:status.is_untracked
+    call gita#util#info('no changes are existing on the file (working tree is clean)')
+    return
   endif
+  call gita#action#add([force, '--', a:status.path])
+  call s:status_update()
+endfunction " }}}
+function! s:status_action_rm(status, opener) abort " {{{
+  let force = a:opener ==# 'force' ? '--force' : ''
+  if a:status.is_ignored && !strlen(force)
+    " TODO is this true?
+    call gita#util#warn('ignored file could not be removed. use <Plug>(gita-action-RM) to add')
+    return
+  elseif !a:status.is_unstaged
+    call gita#util#info('no changes are existing on the file (working tree is clean)')
+    return
+  endif
+  call gita#action#rm([force, '--', a:status.path])
+  call s:status_update()
+endfunction " }}}
+function! s:status_action_rm_cached(status, opener) abort " {{{
+  if !a:status.is_staged
+    call gita#util#info('no changes are existing on the index (index is clean)')
+    return
+  endif
+  call gita#action#rm(['--cached', '--', a:status.path])
+  call s:status_update()
+endfunction " }}}
+function! s:status_action_checkout(status, opener) abort " {{{
+  let force = a:opener ==# 'force' ? '--force' : ''
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ 'the behavior of checking out a conflicted file is not defined. let me know if you know the proper behavior.',
+          \ 'The behavior is not defined')
+    return
+  elseif a:status.is_ignored
+    call gita#util#error(
+          \ 'the behavior of checking out an ignored file is not defined. let me know if you know the proper behavior.',
+          \ 'The behavior is not defined')
+    return
+  elseif a:status.is_unstaged && !strlen(force)
+    call gita#util#warn('locally changed file could not be checked out. use <Plug>(gita-action-CHECKOUT) to checkout')
+    return
+  endif
+  call gita#action#checkout([force, 'HEAD', '--', a:status.path])
   call s:status_update()
 endfunction " }}}
 function! s:status_action_revert(status, opener) abort " {{{
-  call gita#util#error('the action has not been implemented yet.', 'Not implemented error:')
+  " remove untracked file or checkout HEAD file to discard the local changes
+  if a:status.is_conflicted || a:status.is_ignored
+    call gita#util#warn(
+          \ 'the behavior of reverting confliced or ignored file is not defined.',
+          \ 'The behavior is not defined')
+    return
+  elseif a:status.is_untracked
+    call gita#util#warn(
+          \ 'This operation will remove the untracked file and could not be reverted',
+          \ 'CAUTION: The operation could not be reverted',
+          \)
+    let a = gita#util#asktf('Are you sure that you want to remove the untracked file?')
+    if a
+      call delete(a:status.path)
+    endif
+  else
+    call gita#util#warn(
+          \ 'This operation will discard the local changes on the file and could not be reverted',
+          \ 'CAUTION: The operation could not be reverted',
+          \)
+    let a = gita#util#asktf('Are you sure that you want to discard the local changes on the file?')
+    if a
+      call s:status_action_checkout(a:status, 'force')
+    endif
+  endif
+  call s:status_update()
+endfunction " }}}
+function! s:status_action_toggle(status, opener) abort " {{{
+  if a:status.is_conflicted || a:status.is_ignored
+    call gita#util#warn(
+          \ 'the behavior of toggling confliced or ignored file is not defined.',
+          \ 'The behavior is not defined')
+    return
+  elseif a:status.is_unstaged
+    if a:status.worktree == 'D'
+      call s:status_action_rm(a:status, a:opener)
+    else
+      call s:status_action_add(a:status, a:opener)
+    endif
+  elseif a:status.is_untracked
+      call s:status_action_add(a:status, a:opener)
+  else
+      call s:status_action_rm_cached(a:status, a:opener)
+  endif
 endfunction " }}}
 function! s:status_action_open(status, opener) abort " {{{
   let invoker_winnum = s:invoker_get_winnum(b:gita)
@@ -323,7 +418,7 @@ function! s:commit_open(...) abort " {{{
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
   " construction
-  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
+  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
   setlocal winfixheight
   execute 'setlocal filetype=' . s:const.commit_filetype
 
@@ -358,6 +453,7 @@ function! s:commit_open(...) abort " {{{
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:commit_do_write(expand("<amatch>"), b:gita)
   autocmd BufWinLeave <buffer> call s:commit_do_commit(b:gita)
+  autocmd WinLeave <buffer> call s:invoker_focus(b:gita)
 
   " update contents
   call s:commit_update()
@@ -426,7 +522,6 @@ function! s:commit_do_commit(gita) abort " {{{
   endif
   let status = a:gita.get('status', {})
   if empty(status) || empty(status.staged)
-    call s:invoker_focus(b:gita, 1)
     return
   endif
   " get comment removed content
@@ -434,7 +529,6 @@ function! s:commit_do_commit(gita) abort " {{{
   " check if commit should be executed
   if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
-    call s:invoker_focus(b:gita, 1)
     return
   endif
   " save comment removed content to a tempfile
@@ -451,7 +545,6 @@ function! s:commit_do_commit(gita) abort " {{{
   else
     call gita#util#error(result.stdout, 'An exception has occur')
   endif
-  call s:invoker_focus(b:gita, 1)
 endfunction " }}}
 function! s:commit_action(name, ...) abort " {{{
   if &filetype != s:const.commit_filetype
