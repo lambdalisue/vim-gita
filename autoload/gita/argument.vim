@@ -32,7 +32,7 @@ function! s:get_command_name(cmdline) " {{{
   endif
 endfunction " }}}
 
-function! s:get_default_parser() " {{{
+function! s:get_default_parser() abort " {{{
   if !exists('s:default_parser')
     let s:default_parser = s:ArgumentParser.new({
           \ 'name': 'Gita',
@@ -41,7 +41,7 @@ function! s:get_default_parser() " {{{
   endif
   return s:default_parser
 endfunction " }}}
-function! s:get_status_parser() " {{{
+function! s:get_status_parser() abort " {{{
   if !exists('s:status_parser')
     let s:status_parser = s:ArgumentParser.new({
           \ 'name': 'Gita status',
@@ -49,12 +49,12 @@ function! s:get_status_parser() " {{{
           \})
     call s:status_parser.add_argument(
           \ '--force-construction',
-          \ 're-construct the buffer (debug)',
+          \ 're-construct the buffer (debug)', {},
           \)
   endif
   return s:status_parser
 endfunction " }}}
-function! s:get_commit_parser() " {{{
+function! s:get_commit_parser() abort " {{{
   if !exists('s:commit_parser')
     let s:commit_parser = s:ArgumentParser.new({
           \ 'name': 'Gita commit',
@@ -62,11 +62,11 @@ function! s:get_commit_parser() " {{{
           \})
     call s:commit_parser.add_argument(
           \ '--amend',
-          \ 'amend previous commit',
+          \ 'amend previous commit',{},
           \)
     call s:commit_parser.add_argument(
           \ '--force-construction',
-          \ 're-construct the buffer (debug)',
+          \ 're-construct the buffer (debug)', {},
           \)
   endif
   return s:commit_parser
@@ -86,7 +86,7 @@ function! gita#argument#parse(bang, range, ...) abort " {{{
   let cname = s:get_command_name(cmdline)
   let cmdline = substitute(cmdline, printf('\v^%s', cname), '', '')
   let cparser = s:get_parser(cname)
-  let settings = get(a:000, 0, {})
+  let settings = get(a:000, 1, {})
   let options = call(cparser.parse, [a:bang, a:range, cmdline, settings], cparser)
   let options.cname = cname
   return options

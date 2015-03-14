@@ -9,6 +9,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+
 " Vital modules ==============================================================
 " {{{
 let s:Path          = gita#util#import('System.Filepath')

@@ -51,7 +51,6 @@ function! gita#Gita(options) abort " {{{
     " validation failed
     return
   endif
-
   if a:options.cname == 'status'
     return s:GitaStatus(a:options)
   elseif a:options.cname == 'commit'
