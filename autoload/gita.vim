@@ -78,6 +78,15 @@ function! s:assign_configs()
         \ s:default_opener_aliases,
         \ get(g:, 'gita#interface#opener_aliases', {}),
         \)
+
+  let s:default_interface_hooks = {}
+  let s:default_interface_hooks.post_status_update = ['gita#statusline#clean']
+  let s:default_interface_hooks.post_commit_update = []
+  let s:default_interface_hooks.post_commit = []
+  let g:gita#interface#hooks = extend(
+        \ s:default_interface_hooks,
+        \ get(g:, 'gita#interface#hooks', {}),
+        \)
 endfunction
 call s:assign_configs() " }}}
 " Assign constant variables " {{{

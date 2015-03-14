@@ -41,7 +41,8 @@ endfunction " }}}
 function! s:get_local_branch_name(...) " {{{
   let path = get(a:000, 0, s:config.misc_path)
   let opts = extend({ 'cwd': path }, get(a:000, 1, {}))
-  return s:Git.exec_line(['rev-parse', '--abbrev-ref', 'HEAD'], opts)
+  let name = s:Git.exec_line(['rev-parse', '--abbrev-ref', 'HEAD'], opts)
+  return substitute(name, '\v^[\s"]*|[\s"]*$', '', 'g')
 endfunction " }}}
 function! s:get_remote_branch_name(...) " {{{
   let path = get(a:000, 0, s:config.misc_path)
@@ -54,7 +55,7 @@ function! s:get_remote_branch_name(...) " {{{
   let remote_name = s:Git.exec_line([
         \ 'for-each-ref', '--format="%(upstream:short)"', symbolic_ref
         \], opts)
-  return remote_name
+  return substitute(remote_name, '\v^[\s"]*|[\s"]*$', '', 'g')
 endfunction " }}}
 
 function! s:get_parsed_status(...) " {{{
