@@ -407,14 +407,17 @@ function! s:commit_do_write(filename, gita) abort " {{{
   setlocal nomodified
 endfunction " }}}
 function! s:commit_do_commit(gita) abort " {{{
-  if empty(a:gita.get('status'))
+  let status = a:gita.get('status', {})
+  if empty(status) || empty(status.staged)
+    " nothing to be commited
     return
   endif
   " get comment removed content
   let contents = getline('1', '$')
-  call filter(contents, 'v:val !~$ "^#"')
+  call filter(contents, 'v:val !~$ "\v^#"')
+  throw string(contents)
   " check if commit should be executed
-  if &modified || join(contents, "") =~# '\v^\s*$'
+  if &modified || join(contents, "" =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
     return
   endif
