@@ -33,8 +33,8 @@ function! s:get_buffer_manager() abort " {{{
 endfunction " }}}
 function! s:get_header_lines(path) abort " {{{
   let n = fnamemodify(s:Git.get_worktree_path(a:path), ':t')
-  let b = substitute(s:GitMisc.get_local_branch_name(a:path), '\v^"|"$', '', 'g')
-  let r = substitute(s:GitMisc.get_remote_branch_name(a:path), '\v^"|"$', '', 'g')
+  let b = s:GitMisc.get_local_branch_name(a:path)
+  let r = s:GitMisc.get_remote_branch_name(a:path)
   let o = s:GitMisc.count_commits_ahead_of_remote(a:path)
   let i = s:GitMisc.count_commits_behind_remote(a:path)
 
@@ -67,6 +67,11 @@ function! s:get_status_line(status) abort " {{{
 endfunction " }}}
 function! s:eliminate_comment_lines(lines) abort " {{{
   return filter(copy(a:lines), 'v:val !~# "^#"')
+endfunction " }}}
+function! s:call_hooks(hooks, ...) abort " {{{
+  for hook in a:hooks
+    call call(hook, a:000)
+  endfor
 endfunction " }}}
 function! s:throw_exception_except_on_valid_filetype(...) abort " {{{
   let fname = get(a:000, 0, 'function')
@@ -374,6 +379,7 @@ function! s:action_rm(statuses, options) abort " {{{
   endif
 endfunction " }}}
 function! s:action_rm_cached(statuses, options) abort " {{{
+  let options = a:options
   " eliminate invalid statuses
   let valid_status_paths = []
   for status in a:statuses
@@ -596,6 +602,7 @@ function! s:action_commit(statuses, options) abort " {{{
   let result = call(s:Git.commit, [fargs, { 'cwd': options.worktree_path }], s:Git)
   call delete(filename)
   if result.status == 0
+    call s:call_hooks(s:hooks.post_commit)
     " clear cache
     call b:gita.remove('commitmsg')
     call b:gita.remove('statuses')
@@ -700,7 +707,8 @@ function! s:status_update() abort " {{{
   let &undolevels = saved_undolevels
   setlocal nomodified
   setlocal nomodifiable
-
+  
+  call s:call_hooks(s:hooks.post_status_update)
   call b:gita.set('statuses_map', statuses_map)
   call b:gita.set('statuses', statuses)
   redraw
@@ -804,6 +812,7 @@ function! s:commit_update() abort " {{{
   let &undolevels = save_undolevels
   setlocal nomodified
 
+  call s:call_hooks(s:hooks.post_commit_update)
   call b:gita.set('statuses_map', statuses_map)
   call b:gita.set('statuses', statuses)
   redraw
@@ -917,6 +926,9 @@ function! gita#interface#commit_define_syntax() abort " {{{
   execute 'syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved'
   execute 'syntax match   GitaGitHubIssue   "\v%([^ /#]+/[^ /#]+#\d+|#\d+)"'
 endfunction " }}}
+
+" Assign variables
+let s:hooks = g:gita#interface#hooks
 
 " Assign constant variables
 if !exists('s:const')

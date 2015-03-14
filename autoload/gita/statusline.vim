@@ -18,21 +18,41 @@ let s:Git           = gita#util#import('VCS.Git')
 let s:GitMisc       = gita#util#import('VCS.Git.Misc')
 " }}}
 
+function! s:get_cache(name) " {{{
+  let name = printf('_%s_cache', a:name)
+  if !exists('s:' . name)
+    let s:[name] = s:Cache.new()
+    function! s:{name}.cache_key(name)
+      if strlen(a:name) == 0
+        return '<empty>'
+      endif
+      return a:name
+    endfunction
+  endif
+  return s:[name]
+endfunction " }}}
+function! s:get_worktree_path(path) " {{{
+  let s:cache = s:get_cache('worktree')
+  if !s:cache.has(a:path)
+    call s:cache.set(a:path, s:Git.get_worktree_path(a:path))
+  endif
+  return s:cache.get(a:path)
+endfunction " }}}
 function! s:get_status(path) " {{{
   let statuses = s:GitMisc.get_parsed_status(a:path)
   let conflicted = len(statuses.conflicted)
   let untracked = len(statuses.untracked)
-  let unstaged = len(status.unstaged)
+  let unstaged = len(statuses.unstaged)
   let added = 0
   let deleted = 0
   let renamed = 0
   let modified = 0
   for status in statuses.staged
-    if status.index == 'A'
+    if status.index ==# 'A'
       let added += 1
-    elseif status.index == 'D'
+    elseif status.index ==# 'D'
       let deleted += 1
-    elseif status.index == 'R'
+    elseif status.index ==# 'R'
       let renamed += 1
     else
       let modified += 1
@@ -45,39 +65,42 @@ function! s:get_status(path) " {{{
         \ 'deleted': deleted ? deleted : '',
         \ 'renamed': renamed ? renamed : '',
         \ 'modified': modified ? modified : '',
-        \ 'unstaged'; unstaged ? unstaged : '',
+        \ 'unstaged': unstaged ? unstaged : '',
         \}
 endfunction " }}}
-function! s:get_info(path, no_cache) " {{{
-  if !s:Git.detect(a:path)
-    return {}
-  elseif !exists('s:info_cache')
-    let s:info_cache = s:Cache.new()
-  endif
-  let path = s:Git.get_worktree_path(a:path)
-  let info = s:info_cache.get(path, {})
-  if getftime(path) == get(info, 'access_time', -1) && !a:no_cache
+function! s:get_info(path) " {{{
+  let cache = s:get_cache('info')
+  let info = cache.get(a:path, {})
+  if getftime(a:path) == get(info, 'access_time', -1)
     return info
   endif
-  let info.access_time = getftime(path)
-  let info.repository_name = fnamemodify(s:Git.get_worktree_path(path), ':t')
-  let info.local_branch_name = substitute(s:GitMisc.get_local_branch_name(path), '^"\|"$', '', '')
-  let info.remote_branch_name = substitute(s:GitMisc.get_remote_branch_name(path), '^"\|"$', '', '')
-  let info.incoming = string(s:GitMisc.count_commits_behind_remote(path))
-  let info.outgoing = string(s:GitMisc.count_commits_ahead_of_remote(path)) 
-  let info.hashref = s:GitMisc.get_last_commit_hashref(path)
-  let info.hashref_short = s:GitMisc.get_last_commit_hashref(path, { 'short': 1 })
-  let info = extend(info, s:get_status(path))
-  call s:info_cache.set(path, info)
+  let info.access_time = getftime(a:path)
+  let info.repository_name = fnamemodify(s:Git.get_worktree_path(a:path), ':t')
+  let info.local_branch_name = s:GitMisc.get_local_branch_name(a:path)
+  let info.remote_branch_name = s:GitMisc.get_remote_branch_name(a:path)
+  let info.incoming = string(s:GitMisc.count_commits_behind_remote(a:path))
+  let info.outgoing = string(s:GitMisc.count_commits_ahead_of_remote(a:path)) 
+  let info.hashref = s:GitMisc.get_last_commit_hashref(a:path)
+  let info.hashref_short = s:GitMisc.get_last_commit_hashref(a:path, { 'short': 1 })
+  let info = extend(info, s:get_status(a:path))
+  call cache.set(a:path, info)
   return info
 endfunction " }}}
 
 function! gita#statusline#info(...) " {{{
-  let options = extend({
-        \ 'path': expand('%'),
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  return s:get_info(options.path, options.no_cache)
+  let path = s:get_worktree_path(get(a:000, 0, expand('%')))
+  if strlen(path) == 0
+    return {}
+  endif
+  return s:get_info(path)
+endfunction " }}}
+function! gita#statusline#clean(...) " {{{
+  let path = s:get_worktree_path(get(a:000, 0, expand('%')))
+  let cache = s:get_cache('info')
+  if strlen(path) == 0
+    return
+  endif
+  call cache.remove(path)
 endfunction " }}}
 function! gita#statusline#format(format, ...) " {{{
   " format rule:
@@ -91,6 +114,9 @@ function! gita#statusline#format(format, ...) " {{{
   "     '<value><right>'       if <value> != ''
   "     ''                     if <value> == ''
   let info = get(a:000, 0, gita#statusline#info())
+  if empty(info)
+    return ''
+  endif
   let pattern = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
   let str = copy(a:format)
   for [key, value] in items(s:format_map)
@@ -99,7 +125,7 @@ function! gita#statusline#format(format, ...) " {{{
     let repl = strlen(result) ? printf('\1%s\2', result) : ''
     let str = substitute(str, pat, repl, 'g')
   endfor
-  return str
+  return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction
 let s:format_map = {
       \ 'lb': 'local_branch_name',
@@ -120,12 +146,16 @@ let s:format_map = {
 " }}}
 function! gita#statusline#preset(name, ...) " {{{
   let info = get(a:000, 0, gita#statusline#info())
-  return gita#statusline#format(s:preset[a:name], info)
+  let format = get(s:preset, a:name, '')
+  if strlen(format) == 0
+    return ''
+  endif
+  return gita#statusline#format(format, info)
 endfunction
 let s:preset = {
-      \ 'branch': '⭠ %{|/}rn%lb',
-      \ 'remote': '❖  %{|/}rb%Hr',
-      \ 'status': '%{!| }nc%{+| }na%{-| }nd%{=| }nr%{*| }nm%{?}nu',
+      \ 'branch': '⭠ %{|/}rn%lb%{ <> |}rb',
+      \ 'commit': '%{#}Hr',
+      \ 'status': '%{!| }nc%{+| }na%{-| }nd%{=| }nr%{*| }nm%{~| }ns%{?}nu',
       \ 'traffic': '%{⇡| }og%{⇣}ic'
       \}
 " }}}
