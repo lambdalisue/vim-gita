@@ -12,7 +12,7 @@ set cpo&vim
 function! s:get_vital() " {{{
   if !exists('s:_vital_module_Vital')
     " TODO replace it to 'vim_gita'
-    let s:_vital_module_Vital = vital#of('vital')
+    let s:_vital_module_Vital = vital#of('vim_gita')
   endif
   return s:_vital_module_Vital
 endfunction " }}}
@@ -23,37 +23,33 @@ function! gita#util#import(name) " {{{
   endif
   return s:[cache_name]
 endfunction " }}}
+
+let s:Prelude = gita#util#import('Prelude')
+let s:List    = gita#util#import('Data.List')
+
 function! gita#util#is_numeric(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_numeric, a:000, X)
+  return call(s:Prelude.is_numeric, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_number(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_number, a:000, X)
+  return call(s:Prelude.is_number, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_float(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_float, a:000, X)
+  return call(s:Prelude.is_float, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_string(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_string, a:000, X)
+  return call(s:Prelude.is_string, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_funcref(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_funcref, a:000, X)
+  return call(s:Prelude.is_funcref, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_list(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_list, a:000, X)
+  return call(s:Prelude.is_list, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#is_dict(...) " {{{
-  let X = gita#util#import('Prelude')
-  return call(X.is_dict, a:000, X)
+  return call(s:Prelude.is_dict, a:000, s:Prelude)
 endfunction " }}}
 function! gita#util#flatten(...) " {{{
-  let X = gita#util#import('Data.List')
-  return call(X.flatten, a:000, X)
+  return call(s:List.flatten, a:000, s:List)
 endfunction " }}}
 
 function! gita#util#echomsg(hl, msg) abort " {{{

@@ -1,0 +1,12 @@
+vim_gita
+5b28b65
+
+ArgumentParser
+System.Filepath
+Vim.Buffer
+Vim.BufferManager
+System.Cache.Simple
+VCS.Git
+VCS.Git.Misc
+Prelude
+Data.List

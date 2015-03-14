@@ -50,7 +50,7 @@ function! s:_listalize(value) abort " {{{
   endif
   return [a:value]
 endfunction " }}}
-function! s:_shellwords(str) abort " {{{
+function! s:shellwords(str) abort " {{{
   let sd = '\([^ \t''"]\+\)'        " Space/Tab separated texts
   let sq = '''\zs\([^'']\+\)\ze'''  " Single quotation wrapped text
   let dq = '"\zs\([^"]\+\)\ze"'     " Double quotation wrapped text
@@ -230,11 +230,13 @@ function! s:parser._parse_cmdline(cmdline, ...) abort " {{{
   let args = extend({
         \ '__unknown__': [],
         \ '__args__': [],
+        \ '__shellwords__': [],
         \}, get(a:000, 0, {}))
   let args = extend(deepcopy(self._defaults), args)
-  let shellwords = s:_shellwords(a:cmdline)
+  let shellwords = s:shellwords(a:cmdline)
   let length = len(shellwords)
   let cursor = 0
+  let args.__shellwords__ = shellwords
   while cursor < length
     let cword = shellwords[cursor]
     let nword = (length == cursor + 1) ? '' : shellwords[cursor+1]
