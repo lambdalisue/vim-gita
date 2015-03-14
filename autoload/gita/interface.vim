@@ -114,6 +114,13 @@ function! s:status_open(...) abort " {{{
     call gita#util#error('vim-gita: failed to open a git status window')
     return
   endif
+  " check if invoker is another gita buffer or not
+  if manager.is_managed(invoker_bufnum)
+    " synchronize invoker_bufnum
+    let a = getbufvar(invoker_bufnum, 'gita', {})
+    let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
+    unlet a
+  endif
 
   if exists('b:gita') && !options.force_construction
     call b:gita.set('options', options)
@@ -438,6 +445,13 @@ function! s:commit_open(...) abort " {{{
   if bufinfo.bufnr == -1
     call gita#util#error('vim-gita: failed to open a git commit window')
     return
+  endif
+  " check if invoker is another gita buffer or not
+  if manager.is_managed(invoker_bufnum)
+    " synchronize invoker_bufnum
+    let a = getbufvar(invoker_bufnum, 'gita', {})
+    let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
+    unlet a
   endif
 
   if exists('b:gita') && !options.force_construction
