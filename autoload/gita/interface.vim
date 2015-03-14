@@ -570,7 +570,7 @@ function! s:action_commit(statuses, options) abort " {{{
     return
   elseif &modified
     call gita#util#warn(
-          \ 'there are non saved modification on the buffer. commiting the changes has canceled.',
+          \ 'there are non saved changes on the commit message. save the changes with ":w" first.',
           \ 'Commiting the changes has canceled.',
           \)
     return
@@ -579,7 +579,7 @@ function! s:action_commit(statuses, options) abort " {{{
   let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
   if join(commitmsg, "") =~# '\v^\s*$'
     call gita#util#warn(
-          \ 'no commit messages are available. commiting the changes has canceld.',
+          \ 'no commit messages are available. note that all lines start from "#" are eliminated.',
           \ 'Commiting the changes has canceled.',
           \)
     return
@@ -594,14 +594,15 @@ function! s:action_commit(statuses, options) abort " {{{
   let result = call(s:Git.commit, [fargs], s:Git)
   call delete(filename)
   if result.status == 0
-    call gita#util#info(result.stdout, 'The changes has been commited')
     " clear cache
     call b:gita.remove('commitmsg')
     call b:gita.remove('statuses')
     " open status buffer instead
     call s:status_open()
+    " show result
+    call gita#util#info(result.stdout, 'The changes has been commited')
   else
-    call gita#util#error(result.stdout, 'An exception has occur')
+    call gita#util#error(result.stdout, 'Exception')
   endif
 endfunction " }}}
 
