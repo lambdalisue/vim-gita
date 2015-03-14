@@ -273,18 +273,26 @@ function! s:multiaction(name, ...) abort " {{{
   return s:action(a:name, options)
 endfunction " }}}
 function! s:action_status_open(statuses, options) abort " {{{
-  let options = extend({
-        \ 'force_construction': 1,
-        \}, a:options)
-  call s:status_open(options)
+  if &modified && !get(a:options, 'force', 0)
+    call gita#util#warn(
+          \ 'the modification on the buffer has not saved yet.'
+          \)
+    return
+  endif
+  call s:status_open(a:options)
 endfunction " }}}
 function! s:action_status_update(statuses, options) abort " {{{
   call s:status_update()
   redraw!
 endfunction " }}}
 function! s:action_commit_open(statuses, options) abort " {{{
+  if &modified && !get(a:options, 'force', 0)
+    call gita#util#warn(
+          \ 'the modification on the buffer has not saved yet. save the buffer with ":w"',
+          \)
+    return
+  endif
   let options = extend({
-        \ 'force_construction': 1,
         \ 'amend': 0,
         \}, a:options)
   call s:commit_open(options)
@@ -552,12 +560,20 @@ function! s:action_commit(statuses, options) abort " {{{
   let statuses = b:gita.get('statuses')
   if empty(statuses) || empty(statuses.staged)
     return
+  elseif &modified
+    call gita#util#warn(
+          \ 'there are non saved modification on the buffer. commiting the changes has canceled.',
+          \ 'Commiting the changes has canceled.',
+          \)
+    return
   endif
   " get comment removed content
   let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
-  " check if commit should be executed
-  if &modified || join(commitmsg, "") =~# '\v^\s*$'
-    call gita#util#info('Commiting the changes has canceled.')
+  if join(commitmsg, "") =~# '\v^\s*$'
+    call gita#util#warn(
+          \ 'no commit messages are available. commiting the changes has canceld.'
+          \ 'Commiting the changes has canceled.',
+          \)
     return
   endif
   " save comment removed content to a tempfile
@@ -571,6 +587,10 @@ function! s:action_commit(statuses, options) abort " {{{
   call delete(filename)
   if result.status == 0
     call gita#util#info(result.stdout, 'The changes has been commited')
+    " clear cache
+    b:gita.remove('commitmsg')
+    " open status buffer instead
+    call s:status_open()
   else
     call gita#util#error(result.stdout, 'An exception has occur')
   endif
@@ -709,26 +729,7 @@ function! s:commit_open(...) abort " {{{
 
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:commit_ac_write(expand("<amatch>"))
-  function! s:commit_ac_write(filename) abort
-    call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
-    if a:filename != expand('%:p')
-      " a new filename is given. save the content to the new file
-      execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
-      return
-    endif
-    " cache commitmsg
-    let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
-    call b:gita.set('commitmsg', commitmsg)
-    setlocal nomodified
-  endfunction
-  autocmd WinLeave <buffer> call s:commit_ac_leave()
-  function! s:commit_ac_leave() abort
-    call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
-    " commit before leave
-    call s:action_commit({}, {})
-    " focus invoker
-    call s:invoker_focus(b:gita)
-  endfunction
+  autocmd WinLeave    <buffer> call s:commit_ac_leave()
 
   " update contents
   call s:commit_update()
@@ -754,7 +755,7 @@ function! s:commit_update() abort " {{{
   endfor
 
   " create default commit message
-  if strlen(b:gita.get('commitmsg', ''))
+  if !empty(b:gita.get('commitmsg', []))
     let buflines = b:gita.get('commitmsg') + buflines
   elseif empty(statuses.staged)
     let buflines = ['no changes added to commit'] + buflines
@@ -779,6 +780,25 @@ function! s:commit_update() abort " {{{
   call b:gita.set('statuses_map', statuses_map)
   call b:gita.set('statuses', statuses)
   redraw
+endfunction " }}}
+function! s:commit_ac_write(filename) abort " {{{
+  call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
+  if a:filename != expand('%:p')
+    " a new filename is given. save the content to the new file
+    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
+    return
+  endif
+  " cache commitmsg
+  let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
+  call b:gita.set('commitmsg', commitmsg)
+  setlocal nomodified
+endfunction " }}}
+function! s:commit_ac_leave() abort " {{{
+  call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
+  " commit before leave
+  call s:action_commit({}, {})
+  " focus invoker
+  call s:invoker_focus(b:gita)
 endfunction " }}}
 
 

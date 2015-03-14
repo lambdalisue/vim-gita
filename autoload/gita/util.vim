@@ -94,10 +94,10 @@ endfunction " }}}
 function! gita#util#warn(message, ...) abort " {{{
   let title = get(a:000, 0, '')
   if strlen(title)
-    call gita#util#echomsg('Warning', title)
+    call gita#util#echomsg('WarningMsg', title)
     call gita#util#echomsg('None', a:message)
   else
-    call gita#util#echomsg('Warning', a:message)
+    call gita#util#echomsg('WarningMsg', a:message)
   endif
 endfunction " }}}
 function! gita#util#error(message, ...) abort " {{{
