@@ -31,6 +31,7 @@ function! s:get_buffer_manager() abort " {{{
   return s:buffer_manager
 endfunction " }}}
 function! s:get_header_lines(path) abort " {{{
+  let n = fnamemodify(s:Git.get_worktree_path(a:path), ':t')
   let b = substitute(s:GitMisc.get_local_branch_name(a:path), '\v^"|"$', '', 'g')
   let r = substitute(s:GitMisc.get_remote_branch_name(a:path), '\v^"|"$', '', 'g')
   let o = s:GitMisc.count_commits_ahead_of_remote(a:path)
@@ -38,9 +39,9 @@ function! s:get_header_lines(path) abort " {{{
 
   let buflines = []
   if strlen(r) > 0
-    call add(buflines, printf('# On branch %s -> %s', b, r))
+    call add(buflines, printf('# On branch %s/%s -> %s', n, b, r))
   else
-    call add(buflines, printf('# On branch %s', b))
+    call add(buflines, printf('# On branch %s/%s', n, b))
   endif
   if o > 0 && i > 0
     call add(buflines, printf(

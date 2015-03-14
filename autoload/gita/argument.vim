@@ -81,9 +81,10 @@ function! s:get_parser(cname) abort " {{{
   return call(fname, [])
 endfunction " }}}
 
-function! gita#argument#parse(bang, range, cmdline, ...) abort " {{{
-  let cname = s:get_command_name(a:cmdline)
-  let cmdline = substitute(a:cmdline, printf('\v^%s', cname), '', '')
+function! gita#argument#parse(bang, range, ...) abort " {{{
+  let cmdline = get(a:000, 0, '')
+  let cname = s:get_command_name(cmdline)
+  let cmdline = substitute(cmdline, printf('\v^%s', cname), '', '')
   let cparser = s:get_parser(cname)
   let settings = get(a:000, 0, {})
   let options = call(cparser.parse, [a:bang, a:range, cmdline, settings], cparser)
