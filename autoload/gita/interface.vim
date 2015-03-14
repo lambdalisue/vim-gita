@@ -63,20 +63,37 @@ endfunction " }}}
 function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
-function! s:throw_exception_on_invalid_filetype(...) abort " {{{
+function! s:eliminate_comment_lines(lines) abort " {{{
+  return filter(copy(a:lines), 'v:val !~# "^#"')
+endfunction " }}}
+function! s:throw_exception_except_on_valid_filetype(...) abort " {{{
   let fname = get(a:000, 0, 'function')
   if &filetype != s:const.status_filetype && &filetype != s:const.commit_filetype
     throw printf('vim-gita: %s required to be executed on a proper filetype buffer', fname)
   endif
 endfunction " }}}
+function! s:throw_exception_except_on_status_filetype(...) abort " {{{
+  let fname = get(a:000, 0, 'function')
+  if &filetype != s:const.status_filetype
+    throw printf('vim-gita: %s required to be executed on a gita-status filetype buffer', fname)
+  endif
+endfunction " }}}
+function! s:throw_exception_except_on_commit_filetype(...) abort " {{{
+  let fname = get(a:000, 0, 'function')
+  if &filetype != s:const.commit_filetype
+    throw printf('vim-gita: %s required to be executed on a gita-commit filetype buffer', fname)
+  endif
+endfunction " }}}
 
 " selected status
 function! s:get_selected_status() abort " {{{
+  call s:throw_exception_except_on_valid_filetype('s:get_selected_status')
   let statuses_map = b:gita.get('statuses_map', {})
   let selected_line = getline('.')
   return get(statuses_map, selected_line, {})
 endfunction " }}}
 function! s:get_selected_statuses() abort " {{{
+  call s:throw_exception_except_on_valid_filetype('s:get_selected_status')
   let statuses_map = b:gita.get('statuses_map', {})
   let selected_lines = getline(getpos("'<")[1], getpos("'>")[1])
   let selected_statuses = []
@@ -122,58 +139,59 @@ endfunction " }}}
 function! s:smart_map(lhs, rhs) abort " {{{
   " return {rhs} if the mapping is called on Git status line of status/commit
   " buffer. otherwise it return {lhs}
-  if &filetype != s:const.status_filetype && &filetype != s:const.commit_filetype
-    throw 'vim-gita: s:smart_map required to be executed on a proper buffer'
-  endif
+  call s:throw_exception_except_on_valid_filetype('s:smart_map')
   let selected_status = s:get_selected_status()
   return empty(selected_status) ? a:lhs : a:rhs
 endfunction " }}}
-function! s:define_mappings(filetype) abort " {{{
-  nnoremap <silent><buffer> <Plug>(gita-action-status)        :<C-u>call <SID>monoaction('status_open')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-status-update) :<C-u>call <SID>monoaction('status_update')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-commit)        :<C-u>call <SID>monoaction('commit_open')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-commit-amend)  :<C-u>call <SID>monoaction('commit_open', { 'amend': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-commit-update) :<C-u>call <SID>monoaction('commit_update')<CR>
+function! s:define_mappings() abort " {{{
+  call s:throw_exception_except_on_valid_filetype('s:define_mappings')
 
-  nnoremap <silent><buffer> <Plug>(gita-action-add)           :<C-u>call <SID>monoaction('add')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-ADD)           :<C-u>call <SID>monoaction('add', { 'force': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-rm)            :<C-u>call <SID>monoaction('rm')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-RM)            :<C-u>call <SID>monoaction('rm', { 'force': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-rm-cached)     :<C-u>call <SID>monoaction('rm_cached')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-checkout)      :<C-u>call <SID>monoaction('checkout')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)      :<C-u>call <SID>monoaction('checkout', { 'force': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-revert)        :<C-u>call <SID>monoaction('revert')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-toggle)        :<C-u>call <SID>monoaction('toggle')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-split)    :<C-u>call <SID>monoaction('diff', { 'opener': 'split' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit)   :<C-u>call <SID>monoaction('diff', { 'opener': 'vsplit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-edit)     :<C-u>call <SID>monoaction('open', { 'opener': 'edit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-split)    :<C-u>call <SID>monoaction('open', { 'opener': 'split' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-vsplit)   :<C-u>call <SID>monoaction('open', { 'opener': 'vsplit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-left)     :<C-u>call <SID>monoaction('open', { 'opener': 'left' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-right)    :<C-u>call <SID>monoaction('open', { 'opener': 'right' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-above)    :<C-u>call <SID>monoaction('open', { 'opener': 'above' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-below)    :<C-u>call <SID>monoaction('open', { 'opener': 'below' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew)   :<C-u>call <SID>monoaction('open', { 'opener': 'tabnew' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit)            :<C-u>call <SID>monoaction('commit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-status-open)       :<C-u>call <SID>monoaction('status_open')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-status-update)     :<C-u>call <SID>monoaction('status_update')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit-open)       :<C-u>call <SID>monoaction('commit_open')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit-open-amend) :<C-u>call <SID>monoaction('commit_open', { 'amend': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit-update)     :<C-u>call <SID>monoaction('commit_update')<CR>
 
-  vnoremap <silent><buffer> <Plug>(gita-action-add)           :<C-u>call <SID>multiaction('add')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-ADD)           :<C-u>call <SID>multiaction('add', { 'force': 1 })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-rm)            :<C-u>call <SID>multiaction('rm')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-RM)            :<C-u>call <SID>multiaction('rm', { 'force': 1 })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-rm-cached)     :<C-u>call <SID>multiaction('rm_cached')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-checkout)      :<C-u>call <SID>multiaction('checkout')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)      :<C-u>call <SID>multiaction('checkout', { 'force': 1 })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-revert)        :<C-u>call <SID>multiaction('revert')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-toggle)        :<C-u>call <SID>multiaction('toggle')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-diff-split)    :<C-u>call <SID>multiaction('diff', { 'opener': 'split' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit)   :<C-u>call <SID>multiaction('diff', { 'opener': 'vsplit' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-edit)     :<C-u>call <SID>multiaction('open', { 'opener': 'edit' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-split)    :<C-u>call <SID>multiaction('open', { 'opener': 'split' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-vsplit)   :<C-u>call <SID>multiaction('open', { 'opener': 'vsplit' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-left)     :<C-u>call <SID>multiaction('open', { 'opener': 'left' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-right)    :<C-u>call <SID>multiaction('open', { 'opener': 'right' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-above)    :<C-u>call <SID>multiaction('open', { 'opener': 'above' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-below)    :<C-u>call <SID>multiaction('open', { 'opener': 'below' })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-open-tabnew)   :<C-u>call <SID>multiaction('open', { 'opener': 'tabnew' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-add)         :<C-u>call <SID>monoaction('add')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-ADD)         :<C-u>call <SID>monoaction('add', { 'force': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-rm)          :<C-u>call <SID>monoaction('rm')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-RM)          :<C-u>call <SID>monoaction('rm', { 'force': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>monoaction('rm_cached')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-checkout)    :<C-u>call <SID>monoaction('checkout')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>monoaction('checkout', { 'force': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-revert)      :<C-u>call <SID>monoaction('revert')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>monoaction('toggle')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-split)  :<C-u>call <SID>monoaction('diff', { 'opener': 'split' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>monoaction('diff', { 'opener': 'vsplit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-edit)   :<C-u>call <SID>monoaction('open', { 'opener': 'edit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-split)  :<C-u>call <SID>monoaction('open', { 'opener': 'split' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>monoaction('open', { 'opener': 'vsplit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-left)   :<C-u>call <SID>monoaction('open', { 'opener': 'left' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-right)  :<C-u>call <SID>monoaction('open', { 'opener': 'right' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-above)  :<C-u>call <SID>monoaction('open', { 'opener': 'above' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-below)  :<C-u>call <SID>monoaction('open', { 'opener': 'below' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>monoaction('open', { 'opener': 'tabnew' })<CR>
+
+  vnoremap <silent><buffer> <Plug>(gita-action-add)         :<C-u>call <SID>multiaction('add')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-ADD)         :<C-u>call <SID>multiaction('add', { 'force': 1 })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-rm)          :<C-u>call <SID>multiaction('rm')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-RM)          :<C-u>call <SID>multiaction('rm', { 'force': 1 })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>multiaction('rm_cached')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-checkout)    :<C-u>call <SID>multiaction('checkout')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>multiaction('checkout', { 'force': 1 })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-revert)      :<C-u>call <SID>multiaction('revert')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>multiaction('toggle')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-diff-split)  :<C-u>call <SID>multiaction('diff', { 'opener': 'split' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>multiaction('diff', { 'opener': 'vsplit' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-edit)   :<C-u>call <SID>multiaction('open', { 'opener': 'edit' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-split)  :<C-u>call <SID>multiaction('open', { 'opener': 'split' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>multiaction('open', { 'opener': 'vsplit' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-left)   :<C-u>call <SID>multiaction('open', { 'opener': 'left' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-right)  :<C-u>call <SID>multiaction('open', { 'opener': 'right' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-above)  :<C-u>call <SID>multiaction('open', { 'opener': 'above' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-below)  :<C-u>call <SID>multiaction('open', { 'opener': 'below' })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>multiaction('open', { 'opener': 'tabnew' })<CR>
 
   if get(g:, 'gita#interface#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
@@ -186,10 +204,10 @@ function! s:define_mappings(filetype) abort " {{{
     nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vsplit)')
     nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-split)')
 
-    if a:filetype == s:const.status_filetype
+    if &filetype == s:const.status_filetype
       nmap <buffer>       <C-l>  <Plug>(gita-action-status-update)
-      nmap <buffer>       cc     <Plug>(gita-action-commit)
-      nmap <buffer>       ca     <Plug>(gita-action-commit-amend)
+      nmap <buffer>       cc     <Plug>(gita-action-commit-open)
+      nmap <buffer>       ca     <Plug>(gita-action-commit-open-amend)
       nmap <buffer><expr> -a     <SID>smart_map('-a',     '<Plug>(gita-action-add)')
       nmap <buffer><expr> -A     <SID>smart_map('-A',     '<Plug>(gita-action-ADD)')
       nmap <buffer><expr> -r     <SID>smart_map('-r',     '<Plug>(gita-action-rm)')
@@ -211,15 +229,16 @@ function! s:define_mappings(filetype) abort " {{{
       vmap <buffer><expr> --     <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     else
       nmap <buffer>       <C-l>  <Plug>(gita-action-commit-update)
-      nmap <buffer>       cc     <Plug>(gita-action-status)
-      nmap <buffer>       ca     <Plug>(gita-action-status)
+      nmap <buffer>       cc     <Plug>(gita-action-status-open)
+      nmap <buffer>       ca     <Plug>(gita-action-status-open)
+      nmap <buffer>       CC     <Plug>(gita-action-commit)
     endif
   endif
 endfunction " }}}
 
 " actions
 function! s:action(name, ...) abort " {{{
-  call s:throw_exception_on_invalid_filetype('s:action')
+  call s:throw_exception_except_on_valid_filetype('s:action')
   let options = extend({
         \ 'multiple': 0,
         \}, get(a:000, 0, {}))
@@ -238,6 +257,7 @@ let s:statuses_optional_actions = [
       \ 'switch_to_commit',
       \ 'update_status',
       \ 'update_commit',
+      \ 'commit',
       \]
 let s:statuses_optional_actions_pattern =
       \ printf('\v%%(%s)', join(s:statuses_optional_actions, '|'))
@@ -525,6 +545,36 @@ function! s:action_diff(statuses, options) abort " {{{
         \ 'the action has not been implemented yet.',
         \ 'Not implemented error')
 endfunction " }}}
+function! s:action_commit(statuses, options) abort " {{{
+  call s:throw_exception_except_on_commit_filetype('s:action_commit')
+  " do not use a:statuses while it is a different kind of object
+  let options = extend(b:gita.get('options'), a:options)
+  let statuses = b:gita.get('statuses')
+  if empty(statuses) || empty(statuses.staged)
+    return
+  endif
+  " get comment removed content
+  let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
+  " check if commit should be executed
+  if &modified || join(commitmsg, "") =~# '\v^\s*$'
+    call gita#util#info('Commiting the changes has canceled.')
+    return
+  endif
+  " save comment removed content to a tempfile
+  let filename = tempname()
+  call writefile(commitmsg, filename)
+  let fargs = ['--file', filename]
+  if options.amend
+    let fargs = fargs + ['--amend']
+  endif
+  let result = call(s:Git.commit, [fargs], s:Git)
+  call delete(filename)
+  if result.status == 0
+    call gita#util#info(result.stdout, 'The changes has been commited')
+  else
+    call gita#util#error(result.stdout, 'An exception has occur')
+  endif
+endfunction " }}}
 
 " gita-status buffer
 function! s:status_open(...) abort " {{{
@@ -567,7 +617,7 @@ function! s:status_open(...) abort " {{{
   execute 'setlocal filetype=' . s:const.status_filetype
 
   " define mappings
-  call s:define_mappings(s:const.status_filetype)
+  call s:define_mappings()
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
@@ -577,7 +627,7 @@ function! s:status_open(...) abort " {{{
   call s:status_update()
 endfunction " }}}
 function! s:status_update() abort " {{{
-  call s:throw_exception_on_invalid_filetype('s:status_update')
+  call s:throw_exception_except_on_status_filetype('s:status_update')
 
   let statuses = s:GitMisc.get_parsed_status()
   if empty(statuses)
@@ -655,19 +705,36 @@ function! s:commit_open(...) abort " {{{
   execute 'setlocal filetype=' . s:const.commit_filetype
 
   " define mappings
-  call s:define_mappings(s:const.commit_filetype)
+  call s:define_mappings()
 
-  " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
-  autocmd BufWriteCmd <buffer> call s:commit_do_write(expand("<amatch>"), b:gita)
-  autocmd BufWinLeave <buffer> call s:commit_do_commit(b:gita)
-  autocmd WinLeave    <buffer> let b:is_closing = 1
+  autocmd BufWriteCmd <buffer> call s:commit_ac_write(expand("<amatch>"))
+  function! s:commit_ac_write(filename) abort
+    call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
+    if a:filename != expand('%:p')
+      " a new filename is given. save the content to the new file
+      execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
+      return
+    endif
+    " cache commitmsg
+    let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
+    call b:gita.set('commitmsg', commitmsg)
+    setlocal nomodified
+  endfunction
+  autocmd WinLeave <buffer> call s:commit_ac_leave()
+  function! s:commit_ac_leave() abort
+    call s:throw_exception_except_on_commit_filetype('s:commit_ac_write')
+    " commit before leave
+    call s:action_commit({}, {})
+    " focus invoker
+    call s:invoker_focus(b:gita)
+  endfunction
 
   " update contents
   call s:commit_update()
 endfunction " }}}
 function! s:commit_update() abort " {{{
-  call s:throw_exception_on_invalid_filetype('s:commit_update')
+  call s:throw_exception_except_on_commit_filetype('s:commit_update')
   let options = b:gita.get('options')
 
   " update contents
@@ -687,7 +754,9 @@ function! s:commit_update() abort " {{{
   endfor
 
   " create default commit message
-  if empty(statuses.staged)
+  if strlen(b:gita.get('commitmsg', ''))
+    let buflines = b:gita.get('commitmsg') + buflines
+  elseif empty(statuses.staged)
     let buflines = ['no changes added to commit'] + buflines
   elseif options.amend
     let commitmsg = s:GitMisc.get_last_commit_message() 
@@ -698,66 +767,18 @@ function! s:commit_update() abort " {{{
 
   " remove the entire content and rewrite the buflines
   setlocal modifiable
+  let saved_cur = getpos('.')
   let save_undolevels = &undolevels
   setlocal undolevels=-1
   silent %delete _
   call setline(1, buflines)
+  call setpos('.', saved_cur)
   let &undolevels = save_undolevels
   setlocal nomodified
-  " select the first line
-  call setpos('.', [bufnr('%'), 1, 1, 0])
 
   call b:gita.set('statuses_map', statuses_map)
   call b:gita.set('statuses', statuses)
   redraw
-endfunction " }}}
-function! s:commit_do_write(filename, gita) abort " {{{
-  call s:throw_exception_on_invalid_filetype('s:commit_do_write')
-  if a:filename != expand('%:p')
-    " a new filename is given. save the content to the new file
-    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
-    return
-  endif
-  setlocal nomodified
-endfunction " }}}
-function! s:commit_do_commit(gita) abort " {{{
-  call s:throw_exception_on_invalid_filetype('s:commit_do_commit')
-  let options = a:gita.get('options')
-  let statuses = a:gita.get('statuses')
-  if empty(statuses) || empty(statuses.staged)
-    if get(b:, 'closing', 0)
-      call s:invoker_focus(b:gita)
-    endif
-    return
-  endif
-  " get comment removed content
-  let contents = getline(1, '$')
-  let contents = filter(contents, 'v:val !~# "^#"')
-  " check if commit should be executed
-  if &modified || join(contents, "") =~# '\v^\s*$'
-    call gita#util#warn('Commiting the changes has canceled.')
-    if get(b:, 'closing', 0)
-      call s:invoker_focus(b:gita)
-    endif
-    return
-  endif
-  " save comment removed content to a tempfile
-  let filename = tempname()
-  call writefile(contents, filename)
-  let fargs = ['--file', filename]
-  if options.amend
-    let fargs = fargs + ['--amend']
-  endif
-  let result = call(s:Git.commit, [fargs], s:Git)
-  call delete(filename)
-  if result.status == 0
-    call gita#util#info(result.stdout, 'The changes has been commited')
-  else
-    call gita#util#error(result.stdout, 'An exception has occur')
-  endif
-  if get(b:, 'closing', 0)
-    call s:invoker_focus(b:gita)
-  endif
 endfunction " }}}
 
 

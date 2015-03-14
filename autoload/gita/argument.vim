@@ -29,6 +29,10 @@ function! s:get_status_parser() " {{{
           \ 'name': 'Gita status',
           \ 'validate_unknown': 0,
           \})
+    call s:status_parser.add_argument(
+          \ '--force-construction',
+          \ 're-construct the buffer (debug)',
+          \)
   endif
   return s:status_parser
 endfunction " }}}
@@ -41,6 +45,10 @@ function! s:get_commit_parser() " {{{
     call s:commit_parser.add_argument(
           \ '--amend',
           \ 'amend previous commit',
+          \)
+    call s:commit_parser.add_argument(
+          \ '--force-construction',
+          \ 're-construct the buffer (debug)',
           \)
   endif
   return s:commit_parser
