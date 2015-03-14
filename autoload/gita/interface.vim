@@ -185,7 +185,7 @@ function! s:status_open(...) abort " {{{
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:invoker_focus(b:gita)
+  autocmd BufWinLeave <buffer> call s:invoker_focus(b:gita)
 
   " update contents
   call s:status_update()
@@ -342,8 +342,8 @@ function! s:commit_open(...) abort " {{{
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:commit_do_commit(b:gita)
   autocmd BufWriteCmd <buffer> call s:commit_do_write(expand("<amatch>"), b:gita)
+  autocmd BufWinLeave <buffer> call s:commit_do_commit(b:gita)
 
   " update contents
   let status = s:GitMisc.get_parsed_status()
@@ -400,14 +400,29 @@ function! s:commit_do_write(filename, gita) abort " {{{
     execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
     return
   endif
-  " save a current commit message into a draft file (in case of sudden death or so on)
-  let contents = getline(1, '$')
-  call filter(contents, 'v:val !~# "^#"')
-  call s:commit_draft_write(contents)
   setlocal nomodified
 endfunction " }}}
 function! s:commit_do_commit(gita) abort " {{{
-
+  if empty(a:gita.get('status'))
+    return
+  endif
+  let contents = getline('1', '$')
+  let filtered = deepcopy(contents)
+  call filter(filtered, 'v:val !~$ "^#|^¥s*$"')
+  if &modified || len(filtered) == 0
+    call gita#util#warn('Commiting the changes has canceled.')
+    return
+  endif
+  let filename = s:Path.join([s:Git.get_repository_path(), 'COMMIT_EDITMSG'])
+  let args = gita#util#flatten(
+        \ ['--file', filename, get(a:gita, 'options', [])]
+        \)
+  echomsg string(filename)
+  echomsg string(args)
+  call writefile(contents, filename)
+  echomsg string(call(s:Git.commit, [args], s:Git))
+  call delete(filename)
+  call gita#util#info('The changes has been commited.')
 endfunction " }}}
 function! s:commit_action(name, ...) abort " {{{
   if &filetype != s:const.commit_filetype
