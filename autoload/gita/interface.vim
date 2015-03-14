@@ -525,7 +525,8 @@ function! s:commit_do_commit(gita) abort " {{{
     return
   endif
   " get comment removed content
-  let contents = filter(copy(getline(1, '$')), 'v:val !~$ "^#"')
+  let contents = getline(1, '$')
+  let contents = filter(contents, 'v:val !~# "^#"')
   " check if commit should be executed
   if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
