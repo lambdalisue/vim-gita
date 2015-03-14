@@ -558,8 +558,15 @@ function! s:action_commit(statuses, options) abort " {{{
   " do not use a:statuses while it is a different kind of object
   let options = extend(b:gita.get('options'), a:options)
   let statuses = b:gita.get('statuses', {})
-  if empty(statuses) || empty(statuses.staged)
-    " already commited or no staged files exists
+  if empty(statuses)
+    " already commited. ignore
+    return
+  elseif empty(statuses.staged)
+    " no staged files exists
+    call gita#util#warn(
+          \ 'there are no indexed files. add changes into the index first.',
+          \ 'Commiting the changes has canceled.',
+          \)
     return
   elseif &modified
     call gita#util#warn(
@@ -572,7 +579,7 @@ function! s:action_commit(statuses, options) abort " {{{
   let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
   if join(commitmsg, "") =~# '\v^\s*$'
     call gita#util#warn(
-          \ 'no commit messages are available. commiting the changes has canceld.'
+          \ 'no commit messages are available. commiting the changes has canceld.',
           \ 'Commiting the changes has canceled.',
           \)
     return
