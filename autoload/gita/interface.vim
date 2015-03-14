@@ -132,7 +132,11 @@ function! s:status_open(...) abort " {{{
     return
   endif
 
-  if exists('b:gita') && !b:gita.get('force_construction', 0) && !options.force_construction
+  if exists('b:gita') && !options.force_construction
+    " update contents
+    call s:status_update()
+    execute 'setlocal filetype=' . s:const.status_filetype
+    " update invoker
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
     return
@@ -192,11 +196,7 @@ function! s:status_open(...) abort " {{{
 endfunction " }}}
 function! s:status_update() abort " {{{
   if &filetype != s:const.status_filetype
-    let gita = getbufvar('b:gita', s:const.status_bufname, {})
-    if !empty(gita)
-      call gita.set('force_construct', 1)
-    endif
-    return
+    throw 'vim-gita: s:status_update required to be executed on a proper buffer'
   endif
 
   let status = s:GitMisc.get_parsed_status()
@@ -410,24 +410,27 @@ function! s:commit_do_commit(gita) abort " {{{
   if empty(a:gita.get('status'))
     return
   endif
+  " get comment removed content
   let contents = getline('1', '$')
-  let filtered = deepcopy(contents)
-  call filter(filtered, 'v:val !~$ "^#|^¥s*$"')
-  if &modified || len(filtered) == 0
+  call filter(contents, 'v:val !~$ "^#"')
+  " check if commit should be executed
+  if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
     return
   endif
+  " save comment removed content to a tempfile
   let filename = tempname()
+  call writefile(contents, filename)
   let args = gita#util#flatten(
         \ ['--file', filename, get(a:gita, 'options', [])]
         \)
-  echomsg string(filename)
-  echomsg string(args)
-  call writefile(contents, filename)
-  echomsg string(call(s:Git.commit, [args], s:Git))
+  let result = call(s:Git.commit, [args], s:Git)
   call delete(filename)
-  call s:status_update()
-  call gita#util#info('The changes has been commited.')
+  if result.status == 0
+    call gita#util#info(result.stdout, 'The changes has been commited')
+  else
+    call gita#util#error(result.stdout, 'An exception has occur')
+  endif
 endfunction " }}}
 function! s:commit_action(name, ...) abort " {{{
   if &filetype != s:const.commit_filetype
