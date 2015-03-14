@@ -28,7 +28,22 @@ function! s:GitaDefault(options) abort " {{{
           \ 'Unknown Git command')
     return
   endif
-  call call('s:Git' . cname, [a:options.__shellwords__], s:Git)
+  let worktree_path = s:Git.get_worktree_path('%')
+  let fargs = a:options.__shellwords__
+  let result = call(s:Git[cname], [fargs, { 'cwd': worktree_path }], s:Git)
+  if result.status == 0
+    redraw
+    call gita#util#info(
+          \ result.stdout,
+          \ printf('OK: git %s %s', cname, join(fargs)),
+          \)
+  else
+    redraw
+    call gita#util#info(
+          \ result.stdout,
+          \ printf('Fail: git %s %s', cname, join(fargs)),
+          \)
+  endif
 endfunction " }}}
 
 function! gita#Gita(options) abort " {{{

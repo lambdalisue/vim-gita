@@ -30,11 +30,11 @@ function! s:get_buffer_manager() abort " {{{
   endif
   return s:buffer_manager
 endfunction " }}}
-function! s:get_header_lines() abort " {{{
-  let b = substitute(s:GitMisc.get_local_branch_name(), '\v^"|"$', '', 'g')
-  let r = substitute(s:GitMisc.get_remote_branch_name(), '\v^"|"$', '', 'g')
-  let o = s:GitMisc.count_commits_ahead_of_remote()
-  let i = s:GitMisc.count_commits_behind_remote()
+function! s:get_header_lines(path) abort " {{{
+  let b = substitute(s:GitMisc.get_local_branch_name(a:path), '\v^"|"$', '', 'g')
+  let r = substitute(s:GitMisc.get_remote_branch_name(a:path), '\v^"|"$', '', 'g')
+  let o = s:GitMisc.count_commits_ahead_of_remote(a:path)
+  let i = s:GitMisc.count_commits_behind_remote(a:path)
 
   let buflines = []
   if strlen(r) > 0
@@ -242,6 +242,7 @@ function! s:action(name, ...) abort " {{{
   call s:throw_exception_except_on_valid_filetype('s:action')
   let options = extend({
         \ 'multiple': 0,
+        \ 'worktree_path': b:gita.get('worktree_path'),
         \}, get(a:000, 0, {}))
   if options.multiple
     let selected_statuses = s:get_selected_statuses()
@@ -326,7 +327,7 @@ function! s:action_add(statuses, options) abort " {{{
   " execute Git command
   let fargs = options.force ? ['--force', '--'] : ['--']
   let fargs = fargs + valid_status_paths
-  let result = s:Git.add(fargs)
+  let result = s:Git.add(fargs, { 'cwd': options.worktree_path })
   if result.status == 0
     call gita#util#info(result.stdout)
     call s:status_update()
@@ -362,7 +363,7 @@ function! s:action_rm(statuses, options) abort " {{{
   " execute Git command
   let fargs = options.force ? ['--force', '--'] : ['--']
   let fargs = fargs + valid_status_paths
-  let result = s:Git.rm(fargs)
+  let result = s:Git.rm(fargs, { 'cwd': options.worktree_path })
   if result.status == 0
     call gita#util#info(result.stdout)
     call s:status_update()
@@ -390,7 +391,7 @@ function! s:action_rm_cached(statuses, options) abort " {{{
   " execute Git command
   let fargs = ['--cached', '--']
   let fargs = fargs + valid_status_paths
-  let result = s:Git.rm(fargs)
+  let result = s:Git.rm(fargs, { 'cwd': options.worktree_path })
   if result.status == 0
     call gita#util#info(result.stdout)
     call s:status_update()
@@ -431,7 +432,7 @@ function! s:action_checkout(statuses, options) abort " {{{
   " execute Git command
   let fargs = options.force ? ['--force', 'HEAD', '--'] : ['HEAD', '--']
   let fargs = fargs + valid_status_paths
-  let result = s:Git.checkout(fargs)
+  let result = s:Git.checkout(fargs, { 'cwd': options.worktree_path })
   if result.status == 0
     call gita#util#info(result.stdout)
     call s:status_update()
@@ -472,7 +473,8 @@ function! s:action_revert(statuses, options) abort " {{{
             \)
       let a = gita#util#asktf('Are you sure that you want to remove the untracked file?')
       if a
-        call delete(status.path)
+        let abspath = s:Git.get_absolute_path(status.path, { 'cwd': options.worktree_path })
+        call delete(abspath)
       endif
     else
       call gita#util#warn(
@@ -589,7 +591,7 @@ function! s:action_commit(statuses, options) abort " {{{
   if get(options, 'amend', 0)
     let fargs = fargs + ['--amend']
   endif
-  let result = call(s:Git.commit, [fargs], s:Git)
+  let result = call(s:Git.commit, [fargs, { 'cwd': options.worktree_path }], s:Git)
   call delete(filename)
   if result.status == 0
     " clear cache
@@ -609,6 +611,7 @@ function! s:status_open(...) abort " {{{
   let options = extend({
         \ 'force_construction': 0,
         \}, get(a:000, 0, {}))
+  let worktree_path = s:Git.get_worktree_path(expand('%'))
   let invoker_bufnum = bufnr('%')
   " open or move to the gita-status buffer
   let manager = s:get_buffer_manager()
@@ -619,22 +622,27 @@ function! s:status_open(...) abort " {{{
   endif
   " check if invoker is another gita buffer or not
   if bufname(invoker_bufnum) =~# printf('\v^%s', s:const.commit_bufname)
-    " synchronize invoker_bufnum
+    " synchronize
     let a = getbufvar(invoker_bufnum, 'gita', {})
+    let worktree_path = empty(a) ? worktree_path : a.get('worktree_path')
     let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
     unlet a
   endif
+  execute 'lcd ' worktree_path
 
   if exists('b:gita') && !options.force_construction
     let options.force_construction = 0
     call b:gita.set('options', extend(b:gita.get('options'), options))
+    call b:gita.set('worktree_path', worktree_path)
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
     call s:status_update()
     return
   endif
+
   let b:gita = s:Cache.new()
   call b:gita.set('options', options)
+  call b:gita.set('worktree_path', worktree_path)
   call b:gita.set('invoker_bufnum', invoker_bufnum)
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
@@ -658,7 +666,8 @@ endfunction " }}}
 function! s:status_update() abort " {{{
   call s:throw_exception_except_on_status_filetype('s:status_update')
 
-  let statuses = s:GitMisc.get_parsed_status()
+  let worktree_path = b:gita.get('worktree_path')
+  let statuses = s:GitMisc.get_parsed_status(worktree_path)
   if empty(statuses)
     " the cwd is not inside of git work tree
     bw!
@@ -670,7 +679,7 @@ function! s:status_update() abort " {{{
           \])
     let statuses_map = {}
   else
-    let buflines = s:get_header_lines()
+    let buflines = s:get_header_lines(worktree_path)
     let statuses_map = {}
     for s in statuses.all
       let status_line = s:get_status_line(s)
@@ -698,6 +707,7 @@ endfunction " }}}
 " gita-commit buffer
 function! s:commit_open(...) abort " {{{
   let options = get(a:000, 0, {})
+  let worktree_path = s:Git.get_worktree_path(expand('%'))
   let invoker_bufnum = bufnr('%')
   let manager = s:get_buffer_manager()
   if manager.open(s:const.commit_bufname).bufnr == -1
@@ -708,6 +718,7 @@ function! s:commit_open(...) abort " {{{
   if bufname(invoker_bufnum) =~# printf('\v^%s', s:const.status_bufname)
     " synchronize invoker_bufnum
     let a = getbufvar(invoker_bufnum, 'gita', {})
+    let worktree_path = empty(a) ? worktree_path : a.get('worktree_path')
     let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
     unlet a
   endif
@@ -715,13 +726,16 @@ function! s:commit_open(...) abort " {{{
   if exists('b:gita') && !get(options, 'force_construction', 0)
     let options.force_construction = 0
     call b:gita.set('options', extend(b:gita.get('options'), options))
+    call b:gita.set('worktree_path', worktree_path)
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
     call s:commit_update()
     return
   endif
+  execute 'lcd ' worktree_path
   let b:gita = s:Cache.new()
   call b:gita.set('options', options)
+  call b:gita.set('worktree_path', worktree_path)
   call b:gita.set('invoker_bufnum', invoker_bufnum)
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
@@ -742,18 +756,19 @@ function! s:commit_open(...) abort " {{{
 endfunction " }}}
 function! s:commit_update() abort " {{{
   call s:throw_exception_except_on_commit_filetype('s:commit_update')
+  let worktree_path = b:gita.get('worktree_path')
   let options = b:gita.get('options')
   let is_amend = get(options, 'amend', 0)
 
   " update contents
-  let statuses = s:GitMisc.get_parsed_status()
+  let statuses = s:GitMisc.get_parsed_status(worktree_path)
   if empty(statuses)
     bw!
     return
   endif
 
   " create commit comments
-  let buflines = s:get_header_lines()
+  let buflines = s:get_header_lines(worktree_path)
   let statuses_map = {}
   for s in statuses.all
     let status_line = printf('# %s', s:get_status_line(s))
@@ -770,7 +785,7 @@ function! s:commit_update() abort " {{{
   elseif empty(statuses.staged)
     let buflines = ['no changes added to commit'] + buflines
   elseif is_amend
-    let commitmsg = s:GitMisc.get_last_commit_message()
+    let commitmsg = s:GitMisc.get_last_commit_message(worktree_path)
     let buflines = split(commitmsg, '\v\r?\n') + buflines
   else
     let buflines = [''] + buflines

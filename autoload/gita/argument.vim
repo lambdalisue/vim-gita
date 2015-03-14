@@ -13,6 +13,24 @@ set cpo&vim
 let s:Path          = gita#util#import('System.Filepath')
 let s:ArgumentParser = gita#util#import('ArgumentParser')
 " }}}
+let s:git_command_names = [
+      \ 'init', 'add', 'rm', 'mv', 'status', 'commit', 'clean',
+      \ 'log', 'diff', 'show',
+      \ 'branch', 'checkout', 'merge', 'rebase', 'tag',
+      \ 'clone', 'fetch', 'pull', 'push', 'remote',
+      \ 'reset', 'rebase', 'bisect', 'grep', 'stash', 'prune',
+      \ 'rev_parse', 'ls_tree', 'cat_file', 'archive', 'gc',
+      \ 'fsck', 'config', 'help',
+      \]
+let s:git_command_names_pattern = printf('\v%%(%s)', join(s:git_command_names, '|'))
+function! s:get_command_name(cmdline) " {{{
+  let command_name = split(a:cmdline)[0]
+  if command_name =~# s:git_command_names_pattern
+    return command_name
+  else
+    return ''
+  endif
+endfunction " }}}
 
 function! s:get_default_parser() " {{{
   if !exists('s:default_parser')
@@ -64,10 +82,11 @@ function! s:get_parser(cname) abort " {{{
 endfunction " }}}
 
 function! gita#argument#parse(bang, range, cmdline, ...) abort " {{{
-  let cname = split(a:cmdline)[0]
-  let parser = s:get_parser(cname)
+  let cname = s:get_command_name(a:cmdline)
+  let cmdline = substitute(a:cmdline, printf('\v^%s', cname), '', '')
+  let cparser = s:get_parser(cname)
   let settings = get(a:000, 0, {})
-  let options = call(parser.parse, [a:bang, a:range, a:cmdline, settings], parser)
+  let options = call(cparser.parse, [a:bang, a:range, cmdline, settings], cparser)
   let options.cname = cname
   return options
 endfunction " }}}
@@ -85,16 +104,6 @@ function! gita#argument#complete(arglead, cmdline, cursorpos) abort " {{{
     return call(parser.complete, [a:arglead, a:cmdline, a:cursorpos], parser)
   endif
 endfunction
-let s:git_command_names = [
-      \ 'init', 'add', 'rm', 'mv', 'status', 'commit', 'clean',
-      \ 'log', 'diff', 'show',
-      \ 'branch', 'checkout', 'merge', 'rebase', 'tag',
-      \ 'clone', 'fetch', 'pull', 'push', 'remote',
-      \ 'reset', 'rebase', 'bisect', 'grep', 'stash', 'prune',
-      \ 'rev_parse', 'ls_tree', 'cat_file', 'archive', 'gc',
-      \ 'fsck', 'config', 'help',
-      \]
-let s:git_command_names_pattern = printf('\v%%(%s)', join(s:git_command_names, '|'))
 " }}}
 
 
