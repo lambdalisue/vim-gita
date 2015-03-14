@@ -17,7 +17,7 @@ let s:Cache         = gita#util#import('System.Cache.Simple')
 let s:Git           = gita#util#import('VCS.Git')
 let s:GitMisc       = gita#util#import('VCS.Git.Misc')
 
-" common features
+" Private=====================================================================
 function! s:get_buffer_manager() abort " {{{
   if !exists('s:buffer_manager')
     let config = {
@@ -61,7 +61,6 @@ endfunction " }}}
 function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
-
 function! s:smart_map(lhs, rhs) abort " {{{
   " return {rhs} if the mapping is called on Git status line of status/commit
   " buffer. otherwise it return {lhs}
@@ -101,7 +100,6 @@ function! s:invoker_get_winnum(gita) abort " {{{
   " return -1 if the winnum is invalid
   return winnum <= winnr('$') ? winnum : -1
 endfunction " }}}
-
 
 " gita-status buffer
 function! s:status_open(...) abort " {{{
@@ -194,10 +192,13 @@ function! s:status_open(...) abort " {{{
     nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>', '<Plug>(gita-action-diff-split)')
 
     vmap <buffer><expr> -a     <SID>smart_map('-a', '<Plug>(gita-action-add)')
+    vmap <buffer><expr> -A     <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
     vmap <buffer><expr> -r     <SID>smart_map('-r', '<Plug>(gita-action-rm)')
-    vmap <buffer><expr> -c     <SID>smart_map('-c', '<Plug>(gita-action-rm-cached)')
-    vmap <buffer><expr> -C     <SID>smart_map('-C', '<Plug>(gita-action-checkout)')
-    vmap <buffer><expr> -R     <SID>smart_map('-R', '<Plug>(gita-action-revert)')
+    vmap <buffer><expr> -R     <SID>smart_map('-R', '<Plug>(gita-action-RM)')
+    vmap <buffer><expr> -h     <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)')
+    vmap <buffer><expr> -c     <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
+    vmap <buffer><expr> -C     <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+    vmap <buffer><expr> -=     <SID>smart_map('-=', '<Plug>(gita-action-revert)')
     vmap <buffer><expr> --     <SID>smart_map('--', '<Plug>(gita-action-toggle)')
   endif
 
@@ -286,7 +287,7 @@ function! s:status_action_add(status, opener) abort " {{{
     call gita#util#info('no changes are existing on the file (working tree is clean)')
     return
   endif
-  call gita#action#add([force, '--', a:status.path])
+  call s:Git.add([force, '--', a:status.path])
   call s:status_update()
 endfunction " }}}
 function! s:status_action_rm(status, opener) abort " {{{
@@ -299,7 +300,7 @@ function! s:status_action_rm(status, opener) abort " {{{
     call gita#util#info('no changes are existing on the file (working tree is clean)')
     return
   endif
-  call gita#action#rm([force, '--', a:status.path])
+  call s:Git.rm([force, '--', a:status.path])
   call s:status_update()
 endfunction " }}}
 function! s:status_action_rm_cached(status, opener) abort " {{{
@@ -307,7 +308,7 @@ function! s:status_action_rm_cached(status, opener) abort " {{{
     call gita#util#info('no changes are existing on the index (index is clean)')
     return
   endif
-  call gita#action#rm(['--cached', '--', a:status.path])
+  call s:Git.rm(['--cached', '--', a:status.path])
   call s:status_update()
 endfunction " }}}
 function! s:status_action_checkout(status, opener) abort " {{{
@@ -326,7 +327,7 @@ function! s:status_action_checkout(status, opener) abort " {{{
     call gita#util#warn('locally changed file could not be checked out. use <Plug>(gita-action-CHECKOUT) to checkout')
     return
   endif
-  call gita#action#checkout([force, 'HEAD', '--', a:status.path])
+  call s:Git.checkout([force, 'HEAD', '--', a:status.path])
   call s:status_update()
 endfunction " }}}
 function! s:status_action_revert(status, opener) abort " {{{
@@ -387,7 +388,9 @@ function! s:status_action_open(status, opener) abort " {{{
   call s:Buffer.open(path, a:opener)
 endfunction " }}}
 function! s:status_action_diff(status, opener) abort " {{{
-  call gita#util#error('the action has not been implemented yet.', 'Not implemented error:')
+  call gita#util#error(
+        \ 'the action has not been implemented yet.',
+        \ 'Not implemented error')
 endfunction " }}}
 
 " gita-commit buffer
@@ -573,21 +576,10 @@ function! s:commit_action_status(status, opener) abort " {{{
   call s:status_open(options)
 endfunction " }}}
 
-" Public
+
+" Public =====================================================================
 function! gita#interface#smart_map(lhs, rhs) abort " {{{
-  if &filetype != s:const.status_filetype & &filetype != s:const.commit_filetype
-    throw 'vim-gita: s:smartmap required to be executed on a proper buffer'
-  endif
-  if !exists('b:gita')
-    return a:lhs
-  endif
-  let status_map = b:gita.get('status_map', {})
-  let selected_line = getline('.')
-  let selected_status = get(status_map, selected_line, {})
-  if empty(selected_status) && a:name !~# '\v%(update|commit)'
-    " the action is executed on invalid line so just do nothing
-    return 0
-  endif
+  call s:smart_map(a:lhs, a:rhs)
 endfunction " }}}
 
 function! gita#interface#status_open(...) abort " {{{
@@ -598,7 +590,7 @@ function! gita#interface#status_update() abort " {{{
   let winnum = bufwinnr(bufnum)
   if winnum == -1
     call gita#util#warn(
-          \ 'use "gita#interface#open_status({options})" prier to this method.',
+          \ 'use "gita#interface#status_open({options})" prier to this method.',
           \ 'vim-gita: "gita-status" buffer is not opened.',
           \)
     return
@@ -614,6 +606,25 @@ function! gita#interface#status_update() abort " {{{
 endfunction " }}}
 function! gita#interface#commit_open(...) abort " {{{
   call call('s:commit_open', a:000)
+endfunction " }}}
+function! gita#interface#commit_update() abort " {{{
+  let bufnum = bufnr(s:const.commit_bufname)
+  let winnum = bufwinnr(bufnum)
+  if winnum == -1
+    call gita#util#warn(
+          \ 'use "gita#interface#commit_open({options})" prier to this method.',
+          \ 'vim-gita: "gita-commit" buffer is not opened.',
+          \)
+    return
+  endif
+
+  let saved_bufnum = bufnr('')
+  " focus the gita-status window
+  silent execute winnum . 'wincmd w'
+  " call actual update
+  call s:commit_update()
+  " restore window focus
+  silent execute bufwinnr(saved_bufnum) . 'wincmd w'
 endfunction " }}}
 
 function! gita#interface#define_highlights() abort " {{{
@@ -661,4 +672,3 @@ endif
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
-
