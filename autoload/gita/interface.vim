@@ -61,10 +61,17 @@ endfunction " }}}
 function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
-function! s:nmap_alias(name, actual) " {{{
-  if !hasmapto(a:name)
-    execute 'nmap <silent><buffer>' a:name a:actual
+
+function! s:smart_map(lhs, rhs) abort " {{{
+  " return {rhs} if the mapping is called on Git status line of status/commit
+  " buffer. otherwise it return {lhs}
+  if &filetype != s:const.status_filetype && &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:smart_map required to be executed on a proper buffer'
   endif
+  let status_map = b:gita.get('status_map', {})
+  let selected_line = getline('.')
+  let selected_status = get(status_map, selected_line, {})
+  return empty(selected_status) ? a:lhs : a:rhs
 endfunction " }}}
 
 function! s:invoker_focus(gita, ...) abort " {{{
@@ -103,6 +110,7 @@ function! s:invoker_get_winnum(gita) abort " {{{
   " return -1 if the winnum is invalid
   return winnum <= winnr('$') ? winnum : -1
 endfunction " }}}
+
 
 " gita-status buffer
 function! s:status_open(...) abort " {{{
@@ -153,24 +161,28 @@ function! s:status_open(...) abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-open-above)  :<C-u>call <SID>status_action('open', 'above')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-below)  :<C-u>call <SID>status_action('open', 'below')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>status_action('open', 'tabnew')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-update)      :call <SID>status_action('update')<CR>
+
   vnoremap <silent><buffer> <Plug>(gita-action-toggle)      :call <SID>status_action('toggle')<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-revert)      :call <SID>status_action('revert')<CR>
 
   if get(g:, 'gita#interface#enable_default_keymaps', 1)
-    nmap <buffer> q      :<C-u>q<CR>
-    call gita#util#nmap_default('<C-l>',  '<Plug>(gita-action-update)', 0, 1)
-    call gita#util#nmap_default('-',      '<Plug>(gita-action-toggle)', 0, 1)
-    call gita#util#nmap_default('R',      '<Plug>(gita-action-revert)', 0, 1)
-    call gita#util#nmap_default('<CR>',   '<Plug>(gita-action-open-edit)', 0, 1)
-    call gita#util#nmap_default('<S-CR>', '<Plug>(gita-action-diff-vsplit)', 0, 1)
-    call gita#util#nmap_default('<C-e>',  '<Plug>(gita-action-open-edit)', 0, 1)
-    call gita#util#nmap_default('<C-d>',  '<Plug>(gita-action-diff-vsplit)', 0, 1)
-    call gita#util#nmap_default('<C-s>',  '<Plug>(gita-action-open-split)', 0, 1)
-    call gita#util#nmap_default('<C-v>',  '<Plug>(gita-action-open-vsplit)', 0, 1)
-    call gita#util#nmap_default('cc',     '<Plug>(gita-action-commit)', 0, 1)
-    call gita#util#nmap_default('ca',     '<Plug>(gita-action-commit-amend)', 0, 1)
-    call gita#util#vmap_default('-',      '<Plug>(gita-action-toggle)', 0, 1)
+    nmap <buffer>       q      :<C-u>q<CR>
+    nmap <buffer>       <C-l>  <Plug>(gita-action-update)
+    nmap <buffer>       cc     <Plug>(gita-action-commit)
+    nmap <buffer>       ca     <Plug>(gita-action-commit-amend)
+    nmap <buffer><expr> -      <SID>smart_map('-', '<Plug>(gita-action-toggle)')
+    nmap <buffer><expr> R      <SID>smart_map('R', '<Plug>(gita-action-revert)')
+    nmap <buffer><expr> <CR>   <SID>smart_map('<CR>', '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> e      <SID>smart_map('e', '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> E      <SID>smart_map('E', '<Plug>(gita-action-open-vsplit)')
+    nmap <buffer><expr> <C-e>  <SID>smart_map('<C-e>', '<Plug>(gita-action-open-split)')
+    nmap <buffer><expr> d      <SID>smart_map('d', '<Plug>(gita-action-diff-split)')
+    nmap <buffer><expr> D      <SID>smart_map('D', '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>', '<Plug>(gita-action-diff-split)')
+
+    vmap <buffer><expr> -      <SID>smart_map('-', '<Plug>(gita-action-toggle)')
+    vmap <buffer><expr> R      <SID>smart_map('R', '<Plug>(gita-action-toggle)')
   endif
 
   " automatically focus invoker when the buffer is closed
@@ -232,10 +244,11 @@ function! s:status_action(name, ...) abort " {{{
   let selected_status = get(status_map, selected_line, {})
   if empty(selected_status) && a:name !~# '\v%(update|commit)'
     " the action is executed on invalid line so just do nothing
-    return
+    return 0
   endif
   let fname = printf('s:status_action_%s', a:name)
   call call(fname, [selected_status, opener])
+  return 1
 endfunction " }}}
 function! s:status_action_commit(status, opener) abort " {{{
   let options = {
@@ -327,15 +340,18 @@ function! s:commit_open(...) abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-open-tabnew) :<C-u>call <SID>commit_action('open', 'tabnew')<CR>
 
   if get(g:, 'gita#interface#enable_default_keymaps', 1)
-    nmap <buffer> q      :<C-u>q<CR>
-    call gita#util#nmap_default('<CR>',   '<Plug>(gita-action-open-edit)', 0, 1)
-    call gita#util#nmap_default('<S-CR>', '<Plug>(gita-action-diff-vsplit)', 0, 1)
-    call gita#util#nmap_default('<C-e>',  '<Plug>(gita-action-open-edit)', 0, 1)
-    call gita#util#nmap_default('<C-d>',  '<Plug>(gita-action-diff-vsplit)', 0, 1)
-    call gita#util#nmap_default('<C-s>',  '<Plug>(gita-action-open-split)', 0, 1)
-    call gita#util#nmap_default('<C-v>',  '<Plug>(gita-action-open-vsplit)', 0, 1)
-    call gita#util#nmap_default('cc',     '<Plug>(gita-action-status)', 0, 1)
-    call gita#util#nmap_default('ca',     '<Plug>(gita-action-status)', 0, 1)
+    nmap <buffer>       q      :<C-u>q<CR>
+    nmap <buffer>       cc     <Plug>(gita-action-status)
+    nmap <buffer>       ca     <Plug>(gita-action-status)
+
+    nmap <buffer><expr> <CR>   <SID>smart_map('<CR>', '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> e      <SID>smart_map('e', '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> E      <SID>smart_map('E', '<Plug>(gita-action-open-vsplit)')
+    nmap <buffer><expr> <C-e>  <SID>smart_map('<C-e>', '<Plug>(gita-action-open-split)')
+    nmap <buffer><expr> d      <SID>smart_map('d', '<Plug>(gita-action-diff-split)')
+    nmap <buffer><expr> D      <SID>smart_map('D', '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>', '<Plug>(gita-action-diff-split)')
   endif
 
   " automatically focus invoker when the buffer is closed
@@ -414,9 +430,7 @@ function! s:commit_do_commit(gita) abort " {{{
     return
   endif
   " get comment removed content
-  let contents = getline(1, '$')
-  call filter(contents, 'v:val !~$ "^#"')
-  call gita#util#debug('s:commit_do_commit:', 'contents = ', contents)
+  let contents = filter(getline(1, '$'), 'v:val !~$ "^#"')
   " check if commit should be executed
   if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
@@ -465,6 +479,22 @@ function! s:commit_action_status(status, opener) abort " {{{
 endfunction " }}}
 
 " Public
+function! gita#interface#smart_map(lhs, rhs) abort " {{{
+  if &filetype != s:const.status_filetype & &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:smartmap required to be executed on a proper buffer'
+  endif
+  if !exists('b:gita')
+    return a:lhs
+  endif
+  let status_map = b:gita.get('status_map', {})
+  let selected_line = getline('.')
+  let selected_status = get(status_map, selected_line, {})
+  if empty(selected_status) && a:name !~# '\v%(update|commit)'
+    " the action is executed on invalid line so just do nothing
+    return 0
+  endif
+endfunction " }}}
+
 function! gita#interface#status_open(...) abort " {{{
   call call('s:status_open', a:000)
 endfunction " }}}
