@@ -14,7 +14,6 @@ let s:Path          = gita#util#import('System.Filepath')
 let s:Buffer        = gita#util#import('Vim.Buffer')
 let s:BufferManager = gita#util#import('Vim.BufferManager')
 let s:Cache         = gita#util#import('System.Cache.Simple')
-let s:FileCache     = gita#util#import('System.Cache')
 let s:Git           = gita#util#import('VCS.Git')
 let s:GitMisc       = gita#util#import('VCS.Git.Misc')
 
@@ -63,7 +62,16 @@ function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
 
-function! s:invoker_focus(gita) abort " {{{
+function! s:invoker_focus(gita, ...) abort " {{{
+  let leaving = get(a:000, 0, 0)
+  if leaving
+    let status_bufnum = bufnr(s:const.status_bufname)
+    let commit_bufnum = bufnr(s:const.commit_bufname)
+    if bufwinnr(status_bufnum) != -1 || bufwinnr(commit_bufnum) != -1
+      " leaving but another buffer exists. ignore focusing invoker
+      return
+    endif
+  endif
   let winnum = a:gita.get('invoker_winnum', -1)
   if winnum <= winnr('$')
     silent execute winnum . 'wincmd w'
@@ -91,33 +99,6 @@ function! s:invoker_get_winnum(gita) abort " {{{
   return winnum <= winnr('$') ? winnum : -1
 endfunction " }}}
 
-function! s:commit_draft_get_filename() abort " {{{
-  return s:GitMisc.get_last_commit_hashref() . '.commitmsg'
-endfunction " }}}
-function! s:commit_draft_get_cache_dir() abort " {{{
-  return s:Path.join([s:Git.get_repository_path(), '.gita'])
-endfunction " }}}
-function! s:commit_draft_exists() abort " {{{
-  let filename = s:commit_draft_get_filename()
-  let cache_dir = s:commit_draft_get_cache_dir()
-  return s:FileCache.filereadable(cache_dir, filename)
-endfunction " }}}
-function! s:commit_draft_read() abort " {{{
-  let filename = s:commit_draft_get_filename()
-  let cache_dir = s:commit_draft_get_cache_dir()
-  return s:FileCache.readfile(cache_dir, filename)
-endfunction " }}}
-function! s:commit_draft_write(list) abort " {{{
-  let filename = s:commit_draft_get_filename()
-  let cache_dir = s:commit_draft_get_cache_dir()
-  return s:FileCache.writefile(cache_dir, filename, a:list)
-endfunction " }}}
-function! s:commit_draft_delete() abort " {{{
-  let filename = s:commit_draft_get_filename()
-  let cache_dir = s:commit_draft_get_cache_dir()
-  return s:FileCache.deletefile(cache_dir, filename)
-endfunction " }}}
-
 " gita-status buffer
 function! s:status_open(...) abort " {{{
   let options = extend({
@@ -133,15 +114,14 @@ function! s:status_open(...) abort " {{{
   endif
 
   if exists('b:gita') && !options.force_construction
-    " update contents
-    call s:status_update()
-    execute 'setlocal filetype=' . s:const.status_filetype
-    " update invoker
+    call b:gita.set('options', options)
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
+    call s:status_update()
     return
   endif
   let b:gita = s:Cache.new()
+  call b:gita.set('options', options)
   call b:gita.set('invoker_bufnum', invoker_bufnum)
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
@@ -152,6 +132,8 @@ function! s:status_open(...) abort " {{{
   setlocal winfixheight
   execute 'setlocal filetype=' . s:const.status_filetype
 
+  nnoremap <silent><buffer> <Plug>(gita-action-commit)      :<C-u>call <SID>status_action('commit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit-amend):<C-u>call <SID>status_action('commit', 'amend')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-update)      :<C-u>call <SID>status_action('update')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-toggle)      :<C-u>call <SID>status_action('toggle')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-revert)      :<C-u>call <SID>status_action('revert')<CR>
@@ -184,12 +166,14 @@ function! s:status_open(...) abort " {{{
     nmap <buffer> <C-d>  <Plug>(gita-action-diff)
     nmap <buffer> <C-s>  <Plug>(gita-action-open-split)
     nmap <buffer> <C-v>  <Plug>(gita-action-open-vsplit)
+    nmap <buffer> cc     <Plug>(gita-action-commit)
+    nmap <buffer> ca     <Plug>(gita-action-commit-amend)
     vmap <buffer> -      <Plug>(gita-action-toggle)
   endif
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
-  autocmd BufWinLeave <buffer> call s:invoker_focus(b:gita)
+  autocmd BufWinLeave <buffer> call s:invoker_focus(b:gita, 1)
 
   " update contents
   call s:status_update()
@@ -250,6 +234,13 @@ function! s:status_action(name, ...) abort " {{{
   let fname = printf('s:status_action_%s', a:name)
   call call(fname, [selected_status, opener])
 endfunction " }}}
+function! s:status_action_commit(status, opener) abort " {{{
+  let options = {
+        \ 'force_construction': 1,
+        \ 'amend': a:opener ==# 'amend',
+        \}
+  call s:commit_open(options)
+endfunction " }}}
 function! s:status_action_update(status, opener) abort " {{{
   call s:status_update()
   redraw!
@@ -297,24 +288,26 @@ function! s:commit_open(...) abort " {{{
   let invoker_bufnum = bufnr('')
   " open or move to the gita-commit buffer
   let manager = s:get_buffer_manager()
-  let bufname = s:const.commit_bufname
-  let bufinfo = manager.open(bufname)
+  let bufinfo = manager.open(s:const.commit_bufname)
   if bufinfo.bufnr == -1
     call gita#util#error('vim-gita: failed to open a git commit window')
     return
   endif
 
   if exists('b:gita') && !options.force_construction
+    call b:gita.set('options', options)
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
+    call s:commit_update()
     return
   endif
   let b:gita = s:Cache.new()
+  call b:gita.set('options', options)
   call b:gita.set('invoker_bufnum', invoker_bufnum)
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
   " construction
-  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
+  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
   setlocal winfixheight
   execute 'setlocal filetype=' . s:const.commit_filetype
 
@@ -350,38 +343,38 @@ function! s:commit_open(...) abort " {{{
   autocmd BufWinLeave <buffer> call s:commit_do_commit(b:gita)
 
   " update contents
+  call s:commit_update()
+endfunction " }}}
+function! s:commit_update() abort " {{{
+  if &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:commit_update required to be executed on a proper buffer'
+  endif
+  let options = b:gita.get('options', {})
+
+  " update contents
   let status = s:GitMisc.get_parsed_status()
   if empty(status)
-    " the cwd is not inside of git work tree
-    let manager = s:get_buffer_manager()
-    call manager.close(s:const.status_bufname)
+    bw!
     return
-  elseif empty(status.all)
-    let buflines = gita#util#flatten([
-          \ s:get_header_lines(),
-          \ '# nothing to commit (working directory clean)',
-          \])
-    let status_map = {}
-  else
-    let buflines = s:get_header_lines()
-    let status_map = {}
-    for s in status.all
-      let status_line = printf('# %s', s:get_status_line(s))
-      let status_map[status_line] = s
-      call add(buflines, status_line)
-    endfor
+  endif
 
-    " update contents with amend/draft
-    if s:commit_draft_exists()
-      let default_commitmsg = s:commit_draft_read()
-      call s:commit_draft_delete()
-    elseif options.amend
-      let default_commitmsg = s:GitMisc.get_last_commit_message()
-    else
-      let default_commitmsg = ['']
-    endif
-    call filter(default_commitmsg, 'v:val !~# "^#"')
-    let buflines = default_commitmsg + buflines
+  " create commit comments
+  let buflines = s:get_header_lines()
+  let status_map = {}
+  for s in status.all
+    let status_line = printf('# %s', s:get_status_line(s))
+    let status_map[status_line] = s
+    call add(buflines, status_line)
+  endfor
+
+  " create default commit message
+  if empty(status.staged)
+    let buflines = ['no changes added to commit'] + buflines
+  elseif get(options, 'amend', 0)
+    let commitmsg = s:GitMisc.get_last_commit_message() 
+    let buflines = split(join(commitmsg, "\n"), "\n") + buflines
+  else
+    let buflines = [''] + buflines
   endif
 
   " remove the entire content and rewrite the buflines
@@ -399,6 +392,9 @@ function! s:commit_open(...) abort " {{{
   call b:gita.set('status', status)
 endfunction " }}}
 function! s:commit_do_write(filename, gita) abort " {{{
+  if &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:commit_do_write required to be executed on a proper buffer'
+  endif
   if a:filename != expand('%:p')
     " a new filename is given. save the content to the new file
     execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
@@ -407,18 +403,22 @@ function! s:commit_do_write(filename, gita) abort " {{{
   setlocal nomodified
 endfunction " }}}
 function! s:commit_do_commit(gita) abort " {{{
+  if &filetype != s:const.commit_filetype
+    throw 'vim-gita: s:commit_do_commit required to be executed on a proper buffer'
+  endif
   let status = a:gita.get('status', {})
   if empty(status) || empty(status.staged)
-    " nothing to be commited
+    call s:invoker_focus(b:gita, 1)
     return
   endif
   " get comment removed content
-  let contents = getline('1', '$')
-  call filter(contents, 'v:val !~$ "\v^#"')
-  throw string(contents)
+  let contents = getline(1, '$')
+  call filter(contents, 'v:val !~$ "^#"')
+  call gita#util#debug('s:commit_do_commit:', 'contents = ', contents)
   " check if commit should be executed
-  if &modified || join(contents, "" =~# '\v^\s*$'
+  if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
+    call s:invoker_focus(b:gita, 1)
     return
   endif
   " save comment removed content to a tempfile
@@ -434,6 +434,7 @@ function! s:commit_do_commit(gita) abort " {{{
   else
     call gita#util#error(result.stdout, 'An exception has occur')
   endif
+  call s:invoker_focus(b:gita, 1)
 endfunction " }}}
 function! s:commit_action(name, ...) abort " {{{
   if &filetype != s:const.commit_filetype
