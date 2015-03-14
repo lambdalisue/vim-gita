@@ -261,11 +261,11 @@ function! s:status_action(name, ...) abort " {{{
   let selected_status = get(status_map, selected_line, {})
   if empty(selected_status) && a:name !~# '\v%(update|commit)'
     " the action is executed on invalid line so just do nothing
-    return 0
+    return
   endif
   let fname = printf('s:status_action_%s', a:name)
+  call gita#util#debug('status_action', fname, opener, selected_status)
   call call(fname, [selected_status, opener])
-  return 1
 endfunction " }}}
 function! s:status_action_commit(status, opener) abort " {{{
   let options = {
@@ -279,20 +279,29 @@ function! s:status_action_update(status, opener) abort " {{{
   redraw!
 endfunction " }}}
 function! s:status_action_add(status, opener) abort " {{{
-  let force = a:opener ==# 'force' ? '--force' : ''
-  if a:status.is_ignored && !strlen(force)
+  let force = a:opener ==# 'force'
+  if a:status.is_ignored && !force
     call gita#util#warn('ignored file could not be added. use <Plug>(gita-action-ADD) to add')
     return
   elseif !a:status.is_unstaged && !a:status.is_untracked
     call gita#util#info('no changes are existing on the file (working tree is clean)')
     return
   endif
-  call s:Git.add([force, '--', a:status.path])
-  call s:status_update()
+  if force
+    let result = s:Git.add(['--force', '--', a:status.path])
+  else
+    let result = s:Git.add(['--', a:status.path])
+  endif
+  if result.status == 0
+    call gita#util#info(result.stdout)
+    call s:status_update()
+  else
+    call gita#util#error(result.stdout, 'An exception has occured')
+  endif
 endfunction " }}}
 function! s:status_action_rm(status, opener) abort " {{{
-  let force = a:opener ==# 'force' ? '--force' : ''
-  if a:status.is_ignored && !strlen(force)
+  let force = a:opener ==# 'force'
+  if a:status.is_ignored && !force
     " TODO is this true?
     call gita#util#warn('ignored file could not be removed. use <Plug>(gita-action-RM) to add')
     return
@@ -300,19 +309,33 @@ function! s:status_action_rm(status, opener) abort " {{{
     call gita#util#info('no changes are existing on the file (working tree is clean)')
     return
   endif
-  call s:Git.rm([force, '--', a:status.path])
-  call s:status_update()
+  if force
+    let result = s:Git.rm(['--force', '--', a:status.path])
+  else
+    let result = s:Git.rm(['--', a:status.path])
+  endif
+  if result.status == 0
+    call gita#util#info(result.stdout)
+    call s:status_update()
+  else
+    call gita#util#error(result.stdout, 'An exception has occured')
+  endif
 endfunction " }}}
 function! s:status_action_rm_cached(status, opener) abort " {{{
   if !a:status.is_staged
     call gita#util#info('no changes are existing on the index (index is clean)')
     return
   endif
-  call s:Git.rm(['--cached', '--', a:status.path])
-  call s:status_update()
+  let result = s:Git.rm(['--cached', '--', a:status.path])
+  if result.status == 0
+    call gita#util#info(result.stdout)
+    call s:status_update()
+  else
+    call gita#util#error(result.stdout, 'An exception has occured')
+  endif
 endfunction " }}}
 function! s:status_action_checkout(status, opener) abort " {{{
-  let force = a:opener ==# 'force' ? '--force' : ''
+  let force = a:opener ==# 'force'
   if a:status.is_conflicted
     call gita#util#error(
           \ 'the behavior of checking out a conflicted file is not defined. let me know if you know the proper behavior.',
@@ -323,12 +346,21 @@ function! s:status_action_checkout(status, opener) abort " {{{
           \ 'the behavior of checking out an ignored file is not defined. let me know if you know the proper behavior.',
           \ 'The behavior is not defined')
     return
-  elseif a:status.is_unstaged && !strlen(force)
+  elseif a:status.is_unstaged && !force
     call gita#util#warn('locally changed file could not be checked out. use <Plug>(gita-action-CHECKOUT) to checkout')
     return
   endif
-  call s:Git.checkout([force, 'HEAD', '--', a:status.path])
-  call s:status_update()
+  if force
+    let result = s:Git.checkout(['--force', 'HEAD', '--', a:status.path])
+  else
+    let result = s:Git.checkout(['HEAD', '--', a:status.path])
+  endif
+  if result.status == 0
+    call gita#util#info(result.stdout)
+    call s:status_update()
+  else
+    call gita#util#error(result.stdout, 'An exception has occured')
+  endif
 endfunction " }}}
 function! s:status_action_revert(status, opener) abort " {{{
   " remove untracked file or checkout HEAD file to discard the local changes
@@ -345,6 +377,7 @@ function! s:status_action_revert(status, opener) abort " {{{
     let a = gita#util#asktf('Are you sure that you want to remove the untracked file?')
     if a
       call delete(a:status.path)
+      call s:status_update()
     endif
   else
     call gita#util#warn(
@@ -356,7 +389,6 @@ function! s:status_action_revert(status, opener) abort " {{{
       call s:status_action_checkout(a:status, 'force')
     endif
   endif
-  call s:status_update()
 endfunction " }}}
 function! s:status_action_toggle(status, opener) abort " {{{
   if a:status.is_conflicted || a:status.is_ignored

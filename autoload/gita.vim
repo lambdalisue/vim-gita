@@ -38,7 +38,7 @@ function! gita#Gita(options) abort " {{{
   if a:options.cname == 'status'
     return s:GitaStatus(a:options)
   elseif a:options.cname == 'commit'
-    return s:GitaStatus(a:options)
+    return s:GitaCommit(a:options)
   else
     return s:GitaDefault(a:options)
   endif
