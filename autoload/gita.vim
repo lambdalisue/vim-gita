@@ -28,7 +28,7 @@ function! s:GitaDefault(options) abort " {{{
           \ 'Unknown Git command')
     return
   endif
-  let worktree_path = s:Git.get_worktree_path('%')
+  let worktree_path = s:Git.get_worktree_path(expand('%'))
   let fargs = a:options.__shellwords__
   let result = call(s:Git[cname], [fargs, { 'cwd': worktree_path }], s:Git)
   if result.status == 0
