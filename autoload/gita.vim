@@ -10,7 +10,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:Git           = gita#util#import('VCS.Git')
+" Vital {{{
+let s:Git = gita#util#import('VCS.Git')
+" }}}
 
 function! s:GitaStatus(options) abort " {{{
   call gita#interface#status_open(a:options)

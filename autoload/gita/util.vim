@@ -9,6 +9,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+" Vital {{{
 function! s:get_vital() " {{{
   if !exists('s:_vital_module_Vital')
     " TODO replace it to 'vim_gita'
@@ -23,9 +24,9 @@ function! gita#util#import(name) " {{{
   endif
   return s:[cache_name]
 endfunction " }}}
-
 let s:Prelude = gita#util#import('Prelude')
 let s:List    = gita#util#import('Data.List')
+" }}}
 
 function! gita#util#is_numeric(...) " {{{
   return call(s:Prelude.is_numeric, a:000, s:Prelude)

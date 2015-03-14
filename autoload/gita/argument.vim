@@ -9,9 +9,10 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-" vital modules (cached)
+" Vital {{{
 let s:Path          = gita#util#import('System.Filepath')
 let s:ArgumentParser = gita#util#import('ArgumentParser')
+" }}}
 
 function! s:get_default_parser() " {{{
   if !exists('s:default_parser')
@@ -65,14 +66,17 @@ endfunction " }}}
 function! gita#argument#complete(arglead, cmdline, cursorpos) abort " {{{
   let cname = split(a:cmdline)[0]
   if strlen(cname) == 0 || cname !~# s:git_command_names_pattern
-    return s:git_command_names
+    " filter command names
+    let suggestion = filter(
+          \ copy(s:git_command_names),
+          \ 'v:val =~# cname',
+          \)
+    return suggestion
   else
     let parser = s:get_parser(cname)
     return call(parser.complete, [a:arglead, a:cmdline, a:cursorpos], parser)
   endif
-endfunction " }}}
-
-
+endfunction
 let s:git_command_names = [
       \ 'init', 'add', 'rm', 'mv', 'status', 'commit', 'clean',
       \ 'log', 'diff', 'show',
@@ -83,6 +87,7 @@ let s:git_command_names = [
       \ 'fsck', 'config', 'help',
       \]
 let s:git_command_names_pattern = printf('\v%%(%s)', join(s:git_command_names, '|'))
+" }}}
 
 
 let &cpo = s:save_cpo
