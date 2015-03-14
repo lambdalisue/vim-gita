@@ -430,7 +430,7 @@ function! s:commit_do_commit(gita) abort " {{{
     return
   endif
   " get comment removed content
-  let contents = filter(getline(1, '$'), 'v:val !~$ "^#"')
+  let contents = filter(copy(getline(1, '$')), 'v:val !~$ "^#"')
   " check if commit should be executed
   if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
@@ -440,9 +440,10 @@ function! s:commit_do_commit(gita) abort " {{{
   " save comment removed content to a tempfile
   let filename = tempname()
   call writefile(contents, filename)
-  let args = gita#util#flatten(
-        \ ['--file', filename, get(a:gita, 'options', [])]
-        \)
+  let args = ['--file', filename]
+  if get(a:gita.get('options'), 'amend', 0)
+    let args = args + ['--amend']
+  endif
   let result = call(s:Git.commit, [args], s:Git)
   call delete(filename)
   if result.status == 0
