@@ -557,8 +557,9 @@ function! s:action_commit(statuses, options) abort " {{{
   call s:throw_exception_except_on_commit_filetype('s:action_commit')
   " do not use a:statuses while it is a different kind of object
   let options = extend(b:gita.get('options'), a:options)
-  let statuses = b:gita.get('statuses')
+  let statuses = b:gita.get('statuses', {})
   if empty(statuses) || empty(statuses.staged)
+    " already commited or no staged files exists
     return
   elseif &modified
     call gita#util#warn(
@@ -588,7 +589,8 @@ function! s:action_commit(statuses, options) abort " {{{
   if result.status == 0
     call gita#util#info(result.stdout, 'The changes has been commited')
     " clear cache
-    b:gita.remove('commitmsg')
+    call b:gita.remove('commitmsg')
+    call b:gita.remove('statuses')
     " open status buffer instead
     call s:status_open()
   else
