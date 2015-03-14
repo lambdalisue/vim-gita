@@ -674,7 +674,7 @@ function! s:status_update() abort " {{{
     return
   elseif empty(statuses.all)
     let buflines = gita#util#flatten([
-          \ s:get_header_lines(),
+          \ s:get_header_lines(worktree_path),
           \ 'nothing to commit (working directory clean)',
           \])
     let statuses_map = {}
