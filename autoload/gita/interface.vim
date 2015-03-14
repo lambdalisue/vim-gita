@@ -531,7 +531,7 @@ function! s:status_open(...) abort " {{{
   let options = extend({
         \ 'force_construction': 0,
         \}, get(a:000, 0, {}))
-  let invoker_bufnum = bufnr('')
+  let invoker_bufnum = bufnr('%')
   " open or move to the gita-status buffer
   let manager = s:get_buffer_manager()
   let bufinfo = manager.open(s:const.status_bufname)
@@ -540,7 +540,7 @@ function! s:status_open(...) abort " {{{
     return
   endif
   " check if invoker is another gita buffer or not
-  if manager.is_managed(invoker_bufnum)
+  if bufname(invoker_bufnum) == s:const.commit_bufname
     " synchronize invoker_bufnum
     let a = getbufvar(invoker_bufnum, 'gita', {})
     let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
@@ -560,7 +560,7 @@ function! s:status_open(...) abort " {{{
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
   " construction
-  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
   setlocal textwidth=0
   setlocal cursorline
   setlocal winfixheight
@@ -623,16 +623,14 @@ function! s:commit_open(...) abort " {{{
         \ 'force_construction': 0,
         \ 'amend': 0,
         \}, get(a:000, 0, {}))
-  let invoker_bufnum = bufnr('')
-  " open or move to the gita-commit buffer
+  let invoker_bufnum = bufnr('%')
   let manager = s:get_buffer_manager()
-  let bufinfo = manager.open(s:const.commit_bufname)
-  if bufinfo.bufnr == -1
+  if manager.open(s:const.commit_bufname).bufnr == -1
     call gita#util#error('vim-gita: failed to open a git commit window')
     return
   endif
   " check if invoker is another gita buffer or not
-  if manager.is_managed(invoker_bufnum)
+  if bufname(invoker_bufnum) ==# s:const.status_bufname
     " synchronize invoker_bufnum
     let a = getbufvar(invoker_bufnum, 'gita', {})
     let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
@@ -652,7 +650,7 @@ function! s:commit_open(...) abort " {{{
   call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
 
   " construction
-  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
+  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
   setlocal winfixheight
   execute 'setlocal filetype=' . s:const.commit_filetype
 
@@ -663,7 +661,7 @@ function! s:commit_open(...) abort " {{{
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:commit_do_write(expand("<amatch>"), b:gita)
   autocmd BufWinLeave <buffer> call s:commit_do_commit(b:gita)
-  autocmd WinLeave <buffer> call s:invoker_focus(b:gita)
+  autocmd WinLeave    <buffer> let b:is_closing = 1
 
   " update contents
   call s:commit_update()
@@ -707,7 +705,7 @@ function! s:commit_update() abort " {{{
   let &undolevels = save_undolevels
   setlocal nomodified
   " select the first line
-  call setpos('.', [bufnr(''), 1, 1, 0])
+  call setpos('.', [bufnr('%'), 1, 1, 0])
 
   call b:gita.set('statuses_map', statuses_map)
   call b:gita.set('statuses', statuses)
@@ -727,6 +725,9 @@ function! s:commit_do_commit(gita) abort " {{{
   let options = a:gita.get('options')
   let statuses = a:gita.get('statuses')
   if empty(statuses) || empty(statuses.staged)
+    if get(b:, 'closing', 0)
+      call s:invoker_focus(b:gita)
+    endif
     return
   endif
   " get comment removed content
@@ -735,6 +736,9 @@ function! s:commit_do_commit(gita) abort " {{{
   " check if commit should be executed
   if &modified || join(contents, "") =~# '\v^\s*$'
     call gita#util#warn('Commiting the changes has canceled.')
+    if get(b:, 'closing', 0)
+      call s:invoker_focus(b:gita)
+    endif
     return
   endif
   " save comment removed content to a tempfile
@@ -742,7 +746,7 @@ function! s:commit_do_commit(gita) abort " {{{
   call writefile(contents, filename)
   let fargs = ['--file', filename]
   if options.amend
-    let fargs = args + ['--amend']
+    let fargs = fargs + ['--amend']
   endif
   let result = call(s:Git.commit, [fargs], s:Git)
   call delete(filename)
@@ -750,6 +754,9 @@ function! s:commit_do_commit(gita) abort " {{{
     call gita#util#info(result.stdout, 'The changes has been commited')
   else
     call gita#util#error(result.stdout, 'An exception has occur')
+  endif
+  if get(b:, 'closing', 0)
+    call s:invoker_focus(b:gita)
   endif
 endfunction " }}}
 
@@ -773,7 +780,7 @@ function! gita#interface#status_update() abort " {{{
     return
   endif
 
-  let saved_bufnum = bufnr('')
+  let saved_bufnum = bufnr('%')
   " focus the gita-status window
   silent execute winnum . 'wincmd w'
   " call actual update
@@ -795,7 +802,7 @@ function! gita#interface#commit_update() abort " {{{
     return
   endif
 
-  let saved_bufnum = bufnr('')
+  let saved_bufnum = bufnr('%')
   " focus the gita-status window
   silent execute winnum . 'wincmd w'
   " call actual update
