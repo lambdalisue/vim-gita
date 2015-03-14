@@ -132,7 +132,7 @@ function! s:status_open(...) abort " {{{
     return
   endif
 
-  if exists('b:gita') && !options.force_construction
+  if exists('b:gita') && !b:gita.get('force_construction', 0) && !options.force_construction
     call b:gita.set('invoker_bufnum', invoker_bufnum)
     call b:gita.set('invoker_winnum', bufwinnr(invoker_bufnum))
     return
@@ -192,7 +192,11 @@ function! s:status_open(...) abort " {{{
 endfunction " }}}
 function! s:status_update() abort " {{{
   if &filetype != s:const.status_filetype
-    throw 'vim-gita: s:status_update required to be executed on a proper buffer'
+    let gita = getbufvar('b:gita', s:const.status_bufname, {})
+    if !empty(gita)
+      call gita.set('force_construct', 1)
+    endif
+    return
   endif
 
   let status = s:GitMisc.get_parsed_status()
@@ -413,7 +417,7 @@ function! s:commit_do_commit(gita) abort " {{{
     call gita#util#warn('Commiting the changes has canceled.')
     return
   endif
-  let filename = s:Path.join([s:Git.get_repository_path(), 'COMMIT_EDITMSG'])
+  let filename = tempname()
   let args = gita#util#flatten(
         \ ['--file', filename, get(a:gita, 'options', [])]
         \)
@@ -422,6 +426,7 @@ function! s:commit_do_commit(gita) abort " {{{
   call writefile(contents, filename)
   echomsg string(call(s:Git.commit, [args], s:Git))
   call delete(filename)
+  call s:status_update()
   call gita#util#info('The changes has been commited.')
 endfunction " }}}
 function! s:commit_action(name, ...) abort " {{{
