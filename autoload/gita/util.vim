@@ -59,7 +59,7 @@ endfunction " }}}
 function! gita#util#echomsg(hl, msg) abort " {{{
   execute 'echohl' a:hl
   try
-    for m in split(a:msg, "\n")
+    for m in split(a:msg, "\v%(\r?\n)")
       echomsg m
     endfor
   finally
