@@ -14,6 +14,11 @@ set cpo&vim
 let s:Git = gita#util#import('VCS.Git')
 " }}}
 
+function! s:call_hooks(hooks, ...) abort " {{{
+  for hook in a:hooks
+    call call(hook, a:000)
+  endfor
+endfunction " }}}
 function! s:GitaStatus(options) abort " {{{
   call gita#interface#status_open(a:options)
 endfunction " }}}
@@ -37,6 +42,9 @@ function! s:GitaDefault(options) abort " {{{
           \ result.stdout,
           \ printf('OK: git %s %s', cname, join(fargs)),
           \)
+    if has_key(g:gita#interface#hooks, 'post_' . cname)
+      call s:call_hooks(get(g:gita#interface#hooks, 'post_' . cname))
+    endif
   else
     redraw
     call gita#util#info(
@@ -83,6 +91,9 @@ function! s:assign_configs()
   let s:default_interface_hooks.post_status_update = ['gita#statusline#clean']
   let s:default_interface_hooks.post_commit_update = []
   let s:default_interface_hooks.post_commit = []
+  let s:default_interface_hooks.post_fetch = ['gita#statusline#clean']
+  let s:default_interface_hooks.post_push = ['gita#statusline#clean']
+  let s:default_interface_hooks.post_pull = ['gita#statusline#clean']
   let g:gita#interface#hooks = extend(
         \ s:default_interface_hooks,
         \ get(g:, 'gita#interface#hooks', {}),
