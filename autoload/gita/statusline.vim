@@ -22,21 +22,16 @@ function! s:get_cache(name) " {{{
   let name = printf('_%s_cache', a:name)
   if !exists('s:' . name)
     let s:[name] = s:Cache.new()
-    function! s:{name}.cache_key(name)
-      if strlen(a:name) == 0
-        return '<empty>'
-      endif
-      return a:name
-    endfunction
   endif
   return s:[name]
 endfunction " }}}
 function! s:get_worktree_path(path) " {{{
   let s:cache = s:get_cache('worktree')
-  if !s:cache.has(a:path)
-    call s:cache.set(a:path, s:Git.get_worktree_path(a:path))
+  let cache_name = strlen(a:path) ? a:path : '<empty>'
+  if !s:cache.has(cache_name)
+    call s:cache.set(cache_name, s:Git.get_worktree_path(a:path))
   endif
-  return s:cache.get(a:path)
+  return s:cache.get(cache_name)
 endfunction " }}}
 function! s:n2s(number) " {{{
   return a:number ? string(a:number) : ''
