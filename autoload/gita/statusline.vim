@@ -38,6 +38,9 @@ function! s:get_worktree_path(path) " {{{
   endif
   return s:cache.get(a:path)
 endfunction " }}}
+function! s:n2s(number) " {{{
+  return a:number ? string(a:number) : ''
+endfunction " }}}
 function! s:get_status(path) " {{{
   let statuses = s:GitMisc.get_parsed_status(a:path)
   let conflicted = len(statuses.conflicted)
@@ -59,13 +62,13 @@ function! s:get_status(path) " {{{
     endif
   endfor
   return {
-        \ 'conflicted': conflicted ? conflicted : '',
-        \ 'untracked': untracked ? untracked : '',
-        \ 'added': added ? added : '',
-        \ 'deleted': deleted ? deleted : '',
-        \ 'renamed': renamed ? renamed : '',
-        \ 'modified': modified ? modified : '',
-        \ 'unstaged': unstaged ? unstaged : '',
+        \ 'conflicted': s:n2s(conflicted),
+        \ 'untracked': s:n2s(untracked),
+        \ 'added': s:n2s(added),
+        \ 'deleted': s:n2s(deleted),
+        \ 'renamed': s:n2s(renamed),
+        \ 'modified': s:n2s(modified),
+        \ 'unstaged': s:n2s(unstaged),
         \}
 endfunction " }}}
 function! s:get_info(path) " {{{
@@ -78,8 +81,8 @@ function! s:get_info(path) " {{{
   let info.repository_name = fnamemodify(s:Git.get_worktree_path(a:path), ':t')
   let info.local_branch_name = s:GitMisc.get_local_branch_name(a:path)
   let info.remote_branch_name = s:GitMisc.get_remote_branch_name(a:path)
-  let info.incoming = string(s:GitMisc.count_commits_behind_remote(a:path))
-  let info.outgoing = string(s:GitMisc.count_commits_ahead_of_remote(a:path)) 
+  let info.incoming = s:n2s(s:GitMisc.count_commits_behind_remote(a:path))
+  let info.outgoing = s:n2s(s:GitMisc.count_commits_ahead_of_remote(a:path)) 
   let info.hashref = s:GitMisc.get_last_commit_hashref(a:path)
   let info.hashref_short = s:GitMisc.get_last_commit_hashref(a:path, { 'short': 1 })
   let info = extend(info, s:get_status(a:path))
