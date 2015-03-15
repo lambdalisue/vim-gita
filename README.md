@@ -1,5 +1,7 @@
 vim-gita [WIP]
 ===============================================================================
+![vim-gita screencast](./doc/screencast1.gif)
+
 *vim-gita* is a plugin for manipulating Git. It provide the following features
 
 -   `:Gita status` which is for manipulating index (staged) and working tree (unstaged)
@@ -43,6 +45,8 @@ All commands start from `:Gita`. The command provides completion thus type `:Git
 `:Gita status` open a new buffer called `gita:status` (or `gita_status` in windows).
 The buffer show similar information which you can get from `git status --short`. (See [git-status(1)](https://www.kernel.org/pub/software/scm/git/docs/git-status.html).)
 
+![vim-gita screencast2](./doc/screencast2.gif)
+
 You can add/remove files from/to index and working tree via the following keymaps:
 
 | Map      | Action                                                    |
@@ -79,6 +83,9 @@ The buffer show similar information which you can get from `git status --short`.
 
 You can edit a commit message and the commit will executed when user hit `CC` or close the buffer window.
 All modifications are cached when user hit `:w`, thus you can go/back to/from gita-status buffer without loosing draft commit message via `cc`.
+
+![vim-gita screencast3](./doc/screencast3.gif)
+
 Additionally, the following keymaps are available:
 
 | Map      | Action                                                    |
@@ -96,6 +103,64 @@ Additionally, the following keymaps are available:
 | `cc`     | Open a status buffer                                      |
 | `CC`     | Execute commit                                            |
 
+
+### Statusline/Tabline
+
+![vim-gita statusline](./doc/screenshot1.png)
+
+vim-gita provide a statusline function. The function simply return a string thus you can use the function in vim's statusline or some statusline plugins like [lightline.vim](https://github.com/itchyny/lightline.vim).
+The following is my settings for lightline.vim. It use tabline instead of statusline.
+
+```vim
+let g:lightline = {
+      \ 'colorscheme': 'hybrid',
+      \ 'active': {
+      \   'left': [
+      \     [ 'mode', 'paste' ],
+      \     [ 'filename' ],
+      \   ],
+      \   'right': [
+      \     [ 'lineinfo' ],
+      \     [ 'fileformat', 'fileencoding', 'filetype' ],
+      \   ],
+      \ },
+      \ 'inactive': {
+      \   'left': [
+      \     [ 'filename' ],
+      \   ],
+      \   'right': [
+      \     [ 'fileformat', 'fileencoding', 'filetype' ],
+      \   ],
+      \ },
+      \ 'tabline': {
+      \   'left': [
+      \     [ 'tabs' ],
+      \   ],
+      \   'right': [
+      \     [ 'close' ],
+      \     [ 'git_branch', 'git_traffic', 'git_status', 'cwd' ],
+      \   ],
+      \ },
+      \ 'component_visible_condition': {
+      \   'lineinfo': '(winwidth(0) >= 70)',
+      \ },
+      \ 'component_function': {
+      \   'git_branch': 'g:lightline.my.git_branch',
+      \   'git_traffic': 'g:lightline.my.git_traffic',
+      \   'git_status': 'g:lightline.my.git_status',
+      \ },
+      \}
+let g:lightline.my = {}
+function! g:lightline.my.git_branch() " {{{
+  return winwidth(0) > 70 ? gita#statusline#preset('branch') : ''
+endfunction " }}}
+function! g:lightline.my.git_traffic() " {{{
+  return winwidth(0) > 70 ? gita#statusline#preset('traffic') : ''
+endfunction " }}}
+function! g:lightline.my.git_status() " {{{
+  return winwidth(0) > 70 ? gita#statusline#preset('status') : ''
+endfunction " }}}
+```
 
 License
 -------------------------------------------------------------------------------
