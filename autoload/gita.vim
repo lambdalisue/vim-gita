@@ -47,7 +47,7 @@ function! s:GitaDefault(options) abort " {{{
     endif
   else
     redraw
-    call gita#util#info(
+    call gita#util#error(
           \ result.stdout,
           \ printf('Fail: git %s %s', cname, join(fargs)),
           \)
