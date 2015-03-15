@@ -604,6 +604,10 @@ function! s:action_commit(statuses, options) abort " {{{
   if result.status == 0
     call s:call_hooks(s:hooks.post_commit)
     " clear cache
+    if has_key(options, 'amend')
+      unlet options.amend
+    endif
+    call b:gita.set('options', options)
     call b:gita.remove('commitmsg')
     call b:gita.remove('statuses')
     " open status buffer instead
