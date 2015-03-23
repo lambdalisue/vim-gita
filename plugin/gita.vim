@@ -9,10 +9,10 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:Gita(...) " {{{
+function! s:Gita(...) abort " {{{
   return gita#Gita(call('gita#arguments#parse', a:000))
 endfunction " }}}
-function! s:GitaComplete(...) " {{{
+function! s:GitaComplete(...) abort " {{{
   return call('gita#arguments#complete', a:000)
 endfunction " }}}
 

@@ -89,15 +89,16 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-commit-open-noamend) :<C-u>call <SID>action('commit_open', 0, { 'amend': 0 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-commit-update)       :<C-u>call <SID>action('commit_update', 0)<CR>
 
-  nnoremap <buffer><silent> <Plug>(gita-action-add)       :<C-u>call <SID>action('add', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-ADD)       :<C-u>call <SID>action('add', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-rm)        :<C-u>call <SID>action('rm', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-RM)        :<C-u>call <SID>action('rm', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-rm-cached) :<C-u>call <SID>action('rm_cached', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-RM-cached) :<C-u>call <SID>action('rm_cached', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-checkout)  :<C-u>call <SID>action('checkout', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)  :<C-u>call <SID>action('checkout', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-toggle)    :<C-u>call <SID>action('toggle', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 0, { 'force': 1 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm', 0, { 'force': 1 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>action('rm_cached', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-RM-cached)   :<C-u>call <SID>action('rm_cached', 0, { 'force': 1 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 0, { 'force': 1 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 0)<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 0, { 'force': 1 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-edit)   :<C-u>call <SID>action('open', 0, { 'opener': 'edit' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-left)   :<C-u>call <SID>action('open', 0, { 'opener': 'left' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-right)  :<C-u>call <SID>action('open', 0, { 'opener': 'right' })<CR>
@@ -108,15 +109,16 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-diff-split)  :<C-u>call <SID>action('diff', 0, { 'opener': 'split' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>action('diff', 0, { 'opener': 'vsplit' })<CR>
 
-  vnoremap <buffer><silent> <Plug>(gita-action-add)       :<C-u>call <SID>action('add', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-ADD)       :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-rm)        :<C-u>call <SID>action('rm', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-RM)        :<C-u>call <SID>action('rm', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-rm-cached) :<C-u>call <SID>action('rm_cached', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-RM-cached) :<C-u>call <SID>action('rm_cached', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-checkout)  :<C-u>call <SID>action('checkout', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)  :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-toggle)    :<C-u>call <SID>action('toggle', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm', 1, { 'force': 1 })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>action('rm_cached', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-RM-cached)   :<C-u>call <SID>action('rm_cached', 1, { 'force': 1 })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 1)<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 1, { 'force': 1 })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-edit)   :<C-u>call <SID>action('open', 1, { 'opener': 'edit' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-left)   :<C-u>call <SID>action('open', 1, { 'opener': 'left' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-right)  :<C-u>call <SID>action('open', 1, { 'opener': 'right' })<CR>
@@ -143,6 +145,7 @@ function! s:define_mappings() abort " {{{
       nmap <buffer> cc    <Plug>(gita-action-commit-open)
       nmap <buffer> cA    <Plug>(gita-action-commit-open-amend)
       nmap <buffer> cC    <Plug>(gita-action-commit-open-noamend)
+
       nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)', 0)
       nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)', 0)
       nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)', 0)
@@ -152,6 +155,7 @@ function! s:define_mappings() abort " {{{
       nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)', 0)
       nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)', 0)
       nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)', 0)
+      nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)', 0)
 
       vmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)', 1)
       vmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)', 1)
@@ -162,6 +166,7 @@ function! s:define_mappings() abort " {{{
       vmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)', 1)
       vmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)', 1)
       vmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)', 1)
+      vmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)', 1)
     else
       nmap <buffer> <C-l> <Plug>(gita-action-commit-update)
       nmap <buffer> cc    <Plug>(gita-action-status-open)
