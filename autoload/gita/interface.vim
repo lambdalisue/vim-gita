@@ -6,9 +6,10 @@
 " License:  MIT license
 " (C) 2015, Alisue, hashnote.net
 "******************************************************************************
+finish
+
 let s:save_cpo = &cpo
 set cpo&vim
-
 
 " Vital modules ==============================================================
 " {{{
@@ -641,7 +642,6 @@ function! s:status_open(...) abort " {{{
     let invoker_bufnum = empty(a) ? invoker_bufnum : a.get('invoker_bufnum')
     unlet a
   endif
-  execute 'lcd ' worktree_path
 
   if exists('b:gita') && !options.force_construction
     let options.force_construction = 0
@@ -746,7 +746,7 @@ function! s:commit_open(...) abort " {{{
     call s:commit_update()
     return
   endif
-  execute 'lcd ' worktree_path
+
   let b:gita = s:Cache.new()
   call b:gita.set('options', options)
   call b:gita.set('worktree_path', worktree_path)
