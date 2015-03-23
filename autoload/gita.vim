@@ -10,6 +10,40 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:Git = gita#util#import('VCS.Git')
+
+
+function! s:GitaStatus(opts) abort " {{{
+  call gita#core#status_open(a:opts)
+endfunction " }}}
+function! s:GitaDefault(opts) abort " {{{
+  let git = s:Git.find(expand('%'))
+  let result = git.exec(a:opts.args)
+  if result.status == 0
+    call gita#util#info(
+          \ result.stdout,
+          \ printf('Ok: "%s"', join(result.args))
+          \)
+  else
+    call gita#util#info(
+          \ result.stdout,
+          \ printf('No: "%s"', join(result.args))
+          \)
+  endif
+endfunction " }}}
+
+function! gita#Gita(opts) abort " {{{
+  if empty(a:opts)
+    " validation failed
+    return
+  endif
+  if a:opts._name == 'status'
+    return s:GitaStatus(a:opts)
+  else
+    return s:GitaDefault(a:opts)
+  endif
+endfunction " }}}
+
 " Assign configure variables " {{{
 function! s:assign_configs()
   let g:gita#debug = get(g:, 'gita#debug', 1)
