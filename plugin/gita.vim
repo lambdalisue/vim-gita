@@ -10,10 +10,10 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 function! s:Gita(...) " {{{
-  return gita#Gita(call('gita#argument#parse', a:000))
+  return gita#Gita(call('gita#arguments#parse', a:000))
 endfunction " }}}
 function! s:GitaComplete(...) " {{{
-  return call('gita#argument#complete', a:000)
+  return call('gita#arguments#complete', a:000)
 endfunction " }}}
 
 command! -nargs=? -range=% -bang
