@@ -16,6 +16,9 @@ let s:Git = gita#util#import('VCS.Git')
 function! s:GitaStatus(opts) abort " {{{
   call gita#core#status_open(a:opts)
 endfunction " }}}
+function! s:GitaCommit(opts) abort " {{{
+  call gita#core#commit_open(a:opts)
+endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git = s:Git.find(expand('%'))
   let result = git.exec(a:opts.args)
@@ -39,6 +42,8 @@ function! gita#Gita(opts) abort " {{{
   endif
   if a:opts._name == 'status'
     return s:GitaStatus(a:opts)
+  elseif a:opts._name == 'commit'
+    return s:GitaCommit(a:opts)
   else
     return s:GitaDefault(a:opts)
   endif

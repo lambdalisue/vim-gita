@@ -1,5 +1,5 @@
 "******************************************************************************
-" vim-gita arguments/status
+" vim-gita arguments/commit
 "
 " Author:   Alisue <lambdalisue@hashnote.net>
 " URL:      http://hashnote.net/
@@ -15,27 +15,56 @@ let s:ArgumentParser = gita#util#import('ArgumentParser')
 function! s:get_parser() abort " {{{
   if !exists('s:parser')
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Show the working tree status in Gita interface',
+          \ 'name': 'Record changes to the repository via Gita interface',
           \})
     call s:parser.add_argument(
           \ '--force-construction',
           \ 're-construct the buffer (debug)', {},
           \)
     call s:parser.add_argument(
-          \ '--untracked-files', '-u',
-          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
-          \   'choices': ['all', 'normal', 'no'],
-          \   'default': 'all',
+          \ '--author',
+          \ 'override author for commit', {
+          \   'type': 'value',
           \ })
     call s:parser.add_argument(
-          \ '--ignored',
-          \ 'show ignored files', {
+          \ '--message', '-m',
+          \ 'commit message', {
+          \   'type': 'value',
+          \ })
+    call s:parser.add_argument(
+          \ '--reedit-message', '-c',
+          \ 'reuse and edit message from specified commit', {
+          \   'type': 'value',
+          \ })
+    call s:parser.add_argument(
+          \ '--reuse-message', '-C',
+          \ 'reuse message from specified commit', {
+          \   'type': 'value',
+          \ })
+    call s:parser.add_argument(
+          \ '--all', '-a',
+          \ 'commit all changed files', {
           \   'kind': 'switch',
           \ })
     call s:parser.add_argument(
-          \ '--ignore-submodules',
-          \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
-          \   'choices': ['all', 'dirty', 'untracked'],
+          \ '--include', '-i',
+          \ 'add specified files to index for commit', {
+          \   'kind': 'value',
+          \ })
+    call s:parser.add_argument(
+          \ '--reset-author',
+          \ 'the commit is authored by me now (used with -C/-c/--amend)', {
+          \   'kind': 'switch',
+          \ })
+    call s:parser.add_argument(
+          \ '--amend',
+          \ 'amend previous commit', {
+          \   'kind': 'switch',
+          \ })
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'choices': ['all', 'normal', 'no'],
           \   'default': 'all',
           \ })
   endif
@@ -61,3 +90,4 @@ endfunction " }}}
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+
