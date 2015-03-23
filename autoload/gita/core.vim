@@ -614,7 +614,6 @@ function! s:action_commit(statuses, options) abort " {{{
   let result = gita.git.exec(fargs)
   call delete(filename)
   if result.status == 0
-    call s:call_hooks(s:hooks.post_commit)
     " clear cache
     let gita.options = {}
     if has_key(b:, '_commitmsg')
@@ -796,7 +795,7 @@ function! s:commit_update() abort " {{{
   endif
 
   let opts = { 'args': [] }
-  if gita.options.amend
+  if get(gita.options, 'amend', 0)
     call add(opts.args, '--amend')
   endif
   let statuses = gita.git.get_parsed_commit(opts)
@@ -822,7 +821,7 @@ function! s:commit_update() abort " {{{
   let commitmsg = ['']
   if exists('b:_commitmsg')
     let commitmsg = b:_commitmsg
-  elseif gita.options.amend
+  elseif get(gita.options, 'amend', 0)
     let commitmsg = gita.git.get_last_commit_message()
     let commitmsg = commitmsg + ['# AMEND']
   elseif empty(statuses.staged)
