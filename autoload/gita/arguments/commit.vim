@@ -71,7 +71,7 @@ function! s:get_parser() abort " {{{
   return s:parser
 endfunction " }}}
 
-function! gita#arguments#status#parse(bang, range, ...) abort " {{{
+function! gita#arguments#commit#parse(bang, range, ...) abort " {{{
   let cmdline = get(a:000, 0, '')
   let settings = get(a:000, 1, {})
   let parser = s:get_parser()
@@ -79,7 +79,7 @@ function! gita#arguments#status#parse(bang, range, ...) abort " {{{
   let opts = call(parser.parse, args, parser)
   return opts
 endfunction " }}}
-function! gita#arguments#status#complete(arglead, cmdline, cursorpos) abort " {{{
+function! gita#arguments#commit#complete(arglead, cmdline, cursorpos) abort " {{{
   let parser = s:get_parser()
   let args = [a:arglead, a:cmdline, a:cursorpos]
   let complete = call(parser.complete, args, parser)

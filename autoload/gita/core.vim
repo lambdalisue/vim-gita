@@ -11,15 +11,51 @@ set cpo&vim
 
 
 " Vital modules ==============================================================
-" {{{
 let s:Path          = gita#util#import('System.Filepath')
+let s:Dict          = gita#util#import('Data.Dict')
 let s:Buffer        = gita#util#import('Vim.Buffer')
 let s:BufferManager = gita#util#import('Vim.BufferManager')
 let s:Git           = gita#util#import('VCS.Git')
-" }}}
+
+" Gita instance
+function! gita#core#get_gita(...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  return getbufvar(bufname, '_gita', {})
+endfunction " }}}
+function! gita#core#create_gita(...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  let invoker_bufnum = bufnr(bufname)
+  let base = {
+        \ 'invoker_bufnum': invoker_bufnum,
+        \ 'invoker_winnum': bufwinnr(invoker_bufnum),
+        \ 'is_interface': bufname('%') =~# s:const.interface_pattern,
+        \ 'options': {},
+        \}
+  if strlen(&buftype)
+    let gita = extend(base, {
+          \ 'is_enable': 0,
+          \ 'git': {},
+          \})
+  else
+    let git = s:Git.find(bufname)
+    let gita = extend(base, {
+          \ 'is_enable': !empty(git),
+          \ 'git': git,
+          \})
+  endif
+  call setbufvar(bufname, '_gita', gita)
+endfunction " }}}
+function! gita#core#get_or_create_gita(...) abort " {{{
+  let gita = call(gita#core#get_gita, a:000)
+  if empty(gita)
+    let gita = call(gita#core#create_gita, a:000)
+  endif
+  return gita
+endfunction " }}}
 
 " Utility functions
 function! s:get_header_lines(gita) abort " {{{
+  let c = get(a:gita.git.get_parsed_config(), 'core.commentChar', '#')
   let n = fnamemodify(a:gita.git.worktree, ':t')
   let b = a:gita.git.get_current_branch()
   let r = printf('%s/%s',
@@ -33,24 +69,24 @@ function! s:get_header_lines(gita) abort " {{{
 
   let buflines = []
   if strlen(r) > 0
-    call add(buflines, printf('# On branch %s/%s -> %s', n, b, r))
+    call add(buflines, printf('%s On branch %s/%s -> %s', c, n, b, r))
   else
-    call add(buflines, printf('# On branch %s/%s', n, b))
+    call add(buflines, printf('%s On branch %s/%s', c, n, b))
   endif
   if o > 0 && i > 0
     call add(buflines, printf(
-          \ '# This branch is %d commit(s) ahead of and %d commit(s) behind %s',
-          \ o, i, r
+          \ '%s This branch is %d commit(s) ahead of and %d commit(s) behind %s',
+          \ c, o, i, r
           \))
   elseif o > 0
     call add(buflines, printf(
-          \ '# This branch is %d commit(s) ahead of %s',
-          \ o, r
+          \ '%s This branch is %d commit(s) ahead of %s',
+          \ c, o, r
           \))
   elseif i > 0
     call add(buflines, printf(
-          \ '# This branch is %d commit(s) behind %s',
-          \ i, r
+          \ '%s This branch is %d commit(s) behind %s',
+          \ c, i, r
           \))
   endif
   return buflines
@@ -58,24 +94,16 @@ endfunction " }}}
 function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
-function! s:update_contents(contents) abort " {{{
-  call s:validate_filetype('s:update_contents')
-  let saved_cur = getpos('.')
-  let saved_undolevels = &undolevels
-  silent %delete _
-  call setline(1, a:contents)
-  call setpos('.', saved_cur)
-  let &undolevels = saved_undolevels
-  setlocal nomodified
+function! s:unlet(name) abort " {{{
+  if exists(a:name)
+    execute 'unlet' a:name
+  endif
 endfunction " }}}
-function! s:eliminate_comment_lines(lines) abort " {{{
-  return filter(copy(a:lines), 'v:val !~# "^#"')
-endfunction " }}}
-function! s:smart_map(lhs, rhs, multi) abort " {{{
+function! s:smart_map(lhs, rhs) abort " {{{
   call s:validate_filetype('s:smart_map')
   " return {rhs} if the mapping is called on Git status line of status/commit
   " buffer. otherwise it return {lhs}
-  let ret = a:multi ? s:get_selected_statuses() : s:get_selected_status()
+  let ret = s:get_selected_status()
   return empty(ret) ? a:lhs : a:rhs
 endfunction " }}}
 function! s:define_mappings() abort " {{{
@@ -146,27 +174,27 @@ function! s:define_mappings() abort " {{{
       nmap <buffer> cA    <Plug>(gita-action-commit-open-amend)
       nmap <buffer> cC    <Plug>(gita-action-commit-open-noamend)
 
-      nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)', 0)
-      nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)', 0)
-      nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)', 0)
-      nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)', 0)
-      nmap <buffer><expr> -h <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)', 0)
-      nmap <buffer><expr> -H <SID>smart_map('-H', '<Plug>(gita-action-RM-cached)', 0)
-      nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)', 0)
-      nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)', 0)
-      nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)', 0)
-      nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)', 0)
+      nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
+      nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
+      nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)')
+      nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)')
+      nmap <buffer><expr> -h <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)')
+      nmap <buffer><expr> -H <SID>smart_map('-H', '<Plug>(gita-action-RM-cached)')
+      nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
+      nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+      nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
+      nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)')
 
-      vmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)', 1)
-      vmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)', 1)
-      vmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)', 1)
-      vmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)', 1)
-      vmap <buffer><expr> -h <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)', 1)
-      vmap <buffer><expr> -H <SID>smart_map('-H', '<Plug>(gita-action-RM-cached)', 1)
-      vmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)', 1)
-      vmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)', 1)
-      vmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)', 1)
-      vmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)', 1)
+      vmap <buffer>       -a <Plug>(gita-action-add)
+      vmap <buffer>       -A <Plug>(gita-action-ADD)
+      vmap <buffer>       -r <Plug>(gita-action-rm)
+      vmap <buffer>       -R <Plug>(gita-action-RM)
+      vmap <buffer>       -h <Plug>(gita-action-rm-cached)
+      vmap <buffer>       -H <Plug>(gita-action-RM-cached)
+      vmap <buffer>       -c <Plug>(gita-action-checkout)
+      vmap <buffer>       -C <Plug>(gita-action-CHECKOUT)
+      vmap <buffer>       -- <Plug>(gita-action-toggle)
+      vmap <buffer>       -= <Plug>(gita-action-TOGGLE)
     else
       nmap <buffer> <C-l> <Plug>(gita-action-commit-update)
       nmap <buffer> cc    <Plug>(gita-action-status-open)
@@ -184,7 +212,6 @@ function! s:get_selected_statuses() abort " {{{
   call s:validate_filetype('s:get_selected_statuses')
   let statuses_map = b:_statuses_map
   let selected_lines = getline(getpos("'<")[1], getpos("'>")[1])
-  call gita#util#debug('s:get_selected_statuses', selected_lines)
   let selected_statuses = []
   for selected_line in selected_lines
     let status = get(statuses_map, selected_line, {})
@@ -193,91 +220,6 @@ function! s:get_selected_statuses() abort " {{{
     endif
   endfor
   return selected_statuses
-endfunction " }}}
-
-" Interface (buffer)
-function! s:interface_get_buffer_manager() abort " {{{
-  if !exists('s:buffer_manager')
-    let config = {
-          \ 'opener': 'topleft 20 split',
-          \ 'range': 'tabpage',
-          \}
-    let s:buffer_manager = s:BufferManager.new(config)
-  endif
-  return s:buffer_manager
-endfunction " }}}
-function! s:interface_open_buffer(name) abort " {{{
-  let manager = s:interface_get_buffer_manager()
-  return manager.open(a:name)
-endfunction " }}}
-function! s:interface_update_buffer(contents) abort " {{{
-  let saved_cur = getpos('.')
-  let saved_undolevels = &undolevels
-  silent %delete _
-  call setline(1, a:contents)
-  call setpos('.', saved_cur)
-  let &undolevels = saved_undolevels
-  setlocal nomodified
-endfunction " }}}
-
-" Gita instance
-function! s:gita_get() abort " {{{
-  return get(b:, '_gita', {})
-endfunction " }}}
-function! s:gita_create() abort " {{{
-  let invoker_bufnum = bufnr('%')
-  let base = {
-        \ 'invoker_bufnum': invoker_bufnum,
-        \ 'invoker_winnum': bufwinnr(invoker_bufnum),
-        \ 'is_interface': bufname('%') =~# s:const.interface_pattern,
-        \ 'options': {},
-        \}
-  if strlen(&buftype)
-    let b:_gita = extend(base, {
-          \ 'is_enable': 0,
-          \ 'git': {},
-          \})
-  else
-    let git = s:Git.find(expand('%'))
-    let b:_gita = extend(base, {
-          \ 'is_enable': !empty(git),
-          \ 'git': git,
-          \})
-  endif
-  return b:_gita
-endfunction " }}}
-function! s:gita_get_or_create() abort " {{{
-  if !exists('b:_gita')
-    return s:gita_create()
-  else
-    return s:gita_get()
-  endif
-endfunction " }}}
-
-" Invoker
-function! s:invoker_focus(gita) abort " {{{
-  let bufnum = get(a:gita, 'invoker_bufnum', -1)
-  let winnum = bufwinnr(bufnum)
-  if winnum == -1
-    let winnum = get(a:gita, 'invoker_winnum', -1)
-  endif
-  if winnum <= winnr('$')
-    silent execute winnum . 'wincmd w'
-  else
-    silent execute 'wincmd p'
-  endif
-endfunction " }}}
-function! s:invoker_get_winnum(gita) abort " {{{
-  let bufnum = get(a:gita, 'invoker_bufnum', -1)
-  let winnum = bufwinnr(bufnum)
-  if winnum == -1
-    let winnum = get(a:gita, 'invoker_winnum', -1)
-  endif
-  if winnum <= winnr('$')
-    silent execute winnum . 'wincmd w'
-  else
-    silent execute 'wincmd p'
-  endif
 endfunction " }}}
 
 " Validation
@@ -300,10 +242,81 @@ function! s:validate_filetype_commit(...) abort " {{{
   endif
 endfunction " }}}
 
+" Buffer
+function! s:buffer_get_manager() abort " {{{
+  if !exists('s:buffer_manager')
+    let config = {
+          \ 'opener': 'topleft 20 split',
+          \ 'range': 'tabpage',
+          \}
+    let s:buffer_manager = s:BufferManager.new(config)
+  endif
+  return s:buffer_manager
+endfunction " }}}
+function! s:buffer_open(name) abort " {{{
+  let manager = s:buffer_get_manager()
+  return manager.open(a:name)
+endfunction " }}}
+function! s:buffer_update(buflines) abort " {{{
+  call s:validate_filetype('s:buffer_update')
+  let saved_cur = getpos('.')
+  let saved_undolevels = &undolevels
+  silent %delete _
+  call setline(1, a:buflines)
+  call setpos('.', saved_cur)
+  let &undolevels = saved_undolevels
+  setlocal nomodified
+endfunction " }}}
+
+" Invoker
+function! s:invoker_get(...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  let invoker = getbufvar(bufname, '_invoker', {})
+  if empty(invoker)
+    let bufnum = bufnr(bufname)
+    let winnum = bufwinnr(bufnum)
+    let invoker = {
+          \ 'bufnum': bufnum,
+          \ 'winnum': winnum,
+          \}
+  endif
+  return invoker
+endfunction " }}}
+function! s:invoker_set(invoker, ...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  call setbufvar(bufname, '_invoker', a:invoker)
+endfunction " }}}
+function! s:invoker_get_winnum(invoker) abort " {{{
+  let bufnum = a:invoker.bufnum
+  let winnum = bufwinnr(bufnum)
+  if winnum == -1
+    let winnum = a:invoker.winnum
+  endif
+  return winnum
+endfunction " }}}
+function! s:invoker_focus(invoker) abort " {{{
+  let winnum = s:invoker_get_winnum(a:invoker)
+  if winnum <= winnr('$')
+    silent execute winnum . 'wincmd w'
+  else
+    silent execute 'wincmd p'
+  endif
+endfunction " }}}
+
+" Options
+function! s:options_get(...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  return getbufvar(bufname, '_options', {})
+endfunction " }}}
+function! s:options_set(options, ...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  call setbufvar(bufname, '_options', a:options)
+endfunction " }}}
+
 " Action
 function! s:action(name, multi, ...) abort " {{{
   call s:validate_filetype('s:action')
-  let options = extend({}, get(a:000, 0, {}))
+  let options = extend(s:options_get(), get(a:000, 0, {}))
   if a:multi
     let selected_statuses = s:get_selected_statuses()
   else
@@ -315,10 +328,10 @@ function! s:action(name, multi, ...) abort " {{{
   return call(printf('s:action_%s', a:name), [selected_statuses, options])
 endfunction
 let s:statuses_optional_actions = [
-      \ 'switch_to_status',
-      \ 'switch_to_commit',
-      \ 'update_status',
-      \ 'update_commit',
+      \ 'status_open',
+      \ 'status_update',
+      \ 'commit_open',
+      \ 'commit_update',
       \ 'commit',
       \]
 let s:statuses_optional_actions_pattern =
@@ -376,18 +389,8 @@ function! s:action_add(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  " execute Git command
-  let fargs = options.force ? ['add', '--force', '--'] : ['add', '--']
-  let fargs = fargs + map(valid_statuses, 'v:val.path')
-  let result = s:gita_get().git.exec(fargs)
-  if result.status == 0
-    call gita#util#info(result.stdout)
+  if !gita#get().add(options, map(valid_statuses, 'v:val.path'))
     call s:status_update()
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('A following exception occured with executing "%s"', join(result.args)),
-          \)
   endif
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
@@ -414,22 +417,13 @@ function! s:action_rm(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  " execute Git command
-  let fargs = options.force ? ['rm', '--force', '--'] : ['rm', '--']
-  let fargs = fargs + map(valid_statuses, 'v:val.path')
-  let result = s:gita_get().git.exec(fargs)
-  if result.status == 0
-    call gita#util#info(result.stdout)
+  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
     call s:status_update()
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('A following exception occured with executing "%s"', join(result.args)),
-          \)
   endif
 endfunction " }}}
 function! s:action_rm_cached(statuses, options) abort " {{{
   let options = extend({ 'force': 0 }, a:options)
+  let options.cached = 1
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
@@ -446,18 +440,8 @@ function! s:action_rm_cached(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  " execute Git command
-  let fargs = options.force ? ['rm', '--cached', '--force', '--'] : ['rm', '--cached', '--']
-  let fargs = fargs + map(valid_statuses, 'v:val.path')
-  let result = s:gita_get().git.exec(fargs)
-  if result.status == 0
-    call gita#util#info(result.stdout)
+  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
     call s:status_update()
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('A following exception occured with executing "%s"', join(result.args)),
-          \)
   endif
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
@@ -490,18 +474,8 @@ function! s:action_checkout(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  " execute Git command
-  let fargs = options.force ? ['checkout', '--force', 'HEAD', '--'] : ['checkout', 'HEAD', '--']
-  let fargs = fargs + map(valid_statuses, 'v:val.path')
-  let result = s:gita_get().git.exec(fargs)
-  if result.status == 0
-    call gita#util#info(result.stdout)
+  if !gita#get().checkout(options, 'HEAD', map(valid_statuses, 'v:val.path'))
     call s:status_update()
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('A following exception occured with executing "%s"', join(result.args)),
-          \)
   endif
 endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
@@ -552,8 +526,8 @@ endfunction " }}}
 function! s:action_open(statuses, options) abort " {{{
   let options = extend({ 'opener': 'edit' }, a:options)
   let opener = get(g:gita#core#opener_aliases, options.opener, options.opener)
-  let gita = s:gita_get()
-  let invoker_winnum = s:invoker_get_winnum(gita)
+  let gita = gita#get()
+  let invoker_winnum = s:invoker_get_winnum(s:invoker_get())
   if invoker_winnum != -1
     silent execute invoker_winnum . 'wincmd w'
   else
@@ -566,22 +540,13 @@ function! s:action_open(statuses, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:action_diff(statuses, options) abort " {{{
-  let options = extend({ 'opener': 'edit' }, a:options)
-  let opener = get(g:gita#core#opener_aliases, options.opener, options.opener)
-  let gita = s:gita_get()
-  let invoker_winnum = s:invoker_get_winnum(gita)
-  if invoker_winnum != -1
-    silent execute invoker_winnum . 'wincmd w'
-  else
-    silent execute 'wincmd p'
-  endif
   " Not implemented yet
   call gita#util#error('The function has not been implemented yet')
 endfunction " }}}
 function! s:action_commit(statuses, options) abort " {{{
   " do not use a:statuses while it is a different kind of object
-  let gita = s:gita_get()
-  let options = extend(get(gita, 'options', {}), a:options)
+  let gita = gita#get()
+  let options = extend({}, a:options)
   let statuses = get(b:, '_statuses', {})
   if empty(statuses)
     " already commited. ignore
@@ -601,10 +566,11 @@ function! s:action_commit(statuses, options) abort " {{{
     return
   endif
   " get comment removed content
-  let commitmsg = s:eliminate_comment_lines(getline(1, '$'))
+  let c = get(gita#get().git.get_parsed_config(), 'core.commentChar', '#')
+  let commitmsg = filter(getline(1, '$'), printf('v:val !~# "^%s"', c))
   if join(commitmsg, "") =~# '\v^\s*$'
     call gita#util#warn(
-          \ 'no commit messages are available. note that all lines start from "#" are eliminated.',
+          \ printf('no commit messages are available. note that all lines start from "%s" are eliminated.', c),
           \ 'Commiting the changes has canceled.',
           \)
     return
@@ -612,27 +578,14 @@ function! s:action_commit(statuses, options) abort " {{{
   " save comment removed content to a tempfile
   let filename = tempname()
   call writefile(commitmsg, filename)
-  let fargs = ['commit', '--file', filename]
-  if get(options, 'amend', 0)
-    let fargs = fargs + ['--amend']
-  endif
-  let result = gita.git.exec(fargs)
-  call delete(filename)
-  if result.status == 0
-    " clear cache
-    let gita.options = {}
-    if has_key(b:, '_commitmsg')
-      unlet b:_commitmsg
-    endif
-    unlet b:_statuses
-    call s:status_open()
-    " show result
-    call gita#util#info(result.stdout, 'The changes has been commited')
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('A following exception occured with executing "%s"', join(result.args)),
-          \)
+  let options.file = filename
+  if !gita#get().commit(options)
+    call delete(filename)
+    call s:unlet('b:_options')
+    call s:unlet('b:_commitmsg')
+    call s:unlet('b:_statuses')
+    call s:unlet('b:_statuses_map')
+    call s:commit_update()
   endif
 endfunction " }}}
 
@@ -641,16 +594,20 @@ function! s:status_open(...) abort " {{{
   let opts = extend({
         \ 'force_construction': 0,
         \}, get(a:000, 0, {}))
-  " get a gita instance of the invoker
-  let gita = s:gita_get_or_create()
+  let gita = gita#get()
+  let invoker = s:invoker_get()
+  let options = extend(
+        \ s:options_get(),
+        \ s:Dict.omit(opts, [
+        \   'force_construction',
+        \]))
   " open or move to the interface buffer
-  if s:interface_open_buffer(s:const.status_bufname).bufnr == -1
-    call gita#util#error('vim-gita: failed to open a git status window')
-    return
+  if s:buffer_open(s:const.status_bufname).bufnr == -1
+    throw 'vim-gita: failed to open a git status window'
   endif
   " check if gita is available
   if !gita.is_enable
-    let cached_gita = s:gita_get()
+    let cached_gita = gita#get()
     if get(cached_gita, 'is_enable', 0)
       " invoker is not in Git directory but the interface has cache so use the
       " cache to display the status window
@@ -663,15 +620,17 @@ function! s:status_open(...) abort " {{{
     endif
   endif
 
-  let gita.options = extend(deepcopy(gita.options), opts)
+  " cache instances
+  call gita#set(gita)
+  call s:invoker_set(invoker)
+  call s:options_set(options)
+
   " check if construction is required
   if exists('b:_constructed') && !opts.force_construction
     " construction is not required.
-    let b:_gita = gita
     call s:status_update()
     return
   endif
-  let b:_gita = gita
   let b:_constructed = 1
 
   " construction
@@ -693,41 +652,39 @@ function! s:status_open(...) abort " {{{
 endfunction " }}}
 function! s:status_update() abort " {{{
   call s:validate_filetype_status('s:status_update')
-  let gita = s:gita_get()
-  if empty(gita) || !gita.is_enable
+  redraw | echo 'Updating status...'
+  let gita = gita#get()
+  if !gita.is_enable
     bw!
     return
   endif
 
-  let statuses = gita.git.get_parsed_status()
-  if get(statuses, 'status', 0)
-    call gita#util#error(
-          \ statuses.stdout,
-          \ printf('A following exception occured when executing "%s"', join(statuses.args)),
-          \)
+  let options = s:options_get()
+  let statuses = gita.status(extend({ 'parsed': 1 }, options))
+  if empty(statuses)
     bw!
     return
   endif
 
+  " create status message
+  let buflines = s:get_header_lines(gita)
+  let statuses_map = {}
+  for s in statuses.all
+    let status_line = printf('%s', s:get_status_line(s))
+    let statuses_map[status_line] = s
+    call add(buflines, status_line)
+  endfor
+
+  " create status messages
+  let statusmsg = []
   if empty(statuses.all)
-    let buflines = gita#util#flatten([
-          \ s:get_header_lines(gita),
-          \ 'nothing to commit (working directory clean)',
-          \])
-    let statuses_map = {}
-  else
-    let buflines = s:get_header_lines(gita)
-    let statuses_map = {}
-    for s in statuses.all
-      let status_line = s:get_status_line(s)
-      let statuses_map[status_line] = s
-      call add(buflines, status_line)
-    endfor
+    let statusmsg = ['nothing to commit (working directory clean']
   endif
+  let bufline = statusmsg + buflines
 
   " remove the entire content and rewrite the buflines
   setlocal modifiable
-  call s:update_contents(buflines)
+  call s:buffer_update(buflines)
   setlocal nomodifiable
 
   let b:_statuses = statuses
@@ -736,22 +693,26 @@ function! s:status_update() abort " {{{
 endfunction " }}}
 function! s:status_ac_leave() abort " {{{
   call s:validate_filetype_status('s:status_ac_leave')
-  call s:invoker_focus(s:gita_get())
+  call s:invoker_focus(s:invoker_get())
 endfunction " }}}
 function! s:commit_open(...) abort " {{{
   let opts = extend({
         \ 'force_construction': 0,
         \}, get(a:000, 0, {}))
-  " get a gita instance of the invoker
-  let gita = s:gita_get_or_create()
+  let gita = gita#get()
+  let invoker = s:invoker_get()
+  let options = extend(
+        \ s:options_get(),
+        \ s:Dict.omit(opts, [
+        \   'force_construction',
+        \]))
   " open or move to the interface buffer
-  if s:interface_open_buffer(s:const.commit_bufname).bufnr == -1
-    call gita#util#error('vim-gita: failed to open a git commit window')
-    return
+  if s:buffer_open(s:const.commit_bufname).bufnr == -1
+    throw 'vim-gita: failed to open a git commit window'
   endif
   " check if gita is available
   if !gita.is_enable
-    let cached_gita = s:gita_get()
+    let cached_gita = gita#get()
     if get(cached_gita, 'is_enable', 0)
       " invoker is not in Git directory but the interface has cache so use the
       " cache to display the status window
@@ -764,15 +725,17 @@ function! s:commit_open(...) abort " {{{
     endif
   endif
 
-  let gita.options = extend(deepcopy(gita.options), opts)
+  " cache instances
+  call gita#set(gita)
+  call s:invoker_set(invoker)
+  call s:options_set(options)
+
   " check if construction is required
   if exists('b:_constructed') && !opts.force_construction
     " construction is not required.
-    let b:_gita = gita
     call s:commit_update()
     return
   endif
-  let b:_gita = gita
   let b:_constructed = 1
 
   " construction
@@ -793,31 +756,26 @@ function! s:commit_open(...) abort " {{{
 endfunction " }}}
 function! s:commit_update() abort " {{{
   call s:validate_filetype_commit('s:commit_update')
-  let gita = s:gita_get()
-  if empty(gita) || !gita.is_enable
+  redraw | echo 'Updating status...'
+  let gita = gita#get()
+  if !gita.is_enable
+    bw!
+    return
+  endif
+  let c = get(gita.git.get_parsed_config(), 'core.commentChar', '#')
+
+  let options = s:options_get()
+  let statuses = gita.commit(extend({ 'parsed': 1 }, options))
+  if empty(statuses)
     bw!
     return
   endif
 
-  let opts = { 'args': [] }
-  if get(gita.options, 'amend', 0)
-    call add(opts.args, '--amend')
-  endif
-  let statuses = gita.git.get_parsed_commit(opts)
-  if get(statuses, 'status', 0)
-    call gita#util#error(
-          \ statuses.stdout,
-          \ printf('A following exception occured when executing "%s"', join(statuses.args)),
-          \)
-    bw!
-    return
-  endif
-
-  " create commit comments
+  " create status message
   let buflines = s:get_header_lines(gita)
   let statuses_map = {}
   for s in statuses.all
-    let status_line = printf('# %s', s:get_status_line(s))
+    let status_line = printf('%s %s', c, s:get_status_line(s))
     let statuses_map[status_line] = s
     call add(buflines, status_line)
   endfor
@@ -826,9 +784,9 @@ function! s:commit_update() abort " {{{
   let commitmsg = ['']
   if exists('b:_commitmsg')
     let commitmsg = b:_commitmsg
-  elseif get(gita.options, 'amend', 0)
+  elseif get(options, 'amend', 0)
     let commitmsg = gita.git.get_last_commit_message()
-    let commitmsg = commitmsg + ['# AMEND']
+    let commitmsg = commitmsg + [printf('%s AMEND', c)]
   elseif empty(statuses.staged)
     let commitmsg = ['no changes added to commit']
   endif
@@ -836,7 +794,7 @@ function! s:commit_update() abort " {{{
 
   " remove the entire content and rewrite the buflines
   setlocal modifiable
-  call s:update_contents(buflines)
+  call s:buffer_update(buflines)
 
   let b:_statuses = statuses
   let b:_statuses_map = statuses_map
@@ -850,7 +808,9 @@ function! s:commit_ac_write(filename) abort " {{{
     return
   endif
   " cache commitmsg
-  let b:_commitmsg = s:eliminate_comment_lines(getline(1, '$'))
+  let gita = gita#get()
+  let c = get(gita.git.get_parsed_config(), 'core.commentChar', '#')
+  let b:_commitmsg = filter(getline(1, '$'), printf('v:val !~# "^%s"', c))
   setlocal nomodified
 endfunction " }}}
 function! s:commit_ac_leave() abort " {{{
@@ -858,7 +818,7 @@ function! s:commit_ac_leave() abort " {{{
   " commit before leave
   call s:action_commit({}, {})
   " focus invoker
-  call s:invoker_focus(s:gita_get())
+  call s:invoker_focus(s:invoker_get())
 endfunction " }}}
 
 " Public
@@ -914,4 +874,4 @@ endif
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+"vim: stts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
