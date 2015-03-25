@@ -340,7 +340,7 @@ function! s:action_add(statuses, options) abort " {{{
             \ status.path)
             \)
       continue
-    elseif !status.is_unstaged && !status.is_untracked
+    elseif !status.is_unstaged && !status.is_untracked && !status.is_conflicted
       call gita#util#debug(printf(
             \ 'no changes are existing on the file "%s" (working tree is clean)',
             \ status.path)
