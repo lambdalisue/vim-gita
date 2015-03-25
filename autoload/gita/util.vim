@@ -77,7 +77,7 @@ function! gita#util#echomsg(hl, msg) abort " {{{
   endtry
 endfunction " }}}
 function! gita#util#input(hl, msg, ...) abort " {{{
-  execute 'echol' a:hl
+  execute 'echohl' a:hl
   try
     return input(a:msg, get(a:000, 0, ''))
   finally
@@ -123,7 +123,9 @@ function! gita#util#error(message, ...) abort " {{{
   endif
 endfunction " }}}
 function! gita#util#ask(message, ...) abort " {{{
-  return gita#util#input('Question', a:message, get(a:000, 0, ''))
+  let result = gita#util#input('Question', a:message, get(a:000, 0, ''))
+  redraw
+  return result
 endfunction " }}}
 function! gita#util#asktf(message, ...) abort " {{{
   let result = gita#util#ask(

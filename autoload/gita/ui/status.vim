@@ -410,6 +410,12 @@ function! s:action_rm_cached(statuses, options) abort " {{{
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
   let options = extend({ 'force': 0 }, a:options)
+  let commit = gita#util#ask('Which commit do you want to checkout from? ', 'HEAD')
+  if strlen(commit) == 0
+    redraw
+    call gita#util#warn('The operation has canceled by user.')
+    return
+  endif
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
@@ -425,7 +431,7 @@ function! s:action_checkout(statuses, options) abort " {{{
             \ status.path)
             \)
       continue
-    elseif status.is_unstaged && !force
+    elseif status.is_unstaged && !options.force
       call gita#util#warn(printf(
             \ 'locally changed file "%s" could not be checked out. use <Plug>(gita-action-CHECKOUT) to checkout',
             \ status.path)
@@ -438,7 +444,7 @@ function! s:action_checkout(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().checkout(options, 'HEAD', map(valid_statuses, 'v:val.path'))
+  if !gita#get().checkout(options, commit, map(valid_statuses, 'v:val.path'))
     call s:status_update()
   endif
 endfunction " }}}
