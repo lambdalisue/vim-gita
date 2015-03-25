@@ -26,14 +26,13 @@ function! s:get_info() abort " {{{
   let gita = gita#get()
   if gita.is_enable
     let info = {
-          \ 'name': fnamemodify(gita.git.worktree, ':t'),
+          \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
           \ 'local_branch': gita.git.get_current_branch(),
-          \ 'remote_branch': printf('%s/%s',
-          \   gita.git.get_current_branch_remote(),
-          \   substitute(
-          \     gita.git.get_current_branch_merge(),
-          \     '^refs/heads/', '', ''
-          \   )),
+          \ 'remote_name': gita.git.get_current_branch_remote(),
+          \ 'remote_branch': substitute(
+          \    gita.git.get_current_branch_merge(),
+          \    '^refs/heads/', '', ''
+          \  ),
           \ 'outgoing': gita.git.get_commits_ahead_of_remote(),
           \ 'incoming': gita.git.get_commits_behind_remote(),
           \}
@@ -100,8 +99,9 @@ function! s:format(format, info) abort " {{{
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction
 let s:format_map = {
-      \ 'nn': 'name',
+      \ 'ln': 'local_name',
       \ 'lb': 'local_branch',
+      \ 'rn': 'remote_name',
       \ 'rb': 'remote_branch',
       \ 'ic': 'incoming',
       \ 'og': 'outgoing',
@@ -131,9 +131,11 @@ function! gita#statusline#preset(name, ...) " {{{
   return s:format(format, info)
 endfunction
 let s:preset = {
-      \ 'branch': '⭠ %{|/}nn%lb%{ <> |}rb',
+      \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb',
+      \ 'branch_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb',
       \ 'status': '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu',
-      \ 'traffic': 'L⇄R %{￫| }og%{￩}ic',
+      \ 'traffic': '%{<| }ic%{>|}og',
+      \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
 " }}}
 
