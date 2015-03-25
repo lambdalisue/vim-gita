@@ -19,7 +19,7 @@ let s:Git           = gita#util#import('VCS.Git')
 
 " Utility functions
 function! s:get_header_lines(gita) abort " {{{
-  let c = get(a:gita.git.get_parsed_config(), 'core.commentchar', '#')
+  let c = a:gita.git.get_comment_char()
   let n = fnamemodify(a:gita.git.worktree, ':t')
   let b = a:gita.git.get_current_branch()
   let r = printf('%s/%s',
@@ -510,7 +510,7 @@ endfunction " }}}
 function! s:action_commit(statuses, options) abort " {{{
   " do not use a:statuses while it is a different kind of object
   let gita = gita#get()
-  let options = extend({}, a:options)
+  let options = extend(s:options_get(), a:options)
   let statuses = get(b:, '_statuses', {})
   if empty(statuses)
     " already commited. ignore
@@ -530,7 +530,7 @@ function! s:action_commit(statuses, options) abort " {{{
     return
   endif
   " get comment removed content
-  let c = get(gita#get().git.get_parsed_config(), 'core.commentchar', '#')
+  let c = gita.git.get_comment_char()
   let commitmsg = filter(getline(1, '$'), printf('v:val !~# "^%s"', c))
   if join(commitmsg, "") =~# '\v^\s*$'
     call gita#util#warn(
@@ -579,8 +579,9 @@ function! s:status_open(...) abort " {{{
       unlet cached_gita
     else
       " nothing can do. close the window and exit.
-      redraw | call gita#util#warn('Not in git repository')
-      bw!
+      redraw
+      call gita#util#warn('Not in git working tree')
+      close!
       return
     endif
   endif
@@ -619,15 +620,16 @@ function! s:status_update() abort " {{{
   call s:validate_filetype_status('s:status_update')
   let gita = gita#get()
   if !gita.is_enable
-    call gita#util#warn('Not in git repository')
-    bw!
+    redraw
+    call gita#util#warn('Not in git working tree')
+    close!
     return
   endif
 
   let options = s:options_get()
-  let statuses = gita.status(extend({ 'parsed': 1 }, options))
+  let statuses = gita.status(extend({ 'no_cache': 1, 'parsed': 1 }, options))
   if empty(statuses)
-    bw!
+    close!
     return
   endif
 
@@ -685,7 +687,9 @@ function! s:commit_open(...) abort " {{{
       unlet cached_gita
     else
       " nothing can do. close the window and exit.
-      bw!
+      redraw
+      call gita#util#warn('Not in git working tree')
+      close!
       return
     endif
   endif
@@ -723,15 +727,16 @@ function! s:commit_update() abort " {{{
   call s:validate_filetype_commit('s:commit_update')
   let gita = gita#get()
   if !gita.is_enable
-    bw!
+    call gita#util#warn('Not in git working tree')
+    close!
     return
   endif
-  let c = get(gita.git.get_parsed_config(), 'core.commentchar', '#')
+  let c = gita.git.get_comment_char()
 
   let options = s:options_get()
-  let statuses = gita.commit(extend({ 'parsed': 1 }, options))
+  let statuses = gita.commit(extend({ 'no_cache': 1, 'parsed': 1 }, options))
   if empty(statuses)
-    bw!
+    close!
     return
   endif
 
@@ -749,7 +754,7 @@ function! s:commit_update() abort " {{{
   if exists('b:_commitmsg')
     let commitmsg = b:_commitmsg
   elseif get(options, 'amend', 0)
-    let commitmsg = gita.git.get_last_commit_message()
+    let commitmsg = gita.git.get_last_commitmsg()
     let commitmsg = commitmsg + [printf('%s AMEND', c)]
   elseif empty(statuses.staged)
     let commitmsg = ['no changes added to commit']
