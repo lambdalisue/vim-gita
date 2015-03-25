@@ -56,6 +56,16 @@ function! gita#util#listalize(val) abort " {{{
   return gita#util#is_list(a:val) ? a:val : [a:val]
 endfunction " }}}
 
+function! gita#util#echo(hl, msg) abort " {{{
+  execute 'echohl' a:hl
+  try
+    for m in split(a:msg, '\v\r?\n')
+      echo m
+    endfor
+  finally
+    echohl None
+  endtry
+endfunction " }}}
 function! gita#util#echomsg(hl, msg) abort " {{{
   execute 'echohl' a:hl
   try

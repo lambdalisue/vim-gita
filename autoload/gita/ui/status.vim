@@ -1,5 +1,5 @@
 "******************************************************************************
-" vim-gita interface
+" vim-gita ui status
 "
 " Author:   Alisue <lambdalisue@hashnote.net>
 " URL:      http://hashnote.net/
@@ -121,7 +121,7 @@ function! s:define_mappings() abort " {{{
   vnoremap <buffer><silent> <Plug>(gita-action-diff-split)  :<C-u>call <SID>action('diff', 1, { 'opener': 'split' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>action('diff', 1, { 'opener': 'vsplit' })<CR>
 
-  if get(g:, 'gita#core#enable_default_keymaps', 1)
+  if get(g:, 'gita#ui#status#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
     nmap <buffer><expr> <CR>   <SID>smart_map('<CR>',   '<Plug>(gita-action-open-edit)', 0)
     nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)', 0)
@@ -489,7 +489,7 @@ function! s:action_toggle(statuses, options) abort " {{{
 endfunction " }}}
 function! s:action_open(statuses, options) abort " {{{
   let options = extend({ 'opener': 'edit' }, a:options)
-  let opener = get(g:gita#core#opener_aliases, options.opener, options.opener)
+  let opener = get(g:gita#ui#status#opener_aliases, options.opener, options.opener)
   let gita = gita#get()
   let invoker_winnum = s:invoker_get_winnum(s:invoker_get())
   if invoker_winnum != -1
@@ -791,13 +791,13 @@ function! s:commit_ac_leave() abort " {{{
 endfunction " }}}
 
 " Public
-function! gita#core#status_open(...) abort " {{{
+function! gita#ui#status#status_open(...) abort " {{{
   call call('s:status_open', a:000)
 endfunction " }}}
-function! gita#core#commit_open(...) abort " {{{
+function! gita#ui#status#commit_open(...) abort " {{{
   call call('s:commit_open', a:000)
 endfunction " }}}
-function! gita#core#define_highlights() abort " {{{
+function! gita#ui#status#define_highlights() abort " {{{
   highlight default link GitaComment    Comment
   highlight default link GitaConflicted ErrorMsg
   highlight default link GitaUnstaged   WarningMsg
@@ -810,7 +810,7 @@ function! gita#core#define_highlights() abort " {{{
   highlight default link GitaGitHubKeyword Keyword
   highlight default link GitaGitHubIssue   Identifier
 endfunction " }}}
-function! gita#core#status_define_syntax() abort " {{{
+function! gita#ui#status#status_define_syntax() abort " {{{
   execute 'syntax match GitaComment    /\v^#.*/'
   execute 'syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/'
   execute 'syntax match GitaUnstaged   /\v^%([ MARC][MD]|DM)\s.*$/'
@@ -820,7 +820,7 @@ function! gita#core#status_define_syntax() abort " {{{
   execute 'syntax match GitaComment    /\v^# On branch/ contained'
   execute 'syntax match GitaBranch     /\v^# On branch .*$/hs=s+12 contains=GitaComment'
 endfunction " }}}
-function! gita#core#commit_define_syntax() abort " {{{
+function! gita#ui#status#commit_define_syntax() abort " {{{
   execute 'syntax match GitaComment    /\v^#.*/'
   execute 'syntax match GitaComment    /\v^# / contained'
   execute 'syntax match GitaConflicted /\v^# %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2 contains=GitaComment'
@@ -838,7 +838,7 @@ endfunction " }}}
 
 " Assign constant variables
 if !exists('s:const')
-  let s:const = g:gita#core#const
+  let s:const = g:gita#ui#status#const
 endif
 
 let &cpo = s:save_cpo
