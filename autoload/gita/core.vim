@@ -579,7 +579,7 @@ function! s:status_open(...) abort " {{{
       unlet cached_gita
     else
       " nothing can do. close the window and exit.
-      call gita#util#warn('Not in git repository')
+      redraw | call gita#util#warn('Not in git repository')
       bw!
       return
     endif
@@ -619,6 +619,7 @@ function! s:status_update() abort " {{{
   call s:validate_filetype_status('s:status_update')
   let gita = gita#get()
   if !gita.is_enable
+    call gita#util#warn('Not in git repository')
     bw!
     return
   endif
@@ -626,7 +627,6 @@ function! s:status_update() abort " {{{
   let options = s:options_get()
   let statuses = gita.status(extend({ 'parsed': 1 }, options))
   if empty(statuses)
-    call gita#util#warn('Not in git repository')
     bw!
     return
   endif
