@@ -128,26 +128,26 @@ function! s:gita.rm(options, ...) abort " {{{
   endif
   return s:parse_exec_result(self.git.exec(args, opts))
 endfunction " }}}
-function! s:gita.checkout(options, branch, ...) abort " {{{
+function! s:gita.checkout(options, commit, ...) abort " {{{
   let defaults = {
-        \ 'b': 0,       " create and checkout a new branch
-        \ 'B': 0,       " create/reset and checkout a branch
-        \ 'l': 0,       " create reflog for new branch
-        \ 'detach': 0,  " detach the HEAD at named commit
-        \ 'track': 0,   " set upstream info for new branch
-        \ 'ours': 0,    " checkout our version for unmerged files
-        \ 'theirs': 0,  " checkout their version for unmerged files
-        \ 'force': 0,   " force checkout (throw away local modifications)
-        \ 'merge': 0,   " perform a 3-way merge with the new branch
-        \ 'orphan': 0, 
+        \ 'b': 0,
+        \ 'B': 0,
+        \ 'l': 0,
+        \ 'detach': 0,
+        \ 'track': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
+        \ 'force': 0,
+        \ 'merge': 0,
+        \ 'orphan': 0,
         \}
   let opts = s:Dict.omit(a:options, keys(defaults))
   let args = ['checkout'] + s:opts2args(a:options, defaults)
   let filenames = gita#util#listalize(get(a:000, 0, []))
   if len(filenames) > 0
-    call add(args, [a:branch, '--', filenames])
+    call add(args, [a:commit, '--', filenames])
   else
-    call add(args, [a:branch])
+    call add(args, [a:commit])
   endif
   return s:parse_exec_result(self.git.exec(args, opts))
 endfunction " }}}
