@@ -220,26 +220,6 @@ function! s:gita.commit(options, ...) abort " {{{
     return s:parse_exec_result(self.git.exec(args, opts))
   endif
 endfunction " }}}
-function! s:gita.get_worktree_name() abort " {{{
-  return fnamemodify(self.git.worktree, ':t')
-endfunction " }}}
-function! s:gita.get_current_branch() abort " {{{
-  return self.git.get_current_branch()
-endfunction " }}}
-function! s:gita.get_current_branch_remote() abort " {{{
-  return self.git.get_current_branch_remote()
-endfunction " }}}
-function! s:gita.get_current_branch_merge() abort " {{{
-  return self.git.get_current_branch_merge()
-endfunction " }}}
-function! s:gita.get_connected_branch() abort " {{{
-  let r = printf('%s/%s',
-        \ self.get_current_branch_remote(),
-        \ substitute(
-        \   self.git.get_current_branch_merge(),
-        \   '^refs/heads/', '', ''
-        \ ))
-endfunction " }}}
 
 " Public
 function! gita#add_hooks(...) abort " {{{
