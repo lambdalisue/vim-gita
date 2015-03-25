@@ -543,7 +543,8 @@ function! s:action_commit(statuses, options) abort " {{{
   let filename = tempname()
   call writefile(commitmsg, filename)
   let options.file = filename
-  if !gita#get().commit(options)
+  if !gita.commit(options)
+    call gita.git.cache.clear()
     call delete(filename)
     call s:unlet('b:_options')
     call s:unlet('b:_commitmsg')

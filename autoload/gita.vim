@@ -232,9 +232,9 @@ function! gita#Gita(opts) abort " {{{
     return s:GitaDefault(a:opts)
   endif
 endfunction " }}}
-function! gita#get(...) abort " {{{
-  let bufname = bufname(get(a:000, 0, '%'))
-  let gita = getbufvar(bufname, '_gita', {})
+function! gita#get() abort " {{{
+  let bufname = bufname('%')
+  let gita = get(b:, '_gita', {})
   if empty(gita) || (empty(&buftype) && bufname !=# gita.bufname) || (get(g:, 'gita#debug', 0) && empty(&buftype))
     if strlen(&buftype)
       let gita = extend(deepcopy(s:gita), {
@@ -252,12 +252,11 @@ function! gita#get(...) abort " {{{
     endif
   endif
   " cache gita instance
-  call gita#set(gita, bufname)
+  call gita#set(gita)
   return gita
 endfunction " }}}
-function! gita#set(gita, ...) abort " {{{
-  let bufname = get(a:000, 0, '%')
-  call setbufvar(bufname, '_gita', a:gita)
+function! gita#set(gita) abort " {{{
+  let b:_gita = a:gita
 endfunction " }}}
 
 let &cpo = s:save_cpo
