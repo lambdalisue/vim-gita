@@ -15,10 +15,10 @@ let s:Git = gita#util#import('VCS.Git')
 
 
 function! s:GitaStatus(opts) abort " {{{
-  call gita#core#status_open(a:opts)
+  call gita#ui#status#status_open(a:opts)
 endfunction " }}}
 function! s:GitaCommit(opts) abort " {{{r
-  call gita#core#commit_open(a:opts)
+  call gita#ui#status#commit_open(a:opts)
 endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git = s:Git.find(expand('%'))

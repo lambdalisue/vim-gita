@@ -34,9 +34,9 @@ function! s:assign_configs()
       \ 'below':  'rightbelow split', 
       \ 'tabnew': 'tabnew',
       \}
-  let g:gita#cors#opener_aliases = extend(
+  let g:gita#ui#status#opener_aliases = extend(
         \ s:default_opener_aliases,
-        \ get(g:, 'gita#core#opener_aliases', {}),
+        \ get(g:, 'gita#ui#status#opener_aliases', {}),
         \)
 endfunction
 call s:assign_configs() " }}}
@@ -52,7 +52,7 @@ function! s:assign_consts()
         \ const.commit_bufname,
         \)
   lockvar const
-  let g:gita#core#const = const
+  let g:gita#ui#status#const = const
 endfunction
 call s:assign_consts() "}}}
 
