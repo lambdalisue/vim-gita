@@ -13,6 +13,28 @@ set cpo&vim
 let s:Dict = gita#util#import('Data.Dict')
 let s:Git = gita#util#import('VCS.Git')
 
+function! s:get_hooks(name, timing) abort " {{{
+  return get(get(get(g:, 'gita#hooks', {}), a:name, {}), a:timing, [])
+endfunction " }}}
+function! s:add_hooks(name, timing, hooks) abort " {{{
+  if !has_key(g:, 'gita#hooks')
+    let g:gita#hooks = {}
+  endif
+  if !has_key(g:gita#hooks, a:name)
+    let g:gita#hooks[a:name] = {}
+  endif
+  if !has_key(g:gita#hooks[a:name], a:timing)
+    let g:gita#hooks[a:name][a:timing] = []
+  endif
+  let hooks = gita#util#is_list(a:hooks) ? a:hooks : [a:hooks]
+  let g:gita#hooks[a:name][a:timing] += hooks
+endfunction " }}}
+function! s:call_hooks(name, timing, ...) abort " {{{
+  let hooks = get(get(get(g:, 'gita#hooks', {}), a:name, {}), a:timing, [])
+  for hook in hooks
+    call call(hook, a:000)
+  endfor
+endfunction " }}}
 
 function! s:GitaStatus(opts) abort " {{{
   call gita#ui#status#status_open(a:opts)
@@ -22,12 +44,14 @@ function! s:GitaCommit(opts) abort " {{{r
 endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git = s:Git.find(expand('%'))
+  call s:call_hooks(a:opts._name, 'pre', a:opts)
   let result = git.exec(a:opts.args)
   if result.status == 0
     call gita#util#info(
           \ result.stdout,
           \ printf('Ok: "%s"', join(result.args))
           \)
+    call s:call_hooks(a:opts._name, 'post', a:opts)
   else
     call gita#util#info(
           \ result.stdout,
@@ -35,6 +59,8 @@ function! s:GitaDefault(opts) abort " {{{
           \)
   endif
 endfunction " }}}
+
+" Gita instance
 function! s:opts2args(opts, defaults) abort " {{{
   let args = []
   for [key, value] in items(a:defaults)
@@ -68,8 +94,6 @@ function! s:parse_exec_result(result) abort " {{{
     return 1
   endif
 endfunction " }}}
-
-" Gita instance
 let s:gita = {}
 function! s:gita.add(options, ...) abort " {{{
   let defaults = {
@@ -218,6 +242,15 @@ function! s:gita.get_connected_branch() abort " {{{
 endfunction " }}}
 
 " Public
+function! gita#add_hooks(...) abort " {{{
+  call call('s:add_hooks', a:000)
+endfunction " }}}
+function! gita#get_hooks(...) abort " {{{
+  return call('s:get_hooks', a:000)
+endfunction " }}}
+function! gita#call_hooks(...) abort " {{{
+  return call('s:call_hooks', a:000)
+endfunction " }}}
 function! gita#Gita(opts) abort " {{{
   if empty(a:opts)
     " validation failed

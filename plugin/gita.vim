@@ -38,6 +38,22 @@ function! s:assign_configs()
         \ s:default_opener_aliases,
         \ get(g:, 'gita#ui#status#opener_aliases', {}),
         \)
+
+  let s:default_hooks = {
+        \ 'commit': {
+        \   'post': ['gita#statusline#clear'],
+        \ },
+        \ 'push': {
+        \   'post': ['gita#statusline#clear'],
+        \ },
+        \ 'pull': {
+        \   'post': ['gita#statusline#clear'],
+        \ },
+        \}
+  let g:gita#hooks = extend(
+        \ s:default_hooks,
+        \ get(g:, 'gita#hooks', {}),
+        \)
 endfunction
 call s:assign_configs() " }}}
 " Assign constant variables " {{{

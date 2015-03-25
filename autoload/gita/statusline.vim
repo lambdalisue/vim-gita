@@ -114,6 +114,12 @@ let s:format_map = {
       \ 'nm': 'modified',
       \}
 " }}}
+function! s:clear() abort " {{{
+  let gita = gita#get()
+  if gita.is_enable
+    call gita.git.cache.clear()
+  endif
+endfunction " }}}
 
 function! gita#statusline#info(...) " {{{
   return call('s:get_info', a:000)
@@ -138,6 +144,9 @@ let s:preset = {
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
 " }}}
+function! gita#statusline#clear(...) " {{{
+  call s:clear()
+endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
