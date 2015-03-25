@@ -353,8 +353,14 @@ function! s:action_add(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().add(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.add(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
@@ -381,8 +387,14 @@ function! s:action_rm(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_rm_cached(statuses, options) abort " {{{
@@ -404,8 +416,14 @@ function! s:action_rm_cached(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
@@ -444,8 +462,14 @@ function! s:action_checkout(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.checkout(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
@@ -550,7 +574,8 @@ function! s:action_commit(statuses, options) abort " {{{
   call writefile(commitmsg, filename)
   let options.file = filename
   call gita#call_hooks('commit', 'pre', options)
-  if !gita.commit(options)
+  let result = gita#get().git.commit(options)
+  if result.status == 0
     " clear cache
     call delete(filename)
     call s:unlet('b:_options')
@@ -560,6 +585,11 @@ function! s:action_commit(statuses, options) abort " {{{
     " call hooks and update buffer
     call gita#call_hooks('commit', 'post', options)
     call s:commit_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 
@@ -637,8 +667,12 @@ function! s:status_update() abort " {{{
   endif
 
   let options = s:options_get()
-  let statuses = gita.status(extend({ 'no_cache': 1, 'parsed': 1 }, options))
-  if empty(statuses)
+  let statuses = gita.git.get_parsed_status(extend({ 'no_cache': 1 }, options))
+  if get(statuses, 'status', 0)
+    call gita#util#error(
+          \ statuses.stdout,
+          \ printf('Fail: %s', join(statuses.args))
+          \)
     close!
     return
   endif
@@ -744,8 +778,12 @@ function! s:commit_update() abort " {{{
   let c = gita.git.get_comment_char()
 
   let options = s:options_get()
-  let statuses = gita.commit(extend({ 'no_cache': 1, 'parsed': 1 }, options))
-  if empty(statuses)
+  let statuses = gita.git.get_parsed_commit(extend({ 'no_cache': 1 }, options))
+  if get(statuses, 'status', 0)
+    call gita#util#error(
+          \ statuses.stdout,
+          \ printf('Fail: %s', join(statuses.args))
+          \)
     close!
     return
   endif
