@@ -45,7 +45,7 @@ endfunction " }}}
 function! s:get_statuses() abort " {{{
   let gita = gita#get()
   if gita.is_enable
-    let statuses = gita.status({ 'parsed': 1 })
+    let statuses = gita.git.get_parsed_status()
     " Note:
     "   the 'statuses' is cached, mean that 'untracked' doesn't reflect the
     "   real. That's why 'untracked' is missing in the following dictionary.
