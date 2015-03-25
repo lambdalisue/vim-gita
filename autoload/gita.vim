@@ -36,8 +36,6 @@ function! s:GitaDefault(opts) abort " {{{
   endif
 endfunction " }}}
 function! s:opts2args(opts, defaults) abort " {{{
-  echomsg "opts: " . string(a:opts)
-  echomsg "defaults: " . string(a:defaults)
   let args = []
   for [key, value] in items(a:defaults)
     if has_key(a:opts, key)
@@ -215,17 +213,19 @@ function! gita#Gita(opts) abort " {{{
   endif
 endfunction " }}}
 function! gita#get(...) abort " {{{
-  let bufname = get(a:000, 0, '%')
+  let bufname = bufname(get(a:000, 0, '%'))
   let gita = getbufvar(bufname, '_gita', {})
-  if empty(gita) || (get(g:, 'gita#debug', 0) && empty(&buftype))
+  if empty(gita) || bufname !=# gita.bufname || (get(g:, 'gita#debug', 0) && empty(&buftype))
     if strlen(&buftype)
       let gita = extend(deepcopy(s:gita), {
+            \ 'bufname': bufname,
             \ 'is_enable': 0,
             \ 'git': {},
             \})
     else
-      let git = s:Git.find(expand(bufname))
+      let git = s:Git.find(bufname)
       let gita = extend(deepcopy(s:gita), {
+            \ 'bufname': bufname,
             \ 'is_enable': !empty(git),
             \ 'git': git,
             \})
