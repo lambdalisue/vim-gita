@@ -52,6 +52,9 @@ endfunction " }}}
 function! gita#util#flatten(...) " {{{
   return call(s:List.flatten, a:000, s:List)
 endfunction " }}}
+function! gita#util#listalize(val) abort " {{{
+  return gita#util#is_list(a:val) ? a:val : [a:val]
+endfunction " }}}
 
 function! gita#util#echomsg(hl, msg) abort " {{{
   execute 'echohl' a:hl

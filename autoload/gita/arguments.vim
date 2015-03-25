@@ -14,26 +14,26 @@ let s:ArgumentParser = gita#util#import('ArgumentParser')
 
 
 function! gita#arguments#parse(bang, range, ...) abort " {{{
+  let bang = a:bang ==# '!'
   let cmdline = get(a:000, 0, '')
   let args = split(cmdline)
-  let name = args[0]
-  if name =~# s:gita_command_names_pattern
+  let name = len(args) ? args[0] : ''
+  if !bang && name =~# s:gita_command_names_pattern
     let cmdline = len(args) > 1 ? join(args[1:]) : ''
     let cmdname = printf('gita#arguments#%s#parse', name)
     let opts = call(cmdname, [a:bang, a:range, cmdline])
+    let opts._name = name
   else
     let opts = {'args': s:ArgumentParser.shellwords(cmdline)}
-  endif
-  if !empty(opts)
-    let opts._name = name
   endif
   return opts
 endfunction " }}}
 function! gita#arguments#complete(arglead, cmdline, cursorpos) abort " {{{
-  let cmdline = substitute(a:cmdline, '\v^Gita\s?', '', '')
+  let bang = a:cmdline =~# '\v^Gita!'
+  let cmdline = substitute(a:cmdline, '\v^Gita!?\s?', '', '')
   let args = split(cmdline)
   let name = len(args) ? args[0] : ''
-  if name =~# s:gita_command_names_pattern
+  if !bang && name =~# s:gita_command_names_pattern
     let cmdline = len(args) > 1 ? join(args[1:]) : ''
     let cmdname = printf('gita#arguments#%s#complete', name)
     let complete = call(cmdname, [a:arglead, cmdline, a:cursorpos])
