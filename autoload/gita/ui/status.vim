@@ -123,14 +123,14 @@ function! s:define_mappings() abort " {{{
 
   if get(g:, 'gita#ui#status#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
-    nmap <buffer><expr> <CR>   <SID>smart_map('<CR>',   '<Plug>(gita-action-open-edit)', 0)
-    nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)', 0)
-    nmap <buffer><expr> e      <SID>smart_map('e',      '<Plug>(gita-action-open-edit)', 0)
-    nmap <buffer><expr> E      <SID>smart_map('E',      '<Plug>(gita-action-open-vsplit)', 0)
-    nmap <buffer><expr> <C-e>  <SID>smart_map('<C-e>',  '<Plug>(gita-action-open-split)', 0)
-    nmap <buffer><expr> d      <SID>smart_map('d',      '<Plug>(gita-action-diff-split)', 0)
-    nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vsplit)', 0)
-    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-split)', 0)
+    nmap <buffer><expr> <CR>   <SID>smart_map('<CR>',   '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> <S-CR> <SID>smart_map('<S-CR>', '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> e      <SID>smart_map('e',      '<Plug>(gita-action-open-edit)')
+    nmap <buffer><expr> E      <SID>smart_map('E',      '<Plug>(gita-action-open-vsplit)')
+    nmap <buffer><expr> <C-e>  <SID>smart_map('<C-e>',  '<Plug>(gita-action-open-split)')
+    nmap <buffer><expr> d      <SID>smart_map('d',      '<Plug>(gita-action-diff-split)')
+    nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vsplit)')
+    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-split)')
 
     if &filetype == s:const.status_filetype
       nmap <buffer> <C-l> <Plug>(gita-action-status-update)
