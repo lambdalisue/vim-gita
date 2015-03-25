@@ -98,8 +98,8 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-open-below)  :<C-u>call <SID>action('open', 0, { 'opener': 'below' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-split)  :<C-u>call <SID>action('open', 0, { 'opener': 'split' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>action('open', 0, { 'opener': 'vsplit' })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-diff-split)  :<C-u>call <SID>action('diff', 0, { 'opener': 'split' })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>action('diff', 0, { 'opener': 'vsplit' })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 0, { 'vertical': 0 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 0, { 'vertical': 1 })<CR>
 
   vnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 1)<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
@@ -118,8 +118,8 @@ function! s:define_mappings() abort " {{{
   vnoremap <buffer><silent> <Plug>(gita-action-open-below)  :<C-u>call <SID>action('open', 1, { 'opener': 'below' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-split)  :<C-u>call <SID>action('open', 1, { 'opener': 'split' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>action('open', 1, { 'opener': 'vsplit' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-diff-split)  :<C-u>call <SID>action('diff', 1, { 'opener': 'split' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-diff-vsplit) :<C-u>call <SID>action('diff', 1, { 'opener': 'vsplit' })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 1, { 'vertical': 0 })<CR>
+  vnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 1, { 'vertical': 1 })<CR>
 
   if get(g:, 'gita#ui#status#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
@@ -128,9 +128,9 @@ function! s:define_mappings() abort " {{{
     nmap <buffer><expr> e      <SID>smart_map('e',      '<Plug>(gita-action-open-edit)')
     nmap <buffer><expr> E      <SID>smart_map('E',      '<Plug>(gita-action-open-vsplit)')
     nmap <buffer><expr> <C-e>  <SID>smart_map('<C-e>',  '<Plug>(gita-action-open-split)')
-    nmap <buffer><expr> d      <SID>smart_map('d',      '<Plug>(gita-action-diff-split)')
-    nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vsplit)')
-    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-split)')
+    nmap <buffer><expr> d      <SID>smart_map('d',      '<Plug>(gita-action-diff-vert)')
+    nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vert)')
+    nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-hori)')
 
     if &filetype == s:const.status_filetype
       nmap <buffer> <C-l> <Plug>(gita-action-status-update)
@@ -353,8 +353,14 @@ function! s:action_add(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().add(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.add(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
@@ -381,8 +387,14 @@ function! s:action_rm(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_rm_cached(statuses, options) abort " {{{
@@ -404,8 +416,14 @@ function! s:action_rm_cached(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().rm(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
@@ -444,8 +462,14 @@ function! s:action_checkout(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  if !gita#get().checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.checkout(options, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
     call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
@@ -510,8 +534,26 @@ function! s:action_open(statuses, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:action_diff(statuses, options) abort " {{{
-  " Not implemented yet
-  call gita#util#error('The function has not been implemented yet')
+  let options = extend({ 'vertical': 1 }, a:options)
+  let opener = get(g:gita#ui#status#opener_aliases, 'edit', 'edit')
+  let gita = gita#get()
+  let invoker_winnum = s:invoker_get_winnum(s:invoker_get())
+  if invoker_winnum != -1
+    silent execute invoker_winnum . 'wincmd w'
+  else
+    silent execute 'wincmd p'
+  endif
+  let commit = gita#util#ask('Which commit do you want to compare with? ', 'HEAD')
+  if strlen(commit) == 0
+    call gita#util#warn('Operation has canceled by user.')
+    return
+  endif
+  " open the selected status files
+  for status in a:statuses
+    let path = get(status, 'path2', status.path)
+    call s:Buffer.open(path, opener)
+    call gita#ui#diff#diffthis(commit, options)
+  endfor
 endfunction " }}}
 function! s:action_commit(statuses, options) abort " {{{
   " do not use a:statuses while it is a different kind of object
@@ -550,7 +592,8 @@ function! s:action_commit(statuses, options) abort " {{{
   call writefile(commitmsg, filename)
   let options.file = filename
   call gita#call_hooks('commit', 'pre', options)
-  if !gita.commit(options)
+  let result = gita#get().git.commit(options)
+  if result.status == 0
     " clear cache
     call delete(filename)
     call s:unlet('b:_options')
@@ -560,6 +603,11 @@ function! s:action_commit(statuses, options) abort " {{{
     " call hooks and update buffer
     call gita#call_hooks('commit', 'post', options)
     call s:commit_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 
@@ -637,8 +685,12 @@ function! s:status_update() abort " {{{
   endif
 
   let options = s:options_get()
-  let statuses = gita.status(extend({ 'no_cache': 1, 'parsed': 1 }, options))
-  if empty(statuses)
+  let statuses = gita.git.get_parsed_status(extend({ 'no_cache': 1 }, options))
+  if get(statuses, 'status', 0)
+    call gita#util#error(
+          \ statuses.stdout,
+          \ printf('Fail: %s', join(statuses.args))
+          \)
     close!
     return
   endif
@@ -744,8 +796,12 @@ function! s:commit_update() abort " {{{
   let c = gita.git.get_comment_char()
 
   let options = s:options_get()
-  let statuses = gita.commit(extend({ 'no_cache': 1, 'parsed': 1 }, options))
-  if empty(statuses)
+  let statuses = gita.git.get_parsed_commit(extend({ 'no_cache': 1 }, options))
+  if get(statuses, 'status', 0)
+    call gita#util#error(
+          \ statuses.stdout,
+          \ printf('Fail: %s', join(statuses.args))
+          \)
     close!
     return
   endif
