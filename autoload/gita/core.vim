@@ -17,42 +17,6 @@ let s:Buffer        = gita#util#import('Vim.Buffer')
 let s:BufferManager = gita#util#import('Vim.BufferManager')
 let s:Git           = gita#util#import('VCS.Git')
 
-" Gita instance
-function! gita#core#get_gita(...) abort " {{{
-  let bufname = get(a:000, 0, '%')
-  return getbufvar(bufname, '_gita', {})
-endfunction " }}}
-function! gita#core#create_gita(...) abort " {{{
-  let bufname = get(a:000, 0, '%')
-  let invoker_bufnum = bufnr(bufname)
-  let base = {
-        \ 'invoker_bufnum': invoker_bufnum,
-        \ 'invoker_winnum': bufwinnr(invoker_bufnum),
-        \ 'is_interface': bufname('%') =~# s:const.interface_pattern,
-        \ 'options': {},
-        \}
-  if strlen(&buftype)
-    let gita = extend(base, {
-          \ 'is_enable': 0,
-          \ 'git': {},
-          \})
-  else
-    let git = s:Git.find(bufname)
-    let gita = extend(base, {
-          \ 'is_enable': !empty(git),
-          \ 'git': git,
-          \})
-  endif
-  call setbufvar(bufname, '_gita', gita)
-endfunction " }}}
-function! gita#core#get_or_create_gita(...) abort " {{{
-  let gita = call(gita#core#get_gita, a:000)
-  if empty(gita)
-    let gita = call(gita#core#create_gita, a:000)
-  endif
-  return gita
-endfunction " }}}
-
 " Utility functions
 function! s:get_header_lines(gita) abort " {{{
   let c = get(a:gita.git.get_parsed_config(), 'core.commentChar', '#')
@@ -615,6 +579,7 @@ function! s:status_open(...) abort " {{{
       unlet cached_gita
     else
       " nothing can do. close the window and exit.
+      call gita#util#warn('Not in git repository')
       bw!
       return
     endif
@@ -652,7 +617,6 @@ function! s:status_open(...) abort " {{{
 endfunction " }}}
 function! s:status_update() abort " {{{
   call s:validate_filetype_status('s:status_update')
-  redraw | echo 'Updating status...'
   let gita = gita#get()
   if !gita.is_enable
     bw!
@@ -662,6 +626,7 @@ function! s:status_update() abort " {{{
   let options = s:options_get()
   let statuses = gita.status(extend({ 'parsed': 1 }, options))
   if empty(statuses)
+    call gita#util#warn('Not in git repository')
     bw!
     return
   endif
@@ -756,7 +721,6 @@ function! s:commit_open(...) abort " {{{
 endfunction " }}}
 function! s:commit_update() abort " {{{
   call s:validate_filetype_commit('s:commit_update')
-  redraw | echo 'Updating status...'
   let gita = gita#get()
   if !gita.is_enable
     bw!
