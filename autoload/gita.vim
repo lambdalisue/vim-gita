@@ -215,7 +215,7 @@ endfunction " }}}
 function! gita#get(...) abort " {{{
   let bufname = bufname(get(a:000, 0, '%'))
   let gita = getbufvar(bufname, '_gita', {})
-  if empty(gita) || bufname !=# gita.bufname || (get(g:, 'gita#debug', 0) && empty(&buftype))
+  if empty(gita) || (empty(&buftype) && bufname !=# gita.bufname) || (get(g:, 'gita#debug', 0) && empty(&buftype))
     if strlen(&buftype)
       let gita = extend(deepcopy(s:gita), {
             \ 'bufname': bufname,
