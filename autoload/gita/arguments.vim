@@ -22,10 +22,10 @@ function! gita#arguments#parse(bang, range, ...) abort " {{{
     let cmdline = len(args) > 1 ? join(args[1:]) : ''
     let cmdname = printf('gita#arguments#%s#parse', name)
     let opts = call(cmdname, [a:bang, a:range, cmdline])
-    let opts._name = name
   else
     let opts = {'args': s:ArgumentParser.shellwords(cmdline)}
   endif
+  let opts._name = name
   return opts
 endfunction " }}}
 function! gita#arguments#complete(arglead, cmdline, cursorpos) abort " {{{

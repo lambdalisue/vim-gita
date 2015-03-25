@@ -543,13 +543,16 @@ function! s:action_commit(statuses, options) abort " {{{
   let filename = tempname()
   call writefile(commitmsg, filename)
   let options.file = filename
+  call gita#call_hooks('commit', 'pre', options)
   if !gita.commit(options)
-    call gita.git.cache.clear()
+    " clear cache
     call delete(filename)
     call s:unlet('b:_options')
     call s:unlet('b:_commitmsg')
     call s:unlet('b:_statuses')
     call s:unlet('b:_statuses_map')
+    " call hooks and update buffer
+    call gita#call_hooks('commit', 'post', options)
     call s:commit_update()
   endif
 endfunction " }}}
