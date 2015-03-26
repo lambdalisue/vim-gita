@@ -627,6 +627,7 @@ function! s:status_open(...) abort " {{{
   if s:buffer_open(s:const.status_bufname).bufnr == -1
     throw 'vim-gita: failed to open a git status window'
   endif
+  execute 'setlocal filetype=' . s:const.status_filetype
   " check if gita is available
   if !gita.is_enable
     let cached_gita = gita#get()
@@ -662,7 +663,6 @@ function! s:status_open(...) abort " {{{
   setlocal textwidth=0
   setlocal cursorline
   setlocal winfixheight
-  execute 'setlocal filetype=' . s:const.status_filetype
 
   " define mappings
   call s:define_mappings()
@@ -739,6 +739,7 @@ function! s:commit_open(...) abort " {{{
   if s:buffer_open(s:const.commit_bufname).bufnr == -1
     throw 'vim-gita: failed to open a git commit window'
   endif
+  execute 'setlocal filetype=' . s:const.commit_filetype
   " check if gita is available
   if !gita.is_enable
     let cached_gita = gita#get()
@@ -772,7 +773,6 @@ function! s:commit_open(...) abort " {{{
   " construction
   setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
   setlocal winfixheight
-  execute 'setlocal filetype=' . s:const.commit_filetype
 
   " define mappings
   call s:define_mappings()

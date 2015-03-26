@@ -25,47 +25,51 @@ function! s:diffthis(commit, ...) abort " {{{
         \}, get(a:000, 0, {}))
 
   let result = gita.git.diff(opts, a:commit, expand('%'))
-  if result.status == 0
-    if strlen(result.stdout) == 0
-      call gita#util#warn(
-            \ printf('No changes exists from %s on %s', a:commit, expand('%')),
-            \)
-      return
-    endif
-    " construct diff
-    diffoff!
-    let bufnum = bufnr('')
-    let filetype = &filetype
-    let fname_out = tempname()
-    let fname_new = printf("%s.%s", bufname('%'), a:commit)
-    if bufexists(fname_new)
-      silent bwipeout fname_new
-    endif
-    call writefile(split(result.stdout, '\v\r?\n'), fname_out)
-    if opts.vertical
-      silent execute 'vert diffpatch' fname_out
-    else
-      silent execute 'diffpatch' fname_out
-    endif
-    call delete(fname_out)
-    silent execute 'file' fname_new
-    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-    setlocal foldmethod=diff
-    setl nomodifiable
-    let b:_gita_diff_bufnum = bufnum
-    augroup vim_gita_diff
-      autocmd! * <buffer>
-      autocmd BufWinLeave <buffer> call s:diff_leave_ac()
-    augroup END
-
-    let bufnum = bufnr('')
-    silent execute 'wincmd p'
-    let b:_gita_diff_bufnum = bufnum
-    augroup vim_gita_diff
-      autocmd! * <buffer>
-      autocmd BufWinLeave <buffer> call s:orig_leave_ac()
-    augroup END
+  if result.status != 0
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
+    return
+  elseif strlen(result.stdout) == 0
+    call gita#util#warn(
+          \ printf('No changes exists from %s on %s', a:commit, expand('%')),
+          \)
+    return
   endif
+  " construct diff
+  diffoff!
+  let bufnum = bufnr('')
+  let filetype = &filetype
+  let fname_out = tempname()
+  let fname_new = printf("%s.%s", bufname('%'), a:commit)
+  if bufexists(fname_new)
+    silent bwipeout fname_new
+  endif
+  call writefile(split(result.stdout, '\v\r?\n'), fname_out)
+  if opts.vertical
+    silent execute 'vert diffpatch' fname_out
+  else
+    silent execute 'diffpatch' fname_out
+  endif
+  call delete(fname_out)
+  silent execute 'file' fname_new
+  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+  setlocal foldmethod=diff
+  setl nomodifiable
+  let b:_gita_diff_bufnum = bufnum
+  augroup vim_gita_diff
+    autocmd! * <buffer>
+    autocmd BufWinLeave <buffer> call s:diff_leave_ac()
+  augroup END
+
+  let bufnum = bufnr('')
+  silent execute 'wincmd p'
+  let b:_gita_diff_bufnum = bufnum
+  augroup vim_gita_diff
+    autocmd! * <buffer>
+    autocmd BufWinLeave <buffer> call s:orig_leave_ac()
+  augroup END
 endfunction " }}}
 function! s:diff_leave_ac() abort " {{{
   diffoff
