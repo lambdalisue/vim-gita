@@ -25,14 +25,12 @@ endfunction " }}}
 function! s:get_info() abort " {{{
   let gita = gita#get()
   if gita.is_enable
+    let meta = gita.git.get_meta()
     let info = {
           \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
-          \ 'local_branch': gita.git.get_current_branch(),
-          \ 'remote_name': gita.git.get_current_branch_remote(),
-          \ 'remote_branch': substitute(
-          \    gita.git.get_current_branch_merge(),
-          \    '^refs/heads/', '', ''
-          \  ),
+          \ 'local_branch': meta.current_branch,
+          \ 'remote_name': meta.current_branch_remote,
+          \ 'remote_branch': meta.current_remote_branch,
           \ 'outgoing': gita.git.get_commits_ahead_of_remote(),
           \ 'incoming': gita.git.get_commits_behind_remote(),
           \}

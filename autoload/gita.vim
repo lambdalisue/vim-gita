@@ -120,6 +120,17 @@ function! gita#set(gita) abort " {{{
   let b:_gita = a:gita
 endfunction " }}}
 
+function! s:gita.get_comment_char() abort " {{{
+  if has_key(self, 'comment_char')
+    return self.comment_char
+  elseif !self.is_enable
+    return ''
+  endif
+  let meta = self.git.get_meta()
+  let self.comment_char = meta.comment_char
+  return self.comment_char
+endfunction " }}}
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
