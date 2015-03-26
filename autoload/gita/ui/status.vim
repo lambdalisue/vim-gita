@@ -32,7 +32,7 @@ function! s:get_header_lines(gita) abort " {{{
   let i = a:gita.git.get_commits_behind_remote()
 
   let buflines = []
-  if strlen(r) > 0
+  if strlen(r) > 1
     call add(buflines, printf('%s On branch %s/%s -> %s', c, n, b, r))
   else
     call add(buflines, printf('%s On branch %s/%s', c, n, b))
