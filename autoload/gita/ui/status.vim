@@ -462,7 +462,7 @@ function! s:action_checkout(statuses, options) abort " {{{
     call gita#util#warn('no valid file was selected. cancel the operation.')
     return
   endif
-  let result = gita#get().git.checkout(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
   if result.status == 0
     call s:status_update()
   else
