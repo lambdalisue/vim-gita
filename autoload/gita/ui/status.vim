@@ -19,15 +19,14 @@ let s:Git           = gita#util#import('VCS.Git')
 
 " Utility functions
 function! s:get_header_lines(gita) abort " {{{
-  let c = a:gita.git.get_comment_char()
+  let meta = a:gita.git.get_meta()
+  let c = a:gita.get_comment_char()
   let n = fnamemodify(a:gita.git.worktree, ':t')
-  let b = a:gita.git.get_current_branch()
+  let b = meta.current_branch
   let r = printf('%s/%s',
-        \ a:gita.git.get_current_branch_remote(),
-        \ substitute(
-        \   a:gita.git.get_current_branch_merge(),
-        \   '^refs/heads/', '', ''
-        \ ))
+        \   meta.current_branch_remote,
+        \   meta.current_remote_branch,
+        \ )
   let o = a:gita.git.get_commits_ahead_of_remote()
   let i = a:gita.git.get_commits_behind_remote()
 
@@ -578,7 +577,7 @@ function! s:action_commit(statuses, options) abort " {{{
     return
   endif
   " get comment removed content
-  let c = gita.git.get_comment_char()
+  let c = gita.get_comment_char()
   let commitmsg = filter(getline(1, '$'), printf('v:val !~# "^%s"', c))
   if join(commitmsg, "") =~# '\v^\s*$'
     call gita#util#warn(
@@ -793,7 +792,7 @@ function! s:commit_update() abort " {{{
     close!
     return
   endif
-  let c = gita.git.get_comment_char()
+  let c = gita.get_comment_char()
 
   let options = s:options_get()
   let statuses = gita.git.get_parsed_commit(extend({ 'no_cache': 1 }, options))
@@ -844,7 +843,7 @@ function! s:commit_ac_write(filename) abort " {{{
   endif
   " cache commitmsg
   let gita = gita#get()
-  let c = get(gita.git.get_parsed_config(), 'core.commentchar', '#')
+  let c = gita.get_comment_char()
   let b:_commitmsg = filter(getline(1, '$'), printf('v:val !~# "^%s"', c))
   setlocal nomodified
 endfunction " }}}
