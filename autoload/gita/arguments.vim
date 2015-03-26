@@ -59,7 +59,7 @@ let s:git_command_names = [
 let s:git_command_names_pattern = printf('\v%%(%s)', join(s:git_command_names, '|'))
 
 let s:gita_command_names = [
-      \ 'status', 'commit',
+      \ 'status', 'commit', 'diff',
       \]
 let s:gita_command_names_pattern = printf('\v%%(%s)', join(s:gita_command_names, '|'))
 

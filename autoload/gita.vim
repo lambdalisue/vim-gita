@@ -42,6 +42,10 @@ endfunction " }}}
 function! s:GitaCommit(opts) abort " {{{r
   call gita#ui#status#commit_open(a:opts)
 endfunction " }}}
+function! s:GitaDiff(opts) abort " {{{
+  let commit = empty(get(a:opts, '__unknown__', [])) ? '' : join(a:opts.__unknown__)
+  call gita#ui#diff#diffthis(commit, a:opts)
+endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git = s:Git.find(expand('%'))
   call s:call_hooks(a:opts._name, 'pre', a:opts)
@@ -81,6 +85,8 @@ function! gita#Gita(opts) abort " {{{
     return s:GitaStatus(a:opts)
   elseif name ==# 'commit'
     return s:GitaCommit(a:opts)
+  elseif name ==# 'diff'
+    return s:GitaDiff(a:opts)
   else
     return s:GitaDefault(a:opts)
   endif
