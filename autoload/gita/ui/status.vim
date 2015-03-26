@@ -27,8 +27,8 @@ function! s:get_header_lines(gita) abort " {{{
         \   meta.current_branch_remote,
         \   meta.current_remote_branch,
         \ )
-  let o = a:gita.git.get_commits_ahead_of_remote()
-  let i = a:gita.git.get_commits_behind_remote()
+  let o = a:gita.git.count_commits_ahead_of_remote()
+  let i = a:gita.git.count_commits_behind_remote()
 
   let buflines = []
   if strlen(r) > 1

@@ -31,8 +31,8 @@ function! s:get_info() abort " {{{
           \ 'local_branch': meta.current_branch,
           \ 'remote_name': meta.current_branch_remote,
           \ 'remote_branch': meta.current_remote_branch,
-          \ 'outgoing': gita.git.get_commits_ahead_of_remote(),
-          \ 'incoming': gita.git.get_commits_behind_remote(),
+          \ 'outgoing': gita.git.count_commits_ahead_of_remote(),
+          \ 'incoming': gita.git.count_commits_behind_remote(),
           \}
     let info = extend(info, s:get_statuses())
   else
