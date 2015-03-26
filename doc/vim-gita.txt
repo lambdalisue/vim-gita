@@ -1,0 +1,213 @@
+*vim-gita.txt*      An alternative Git manipulation plugin
+
+Version: 0.1.0
+Author:  Alisue <lambdalisue@hashnote.net>		*vim-gita-author*
+Support: Vim 7.3 and above
+License: MIT license  {{{
+	Copyright (c) 2014 Alisue, hashnote.net
+
+	Permission is hereby granted, free of charge, to any person obtaining
+	a copy of this software and associated documentation files
+	(the "Software"), to deal in the Software without restriction,
+	including without limitation the rights to use, copy, modify, merge,
+	publish, distribute, sublicense, and/or sell copies of the Software,
+	and to permit persons to whom the Software is furnished to do so,
+	subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be
+	included in all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+	EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+	MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+	CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+	TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+}}}
+
+=============================================================================
+CONTENTS					*vim-gita-contents*
+
+Introduction		|vim-gita-introduction|
+Install				|vim-gita-install|
+Usage				|vim-gita-usage|
+	Authentication		|vim-gita-usage-authentication|
+	Listing				|vim-gita-usage-listing|
+	Opening				|vim-gita-usage-opening|
+	Posting				|vim-gita-usage-posting|
+	Editing				|vim-gita-usage-editing|
+	Deleting			|vim-gita-usage-deleting|
+	Star/Unstar			|vim-gita-usage-star|
+	Forking				|vim-gita-usage-forking|
+	Browsing			|vim-gita-usage-browsing|
+	Anonymous-mode			|vim-gita-usage-anonymous-mode|
+Interface			|vim-gita-interface|
+	Options				|vim-gita-interface-options|
+	Commands			|vim-gita-interface-commands|
+	Mappings			|vim-gita-interface-mappings|
+	Highlights			|vim-gita-interface-highlights|
+Unite interface		|vim-gita-unite-interface|
+	Sources				|vim-gita-unite-interface-sources|
+	Kinds				|vim-gita-unite-interface-kinds|
+	Actions				|vim-gita-unite-interface-actions|
+	Filters				|vim-gita-unite-interface-filters|
+	Highlights			|vim-gita-unite-interface-highlights|
+
+==============================================================================
+INTRODUCTION					*vim-gita-introduction*
+
+*vim-gita* is an alternative Git manipluation plugin.
+It provide the following features:
+
+1. Show a current working tree status in a status buffer
+2. Manipulate a staged/unstaged/untracked files in the status buffer
+3. Edit a commit message in a commit buffer
+4. Commit changes from the commit buffer
+5. Open a file listed in the status buffer or the commit buffer
+6. Show a difference of a file between working tree and other branch/commit.
+7. Execute a Git command
+
+This plugin is strongly inspired by tpope/vim-fugitive, thinca/vim-vcs,
+Shougo/vim-vcs, and lambdalisue/vim-gista and the most of the features are
+powerd by vim-jp/vital.vim, lambdalisue/vital-System-Cache-Unified,
+lambdalisue/vital-ArgumentParser, and lambdalisue/vital-VCS-Git.
+
+References:
+- tpope/vim-fugitive: https://github.com/tpope/vim-fugitive
+- thinca/vim-vcs: https://github.com/thinca/vim-vcs
+- Shougo/vim-vcs: https://github.com/Shougo/vim-vcs
+- lambdalisue/vim-gista: https://github.com/lambdalisue/vim-gista
+- vim-jp/vital.vim: https://github.com/vim-jp/vital.vim
+- lambdalisue/vital-System-Cache-Unified: https://github.com/lambdalisue/vital-System-Cache-Unified
+- lambdalisue/vital-ArgumentParser: https://github.com/lambdalisue/vital-ArgumentParser
+- lambdalisue/vital-VCS-Git: https://github.com/lambdalisue/vital-VCS-Git
+
+==============================================================================
+INSTALL						*vim-gita-install*
+
+The repository (https://github.com/lambdalisue/vim-gita) follow a standard
+structure of general vim plugin thus you can use Vundle.vim or neobundle.vim
+to install |vim-gita| like:
+>
+	" Vundle.vim
+	Plugin 'lambdalisue/vim-gita'
+
+	" neobundle.vim
+	NeoBundle 'lambdalisue/vim-gita'
+
+	" neobundle.vim (Lazy)
+	NeoBundleLazy 'lambdalisue/vim-gita', {
+		\ 'autoload': {
+		\   'commands': ['Gita'],
+		\}}
+<
+If you are not using any vim plugin manager, you can copy the repository to
+your $VIM directory to enable the plugin but I really recommend you to try one
+of those vim plugin managers.
+
+
+==============================================================================
+USAGE						*vim-gita-usage*
+
+------------------------------------------------------------------------------
+STATUS						*vim-gita-usage-status*
+
+To display a current status of the Git working tree. Execute the following
+command.
+>
+	:Gita status
+<
+It will open a status buffer which indicate the current status of the Git
+working tree which the current buffer belongs. If the current buffer is not
+under any Git working tree, it will complain about it and won't open the buffer.
+
+In the status buffer, you will see the current status in a short format (git
+status --short). See 'Short Format' section of 'git status --help' if you are
+not familiar with the format. In short, the two letters in front of a file
+path indicate the status of index and woring tree respectively, the character
+'M' mean the file is modified, 'A' is added, 'D' is deleted, 'R' is renamed,
+'C' is copied, and 'U' is updated but unmerged.
+
+In the status buffer, you can manipulate the buffer or the listed files with the
+following key mappings.
+
+						*vim-gita-usage-status-mappings*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+q	Close the buffer
+<C-l>	Refresh and update the status
+cc	Switch to a commit buffer
+cC	Switch to a new commit buffer
+cA	Switch to a new commit buffer with option 'amend'
+
+<CR>	Open a file under the cursor
+<S-CR>	Open a file under the cursor in diff mode
+e	Same as <CR>
+E	Open a file under the cursor via |vsplit|
+<C-e>	Open a file under the cursor via |split|
+d	Same as <S-CR>
+D	Open a file under the cursor in diff mode via vertical split
+<C-d>	Open a file under the cursor in diff mode via horizontal split
+
+-a	Add selected files into index
+-A	Add selected files into index forcibly
+-r	Remove selected files from index
+-R	Remove selected files from index forcibly
+-h	Remove selected files from cache (undo add/remove)
+-H	Remove selected files from cache forcibly (undo add/remove)
+-c	Checkout selected files from a specified commit
+-C	Checkout selected files from a specified commit forcibly
+--	Add or remove selected files into index or from cache (toggle)
+-=	Add or remove selected files into index or from cache forcibly (toggle)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The above mappings are only defined when |g:gita#ui#status#enable_default_keymaps|
+is 1. Otherwise only the following <Plug> mappings are available, mean that
+user need to define own mappings in the status buffer.
+
+					*vim-gita-usage-status-plug-mappings*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<Plug>(gita-action-status-open)		Open a status buffer
+<Plug>(gita-action-status-update)	Refresh and update a status buffer
+<Plug>(gita-action-commit)		Perform commit action
+<Plug>(gita-action-commit-open)		Open a commit buffer
+<Plug>(gita-action-commit-open-amend)	Open a new commit buffer with 'amend'
+<Plug>(gita-action-commit-open-noamend)	Open a new commit buffer
+<Plug>(gita-action-commit-update)	Refresh and update a commit buffer
+
+<Plug>(gita-action-open-edit)		Open a file under the cursor via
+					'edit' opener
+<Plug>(gita-action-open-left)		Open a file under the cursor via
+					'left' opener
+<Plug>(gita-action-open-right)		Open a file under the cursor via
+					'right' opener
+<Plug>(gita-action-open-above)		Open a file under the cursor via
+					'above' opener
+<Plug>(gita-action-open-below)		Open a file under the cursor via
+					'below' opener
+<Plug>(gita-action-open-split)		Open a file under the cursor via
+					'split' opener
+<Plug>(gita-action-open-vsplit)		Open a file under the cursor via
+					'vsplit' opener
+<Plug>(gita-action-diff-hori)		Open a file under the cursor in diff
+					mode via horizontal split
+<Plug>(gita-action-diff-vert)		Open a file under the cursor in diff
+					mode via vertical split
+
+<Plug>(gita-action-add)			Add selected files into index
+<Plug>(gita-action-ADD)			Add selected files into index forcibly
+<Plug>(gita-action-rm)			Remove selected files from index
+<Plug>(gita-action-RM)			Remove selected files from index
+					forcibly
+<Plug>(gita-action-rm-cached)		Remove selected files from cache
+<Plug>(gita-action-RM-cached)		Remove selected files from cache
+					forcibly
+<Plug>(gita-action-checkout)		Checkout selected files from a
+					specified branch/commit
+<Plug>(gita-action-CHECKOUT)		Checkout selected files from a
+					specified branch/commit forcibly
+<Plug>(gita-action-toggle)		Add or remove selected files into
+					index or from cache (toggle)
+<Plug>(gita-action-TOGGLE)		Add or remove selected files into
+					index or from cache forcibly (toggle)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
