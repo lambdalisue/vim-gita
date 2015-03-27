@@ -252,36 +252,27 @@ MAPPINGS					*vim-gita-mappings*
 ------------------------------------------------------------------------------
 STATUS						*vim-gita-mappings-status*
 
-Note: The following mappings are status/commit buffer local.
+The following mappings are available in status or commit buffer.
 
-<Plug>(gita-action-status-open)		Open a status buffer
-<Plug>(gita-action-status-update)	Refresh and update a status buffer
-<Plug>(gita-action-commit)		Perform commit with a current commit
-					message
+<Plug>(gita-action-open-edit)	Open a file via 'edit' opener
+<Plug>(gita-action-open-left)	Open a file via 'left' opener
+<Plug>(gita-action-open-right)	Open a file via 'right' opener
+<Plug>(gita-action-open-above)	Open a file via 'above' opener
+<Plug>(gita-action-open-below)	Open a file via 'below' opener
+<Plug>(gita-action-open-split)	Open a file via 'split' opener
+<Plug>(gita-action-open-vsplit)	Open a file via 'vsplit' opener
+<Plug>(gita-action-diff-hori)	Open a file in diff mode via horizontal split
+<Plug>(gita-action-diff-vert)	Open a file in diff mode via vertical split
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+STATUS ONLY				*vim-gita-mappings-status-only*
+
+The following mappings are available only in status buffer.
+
 <Plug>(gita-action-commit-open)		Open a commit buffer
 <Plug>(gita-action-commit-open-amend)	Open a new commit buffer with 'amend'
 <Plug>(gita-action-commit-open-noamend)	Open a new commit buffer
-<Plug>(gita-action-commit-update)	Refresh and update a commit buffer
-
-<Plug>(gita-action-open-edit)		Open a file under the cursor via
-					'edit' opener
-<Plug>(gita-action-open-left)		Open a file under the cursor via
-					'left' opener
-<Plug>(gita-action-open-right)		Open a file under the cursor via
-					'right' opener
-<Plug>(gita-action-open-above)		Open a file under the cursor via
-					'above' opener
-<Plug>(gita-action-open-below)		Open a file under the cursor via
-					'below' opener
-<Plug>(gita-action-open-split)		Open a file under the cursor via
-					'split' opener
-<Plug>(gita-action-open-vsplit)		Open a file under the cursor via
-					'vsplit' opener
-<Plug>(gita-action-diff-hori)		Open a file under the cursor in diff
-					mode via horizontal split
-<Plug>(gita-action-diff-vert)		Open a file under the cursor in diff
-					mode via vertical split
-
+<Plug>(gita-action-status-update)	Refresh and update a status buffer
 <Plug>(gita-action-add)			Add selected files into index
 <Plug>(gita-action-ADD)			Add selected files into index forcibly
 <Plug>(gita-action-rm)			Remove selected files from index
@@ -302,3 +293,14 @@ Note: The following mappings are status/commit buffer local.
 <Plug>(gita-action-DISCARD)		Discard all changes of selected files
 					from index and work tree without any
 					confirmation prompt (Not recommended)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+COMMIT ONLY				*vim-gita-mappings-commit-only*
+
+The following mappings are available only in commit buffer.
+
+<Plug>(gita-action-status-open)		Open a status buffer
+<Plug>(gita-action-commit-update)	Refresh and update a commit buffer
+<Plug>(gita-action-commit)		Perform commit with a current commit
+					message
+
