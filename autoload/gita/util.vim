@@ -131,7 +131,7 @@ function! gita#util#asktf(message, ...) abort " {{{
   let result = gita#util#ask(
         \ printf('%s [yes/no]: ', a:message),
         \ get(a:000, 0, ''))
-  while yesno !~? '^\%(y\%[es]\|n\%[o]\)$'
+  while result !~? '^\%(y\%[es]\|n\%[o]\)$'
     redraw
     if result == ''
       call gita#util#warn('Canceled.')
