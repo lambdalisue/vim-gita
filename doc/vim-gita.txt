@@ -29,30 +29,18 @@ License: MIT license  {{{
 =============================================================================
 CONTENTS					*vim-gita-contents*
 
-Introduction		|vim-gita-introduction|
+Introduction			|vim-gita-introduction|
 Install				|vim-gita-install|
 Usage				|vim-gita-usage|
-	Authentication		|vim-gita-usage-authentication|
-	Listing				|vim-gita-usage-listing|
-	Opening				|vim-gita-usage-opening|
-	Posting				|vim-gita-usage-posting|
-	Editing				|vim-gita-usage-editing|
-	Deleting			|vim-gita-usage-deleting|
-	Star/Unstar			|vim-gita-usage-star|
-	Forking				|vim-gita-usage-forking|
-	Browsing			|vim-gita-usage-browsing|
-	Anonymous-mode			|vim-gita-usage-anonymous-mode|
-Interface			|vim-gita-interface|
-	Options				|vim-gita-interface-options|
-	Commands			|vim-gita-interface-commands|
-	Mappings			|vim-gita-interface-mappings|
-	Highlights			|vim-gita-interface-highlights|
-Unite interface		|vim-gita-unite-interface|
-	Sources				|vim-gita-unite-interface-sources|
-	Kinds				|vim-gita-unite-interface-kinds|
-	Actions				|vim-gita-unite-interface-actions|
-	Filters				|vim-gita-unite-interface-filters|
-	Highlights			|vim-gita-unite-interface-highlights|
+  Status			|vim-gita-usage-status|
+    Mappings			|vim-gita-usage-status-mappings|
+  Commit			|vim-gita-usage-commit|
+    Mappings			|vim-gita-usage-commit-mappings|
+  Diff				|vim-gita-usage-diff|
+  Commands			|vim-gita-usage-commands|
+  Statusline			|vim-gita-usage-statusline|
+Mappings			|vim-gita-mappings|
+    Status			|vim-gita-mappings-status|
 
 ==============================================================================
 INTRODUCTION					*vim-gita-introduction*
@@ -74,14 +62,22 @@ powerd by vim-jp/vital.vim, lambdalisue/vital-System-Cache-Unified,
 lambdalisue/vital-ArgumentParser, and lambdalisue/vital-VCS-Git.
 
 References:
-- tpope/vim-fugitive: https://github.com/tpope/vim-fugitive
-- thinca/vim-vcs: https://github.com/thinca/vim-vcs
-- Shougo/vim-vcs: https://github.com/Shougo/vim-vcs
-- lambdalisue/vim-gista: https://github.com/lambdalisue/vim-gista
-- vim-jp/vital.vim: https://github.com/vim-jp/vital.vim
-- lambdalisue/vital-System-Cache-Unified: https://github.com/lambdalisue/vital-System-Cache-Unified
-- lambdalisue/vital-ArgumentParser: https://github.com/lambdalisue/vital-ArgumentParser
-- lambdalisue/vital-VCS-Git: https://github.com/lambdalisue/vital-VCS-Git
+- tpope/vim-fugitive
+  https://github.com/tpope/vim-fugitive
+- thinca/vim-vcs
+  https://github.com/thinca/vim-vcs
+- Shougo/vim-vcs
+  https://github.com/Shougo/vim-vcs
+- lambdalisue/vim-gista
+  https://github.com/lambdalisue/vim-gista
+- vim-jp/vital.vim
+  https://github.com/vim-jp/vital.vim
+- lambdalisue/vital-System-Cache-Unified
+  https://github.com/lambdalisue/vital-System-Cache-Unified
+- lambdalisue/vital-ArgumentParser
+  https://github.com/lambdalisue/vital-ArgumentParser
+- lambdalisue/vital-VCS-Git
+  https://github.com/lambdalisue/vital-VCS-Git
 
 ==============================================================================
 INSTALL						*vim-gita-install*
@@ -132,8 +128,9 @@ path indicate the status of index and woring tree respectively, the character
 In the status buffer, you can manipulate the buffer or the listed files with the
 following key mappings.
 
-						*vim-gita-usage-status-mappings*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MAPPINGS					*vim-gita-usage-status-mappings*
+
 q	Close the buffer
 <C-l>	Refresh and update the status
 cc	Switch to a commit buffer
@@ -159,17 +156,109 @@ D	Open a file under the cursor in diff mode via vertical split
 -C	Checkout selected files from a specified commit forcibly
 --	Add or remove selected files into index or from cache (toggle)
 -=	Add or remove selected files into index or from cache forcibly (toggle)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The above mappings are only defined when |g:gita#ui#status#enable_default_keymaps|
-is 1. Otherwise only the following <Plug> mappings are available, mean that
-user need to define own mappings in the status buffer.
+is 1. Otherwise only the <Plug> mappings are available (|vim-gita-mappings-status|),
+mean that user need to define own mappings in the status buffer.
 
-					*vim-gita-usage-status-plug-mappings*
+------------------------------------------------------------------------------
+COMMIT						*vim-gita-usage-commit*
+
+To prepare a commit, execute the following command to open a commit buffer to
+edit a commit message (or hit cc, cC, or cA in status buffer)
+>
+	:Gita commit
+<
+It will open a commit buffer which indicate the current status of next commit
+which the current buffer belongs. If the current buffer is not under any Git
+working tree, it will complain about it and won't open the buffer.
+
+In the commit buffer, you can edit a commit message. All lines start from '#'
+(or a character specified to 'core.commentChar' of git config) will be
+truncated from an actual commit message. If you save the changes with ':w',
+the changes will be cached into the buffer and restored when you come backed
+to the comment buffer.
+
+In the commit buffer, you can manipulate the buffer or the listed files with the
+following key mappings.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MAPPINGS					*vim-gita-usage-commit-mappings*
+
+q	Close the buffer
+<C-l>	Refresh and update the status
+cc	Switch to a status buffer
+CC	Perform commit with a current commit message
+
+<CR>	Open a file under the cursor
+<S-CR>	Open a file under the cursor in diff mode
+e	Same as <CR>
+E	Open a file under the cursor via |vsplit|
+<C-e>	Open a file under the cursor via |split|
+d	Same as <S-CR>
+D	Open a file under the cursor in diff mode via vertical split
+<C-d>	Open a file under the cursor in diff mode via horizontal split
+
+The above mappings are only defined when |g:gita#ui#status#enable_default_keymaps|
+is 1. Otherwise only the <Plug> mappings are available (|vim-gita-mappings-status|),
+mean that user need to define own mappings in the status buffer.
+
+------------------------------------------------------------------------------
+DIFF						*vim-gita-usage-diff*
+
+To visualize the difference of the current buffer between working tree and
+index, branch, or commit, execute the following command (or hit <S-CR>, d, D, or
+<C-d> in status/commit buffer)
+>
+	:Gita diff
+<
+It will prompt a input window to ask which commit you want to compare with.
+If there is no difference between the working tree and the target commit, it
+will complain about it and won't open the buffer. Otherwise it will open a
+diff buffer via |diffpatch| function.
+
+The initial diff will be performed by 'git diff --histogram' but if you change
+the original file, a vim's builtin diff algorithm will be used to visualize
+the difference. If you want to use a histogram algorithm to see the changes,
+check a https://github.com/lambdalisue/vim-unified-diff plugin.
+
+------------------------------------------------------------------------------
+COMMANDS					*vim-gita-usage-commands*
+
+All Git commands can be executed via Gita command like
+>
+	:Gita push
+<
+It will execute a push command and display the result. With this way, command
+hooks will be called and cached value (e.g. statusline component) will be
+updated nicely.
+
+If you want to execute status, commit, or diff command in a way which other
+commands do. Add '!' to tell a Gita to NOT use specialized interface. The
+following example will call a status command in a way which other commands do
+and no status buffer will be appeard.
+>
+	:Gita! status
+<
+------------------------------------------------------------------------------
+STATUSLINE					*vim-gita-usage-statusline*
+
+vim-gita provide several statusline component.
+
+
+
+==============================================================================
+MAPPINGS					*vim-gita-mappings*
+
+------------------------------------------------------------------------------
+STATUS						*vim-gita-mappings-status*
+
+Note: The following mappings are status/commit buffer local.
+
 <Plug>(gita-action-status-open)		Open a status buffer
 <Plug>(gita-action-status-update)	Refresh and update a status buffer
-<Plug>(gita-action-commit)		Perform commit action
+<Plug>(gita-action-commit)		Perform commit with a current commit
+					message
 <Plug>(gita-action-commit-open)		Open a commit buffer
 <Plug>(gita-action-commit-open-amend)	Open a new commit buffer with 'amend'
 <Plug>(gita-action-commit-open-noamend)	Open a new commit buffer
@@ -210,4 +299,3 @@ user need to define own mappings in the status buffer.
 					index or from cache (toggle)
 <Plug>(gita-action-TOGGLE)		Add or remove selected files into
 					index or from cache forcibly (toggle)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
