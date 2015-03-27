@@ -57,11 +57,6 @@ endfunction " }}}
 function! s:get_status_line(status) abort " {{{
   return a:status.record
 endfunction " }}}
-function! s:unlet(name) abort " {{{
-  if exists(a:name)
-    execute 'unlet' a:name
-  endif
-endfunction " }}}
 function! s:smart_map(lhs, rhs) abort " {{{
   call s:validate_filetype('s:smart_map')
   " return {rhs} if the mapping is called on Git status line of status/commit
@@ -89,39 +84,26 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>action('open', 0, { 'opener': 'vsplit' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 0, { 'vertical': 0 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 0, { 'vertical': 1 })<CR>
-
-  vnoremap <buffer><silent> <Plug>(gita-action-open-edit)   :<C-u>call <SID>action('open', 1, { 'opener': 'edit' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-left)   :<C-u>call <SID>action('open', 1, { 'opener': 'left' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-right)  :<C-u>call <SID>action('open', 1, { 'opener': 'right' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-above)  :<C-u>call <SID>action('open', 1, { 'opener': 'above' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-below)  :<C-u>call <SID>action('open', 1, { 'opener': 'below' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-split)  :<C-u>call <SID>action('open', 1, { 'opener': 'split' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>action('open', 1, { 'opener': 'vsplit' })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 1, { 'vertical': 0 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 1, { 'vertical': 1 })<CR>
+  nnoremap <buffer><silent> <Plug>(gita-action-solve-conflict) :<C-u>call <SID>action('solve_conflict', 0)<CR>
   
   if &filetype == s:const.status_filetype
     nnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 0)<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 0, { 'force': 1 })<CR>
-    nnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm_cached', 0)<CR>
-    nnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm_cached', 0, { 'force': 1 })<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-reset)       :<C-u>call <SID>action('reset', 0)<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 0)<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 0, { 'force': 1 })<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 0)<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 0, { 'force': 1 })<CR>
     nnoremap <buffer><silent> <Plug>(gita-action-discard)     :<C-u>call <SID>action('discard', 0)<CR>
-    nnoremap <buffer><silent> <Plug>(gita-action-DISCARD)     :<C-u>call <SID>action('discard', 0, { 'force': 1 })<CR>
 
     vnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 1)<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
-    vnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm_cached', 1)<CR>
-    vnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm_cached', 1, { 'force': 1 })<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-reset)       :<C-u>call <SID>action('reset', 1)<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 1)<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 1)<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 1, { 'force': 1 })<CR>
     vnoremap <buffer><silent> <Plug>(gita-action-discard)     :<C-u>call <SID>action('discard', 1)<CR>
-    vnoremap <buffer><silent> <Plug>(gita-action-DISCARD)     :<C-u>call <SID>action('discard', 1, { 'force': 1 })<CR>
   endif
 
   if get(g:, 'gita#ui#status#enable_default_keymaps', 1)
@@ -134,6 +116,7 @@ function! s:define_mappings() abort " {{{
     nmap <buffer><expr> d      <SID>smart_map('d',      '<Plug>(gita-action-diff-vert)')
     nmap <buffer><expr> D      <SID>smart_map('D',      '<Plug>(gita-action-diff-vert)')
     nmap <buffer><expr> <C-d>  <SID>smart_map('<C-d>',  '<Plug>(gita-action-diff-hori)')
+    nmap <buffer><expr> s      <SID>smart_map('s',      '<Plug>(gita-action-solve-conflict)')
 
     if &filetype == s:const.status_filetype
       nmap <buffer> <C-l> <Plug>(gita-action-status-update)
@@ -143,8 +126,7 @@ function! s:define_mappings() abort " {{{
 
       nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
       nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
-      nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)')
-      nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)')
+      nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
       nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
       nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
       nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
@@ -153,8 +135,7 @@ function! s:define_mappings() abort " {{{
 
       vmap <buffer>       -a <Plug>(gita-action-add)
       vmap <buffer>       -A <Plug>(gita-action-ADD)
-      vmap <buffer>       -r <Plug>(gita-action-rm)
-      vmap <buffer>       -R <Plug>(gita-action-RM)
+      vmap <buffer>       -r <Plug>(gita-action-reset)
       vmap <buffer>       -c <Plug>(gita-action-checkout)
       vmap <buffer>       -C <Plug>(gita-action-CHECKOUT)
       vmap <buffer>       -- <Plug>(gita-action-toggle)
@@ -208,13 +189,21 @@ function! s:validate_filetype_commit(...) abort " {{{
 endfunction " }}}
 function! s:validate_status_add(status, options) abort " {{{
   if a:status.is_conflicted
-    call gita#util#error(
-          \ printf('The behavior of adding a conflicted file "%s" to the index has not been defined yet.', a:status.path
-          \)
-    return 1
+    if gita#ui#conflict#has_conflict_markers(a:status.path)
+      call gita#util#warn(
+            \ printf('Conflict markers apparently remain on the file "%s".', a:status.path),
+            \ 'Apparently conflict has not been solved:',
+            \)
+      if !gita#util#asktf('Are you sure to mark the file as solved?')
+        call gita#util#info(
+              \ printf('The operation to the file "%s" has canceled by user. Skip.', a:status.path)
+              \)
+        return 1
+      endif
+    endif
   endif
 
-  if !a:status.is_unstaged && !a:status.is_untracked && !a:status.is_ignored
+  if !a:status.is_unstaged && !a:status.is_untracked && !a:status.is_ignored && !a:status.is_conflicted
     call gita#util#info(
           \ printf('No changes of "%s" exists on the work tree (All changes has been staged)', a:status.path)
           \)
@@ -227,17 +216,17 @@ function! s:validate_status_add(status, options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:validate_status_rm_cached(status, options) abort " {{{
+function! s:validate_status_reset(status, options) abort " {{{
   if a:status.is_conflicted
     call gita#util#error(
-          \ printf('The behavior of removing a conflicted file "%s" from the index has not been defined yet.', a:status.path
+          \ printf('The behavior of resetting a conflicted file "%s" has not been defined yet.', a:status.path)
           \)
     return 1
   endif
 
   if a:status.is_ignored || a:status.is_untracked
     call gita#util#info(
-          \ printf('An untracked file "%s" cannot be removed from the index.', a:status.path)
+          \ printf('An untracked file "%s" cannot be reset.', a:status.path)
           \)
     return 1
   elseif !a:status.is_staged
@@ -251,7 +240,7 @@ endfunction " }}}
 function! s:validate_status_checkout(status, options) abort " {{{
   if a:status.is_conflicted
     call gita#util#error(
-          \ printf('The behavior of checking out a conflicted file "%s" to the work tree has not been defined yet.', a:status.path
+          \ printf('The behavior of checking out a conflicted file "%s" to the work tree has not been defined yet.', a:status.path)
           \)
     return 1
   endif
@@ -270,18 +259,12 @@ function! s:validate_status_checkout(status, options) abort " {{{
   return 0
 endfunction " }}}
 function! s:validate_status_toggle(status, options) abort " {{{
-  if a:status.is_conflicted
-    call gita#util#error(
-          \ printf('The behavior of toggling a conflicted file "%s" from/to the work tree has not been defined yet.', a:status.path
-          \)
-    return 1
-  endif
   return 0
 endfunction " }}}
 function! s:validate_status_discard(status, options) abort " {{{
   if a:status.is_conflicted
     call gita#util#error(
-          \ printf('The behavior of discarding the changes on a conflicted file "%s" has not been defined yet.', a:status.path
+          \ printf('The behavior of discarding the changes on a conflicted file "%s" has not been defined yet.', a:status.path)
           \)
     return 1
   endif
@@ -435,13 +418,12 @@ function! s:action_add(statuses, options) abort " {{{
           \)
   endif
 endfunction " }}}
-function! s:action_rm_cached(statuses, options) abort " {{{
-  let options = extend({ 'force': 0 }, a:options)
-  let options.cached = 1
+function! s:action_reset(statuses, options) abort " {{{
+  let options = extend({ 'force': 0, 'quiet': 1 }, a:options)
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
-    if s:validate_status_rm_cached(status, options)
+    if s:validate_status_reset(status, options)
       continue
     endif
     call add(valid_statuses, status)
@@ -450,7 +432,7 @@ function! s:action_rm_cached(statuses, options) abort " {{{
     call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
-  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
+  let result = gita#get().git.reset(options, '', map(valid_statuses, 'v:val.path'))
   if result.status == 0
     call s:status_update()
   else
@@ -492,32 +474,32 @@ endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
   " classify statuses
   let add_statuses = []
-  let rm_cached_statuses = []
+  let reset_statuses = []
   for status in a:statuses
     if s:validate_status_toggle(status, a:options)
       continue
     endif
     if status.is_staged && status.is_unstaged
-      if get(g:, 'gita#ui#status#toggle_prefer_rm_cached', 0)
-        call add(rm_cached_statuses, status)
+      if get(g:, 'gita#ui#status#toggle_prefer_reset', 0)
+        call add(reset_statuses, status)
       else
         call add(add_statuses, status)
       endif
     elseif status.is_staged
-        call add(rm_cached_statuses, status)
+        call add(reset_statuses, status)
     else
         call add(add_statuses, status)
     endif
   endfor
-  if empty(add_statuses) && empty(rm_cached_statuses)
+  if empty(add_statuses) && empty(reset_statuses)
     call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
   if !empty(add_statuses)
     call s:action_add(add_statuses, a:options)
   endif
-  if !empty(rm_cached_statuses)
-    call s:action_rm_cached(rm_cached_statuses, a:options)
+  if !empty(reset_statuses)
+    call s:action_reset(reset_statuses, a:options)
   endif
 endfunction " }}}
 function! s:action_discard(statuses, options) abort " {{{
@@ -608,15 +590,24 @@ function! s:action_diff(statuses, options) abort " {{{
     call gita#ui#diff#diffthis(commit, options)
   endfor
 endfunction " }}}
+function! s:action_solve_conflict(statuses, options) abort " {{{
+  let options = extend({}, a:options)
+  " open the selected status files
+  for status in a:statuses
+    let path = get(status, 'path2', status.path)
+    call gita#ui#conflict#solver_open(path)
+  endfor
+endfunction " }}}
 function! s:action_commit(statuses, options) abort " {{{
   " do not use a:statuses while it is a different kind of object
   let gita = gita#get()
+  let meta = gita.git.get_meta()
   let options = extend(s:options_get(), a:options)
   let statuses = get(b:, '_statuses', {})
   if empty(statuses)
     " already commited. ignore
     return
-  elseif empty(statuses.staged)
+  elseif empty(statuses.staged) && !strlen(get(meta, 'merge_head', ''))
     " no staged files exists
     call gita#util#warn(
           \ 'there are no indexed files. add changes into the index first.',
@@ -649,10 +640,10 @@ function! s:action_commit(statuses, options) abort " {{{
   if result.status == 0
     " clear cache
     call delete(filename)
-    call s:unlet('b:_options')
-    call s:unlet('b:_commitmsg')
-    call s:unlet('b:_statuses')
-    call s:unlet('b:_statuses_map')
+    unlet! b:_options
+    unlet! b:_commitmsg
+    unlet! b:_statuses
+    unlet! b:_statuses_map
     " call hooks and update buffer
     call gita#call_hooks('commit', 'post', options)
     call s:commit_update()
@@ -682,9 +673,9 @@ function! s:status_open(...) abort " {{{
   endif
   execute 'setlocal filetype=' . s:const.status_filetype
   " check if gita is available
-  if !gita.is_enable
+  if !gita.enabled
     let cached_gita = gita#get()
-    if get(cached_gita, 'is_enable', 0)
+    if get(cached_gita, 'enabled', 0)
       " invoker is not in Git directory but the interface has cache so use the
       " cache to display the status window
       let gita = cached_gita
@@ -730,7 +721,7 @@ endfunction " }}}
 function! s:status_update() abort " {{{
   call s:validate_filetype_status('s:status_update')
   let gita = gita#get()
-  if !gita.is_enable
+  if !gita.enabled
     redraw
     call gita#util#warn('Not in git working tree')
     close!
@@ -794,9 +785,9 @@ function! s:commit_open(...) abort " {{{
   endif
   execute 'setlocal filetype=' . s:const.commit_filetype
   " check if gita is available
-  if !gita.is_enable
+  if !gita.enabled
     let cached_gita = gita#get()
-    if get(cached_gita, 'is_enable', 0)
+    if get(cached_gita, 'enabled', 0)
       " invoker is not in Git directory but the interface has cache so use the
       " cache to display the status window
       let gita = cached_gita
@@ -841,7 +832,7 @@ endfunction " }}}
 function! s:commit_update() abort " {{{
   call s:validate_filetype_commit('s:commit_update')
   let gita = gita#get()
-  if !gita.is_enable
+  if !gita.enabled
     call gita#util#warn('Not in git working tree')
     close!
     return
@@ -869,8 +860,11 @@ function! s:commit_update() abort " {{{
   endfor
 
   " create default commit message
+  let meta = gita.git.get_meta()
   let commitmsg = ['']
-  if exists('b:_commitmsg')
+  if strlen(get(meta, 'merge_head', ''))
+    let commitmsg = get(meta, 'merge_msg', [])
+  elseif exists('b:_commitmsg')
     let commitmsg = b:_commitmsg
   elseif get(options, 'amend', 0)
     let commitmsg = gita.git.get_last_commitmsg()

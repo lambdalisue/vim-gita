@@ -28,6 +28,7 @@ let s:Prelude = gita#util#import('Prelude')
 let s:List    = gita#util#import('Data.List')
 " }}}
 
+" Vital
 function! gita#util#is_numeric(...) " {{{
   return call(s:Prelude.is_numeric, a:000, s:Prelude)
 endfunction " }}}
@@ -56,6 +57,7 @@ function! gita#util#listalize(val) abort " {{{
   return gita#util#is_list(a:val) ? a:val : [a:val]
 endfunction " }}}
 
+" Message
 function! gita#util#echo(hl, msg) abort " {{{
   execute 'echohl' a:hl
   try
@@ -142,6 +144,128 @@ function! gita#util#asktf(message, ...) abort " {{{
   endwhile
   redraw
   return result =~? 'y\%[es]'
+endfunction " }}}
+
+" Buffer
+function! gita#util#buffer_open(buffer, ...) abort " {{{
+  let B = gita#util#import('Vim.Buffer')
+  let opener = get(a:000, 0, get(g:, 'gita#buffer#opener', 'edit'))
+  return B.open(a:buffer, opener)
+endfunction " }}}
+function! gita#util#buffer_update(buflines) abort " {{{
+  let saved_cur = getpos('.')
+  let saved_undolevels = &undolevels
+  setlocal undolevels=-1
+  silent %delete _
+  call setline(1, a:buflines)
+  call setpos('.', saved_cur)
+  silent execute 'setlocal undolevels=' . saved_undolevels
+  setlocal nomodified
+endfunction " }}}
+
+" Mapping
+function! gita#util#mapping_filter(mappings) abort " {{{
+  let filtered = []
+  for mapping in a:mappings
+    let args = s:Prelude.is_list(mapping) ? mapping : [mapping]
+    let name = args[0]
+    let mode = get(args, 1, '')
+    if hasmapto(name, mode)
+      call add(filtered, [maparg(name, mode), name])
+    endif
+    unlet! mapping
+  endfor
+  return filtered
+endfunction " }}}
+
+" Invoker
+function! gita#util#invoker_get(...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  let invoker = getbufvar(bufname, '_invoker', {})
+  if empty(invoker)
+    let bufnum = bufnr(bufname)
+    let winnum = bufwinnr(bufnum)
+    let invoker = {
+          \ 'bufnum': bufnum,
+          \ 'winnum': winnum,
+          \}
+  endif
+  return invoker
+endfunction " }}}
+function! gita#util#invoker_set(invoker, ...) abort " {{{
+  let bufname = get(a:000, 0, '%')
+  call setbufvar(bufname, '_invoker', a:invoker)
+endfunction " }}}
+function! gita#util#invoker_get_winnum(...) abort " {{{
+  let invoker = call('gita#util#invoker_get', a:000)
+  let bufnum = invoker.bufnum
+  let winnum = bufwinnr(bufnum)
+  if winnum == -1
+    let winnum = invoker.winnum
+  endif
+  return winnum
+endfunction " }}}
+function! gita#util#invoker_focus(...) abort " {{{
+  let winnum = call('gita#util#invoker_get_winnum', a:000)
+  if winnum <= winnr('$')
+    silent execute winnum . 'wincmd w'
+  else
+    silent execute 'wincmd p'
+  endif
+endfunction " }}}
+
+" Manipulator
+function! gita#util#manipulator_open(name) abort " {{{
+  if !exists('s:manipulator_buffer_manager')
+    let BM = gita#util#import('Vim.BufferManager')
+    let s:manipulator_buffer_manager = BM.new({
+          \   'opener': 'topleft 20 split',
+          \   'range': 'tabpage',
+          \})
+  endif
+  return s:manipulator_buffer_manager.open(a:name, get(a:000, 0, {}))
+endfunction " }}}
+function! gita#util#manipulator_get_misc_lines() abort " {{{
+  let gita = gita#get()
+  let meta = gita.git.get_meta()
+  let name = fnamemodify(gita.git.worktree, ':t')
+  let branch = meta.current_branch
+  let remote_name = meta.current_branch_remote
+  let remote_branch = meta.current_remote_branch
+  let outgoing = gita.git.count_commits_ahead_of_remote()
+  let incoming = gita.git.count_commits_behind_remote()
+  let is_connected = !(empty(remote_name) || empty(remote_branch))
+
+  let lines = []
+  if is_connected
+    call add(lines,
+          \ printf('# Index and working tree status on a branch `%s/%s` <> `%s/%s`',
+          \   name, branch, remote_name, remote_branch
+          \))
+    if outgoing > 0 && incoming > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) ahead and %d commit(s) behind of %s/%s',
+            \   outgoing, incoming, remote_name, remote_branch,
+            \))
+    elseif outgoing > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) ahead of %s/%s',
+            \   outgoing, remote_name, remote_branch,
+            \))
+    elseif incoming > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) behind %s/%s',
+            \   incoming, remote_name, remote_branch,
+            \))
+    endif
+  else
+    call add(lines,
+          \ printf('# Index and working tree status on a branch `%s/%s`',
+          \   name, branch
+          \))
+
+  endif
+  return lines
 endfunction " }}}
 
 let &cpo = s:save_cpo

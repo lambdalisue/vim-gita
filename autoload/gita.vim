@@ -93,37 +93,41 @@ function! gita#Gita(opts) abort " {{{
 endfunction " }}}
 
 let s:gita = {}
-function! gita#get() abort " {{{
-  let bufname = bufname('%')
-  let gita = get(b:, '_gita', {})
-  if empty(gita) || (empty(&buftype) && bufname !=# gita.bufname) || (get(g:, 'gita#debug', 0) && empty(&buftype))
-    if strlen(&buftype)
+function! gita#get(...) abort " {{{
+  let bufname = get(a:000, 0, bufname('%'))
+  let bufnum  = bufnr(bufname)
+  let buftype = getbufvar(bufnum, '&buftype')
+  let gita    = getbufvar(bufnum, '_gita', {})
+  if empty(gita) || (empty(buftype) && bufname !=# gita.bufname)
+    if empty(buftype)
+      let git = s:Git.find(fnamemodify(bufname, ':p'))
       let gita = extend(deepcopy(s:gita), {
+            \ 'enabled': !empty(git),
             \ 'bufname': bufname,
-            \ 'is_enable': 0,
-            \ 'git': {},
-            \})
-    else
-      let git = s:Git.find(bufname)
-      let gita = extend(deepcopy(s:gita), {
-            \ 'bufname': bufname,
-            \ 'is_enable': !empty(git),
             \ 'git': git,
             \})
+    else
+      " Not a file
+      let gita = extend(deepcopy(s:gita), {
+            \ 'enabled': 0,
+            \ 'bufname': bufname,
+            \ 'git': {},
+            \})
     endif
+    call gita#set(gita, bufname)
   endif
-  " cache gita instance
-  call gita#set(gita)
   return gita
 endfunction " }}}
-function! gita#set(gita) abort " {{{
-  let b:_gita = a:gita
+function! gita#set(gita, ...) abort " {{{
+  let bufname = get(a:000, 0, bufname('%'))
+  let bufnum  = bufnr(bufname)
+  call setbufvar(bufnum, '_gita', a:gita)
 endfunction " }}}
 
 function! s:gita.get_comment_char() abort " {{{
   if has_key(self, 'comment_char')
     return self.comment_char
-  elseif !self.is_enable
+  elseif !self.enabled
     return ''
   endif
   let meta = self.git.get_meta()
