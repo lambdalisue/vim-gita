@@ -80,16 +80,6 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-commit-open-noamend) :<C-u>call <SID>action('commit_open', 0, { 'amend': 0 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-commit-update)       :<C-u>call <SID>action('commit_update', 0)<CR>
 
-  nnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>action('rm_cached', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-RM-cached)   :<C-u>call <SID>action('rm_cached', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 0, { 'force': 1 })<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 0)<CR>
-  nnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 0, { 'force': 1 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-edit)   :<C-u>call <SID>action('open', 0, { 'opener': 'edit' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-left)   :<C-u>call <SID>action('open', 0, { 'opener': 'left' })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-open-right)  :<C-u>call <SID>action('open', 0, { 'opener': 'right' })<CR>
@@ -100,16 +90,6 @@ function! s:define_mappings() abort " {{{
   nnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 0, { 'vertical': 0 })<CR>
   nnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 0, { 'vertical': 1 })<CR>
 
-  vnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-rm-cached)   :<C-u>call <SID>action('rm_cached', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-RM-cached)   :<C-u>call <SID>action('rm_cached', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 1)<CR>
-  vnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 1, { 'force': 1 })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-edit)   :<C-u>call <SID>action('open', 1, { 'opener': 'edit' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-left)   :<C-u>call <SID>action('open', 1, { 'opener': 'left' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-open-right)  :<C-u>call <SID>action('open', 1, { 'opener': 'right' })<CR>
@@ -119,6 +99,30 @@ function! s:define_mappings() abort " {{{
   vnoremap <buffer><silent> <Plug>(gita-action-open-vsplit) :<C-u>call <SID>action('open', 1, { 'opener': 'vsplit' })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-diff-hori)   :<C-u>call <SID>action('diff', 1, { 'vertical': 0 })<CR>
   vnoremap <buffer><silent> <Plug>(gita-action-diff-vert)   :<C-u>call <SID>action('diff', 1, { 'vertical': 1 })<CR>
+  
+  if &filetype == s:const.status_filetype
+    nnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 0)<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 0, { 'force': 1 })<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm_cached', 0)<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm_cached', 0, { 'force': 1 })<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 0)<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 0, { 'force': 1 })<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 0)<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 0, { 'force': 1 })<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-discard)     :<C-u>call <SID>action('discard', 0)<CR>
+    nnoremap <buffer><silent> <Plug>(gita-action-DISCARD)     :<C-u>call <SID>action('discard', 0, { 'force': 1 })<CR>
+
+    vnoremap <buffer><silent> <Plug>(gita-action-add)         :<C-u>call <SID>action('add', 1)<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-ADD)         :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-rm)          :<C-u>call <SID>action('rm_cached', 1)<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-RM)          :<C-u>call <SID>action('rm_cached', 1, { 'force': 1 })<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-checkout)    :<C-u>call <SID>action('checkout', 1)<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-CHECKOUT)    :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-toggle)      :<C-u>call <SID>action('toggle', 1)<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-TOGGLE)      :<C-u>call <SID>action('toggle', 1, { 'force': 1 })<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-discard)     :<C-u>call <SID>action('discard', 1)<CR>
+    vnoremap <buffer><silent> <Plug>(gita-action-DISCARD)     :<C-u>call <SID>action('discard', 1, { 'force': 1 })<CR>
+  endif
 
   if get(g:, 'gita#ui#status#enable_default_keymaps', 1)
     nmap <buffer>       q      :<C-u>q<CR>
@@ -141,23 +145,21 @@ function! s:define_mappings() abort " {{{
       nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
       nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)')
       nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)')
-      nmap <buffer><expr> -h <SID>smart_map('-h', '<Plug>(gita-action-rm-cached)')
-      nmap <buffer><expr> -H <SID>smart_map('-H', '<Plug>(gita-action-RM-cached)')
       nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
       nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
       nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
       nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)')
+      nmap <buffer><expr> -d <SID>smart_map('-d', '<Plug>(gita-action-discard)')
 
       vmap <buffer>       -a <Plug>(gita-action-add)
       vmap <buffer>       -A <Plug>(gita-action-ADD)
       vmap <buffer>       -r <Plug>(gita-action-rm)
       vmap <buffer>       -R <Plug>(gita-action-RM)
-      vmap <buffer>       -h <Plug>(gita-action-rm-cached)
-      vmap <buffer>       -H <Plug>(gita-action-RM-cached)
       vmap <buffer>       -c <Plug>(gita-action-checkout)
       vmap <buffer>       -C <Plug>(gita-action-CHECKOUT)
       vmap <buffer>       -- <Plug>(gita-action-toggle)
       vmap <buffer>       -= <Plug>(gita-action-TOGGLE)
+      vmap <buffer>       -d <Plug>(gita-action-discard)
     else
       nmap <buffer> <C-l> <Plug>(gita-action-commit-update)
       nmap <buffer> cc    <Plug>(gita-action-status-open)
@@ -203,6 +205,87 @@ function! s:validate_filetype_commit(...) abort " {{{
   if &filetype !=# s:const.commit_filetype
     throw printf('vim-gita: %s required to be executed on a commit filetype buffer', fname)
   endif
+endfunction " }}}
+function! s:validate_status_add(status, options) abort " {{{
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ printf('The behavior of adding a conflicted file "%s" to the index has not been defined yet.', a:status.path
+          \)
+    return 1
+  endif
+
+  if !a:status.is_unstaged && !a:status.is_untracked && !a:status.is_ignored
+    call gita#util#info(
+          \ printf('No changes of "%s" exists on the work tree (All changes has been staged)', a:status.path)
+          \)
+    return 1
+  elseif a:status.is_ignored && !get(a:options, 'force', 0)
+    call gita#util#info(
+          \ printf('An ignored file "%s" cannot be added to the index. Use <Plug>(gita-action-ADD) instead.', a:status.path)
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+function! s:validate_status_rm_cached(status, options) abort " {{{
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ printf('The behavior of removing a conflicted file "%s" from the index has not been defined yet.', a:status.path
+          \)
+    return 1
+  endif
+
+  if a:status.is_ignored || a:status.is_untracked
+    call gita#util#info(
+          \ printf('An untracked file "%s" cannot be removed from the index.', a:status.path)
+          \)
+    return 1
+  elseif !a:status.is_staged
+    call gita#util#info(
+          \ printf('No changes of "%s" exists on the index (No changes has been staged)', a:status.path)
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+function! s:validate_status_checkout(status, options) abort " {{{
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ printf('The behavior of checking out a conflicted file "%s" to the work tree has not been defined yet.', a:status.path
+          \)
+    return 1
+  endif
+
+  if a:status.is_ignored || a:status.is_untracked
+    call gita#util#info(
+          \ printf('An untracked file "%s" cannot be checked out to the work tree.', a:status.path)
+          \)
+    return 1
+  elseif a:status.is_unstaged && !get(a:options, 'force', 0)
+    call gita#util#info(
+          \ printf('An unstaged file "%s" cannot be checked out to the work tree. Use <Plug>(gita-action-CHECKOUT) instead.', a:status.path)
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+function! s:validate_status_toggle(status, options) abort " {{{
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ printf('The behavior of toggling a conflicted file "%s" from/to the work tree has not been defined yet.', a:status.path
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+function! s:validate_status_discard(status, options) abort " {{{
+  if a:status.is_conflicted
+    call gita#util#error(
+          \ printf('The behavior of discarding the changes on a conflicted file "%s" has not been defined yet.', a:status.path
+          \)
+    return 1
+  endif
+  return 0
 endfunction " }}}
 
 " Buffer
@@ -333,60 +416,16 @@ function! s:action_add(statuses, options) abort " {{{
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
-    if status.is_ignored && !options.force
-      call gita#util#warn(printf(
-            \ 'ignored file "%s" could not be added. use <Plug>(gita-action-ADD) to add',
-            \ status.path)
-            \)
-      continue
-    elseif !status.is_unstaged && !status.is_untracked && !status.is_conflicted
-      call gita#util#debug(printf(
-            \ 'no changes are existing on the file "%s" (working tree is clean)',
-            \ status.path)
-            \)
+    if s:validate_status_add(status, options)
       continue
     endif
     call add(valid_statuses, status)
   endfor
   if empty(valid_statuses)
-    call gita#util#warn('no valid file was selected. cancel the operation.')
+    call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
   let result = gita#get().git.add(options, map(valid_statuses, 'v:val.path'))
-  if result.status == 0
-    call s:status_update()
-  else
-    call gita#util#error(
-          \ result.stdout,
-          \ printf('Fail: %s', join(result.args)),
-          \)
-  endif
-endfunction " }}}
-function! s:action_rm(statuses, options) abort " {{{
-  let options = extend({ 'force': 0 }, a:options)
-  " eliminate invalid statuses
-  let valid_statuses = []
-  for status in a:statuses
-    if status.is_ignored && !force
-      call gita#util#warn(printf(
-            \ 'ignored file "%s" could not be removed. use <Plug>(gita-action-RM) to remove',
-            \ status.path)
-            \)
-      continue
-    elseif !status.is_unstaged
-      call gita#util#debug(printf(
-            \ 'no changes are existing on the file "%s" (working tree is clean)',
-            \ status.path)
-            \)
-      continue
-    endif
-    call add(valid_statuses, status)
-  endfor
-  if empty(valid_statuses)
-    call gita#util#warn('no valid file was selected. cancel the operation.')
-    return
-  endif
-  let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
   if result.status == 0
     call s:status_update()
   else
@@ -402,17 +441,13 @@ function! s:action_rm_cached(statuses, options) abort " {{{
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
-    if !status.is_staged
-      call gita#util#debug(printf(
-            \ 'no changes are staged on the file "%s" (index is clean)',
-            \ status.path)
-            \)
+    if s:validate_status_rm_cached(status, options)
       continue
     endif
     call add(valid_statuses, status)
   endfor
   if empty(valid_statuses)
-    call gita#util#warn('no valid file was selected. cancel the operation.')
+    call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
   let result = gita#get().git.rm(options, map(valid_statuses, 'v:val.path'))
@@ -427,38 +462,21 @@ function! s:action_rm_cached(statuses, options) abort " {{{
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
   let options = extend({ 'force': 0 }, a:options)
-  let commit = gita#util#ask('Which commit do you want to checkout from? ', 'HEAD')
+  let commit = gita#util#ask('Checkout from: ', 'HEAD')
   if strlen(commit) == 0
-    redraw
-    call gita#util#warn('The operation has canceled by user.')
+    redraw || call gita#util#info('No valid commit was selected. The operation is canceled.')
     return
   endif
   " eliminate invalid statuses
   let valid_statuses = []
   for status in a:statuses
-    if status.is_conflicted
-      call gita#util#error(printf(
-            \ 'the behavior of checking out a conflicted file "%s" is not defined.',
-            \ status.path)
-            \)
-      continue
-    elseif status.is_ignored
-      call gita#util#error(printf(
-            \ 'the behavior of checking out an ignored file "%s" is not defined.',
-            \ status.path)
-            \)
-      continue
-    elseif status.is_unstaged && !options.force
-      call gita#util#warn(printf(
-            \ 'locally changed file "%s" could not be checked out. use <Plug>(gita-action-CHECKOUT) to checkout',
-            \ status.path)
-            \)
+    if s:validate_status_checkout(status, options)
       continue
     endif
     call add(valid_statuses, status)
   endfor
   if empty(valid_statuses)
-    call gita#util#warn('no valid file was selected. cancel the operation.')
+    call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
   let result = gita#get().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
@@ -474,46 +492,82 @@ endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
   " classify statuses
   let add_statuses = []
-  let rm_statuses = []
   let rm_cached_statuses = []
   for status in a:statuses
-    if status.is_conflicted
-      call gita#util#error(printf(
-            \ 'the behavior of toggling a conflicted file "%s" is not defined.',
-            \ status.path)
-            \)
-      continue
-    elseif status.is_ignored
-      call gita#util#error(printf(
-            \ 'the behavior of toggling an ignored file "%s" is not defined.',
-            \ status.path)
-            \)
+    if s:validate_status_toggle(status, a:options)
       continue
     endif
-    if status.is_unstaged
-      if status.worktree == 'D'
-        call add(rm_statuses, status)
+    if status.is_staged && status.is_unstaged
+      if get(g:, 'gita#ui#status#toggle_prefer_rm_cached', 0)
+        call add(rm_cached_statuses, status)
       else
         call add(add_statuses, status)
       endif
-    elseif status.is_untracked
-        call add(add_statuses, status)
-    else
+    elseif status.is_staged
         call add(rm_cached_statuses, status)
+    else
+        call add(add_statuses, status)
     endif
   endfor
-  if empty(add_statuses) && empty(rm_statuses) && empty(rm_cached_statuses)
-    call gita#util#warn('no valid file was selected. cancel the operation.')
+  if empty(add_statuses) && empty(rm_cached_statuses)
+    call gita#util#warn('No valid files were selected. The operation is canceled.')
     return
   endif
   if !empty(add_statuses)
     call s:action_add(add_statuses, a:options)
   endif
-  if !empty(rm_statuses)
-    call s:action_rm(rm_statuses, a:options)
-  endif
   if !empty(rm_cached_statuses)
     call s:action_rm_cached(rm_cached_statuses, a:options)
+  endif
+endfunction " }}}
+function! s:action_discard(statuses, options) abort " {{{
+  let options = extend({ 'force': 0 }, a:options)
+  " eliminate invalid statuses
+  let remove_statuses = []
+  let checkout_statuses = []
+  for status in a:statuses
+    if s:validate_status_discard(status, options)
+      continue
+    endif
+    if status.is_untracked || status.is_ignored
+      call add(remove_statuses, status)
+    else
+      call add(checkout_statuses, status)
+    endif
+  endfor
+  if empty(remove_statuses) && empty(checkout_statuses)
+    call gita#util#warn('No valid files were selected. The operation is canceled.')
+    return
+  endif
+  if !get(options, 'force', 0)
+    call gita#util#warn(
+          \ 'All changes of the following files on the INDEX and the WORK TREE will be discarded, mean that the operation can NOT revert.',
+          \ 'Operation cannot revert:'
+          \)
+    for remove_status in remove_statuses
+      echo printf('- [DELETE] %s', remove_status.path)
+    endfor
+    for checkout_status in checkout_statuses
+      echo printf('- [RESET ] %s', checkout_status.path)
+    endfor
+    let r = gita#util#asktf('Are you sure that you want to discard the changes?')
+    if !r
+      redraw | call gita#util#info('The operation has canceled by user.')
+      return
+    endif
+  endif
+  for remove_status in remove_statuses
+    call delete(remove_status.path)
+  endfor
+  " the following is like 'git reset --hard -- <files>'
+  let result = gita#get().git.checkout(options, 'HEAD', map(checkout_statuses, 'v:val.path'))
+  if result.status == 0
+    call s:status_update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
   endif
 endfunction " }}}
 function! s:action_open(statuses, options) abort " {{{

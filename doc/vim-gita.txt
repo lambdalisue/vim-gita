@@ -148,14 +148,13 @@ D	Open a file under the cursor in diff mode via vertical split
 
 -a	Add selected files into index
 -A	Add selected files into index forcibly
--r	Remove selected files from index
--R	Remove selected files from index forcibly
--h	Remove selected files from cache (undo add/remove)
--H	Remove selected files from cache forcibly (undo add/remove)
+-r	Remove selected files from index (cache)
+-R	Remove selected files from index (cache) forcibly
 -c	Checkout selected files from a specified commit
 -C	Checkout selected files from a specified commit forcibly
 --	Add or remove selected files into index or from cache (toggle)
 -=	Add or remove selected files into index or from cache forcibly (toggle)
+-d	Discard all changes of selected files from index and work tree
 
 The above mappings are only defined when |g:gita#ui#status#enable_default_keymaps|
 is 1. Otherwise only the <Plug> mappings are available (|vim-gita-mappings-status|),
@@ -286,11 +285,10 @@ Note: The following mappings are status/commit buffer local.
 <Plug>(gita-action-add)			Add selected files into index
 <Plug>(gita-action-ADD)			Add selected files into index forcibly
 <Plug>(gita-action-rm)			Remove selected files from index
+					cache (opposite behavior of add)
 <Plug>(gita-action-RM)			Remove selected files from index
-					forcibly
-<Plug>(gita-action-rm-cached)		Remove selected files from cache
-<Plug>(gita-action-RM-cached)		Remove selected files from cache
-					forcibly
+					cache forcibly (opposite behavior of
+					ADD)
 <Plug>(gita-action-checkout)		Checkout selected files from a
 					specified branch/commit
 <Plug>(gita-action-CHECKOUT)		Checkout selected files from a
@@ -299,3 +297,8 @@ Note: The following mappings are status/commit buffer local.
 					index or from cache (toggle)
 <Plug>(gita-action-TOGGLE)		Add or remove selected files into
 					index or from cache forcibly (toggle)
+<Plug>(gita-action-discard)		Discard all changes of selected files
+					from index and work tree
+<Plug>(gita-action-DISCARD)		Discard all changes of selected files
+					from index and work tree without any
+					confirmation prompt (Not recommended)
