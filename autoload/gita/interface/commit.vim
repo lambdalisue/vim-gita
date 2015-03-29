@@ -47,6 +47,14 @@ endfunction " }}}
 function! s:get_current_commitmsg() abort " {{{
   return filter(getline(1, '$'), 'v:val !~# "^#"')
 endfunction " }}}
+function! s:get_help(about) abort " {{{
+  let varname = printf('_help_%s', a:about)
+  if get(b:, varname, 0)
+    return gita#util#interface_get_help(a:about)
+  else
+    return []
+  endif
+endfunction " }}}
 function! s:smart_map(lhs, rhs) abort " {{{
   return empty(s:get_selected_status()) ? a:lhs : a:rhs
 endfunction " }}}
@@ -159,7 +167,7 @@ function! s:action_commit(status, options) abort " {{{
   let gita.interface.commit = {}
   let gita.interface.commit.use_empty_commitmsg_next = 1
   let b:_options = {}
-  if !get(options, 'quitting', 0)
+  if get(options, 'quitting', 0)
     call s:update()
   endif
   call gita#util#info(
@@ -225,8 +233,8 @@ function! s:open(...) abort " {{{
   call s:update()
 endfunction " }}}
 function! s:defmap() abort " {{{
-  nnoremap <silent><buffer> <Plug>(gita-action-help-m)   :<C-u>call <SID>action('help', { 'about': 'mappings' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-help-s)   :<C-u>call <SID>action('help', { 'about': 'symbols' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-help-m)   :<C-u>call <SID>action('help', { 'about': 'commit_mapping' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-help-s)   :<C-u>call <SID>action('help', { 'about': 'short_format' })<CR>
 
   nnoremap <silent><buffer> <Plug>(gita-action-update)   :<C-u>call <SID>action('update')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-switch)   :<C-u>call <SID>action('open_status')<CR>
@@ -316,9 +324,9 @@ function! s:update(...) abort " {{{
   " create buffer lines
   let buflines = s:List.flatten([
         \ commitmsg,
-        \ ['# Press ?m and/or ?s to toggle a help of mappings and/or status symbols.'],
-        \ get(b:, '_help_mappings', 0) ? ['# -- Mapping --'] : [],
-        \ get(b:, '_help_symbols', 0)  ? ['# -- Symbols --'] : [],
+        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ s:get_help('commit_mapping'),
+        \ s:get_help('short_format'),
         \ gita#util#interface_get_misc_lines(),
         \ !empty(meta.merge_msg) ? ['# This branch is in MERGE mode.'] : [],
         \ get(options, 'amend', 0) ? ['# This branch is in AMEND mode.'] : [],
