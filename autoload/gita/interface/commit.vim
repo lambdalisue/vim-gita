@@ -293,7 +293,10 @@ function! s:update(...) abort " {{{
 
   " create a default commit message
   let modified_reserved = 0
-  if has_key(gita.interface.commit, 'commitmsg_cached')
+  if get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
+    let commitmsg = []
+    unlet! gita.interface.commit.use_empty_commitmsg_next
+  elseif has_key(gita.interface.commit, 'commitmsg_cached')
     let commitmsg = gita.interface.commit.commitmsg_cached
     let modified_reserved = 1
     unlet! gita.interface.commit.commitmsg_cached
@@ -307,9 +310,6 @@ function! s:update(...) abort " {{{
     let commitmsg = [
           \ gita.git.get_last_commitmsg(),
           \]
-  elseif get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
-    let commitmsg = []
-    unlet! gita.interface.commit.use_empty_commitmsg_next
   else
     let commitmsg = s:get_current_commitmsg()
   endif
