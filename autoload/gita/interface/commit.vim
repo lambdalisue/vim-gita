@@ -155,8 +155,8 @@ function! s:action_commit(status, options) abort " {{{
   call gita#util#hook_call('commit', 'post', gita)
   " clear
   let gita.interface.commit = {}
-  if bufname('%') ==# s:const.bufname && bufexists(bufnr('%'))
-    unlet! b:_options
+  if bufname('%') ==# s:const.bufname
+    let b:_options = {}
     call s:update()
   endif
 endfunction " }}}
