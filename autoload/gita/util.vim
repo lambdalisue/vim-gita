@@ -163,19 +163,35 @@ function! gita#util#buffer_update(buflines) abort " {{{
   setlocal nomodified
 endfunction " }}}
 
-" Mapping
-function! gita#util#mapping_filter(mappings) abort " {{{
-  let filtered = []
-  for mapping in a:mappings
-    let args = s:Prelude.is_list(mapping) ? mapping : [mapping]
-    let name = args[0]
-    let mode = get(args, 1, '')
-    if hasmapto(name, mode)
-      call add(filtered, [maparg(name, mode), name])
+" Window
+function! gita#util#choosewin() abort " {{{
+  let winnum  = winnr()
+  let winnums = filter(range(1, winnr('$')), '!s:choosewin_is_ignored(v:val)')
+  let options = {
+        \ 'auto_choose': 1,
+        \}
+  try
+    let choice = choosewin#start(winnums, options)
+    if !empty(choice)
+      let [tabnum, winnum] = choice
+      execute 'tabnext' tabnum
+      return winnum
     endif
-    unlet! mapping
-  endfor
-  return filtered
+  catch
+    call gita#util#warn(
+          \ 'An opener "select" require "t9md/choosewin" to be installed.'
+          \ 'Dependencies are not installed.',
+          \)
+    return -1
+  endtry
+endfunction
+function! s:choosewin_is_ignored(winnum) abort
+  let ignored_filetypes = [
+        \ 'gita-status', 'gita-commit', 'gista-list',
+        \ 'unite', 'vimfiler', 'vimshell', 'nerdtree',
+        \ 'gundo', 'tagbar',
+        \]
+  return index(ignored_filetypes, getbufvar(winbufnr(a:winnum), '&filetype')) != -1
 endfunction " }}}
 
 " Invoker
@@ -214,18 +230,18 @@ function! gita#util#invoker_focus(...) abort " {{{
   endif
 endfunction " }}}
 
-" Manipulator
-function! gita#util#manipulator_open(name) abort " {{{
-  if !exists('s:manipulator_buffer_manager')
+" Interface
+function! gita#util#interface_open(name) abort " {{{
+  if !exists('s:interface_buffer_manager')
     let BM = gita#util#import('Vim.BufferManager')
-    let s:manipulator_buffer_manager = BM.new({
+    let s:interface_buffer_manager = BM.new({
           \   'opener': 'topleft 20 split',
           \   'range': 'tabpage',
           \})
   endif
-  return s:manipulator_buffer_manager.open(a:name, get(a:000, 0, {}))
+  return s:interface_buffer_manager.open(a:name, get(a:000, 0, {}))
 endfunction " }}}
-function! gita#util#manipulator_get_misc_lines() abort " {{{
+function! gita#util#interface_get_misc_lines() abort " {{{
   let gita = gita#get()
   let meta = gita.git.get_meta()
   let name = fnamemodify(gita.git.worktree, ':t')
@@ -266,6 +282,30 @@ function! gita#util#manipulator_get_misc_lines() abort " {{{
 
   endif
   return lines
+endfunction " }}}
+
+" Hook
+function! gita#util#hook_get(name, timing) abort " {{{
+  return get(get(get(g:, 'gita#hook', {}), a:name, {}), a:timing, [])
+endfunction " }}}
+function! gita#util#hook_add(name, timing, hooks) abort " {{{
+  if !has_key(g:, 'gita#hook')
+    let g:gita#hook = {}
+  endif
+  if !has_key(g:gita#hook, a:name)
+    let g:gita#hook[a:name] = {}
+  endif
+  if !has_key(g:gita#hook[a:name], a:timing)
+    let g:gita#hook[a:name][a:timing] = []
+  endif
+  let hooks = s:Prelude.is_list(a:hooks) ? a:hooks : [a:hooks]
+  let g:gita#hook[a:name][a:timing] += hooks
+endfunction " }}}
+function! gita#util#hook_call(name, timing, ...) abort " {{{
+  let hooks = gita#util#hook_get(a:name, a:timing)
+  for hook in hooks
+    call call(hook, a:000)
+  endfor
 endfunction " }}}
 
 let &cpo = s:save_cpo

@@ -9,9 +9,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:get_sid() " {{{
-  return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_get_sid$')
-endfun " }}}
 function! s:get_gita(...) abort " {{{
   let gita = call('gita#get', a:000)
   let gita.interface = get(gita, 'interface', {})
@@ -26,10 +23,6 @@ function! s:smart_redraw() abort " {{{
   if &diff
     diffupdate | redraw!
   else
-    let mname = printf(':<C-u>call %ssmart_redraw<CR>', s:get_sid())
-    if maparg('<C-l>', 'n') == mname
-      silent execute 'nunmap <buffer> <C-l>'
-    endif
     redraw!
   endif
 endfunction " }}}
@@ -93,6 +86,8 @@ function! s:compare(status, commit, ...) abort " {{{
     return
   endif
 
+  " TODO Use opened buffer if the buffer is in diff mode.
+
   let args = ['show', printf('%s:%s', a:commit, a:status.path)]
   let result = gita.git.exec(args)
   if result.status != 0
@@ -108,7 +103,9 @@ function! s:compare(status, commit, ...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
   let LOCAL_bufname = bufname('%')
   let filetype = &filetype
-  nnoremap <buffer> <C-l> :<C-u>call <SID>smart_redraw()<CR>
+  if g:gita#interface#diff#define_smart_redraw
+    nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
+  endif
   augroup vim-gita-diff
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
@@ -123,7 +120,9 @@ function! s:compare(status, commit, ...) abort " {{{
   silent execute printf('file %s', REMOTE_bufname)
   silent execute printf('setlocal filetype=%s', filetype)
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-  nnoremap <buffer> <C-l> :<C-u>call <SID>smart_redraw()<CR>
+  if g:gita#interface#diff#define_smart_redraw
+    nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
+  endif
   augroup vim-gita-diff
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
@@ -172,6 +171,21 @@ endfunction " }}}
 function! gita#interface#diff#compare(status, commit, ...) abort " {{{
   call call('s:compare', extend([a:status, a:commit], a:000))
 endfunction " }}}
+function! gita#interface#diff#smart_redraw() abort " {{{
+  call call('s:smart_redraw')
+endfunction " }}}
+
+" Configure " {{{
+let s:default = {}
+let s:default.define_smart_redraw = 1
+
+function! s:config() abort
+  for [key, value] in items(s:default)
+    let g:gita#interface#diff#{key} = get(g:, 'gita#interface#diff#' . key, value)
+  endfor
+endfunction
+call s:config()
+" }}}
 
 let &cpo = s:save_cpo
 unlet! s:save_cpo

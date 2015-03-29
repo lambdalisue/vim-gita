@@ -15,6 +15,7 @@ let s:const.filetype = 'gita-status'
 
 let s:Prelude = gita#util#import('Prelude')
 let s:List = gita#util#import('Data.List')
+let s:Conflict = gita#util#import('VCS.Git.Conflict')
 
 function! s:ensure_list(x) abort " {{{
   return s:Prelude.is_list(a:x) ? a:x : [a:x]
@@ -43,6 +44,19 @@ function! s:get_selected_statuses() abort " {{{
     endif
   endfor
   return selected_statuses
+endfunction " }}}
+function! s:smart_map(lhs, rhs) abort " {{{
+  return empty(s:get_selected_status()) ? a:lhs : a:rhs
+endfunction " }}}
+function! s:validate_filetype(name) abort " {{{
+  if &filetype !=# s:const.filetype
+    call gita#util#error(
+          \ printf('%s required to be called on %s buffer', a:name, s:const.bufname),
+          \ 'FileType miss match',
+          \)
+    return 1
+  endif
+  return 0
 endfunction " }}}
 
 function! s:action(name, ...) abort " {{{
@@ -121,6 +135,32 @@ function! s:action_diff_compare(status, options) abort " {{{
     call gita#util#invoker_focus()
   endif
   call gita#interface#diff#compare(a:status, commit, options)
+endfunction " }}}
+function! s:action_conflict_2way(status, options) abort " {{{
+  let options = extend({
+        \ 'opener': 'edit',
+        \}, a:options)
+  if options.opener ==# 'select'
+    let winnum = gita#util#choosewin()
+    let opener = 'edit'
+  else
+    let opener = options.opener
+    call gita#util#invoker_focus()
+  endif
+  call gita#interface#conflict#2way(a:status, options)
+endfunction " }}}
+function! s:action_conflict_3way(status, options) abort " {{{
+  let options = extend({
+        \ 'opener': 'edit',
+        \}, a:options)
+  if options.opener ==# 'select'
+    let winnum = gita#util#choosewin()
+    let opener = 'edit'
+  else
+    let opener = options.opener
+    call gita#util#invoker_focus()
+  endif
+  call gita#interface#conflict#3way(a:status, options)
 endfunction " }}}
 function! s:action_add(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
@@ -256,6 +296,10 @@ function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff_open', { 'opener': 'edit' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 0 })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-h) :<C-u>call <SID>action('conflict_2way', { 'opener': 'tabnew', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-v) :<C-u>call <SID>action('conflict_2way', { 'opener': 'tabnew', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-h) :<C-u>call <SID>action('conflict_3way', { 'opener': 'tabnew', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-v) :<C-u>call <SID>action('conflict_3way', { 'opener': 'tabnew', 'vertical': 1 })<CR>
 
   nnoremap <silent><buffer> <Plug>(gita-action-add)      :<C-u>call <SID>action('add')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-ADD)      :<C-u>call <SID>action('add', { 'force': 1 })<CR>
@@ -294,25 +338,35 @@ function! s:defmap() abort " {{{
     nmap <buffer> cC <Plug>(gita-action-commit)
     nmap <buffer> cA <Plug>(gita-action-commit-a)
 
-    nmap <buffer> e <Plug>(gita-action-open)
-    nmap <buffer> E <Plug>(gita-action-open-v)
-    nmap <buffer> s <Plug>(gita-action-open-s)
-    nmap <buffer> d <Plug>(gita-action-diff)
-    nmap <buffer> D <Plug>(gita-action-diff-v)
+    nmap <buffer><expr> e  <SID>smart_map('e', '<Plug>(gita-action-open)')
+    nmap <buffer><expr> E  <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+    nmap <buffer><expr> s  <SID>smart_map('s', '<Plug>(gita-action-open-s)')
+    nmap <buffer><expr> d  <SID>smart_map('d', '<Plug>(gita-action-diff)')
+    nmap <buffer><expr> D  <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
+    nmap <buffer><expr> c  <SID>smart_map('c', '<Plug>(gita-action-conflict2-v)')
+    nmap <buffer><expr> C  <SID>smart_map('C', '<Plug>(gita-action-conflict3-v)')
 
-    nmap <buffer> -- <Plug>(gita-action-toggle)
-    nmap <buffer> -= <Plug>(gita-action-TOGGLE)
+    nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
+    nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)')
+    nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
+    nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
+    nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
+    nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-reset)')
+    nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
+    nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+    nmap <buffer><expr> -d <SID>smart_map('-d', '<Plug>(gita-action-discard)')
+    nmap <buffer><expr> -D <SID>smart_map('-D', '<Plug>(gita-action-discard)')
 
-    nmap <buffer> -a <Plug>(gita-action-add)
-    nmap <buffer> -A <Plug>(gita-action-ADD)
-    nmap <buffer> -r <Plug>(gita-action-reset)
-    nmap <buffer> -R <Plug>(gita-action-reset)
-    nmap <buffer> -c <Plug>(gita-action-checkout)
-    nmap <buffer> -C <Plug>(gita-action-CHECKOUT)
-    nmap <buffer> -t <Plug>(gita-action-toggle)
-    nmap <buffer> -T <Plug>(gita-action-TOGGLE)
-    nmap <buffer> -d <Plug>(gita-action-discard)
-    nmap <buffer> -D <Plug>(gita-action-discard)
+    vmap <buffer> -- <Plug>(gita-action-toggle)
+    vmap <buffer> -= <Plug>(gita-action-TOGGLE)
+    vmap <buffer> -a <Plug>(gita-action-add)
+    vmap <buffer> -A <Plug>(gita-action-ADD)
+    vmap <buffer> -r <Plug>(gita-action-reset)
+    vmap <buffer> -R <Plug>(gita-action-reset)
+    vmap <buffer> -c <Plug>(gita-action-checkout)
+    vmap <buffer> -C <Plug>(gita-action-CHECKOUT)
+    vmap <buffer> -d <Plug>(gita-action-discard)
+    vmap <buffer> -D <Plug>(gita-action-discard)
   endif
 endfunction " }}}
 function! s:update(...) abort " {{{
@@ -369,14 +423,34 @@ function! gita#interface#status#update(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#interface#status#action(name, ...) abort " {{{
-  if &filetype !=# s:const.filetype
-    call gita#util#error(
-          \ printf('gita#interface#status#action({name}[, {options}]) required to be called on %s buffer', s:const.bufname),
-          \ 'FileType miss match',
-          \)
+  if s:validate_filetype('gita#interface#status#action()')
     return
   endif
   call call('s:action', extend([a:name], a:000))
+endfunction " }}}
+function! gita#interface#status#smart_map(lhs, rhs) abort " {{{
+  if s:validate_filetype('gita#interface#status#smart_map()')
+    return
+  endif
+  call call('s:smart_map', [a:lhs, a:rhs])
+endfunction " }}}
+function! gita#interface#status#define_highlights() abort " {{{
+  highlight default link GitaComment    Comment
+  highlight default link GitaConflicted ErrorMsg
+  highlight default link GitaUnstaged   WarningMsg
+  highlight default link GitaStaged     Question
+  highlight default link GitaUntracked  WarningMsg
+  highlight default link GitaIgnored    Question
+  highlight default link GitaBranch     Title
+endfunction " }}}
+function! gita#interface#status#define_syntax() abort " {{{
+  execute 'syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/'
+  execute 'syntax match GitaUnstaged   /\v^%([ MARC][MD]|DM)\s.*$/'
+  execute 'syntax match GitaStaged     /\v^[MADRC]\s\s.*$/'
+  execute 'syntax match GitaUntracked  /\v^\?\?\s.*$/'
+  execute 'syntax match GitaIgnored    /\v^!!\s.*$/'
+  execute 'syntax match GitaBranch  /\v`[^`]{-}`/hs=s+1,he=e-1'
+  execute 'syntax match GitaComment /\v^#.*/ contains=GitaBranch'
 endfunction " }}}
 
 let &cpo = s:save_cpo

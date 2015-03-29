@@ -14,8 +14,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 syntax clear
-call gita#ui#status#define_highlights()
-call gita#ui#status#status_define_syntax()
+call gita#interface#status#define_highlights()
+call gita#interface#status#define_syntax()
 
 let b:current_syntax = "gita-status"
 
