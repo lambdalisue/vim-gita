@@ -103,16 +103,6 @@ function! gita#set(gita, ...) abort " {{{
 endfunction " }}}
 
 let s:gita = {}
-function! s:gita.get_comment_char() abort " {{{
-  if has_key(self, 'comment_char')
-    return self.comment_char
-  elseif !self.enabled
-    return ''
-  endif
-  let meta = self.git.get_meta()
-  let self.comment_char = meta.comment_char
-  return self.comment_char
-endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
