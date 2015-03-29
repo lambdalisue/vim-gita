@@ -167,7 +167,7 @@ function! s:action_commit(status, options) abort " {{{
   let gita.interface.commit = {}
   let gita.interface.commit.use_empty_commitmsg_next = 1
   let b:_options = {}
-  if get(options, 'quitting', 0)
+  if !get(options, 'quitting', 0)
     call s:update()
   endif
   call gita#util#info(
