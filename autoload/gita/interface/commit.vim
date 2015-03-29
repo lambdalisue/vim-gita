@@ -92,7 +92,7 @@ function! s:action_open_status(status, options) abort " {{{
   let gita = s:get_gita()
   if &modified
     let gita = s:get_gita()
-    let gita.interface.commit.commitmsg_cached = s:get_current_commitmsg()
+    let gita.interface.commit.commitmsg = s:get_current_commitmsg()
     setlocal nomodified
   endif
   call gita#interface#status#open(a:options)
@@ -277,14 +277,9 @@ function! s:update(...) abort " {{{
   let gita.interface.commit.statuses_map = statuses_map
 
   " create a default commit message
-  let modified_reserved = 0
-  if has_key(gita.interface.commit, 'commitmsg_cached')
-    let commitmsg = gita.interface.commit.commitmsg_cached
-    unlet! gita.interface.commit.commitmsg_cached
-    " restored from a cache and set modified
-    let modified_reserved = 1
-  elseif has_key(gita.interface.commit, 'commitmsg')
+  if has_key(gita.interface.commit, 'commitmsg')
     let commitmsg = gita.interface.commit.commitmsg
+    unlet! gita.interface.commit.commitmsg
   elseif !empty(meta.merge_head)
     let commitmsg = [
           \ meta.merge_msg,
@@ -316,10 +311,6 @@ function! s:update(...) abort " {{{
   " update content
   setlocal modifiable
   call gita#util#buffer_update(buflines)
-
-  if modified_reserved
-    setlocal modified
-  endif
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
   if a:filename != expand('%:p')
