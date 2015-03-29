@@ -92,7 +92,7 @@ function! s:action_open_status(status, options) abort " {{{
   let gita = s:get_gita()
   if &modified
     let gita = s:get_gita()
-    let gita.interface.commit.commitmsg = s:get_current_commitmsg()
+    let gita.interface.commit.commitmsg_cached = s:get_current_commitmsg()
     setlocal nomodified
   endif
   call gita#interface#status#open(a:options)
@@ -156,8 +156,8 @@ function! s:action_commit(status, options) abort " {{{
   call gita#util#hook_call('commit', 'post', gita)
   " clear
   let gita.interface.commit = {}
+  let gita.interface.commit.use_empty_commitmsg_next = 1
   let b:_options = {}
-  silent %delete _
   call gita#util#buffer_clear_undo()
   if !get(options, 'quitting', 0)
     call s:update()
@@ -278,9 +278,13 @@ function! s:update(...) abort " {{{
   let gita.interface.commit.statuses_map = statuses_map
 
   " create a default commit message
-  if has_key(gita.interface.commit, 'commitmsg')
+  let modified_reserved = 0
+  if has_key(gita.interface.commit, 'commitmsg_cached')
+    let commitmsg = gita.interface.commit.commitmsg_cached
+    let modified_reserved = 1
+    unlet! gita.interface.commit.commitmsg_cached
+  elseif has_key(gita.interface.commit, 'commitmsg')
     let commitmsg = gita.interface.commit.commitmsg
-    unlet! gita.interface.commit.commitmsg
   elseif !empty(meta.merge_head)
     let commitmsg = [
           \ meta.merge_msg,
@@ -293,6 +297,9 @@ function! s:update(...) abort " {{{
     let commitmsg = [
           \ 'Nothing to commit (Working tree is clean).',
           \]
+  elseif get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
+    let commitmsg = []
+    unlet! gita.interface.commit.use_empty_commitmsg_next
   else
     let commitmsg = s:get_current_commitmsg()
   endif
@@ -312,6 +319,10 @@ function! s:update(...) abort " {{{
   " update content
   setlocal modifiable
   call gita#util#buffer_update(buflines)
+
+  if modified_reserved
+    setlocal modified
+  endif
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
   if a:filename != expand('%:p')
