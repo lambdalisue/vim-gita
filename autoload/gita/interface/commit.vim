@@ -11,7 +11,7 @@ set cpo&vim
 
 let s:const = {}
 let s:const.bufname  = has('unix') ? 'gita:commit' : 'gita_commit'
-let s:const.filetype = 'gita-commmit'
+let s:const.filetype = 'gita-commit'
 
 let s:Prelude = gita#util#import('Prelude')
 let s:List = gita#util#import('Data.List')
@@ -46,6 +46,19 @@ function! s:get_selected_statuses() abort " {{{
 endfunction " }}}
 function! s:get_current_commitmsg() abort " {{{
   return filter(getline(1, '$'), 'v:val !~# "^#"')
+endfunction " }}}
+function! s:smart_map(lhs, rhs) abort " {{{
+  return empty(s:get_selected_status()) ? a:lhs : a:rhs
+endfunction " }}}
+function! s:validate_filetype(name) abort " {{{
+  if &filetype !=# s:const.filetype
+    call gita#util#error(
+          \ printf('%s required to be called on %s buffer', a:name, s:const.bufname),
+          \ 'FileType miss match',
+          \)
+    return 1
+  endif
+  return 0
 endfunction " }}}
 
 function! s:action(name, ...) abort " {{{
@@ -211,7 +224,7 @@ function! s:defmap() abort " {{{
   nmap <buffer> <Plug>(gita-action-diff-horizontal) <Plug>(gita-action-diff-h)
   nmap <buffer> <Plug>(gita-action-diff-vertical)   <Plug>(gita-action-diff-v)
 
-  if get(g:, 'gita#interface#status#enable_default_keymap', 1)
+  if get(g:, 'gita#interface#commit#enable_default_keymap', 1)
     nmap <buffer><silent> q  :<C-u>quit<CR>
     nmap <buffer> ?m <Plug>(gita-action-help-m)
     nmap <buffer> ?s <Plug>(gita-action-help-s)
@@ -219,11 +232,11 @@ function! s:defmap() abort " {{{
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
 
-    nmap <buffer> e <Plug>(gita-action-open)
-    nmap <buffer> E <Plug>(gita-action-open-v)
-    nmap <buffer> s <Plug>(gita-action-open-s)
-    nmap <buffer> d <Plug>(gita-action-diff)
-    nmap <buffer> D <Plug>(gita-action-diff-v)
+    nmap <buffer><expr> e <SID>smart_map('e', <Plug>(gita-action-open)')
+    nmap <buffer><expr> E <SID>smart_map('E', <Plug>(gita-action-open-v)')
+    nmap <buffer><expr> s <SID>smart_map('s', <Plug>(gita-action-open-s)')
+    nmap <buffer><expr> d <SID>smart_map('d', <Plug>(gita-action-diff)')
+    nmap <buffer><expr> D <SID>smart_map('D', <Plug>(gita-action-diff-v)')
   endif
 endfunction " }}}
 function! s:update(...) abort " {{{
@@ -263,12 +276,10 @@ function! s:update(...) abort " {{{
   elseif !empty(meta.merge_head)
     let commitmsg = [
           \ meta.merge_msg,
-          \ ['The branch is in MERGE mode.'],
           \]
   elseif get(options, 'amend', 0)
     let commitmsg = [
           \ gita.git.get_last_commitmsg(),
-          \ ['The branch is in AMEND mode.'],
           \]
   elseif empty(statuses_map)
     let commitmsg = [
@@ -285,6 +296,8 @@ function! s:update(...) abort " {{{
         \ get(b:, '_help_mappings', 0) ? ['# -- Mapping --'] : [],
         \ get(b:, '_help_symbols', 0)  ? ['# -- Symbols --'] : [],
         \ gita#util#interface_get_misc_lines(),
+        \ !empty(meta.merge_msg) ? ['# This branch is in MERGE mode.'] : [],
+        \ get(options, 'amend', 0) ? ['# This branch is in AMEND mode.'] : [],
         \ statuses_lines,
         \])
 
@@ -298,9 +311,7 @@ function! s:update(...) abort " {{{
 endfunction " }}}
 function! s:clear(...) abort " {{{
   let gita = s:get_gita()
-  unlet! gita.interface.commit.statuses_map
-  unlet! gita.interface.commit.commitmsg
-  unlet! gita.interface.commit.commitmsg_cached
+  let gita.interface.commit = {}
   unlet! b:_options
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
@@ -333,16 +344,43 @@ function! gita#interface#commit#update(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#interface#commit#action(name, ...) abort " {{{
-  if &filetype !=# s:const.filetype
-    call gita#util#error(
-          \ printf('gita#interface#commit#action({name}[, {options}]) required to be called on %s buffer', s:const.bufname),
-          \ 'FileType miss match',
-          \)
+  if s:validate_filetype('gita#interface#commit#action()')
     return
   endif
   call call('s:action', extend([a:name], a:000))
 endfunction " }}}
-
+function! gita#interface#commit#smart_map(lhs, rhs) abort " {{{
+  if s:validate_filetype('gita#interface#commit#smart_map()')
+    return
+  endif
+  call call('s:smart_map', [a:lhs, a:rhs])
+endfunction " }}}
+function! gita#interface#commit#define_highlights() abort " {{{
+  highlight default link GitaComment    Comment
+  highlight default link GitaConflicted ErrorMsg
+  highlight default link GitaUnstaged   WarningMsg
+  highlight default link GitaStaged     Question
+  highlight default link GitaUntracked  WarningMsg
+  highlight default link GitaIgnored    Question
+  highlight default link GitaBranch     Title
+  highlight default link GitaImportant  Tag
+  " github
+  highlight default link GitaGitHubKeyword Keyword
+  highlight default link GitaGitHubIssue   Identifier
+endfunction " }}}
+function! gita#interface#commit#define_syntax() abort " {{{
+  execute 'syntax match GitaConflicted /\v^. %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2'
+  execute 'syntax match GitaUnstaged   /\v^. %([ MARC][MD]|DM)\s.*$/hs=s+2'
+  execute 'syntax match GitaStaged     /\v^. [MADRC] \s.*$/hs=s+2'
+  execute 'syntax match GitaUntracked  /\v^. \?\?\s.*$/hs=s+2'
+  execute 'syntax match GitaIgnored    /\v^. !!\s.*$/hs=s+2'
+  execute 'syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1'
+  execute 'syntax keyword GitaImportant AMEND MERGE'
+  execute 'syntax match GitaComment    /\v^#.*/ contains=GitaConflict,GitaUnstaged,GitaStaged,GitaUntracked,GitaIgnored,GitaBranch,GitaImportant'
+  " github
+  execute 'syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved'
+  execute 'syntax match   GitaGitHubIssue   "\v%([^ /#]+/[^ /#]+#\d+|#\d+)"'
+endfunction " }}}
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 "vim: stts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

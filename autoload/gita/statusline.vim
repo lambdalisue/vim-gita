@@ -24,7 +24,7 @@ function! s:to_string(value) " {{{
 endfunction " }}}
 function! s:get_info() abort " {{{
   let gita = gita#get()
-  if gita.is_enable
+  if gita.enabled
     let meta = gita.git.get_meta()
     let info = {
           \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
@@ -42,7 +42,7 @@ function! s:get_info() abort " {{{
 endfunction " }}}
 function! s:get_statuses() abort " {{{
   let gita = gita#get()
-  if gita.is_enable
+  if gita.enabled
     let statuses = gita.git.get_parsed_status()
     " Note:
     "   the 'statuses' is cached, mean that 'untracked' doesn't reflect the
@@ -114,7 +114,7 @@ let s:format_map = {
 " }}}
 function! s:clear() abort " {{{
   let gita = gita#get()
-  if gita.is_enable
+  if gita.enabled
     call gita.git.cache.clear()
   endif
 endfunction " }}}
