@@ -196,14 +196,13 @@ function! s:open(...) abort " {{{
   let b:_constructed = 1
 
   " construction
-  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
+  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
   setlocal winfixheight
 
   " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
-  autocmd BufWinLeave <buffer> call gita#util#invoker_focus()
+  autocmd QuitPre     <buffer> call s:ac_quit_pre()
 
   " define mappings
   call s:defmap()
