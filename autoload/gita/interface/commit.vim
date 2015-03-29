@@ -125,7 +125,7 @@ function! s:action_commit(status, options) abort " {{{
     " nothing to be committed
     return
   elseif &modified
-    call gita#util#warn(
+    redraw | call gita#util#warn(
           \ 'You have unsaved changes on the commit message. Save the changes by ":w" command.',
           \ 'Unsaved changes exists'
           \)
@@ -134,7 +134,7 @@ function! s:action_commit(status, options) abort " {{{
 
   let commitmsg = s:get_current_commitmsg()
   if join(commitmsg, '') =~# '\v^\s*$'
-    call gita#util#info(
+    redraw | call gita#util#info(
           \ 'No commit message is available (all lines start from "#" are truncated). The operation has canceled.',
           \ 'Commit message does not exist'
           \)
@@ -146,7 +146,7 @@ function! s:action_commit(status, options) abort " {{{
   call writefile(commitmsg, options.file)
   let result = gita.git.commit(options)
   if result.status != 0
-    call gita#util#error(
+    redraw | call gita#util#error(
           \ result.stdout,
           \ printf('Fail: %s', join(result.args)),
           \)
@@ -309,7 +309,7 @@ function! s:update(...) abort " {{{
           \ 'Nothing to commit (Working tree is clean).',
           \]
   elseif get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
-    let commitmsg = []
+    let commitmsg = ['']
     unlet! gita.interface.commit.use_empty_commitmsg_next
   else
     let commitmsg = s:get_current_commitmsg()
