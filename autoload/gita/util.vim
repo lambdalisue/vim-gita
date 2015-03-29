@@ -9,7 +9,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-" Vital {{{
 function! s:get_vital() " {{{
   if !exists('s:_vital_module_Vital')
     " TODO replace it to 'vim_gita'
@@ -24,9 +23,11 @@ function! gita#util#import(name) " {{{
   endif
   return s:[cache_name]
 endfunction " }}}
+
+let s:scriptfile = expand('<sfile>')
 let s:Prelude = gita#util#import('Prelude')
 let s:List    = gita#util#import('Data.List')
-" }}}
+let s:Path    = gita#util#import('System.Filepath')
 
 " Vital
 function! gita#util#is_numeric(...) " {{{
@@ -288,6 +289,21 @@ function! gita#util#interface_get_misc_lines() abort " {{{
 
   endif
   return lines
+endfunction " }}}
+function! gita#util#interface_get_help(about) abort " {{{
+  let vname = '_help_' . a:about
+  if !has_key(s:, vname)
+    let root = fnamemodify(s:scriptfile, ':h:h:h')
+    let filename = s:Path.join(root, 'help', a:about . '.txt')
+    if filereadable(filename)
+      let s:[vname] = readfile(filename)
+    else
+      let s:[vname] = [
+            \ printf('%s is not found.', filename),
+            \]
+    endif
+  endif
+  return get(s:, vname)
 endfunction " }}}
 
 " Autocmd

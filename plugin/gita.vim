@@ -25,7 +25,7 @@ let s:default = {
       \ 'debug': 0,
       \}
 function! s:assign_config()
-  for [key, default] in keys(s:default)
+  for [key, default] in items(s:default)
     let g:gita#{key} = get(g:, 'gita#' . key, default)
   endfor
 endfunction
