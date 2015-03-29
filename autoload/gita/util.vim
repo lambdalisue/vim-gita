@@ -162,6 +162,12 @@ function! gita#util#buffer_update(buflines) abort " {{{
   silent execute 'setlocal undolevels=' . saved_undolevels
   setlocal nomodified
 endfunction " }}}
+function! gita#util#buffer_clear_undo() abort " {{{
+  let saved_undolevels = &undolevels
+  setlocal undolevels=-1
+  silent execute "normal a \<BS>\<ESC>"
+  silent execute 'setlocal undolevels=' . saved_undolevels
+endfunction " }}}
 
 " Window
 function! gita#util#choosewin() abort " {{{
