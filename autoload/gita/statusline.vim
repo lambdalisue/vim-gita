@@ -146,6 +146,16 @@ function! gita#statusline#clear(...) " {{{
   call s:clear()
 endfunction " }}}
 
+augroup vim-gita-statusline
+  autocmd! *
+  " several git command does not update .git/index thus use hooks to clear
+  " statusline cache
+  autocmd User vim-gita-commit-post call gita#statusline#clear()
+  autocmd User vim-gita-fetch-post  call gita#statusline#clear()
+  autocmd User vim-gita-push-post   call gita#statusline#clear()
+  autocmd User vim-gita-pull-post   call gita#statusline#clear()
+augroup END
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

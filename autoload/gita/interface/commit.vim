@@ -154,7 +154,7 @@ function! s:action_commit(status, options) abort " {{{
     return
   endif
 
-  call gita#util#hook_call('commit', 'post', gita)
+  call gita#util#doautocmd('commit-post')
   " clear
   let gita.interface.commit = {}
   let gita.interface.commit.use_empty_commitmsg_next = 1

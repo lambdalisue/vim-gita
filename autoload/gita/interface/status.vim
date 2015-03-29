@@ -169,6 +169,7 @@ function! s:action_add(statuses, options) abort " {{{
   let result = s:get_gita().git.add(options, map(statuses, 'v:val.path'))
   if result.status == 0
     call s:update()
+    call gita#util#doautocmd('add-post')
   else
     call gita#util#error(
           \ result.stdout,
@@ -182,6 +183,7 @@ function! s:action_rm(statuses, options) abort " {{{
   let result = s:get_gita().git.rm(options, map(statuses, 'v:val.path'))
   if result.status == 0
     call s:update()
+    call gita#util#doautocmd('rm-post')
   else
     call gita#util#error(
           \ result.stdout,
@@ -197,6 +199,7 @@ function! s:action_reset(statuses, options) abort " {{{
   let result = s:get_gita().git.reset(options, '', map(statuses, 'v:val.path'))
   if result.status == 0
     call s:update()
+    call gita#util#doautocmd('reset-post')
   else
     call gita#util#error(
           \ result.stdout,
@@ -215,6 +218,7 @@ function! s:action_checkout(statuses, options) abort " {{{
   let result = s:get_gita().git.checkout(options, commit, map(statuses, 'v:val.path'))
   if result.status == 0
     call s:update()
+    call gita#util#doautocmd('checkout-post')
   else
     call gita#util#error(
           \ result.stdout,
@@ -451,6 +455,28 @@ function! s:ac_quit() abort " {{{
   call gita#util#invoker_focus()
 endfunction " }}}
 
+" Private API
+function! gita#interface#status#define_highlights() abort " {{{
+  highlight link GitaComment    Comment
+  highlight link GitaConflicted Error
+  highlight link GitaUnstaged   Constant
+  highlight link GitaStaged     Special
+  highlight link GitaUntracked  GitaUnstaged
+  highlight link GitaIgnored    Identifier
+  highlight link GitaBranch     Title
+endfunction " }}}
+function! gita#interface#status#define_syntax() abort " {{{
+  syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
+  syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
+  syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
+  syntax match GitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
+  syntax match GitaIgnored    /\v^\!\!\s.*$/
+  syntax match GitaUntracked  /\v^\?\?\s.*$/
+  syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
+  syntax match GitaComment    /\v^.*$/ contains=ALL
+  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
+endfunction " }}}
+
 " Public API
 function! gita#interface#status#open(...) abort " {{{
   call call('s:open', a:000)
@@ -485,26 +511,6 @@ function! gita#interface#status#get_selected_statuses() abort " {{{
     return
   endif
   return call('s:get_selected_statuses', a:000)
-endfunction " }}}
-function! gita#interface#status#define_highlights() abort " {{{
-  highlight link GitaComment    Comment
-  highlight link GitaConflicted Error
-  highlight link GitaUnstaged   Constant
-  highlight link GitaStaged     Special
-  highlight link GitaUntracked  GitaUnstaged
-  highlight link GitaIgnored    Identifier
-  highlight link GitaBranch     Title
-endfunction " }}}
-function! gita#interface#status#define_syntax() abort " {{{
-  syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
-  syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
-  syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
-  syntax match GitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
-  syntax match GitaIgnored    /\v^\!\!\s.*$/
-  syntax match GitaUntracked  /\v^\?\?\s.*$/
-  syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
-  syntax match GitaComment    /\v^.*$/ contains=ALL
-  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
 endfunction " }}}
 
 let &cpo = s:save_cpo

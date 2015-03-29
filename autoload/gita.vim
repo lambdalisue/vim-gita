@@ -16,7 +16,7 @@ let s:Git = gita#util#import('VCS.Git')
 function! s:GitaStatus(opts) abort " {{{
   call gita#interface#status#open(a:opts)
 endfunction " }}}
-function! s:GitaCommit(opts) abort " {{{r
+function! s:GitaCommit(opts) abort " {{{
   call gita#interface#commit#open(a:opts)
 endfunction " }}}
 function! s:GitaDiff(opts) abort " {{{
@@ -35,7 +35,7 @@ function! s:GitaDefault(opts) abort " {{{
           \ result.stdout,
           \ printf('Ok: "%s"', join(result.args))
           \)
-    call gita#util#hook_call(a:opts._name, 'post', a:opts)
+    call gita#util#doautocmd(a:opts._name . '-post')
   else
     call gita#util#info(
           \ result.stdout,

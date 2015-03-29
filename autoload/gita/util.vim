@@ -290,28 +290,14 @@ function! gita#util#interface_get_misc_lines() abort " {{{
   return lines
 endfunction " }}}
 
-" Hook
-function! gita#util#hook_get(name, timing) abort " {{{
-  return get(get(get(g:, 'gita#hook', {}), a:name, {}), a:timing, [])
-endfunction " }}}
-function! gita#util#hook_add(name, timing, hooks) abort " {{{
-  if !has_key(g:, 'gita#hook')
-    let g:gita#hook = {}
+" Autocmd
+function! gita#util#doautocmd(name) abort " {{{
+  let name = printf('vim-gita-%s', a:name)
+  if 703 < v:version || (v:version == 703 && has('patch438'))
+    silent execute 'doautocmd <nomodeline> User ' . name
+  else
+    silent execute 'doautocmd User ' . name
   endif
-  if !has_key(g:gita#hook, a:name)
-    let g:gita#hook[a:name] = {}
-  endif
-  if !has_key(g:gita#hook[a:name], a:timing)
-    let g:gita#hook[a:name][a:timing] = []
-  endif
-  let hooks = s:Prelude.is_list(a:hooks) ? a:hooks : [a:hooks]
-  let g:gita#hook[a:name][a:timing] += hooks
-endfunction " }}}
-function! gita#util#hook_call(name, timing, ...) abort " {{{
-  let hooks = gita#util#hook_get(a:name, a:timing)
-  for hook in hooks
-    call call(hook, a:000)
-  endfor
 endfunction " }}}
 
 let &cpo = s:save_cpo
