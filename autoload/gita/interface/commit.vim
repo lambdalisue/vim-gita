@@ -157,7 +157,8 @@ function! s:action_commit(status, options) abort " {{{
   " clear
   let gita.interface.commit = {}
   let b:_options = {}
-  call gita#util#buffer_update([])
+  silent %delete! _
+  call gita#util#buffer_clear_undo()
   if !get(options, 'quitting', 0)
     call s:update()
   endif
@@ -324,11 +325,9 @@ function! s:ac_write(filename) abort " {{{
   setlocal nomodified
 endfunction " }}}
 function! s:ac_quit_pre() abort " {{{
-  if !v:cmdbang
-    let options = deepcopy(b:_options)
-    let options.quitting = 1
-    call s:action_commit({}, options)
-  endif
+  let options = deepcopy(b:_options)
+  let options.quitting = 1
+  call s:action_commit({}, options)
 endfunction " }}}
 
 " Public API
