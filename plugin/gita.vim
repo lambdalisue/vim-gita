@@ -21,9 +21,16 @@ command! -nargs=? -range=% -bang
       \ :call s:Gita(<q-bang>, [<line1>, <line2>], <f-args>)
 
 " Assign configure variables " {{{
-function! s:assign_configs()
-  let g:gita#debug = get(g:, 'gita#debug', 1)
+let s:default = {
+      \ 'debug': 0,
+      \}
+function! s:assign_config()
+  for [key, default] in keys(s:default)
+    let g:gita#{key} = get(g:, 'gita#' . key, default)
+  endfor
 endfunction
+call s:assign_config()
+" }}}
 
 
 let &cpo = s:save_cpo
