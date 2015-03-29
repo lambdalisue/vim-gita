@@ -290,10 +290,6 @@ function! s:open(...) abort " {{{
   setlocal winfixheight
   setlocal cursorline
 
-  " automatically focus invoker when the buffer is closed
-  autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
-
   " define mappings
   call s:defmap()
 
@@ -431,9 +427,6 @@ function! s:update(...) abort " {{{
   setlocal modifiable
   call gita#util#buffer_update(buflines)
   setlocal nomodifiable
-endfunction " }}}
-function! s:ac_quit_pre() abort " {{{
-  call gita#util#invoker_focus()
 endfunction " }}}
 
 " Public API
