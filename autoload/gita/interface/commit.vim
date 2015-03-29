@@ -193,7 +193,7 @@ function! s:open(...) abort " {{{
   let b:_constructed = 1
 
   " construction
-  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
+  setlocal buftype=acwrite bufhidden=wipe noswapfile nobuflisted
   setlocal winfixheight
 
   " automatically focus invoker when the buffer is closed
