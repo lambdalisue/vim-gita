@@ -306,10 +306,10 @@ function! s:update(...) abort " {{{
           \]
   elseif empty(statuses_map)
     let commitmsg = [
-          \ 'Nothing to commit (Working tree is clean).',
+          \ '# Nothing to commit (Working tree is clean).',
           \]
   elseif get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
-    let commitmsg = ['']
+    let commitmsg = []
     unlet! gita.interface.commit.use_empty_commitmsg_next
   else
     let commitmsg = s:get_current_commitmsg()
@@ -326,6 +326,7 @@ function! s:update(...) abort " {{{
         \ get(options, 'amend', 0) ? ['# This branch is in AMEND mode.'] : [],
         \ statuses_lines,
         \])
+  let buflines = buflines[0] =~# '\v^#' ? extend([''], buflines) : buflines
 
   " update content
   setlocal modifiable
