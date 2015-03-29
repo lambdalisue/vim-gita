@@ -9,6 +9,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:P = gita#util#import('Prelude')
+
 function! s:get_gita(...) abort " {{{
   let gita = call('gita#get', a:000)
   let gita.interface = get(gita, 'interface', {})
@@ -27,8 +29,7 @@ function! s:smart_redraw() abort " {{{
   endif
 endfunction " }}}
 
-function! s:open(status, commit, ...) abort " {{{
-  let status  = a:status
+function! s:open(filename, commit, ...) abort " {{{
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
   let options = extend({
@@ -166,10 +167,12 @@ function! s:diff_ac_quit_pre() abort " {{{
 endfunction " }}}
 
 function! gita#interface#diff#open(status, commit, ...) abort " {{{
-  call call('s:open', extend([a:status, a:commit], a:000))
+  let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
+  call call('s:open', extend([status, a:commit], a:000))
 endfunction " }}}
 function! gita#interface#diff#compare(status, commit, ...) abort " {{{
-  call call('s:compare', extend([a:status, a:commit], a:000))
+  let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
+  call call('s:compare', extend([status, a:commit], a:000))
 endfunction " }}}
 function! gita#interface#diff#smart_redraw() abort " {{{
   call call('s:smart_redraw')
