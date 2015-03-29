@@ -291,7 +291,20 @@ function! s:open(...) abort " {{{
   setlocal cursorline
 
   autocmd! * <buffer>
-  autocmd QuitPre <buffer> call gita#util#invoker_focus()
+  " Note:
+  "
+  " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+  " :q        : QuitPre > WinLeave > BufWinLeave
+  " :e        : BufWinLeave
+  " :wincmd w : WinLeave
+  "
+  " s:ac_quit need to be called after BufWriteCmd and only when closing a
+  " buffre window (not when :e, :wincmd w).
+  " That's why the following autocmd combination is required.
+  autocmd WinEnter    <buffer> let b:_winleave = 0
+  autocmd WinLeave    <buffer> let b:_winleave = 1
+  autocmd BufWinEnter <buffer> let b:_winleave = 0
+  autocmd BufWinLeave <buffer> if get(b:, '_winleave', 0) | call s:ac_quit() | endif
 
   " define mappings
   call s:defmap()
@@ -430,6 +443,9 @@ function! s:update(...) abort " {{{
   setlocal modifiable
   call gita#util#buffer_update(buflines)
   setlocal nomodifiable
+endfunction " }}}
+function! s:ac_quit() abort " {{{
+  call gita#util#invoker_focus()
 endfunction " }}}
 
 " Public API

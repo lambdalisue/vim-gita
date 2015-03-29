@@ -215,6 +215,7 @@ function! s:open(...) abort " {{{
   " That's why the following autocmd combination is required.
   autocmd WinEnter    <buffer> let b:_winleave = 0
   autocmd WinLeave    <buffer> let b:_winleave = 1
+  autocmd BufWinEnter <buffer> let b:_winleave = 0
   autocmd BufWinLeave <buffer> if get(b:, '_winleave', 0) | call s:ac_quit() | endif
 
   " define mappings
@@ -303,10 +304,6 @@ function! s:update(...) abort " {{{
   elseif get(options, 'amend', 0)
     let commitmsg = [
           \ gita.git.get_last_commitmsg(),
-          \]
-  elseif empty(statuses_map)
-    let commitmsg = [
-          \ '# Nothing to commit (Working tree is clean).',
           \]
   elseif get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
     let commitmsg = []
