@@ -157,6 +157,10 @@ function! s:action_commit(status, options) abort " {{{
   if !get(options, 'quitting', 0)
     call s:update()
   endif
+  call gita#util#info(
+        \ result.stdout,
+        \ printf('Ok: %s', join(result.args)),
+        \)
 endfunction " }}}
 
 function! s:open(...) abort " {{{
