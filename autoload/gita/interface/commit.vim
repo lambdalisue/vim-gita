@@ -87,6 +87,7 @@ function! s:action_help(status, options) abort " {{{
 endfunction " }}}
 function! s:action_update(status, options) abort " {{{
   call s:update(a:options)
+  redraw!
 endfunction " }}}
 function! s:action_open_status(status, options) abort " {{{
   let gita = s:get_gita()
@@ -251,6 +252,7 @@ function! s:defmap() abort " {{{
 
   if get(g:, 'gita#interface#commit#enable_default_keymap', 1)
     nmap <buffer><silent> q  :<C-u>quit<CR>
+    nmap <buffer> <C-l> <Plug>(gita-action-update)
     nmap <buffer> ?m <Plug>(gita-action-help-m)
     nmap <buffer> ?s <Plug>(gita-action-help-s)
 
@@ -376,29 +378,31 @@ function! gita#interface#commit#smart_map(lhs, rhs) abort " {{{
 endfunction " }}}
 function! gita#interface#commit#define_highlights() abort " {{{
   highlight default link GitaComment    Comment
-  highlight default link GitaConflicted ErrorMsg
-  highlight default link GitaUnstaged   WarningMsg
-  highlight default link GitaStaged     Question
-  highlight default link GitaUntracked  WarningMsg
-  highlight default link GitaIgnored    Question
+  highlight default link GitaConflicted Error
+  highlight default link GitaStaged     Special
+  highlight default link GitaUnstaged   Constant
+  highlight default link GitaUntracked  GitaUnstaged
+  highlight default link GitaIgnored    Identifier
   highlight default link GitaBranch     Title
   highlight default link GitaImportant  Tag
   " github
   highlight default link GitaGitHubKeyword Keyword
-  highlight default link GitaGitHubIssue   Identifier
+  highlight default link GitaGitHubIssue   Define
 endfunction " }}}
 function! gita#interface#commit#define_syntax() abort " {{{
-  execute 'syntax match GitaConflicted /\v^. %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2'
-  execute 'syntax match GitaUnstaged   /\v^. %([ MARC][MD]|DM)\s.*$/hs=s+2'
-  execute 'syntax match GitaStaged     /\v^. [MADRC] \s.*$/hs=s+2'
-  execute 'syntax match GitaUntracked  /\v^. \?\?\s.*$/hs=s+2'
-  execute 'syntax match GitaIgnored    /\v^. !!\s.*$/hs=s+2'
-  execute 'syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1'
-  execute 'syntax keyword GitaImportant AMEND MERGE'
-  execute 'syntax match GitaComment    /\v^#.*/ contains=GitaConflict,GitaUnstaged,GitaStaged,GitaUntracked,GitaIgnored,GitaBranch,GitaImportant'
+  syntax match GitaStaged     /\v^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
+  syntax match GitaUnstaged   /\v^# [ MADRC][ MD]/hs=s+3 contains=ALL
+  syntax match GitaStaged     /\v^# [ MADRC]\s.*$/hs=s+5 contains=ALL
+  syntax match GitaUnstaged   /\v^# .[MDAU?].*$/hs=s+5 contains=ALL
+  syntax match GitaIgnored    /\v^# \!\!\s.*$/hs=s+2
+  syntax match GitaUntracked  /\v^# \?\?\s.*$/hs=s+2
+  syntax match GitaConflicted /\v^# %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2
+  syntax match GitaComment    /\v^#.*$/ contains=ALL
+  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
+  syntax keyword GitaImportant AMEND MERGE
   " github
-  execute 'syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved'
-  execute 'syntax match   GitaGitHubIssue   "\v%([^ /#]+/[^ /#]+#\d+|#\d+)"'
+  syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved
+  syntax match   GitaGitHubIssue   '\v%([^ /#]+/[^ /#]+#\d+|#\d+)'
 endfunction " }}}
 let &cpo = s:save_cpo
 unlet! s:save_cpo

@@ -266,17 +266,17 @@ function! gita#util#interface_get_misc_lines() abort " {{{
           \))
     if outgoing > 0 && incoming > 0
       call add(lines,
-            \ printf('# The branch is %d commit(s) ahead and %d commit(s) behind of %s/%s',
+            \ printf('# The branch is %d commit(s) ahead and %d commit(s) behind of `%s/%s`',
             \   outgoing, incoming, remote_name, remote_branch,
             \))
     elseif outgoing > 0
       call add(lines,
-            \ printf('# The branch is %d commit(s) ahead of %s/%s',
+            \ printf('# The branch is %d commit(s) ahead of `%s/%s`',
             \   outgoing, remote_name, remote_branch,
             \))
     elseif incoming > 0
       call add(lines,
-            \ printf('# The branch is %d commit(s) behind %s/%s',
+            \ printf('# The branch is %d commit(s) behind `%s/%s`',
             \   incoming, remote_name, remote_branch,
             \))
     endif
