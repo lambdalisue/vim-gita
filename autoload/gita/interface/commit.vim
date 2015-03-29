@@ -333,7 +333,7 @@ function! s:ac_quit_pre() abort " {{{
   let options.force = v:cmdbang
   let options.quitting = 1
   call s:action_commit({}, options)
-  call gita#util#invoker_focus()
+  "call gita#util#invoker_focus()
 endfunction " }}}
 
 " Public API
