@@ -20,11 +20,11 @@ function! s:GitaCommit(opts) abort " {{{r
   call gita#interface#commit#open(a:opts)
 endfunction " }}}
 function! s:GitaDiff(opts) abort " {{{
-  let commit = empty(get(a:opts, '__unknown__', [])) ? '' : join(a:opts.__unknown__)
+  let commit = empty(get(a:opts, '__unknown__', [])) ? 'HEAD' : join(a:opts.__unknown__)
   if get(a:opts, 'compare', 1)
-    call gita#interface#diff#compare(commit, a:opts)
+    call gita#interface#diff#compare(expand('%'), commit, a:opts)
   else
-    call gita#interface#diff#open(commit, a:opts)
+    call gita#interface#diff#open(expand('%'), commit, a:opts)
   endif
 endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{

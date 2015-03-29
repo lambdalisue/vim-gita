@@ -9,6 +9,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:P = gita#util#import('Prelude')
 let s:C = gita#util#import('VCS.Git.Conflict')
 
 function! s:get_gita(...) abort " {{{
@@ -226,10 +227,12 @@ function! s:ac_quit_pre() abort " {{{
 endfunction " }}}
 
 function! gita#interface#conflict#2way_open(status, ...) abort " {{{
-  call call('s:2way_open', extend([a:status], a:000))
+  let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
+  call call('s:2way_open', extend([status], a:000))
 endfunction " }}}
 function! gita#interface#conflict#3way_open(status, ...) abort " {{{
-  call call('s:3way_open', extend([a:status], a:000))
+  let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
+  call call('s:3way_open', extend([status], a:000))
 endfunction " }}}
 function! gita#interface#conflict#smart_redraw() abort " {{{
   call call('s:smart_redraw')
