@@ -114,6 +114,8 @@ function! s:action_diff(status, options) abort " {{{
   call gita#util#error('Not implemented yet.')
 endfunction " }}}
 function! s:action_commit(status, options) abort " {{{
+  " Note:
+  "   this action might be called in non gita-commit buffer
   let gita = s:get_gita()
   let meta = gita.git.get_meta()
   let options = extend({ 'force': 0 }, a:options)
@@ -151,8 +153,12 @@ function! s:action_commit(status, options) abort " {{{
   endif
 
   call gita#util#hook_call('commit', 'post', gita)
-  call s:clear()
-  call s:update()
+  " clear
+  let gita.interface.commit = {}
+  if bufname('%') ==# s:const.bufname
+    unlet! b:_options
+    call s:update()
+  endif
 endfunction " }}}
 
 function! s:open(...) abort " {{{
@@ -308,11 +314,6 @@ function! s:update(...) abort " {{{
   if modified_reserved
     setlocal modified
   endif
-endfunction " }}}
-function! s:clear(...) abort " {{{
-  let gita = s:get_gita()
-  let gita.interface.commit = {}
-  unlet! b:_options
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
   if a:filename != expand('%:p')
