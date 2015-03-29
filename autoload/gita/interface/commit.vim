@@ -114,6 +114,9 @@ function! s:action_diff(status, options) abort " {{{
   call gita#util#error('Not implemented yet.')
 endfunction " }}}
 function! s:action_commit(status, options) abort " {{{
+  if s:validate_filetype('s:action_commit()')
+    return
+  endif
   let gita = s:get_gita()
   let meta = gita.git.get_meta()
   let options = extend({ 'force': 0 }, a:options)
@@ -200,6 +203,7 @@ function! s:open(...) abort " {{{
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
   autocmd QuitPre <buffer> call s:ac_quit_pre()
+  autocmd BufWinLeave <buffer> call gita#util#invoker_focus()
 
   " define mappings
   call s:defmap()
@@ -333,7 +337,6 @@ function! s:ac_quit_pre() abort " {{{
   let options.force = v:cmdbang
   let options.quitting = 1
   call s:action_commit({}, options)
-  "call gita#util#invoker_focus()
 endfunction " }}}
 
 " Public API
