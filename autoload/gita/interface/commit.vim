@@ -114,8 +114,6 @@ function! s:action_diff(status, options) abort " {{{
   call gita#util#error('Not implemented yet.')
 endfunction " }}}
 function! s:action_commit(status, options) abort " {{{
-  " Note:
-  "   this action might be called in non gita-commit buffer
   let gita = s:get_gita()
   let meta = gita.git.get_meta()
   let options = extend({ 'force': 0 }, a:options)
@@ -155,8 +153,8 @@ function! s:action_commit(status, options) abort " {{{
   call gita#util#hook_call('commit', 'post', gita)
   " clear
   let gita.interface.commit = {}
-  if bufname('%') ==# s:const.bufname
-    let b:_options = {}
+  let b:_options = {}
+  if !get(options, 'quitting', 0)
     call s:update()
   endif
 endfunction " }}}
@@ -329,6 +327,7 @@ endfunction " }}}
 function! s:ac_quit_pre() abort " {{{
   let options = deepcopy(b:_options)
   let options.force = v:cmdbang
+  let options.quitting = 1
   call s:action_commit({}, options)
   call gita#util#invoker_focus()
 endfunction " }}}
