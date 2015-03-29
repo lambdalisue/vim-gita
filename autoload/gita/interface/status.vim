@@ -85,6 +85,7 @@ function! s:action_help(status, options) abort " {{{
 endfunction " }}}
 function! s:action_update(status, options) abort " {{{
   call s:update(a:options)
+  redraw!
 endfunction " }}}
 function! s:action_open_commit(status, options) abort " {{{
   call gita#interface#commit#open(a:options)
@@ -367,6 +368,8 @@ function! s:defmap() abort " {{{
 
   if get(g:, 'gita#interface#status#enable_default_keymap', 1)
     nmap <buffer><silent> q  :<C-u>quit<CR>
+    nmap <buffer> <C-l> <Plug>(gita-action-update)
+
     nmap <buffer> ?m <Plug>(gita-action-help-m)
     nmap <buffer> ?s <Plug>(gita-action-help-s)
 
@@ -484,22 +487,24 @@ function! gita#interface#status#get_selected_statuses() abort " {{{
   return call('s:get_selected_statuses', a:000)
 endfunction " }}}
 function! gita#interface#status#define_highlights() abort " {{{
-  highlight default link GitaComment    Comment
-  highlight default link GitaConflicted ErrorMsg
-  highlight default link GitaUnstaged   WarningMsg
-  highlight default link GitaStaged     Question
-  highlight default link GitaUntracked  WarningMsg
-  highlight default link GitaIgnored    Question
-  highlight default link GitaBranch     Title
+  highlight link GitaComment    Comment
+  highlight link GitaConflicted Error
+  highlight link GitaUnstaged   Constant
+  highlight link GitaStaged     Special
+  highlight link GitaUntracked  GitaUnstaged
+  highlight link GitaIgnored    Identifier
+  highlight link GitaBranch     Title
 endfunction " }}}
 function! gita#interface#status#define_syntax() abort " {{{
-  execute 'syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/'
-  execute 'syntax match GitaUnstaged   /\v^%([ MARC][MD]|DM)\s.*$/'
-  execute 'syntax match GitaStaged     /\v^[MADRC]\s\s.*$/'
-  execute 'syntax match GitaUntracked  /\v^\?\?\s.*$/'
-  execute 'syntax match GitaIgnored    /\v^!!\s.*$/'
-  execute 'syntax match GitaBranch  /\v`[^`]{-}`/hs=s+1,he=e-1'
-  execute 'syntax match GitaComment /\v^#.*/ contains=GitaBranch'
+  syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
+  syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
+  syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
+  syntax match GitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
+  syntax match GitaIgnored    /\v^\!\!\s.*$/
+  syntax match GitaUntracked  /\v^\?\?\s.*$/
+  syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
+  syntax match GitaComment    /\v^.*$/ contains=ALL
+  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
 endfunction " }}}
 
 let &cpo = s:save_cpo
