@@ -201,10 +201,21 @@ function! s:open(...) abort " {{{
   setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
   setlocal winfixheight
 
-  " automatically focus invoker when the buffer is closed
   autocmd! * <buffer>
   autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-  autocmd QuitPre     <buffer> call s:ac_quit_pre()
+  " Note:
+  "
+  " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+  " :q        : QuitPre > WinLeave > BufWinLeave
+  " :e        : BufWinLeave
+  " :wincmd w : WinLeave
+  "
+  " s:ac_quit need to be called after BufWriteCmd and only when closing a
+  " buffre window (not when :e, :wincmd w).
+  " That's why the following autocmd combination is required.
+  autocmd WinEnter    <buffer> let b:_winleave = 0
+  autocmd WinLeave    <buffer> let b:_winleave = 1
+  autocmd BufWinLeave <buffer> if get(b:, '_winleave', 0) | call s:ac_quit() | endif
 
   " define mappings
   call s:defmap()
@@ -335,10 +346,11 @@ function! s:ac_write(filename) abort " {{{
   let gita.interface.commit.commitmsg = s:get_current_commitmsg()
   setlocal nomodified
 endfunction " }}}
-function! s:ac_quit_pre() abort " {{{
+function! s:ac_quit(...) abort " {{{
   let options = deepcopy(b:_options)
   let options.quitting = 1
   call s:action_commit({}, options)
+  call gita#util#invoker_focus()
 endfunction " }}}
 
 " Public API

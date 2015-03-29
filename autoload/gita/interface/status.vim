@@ -290,6 +290,9 @@ function! s:open(...) abort " {{{
   setlocal winfixheight
   setlocal cursorline
 
+  autocmd! * <buffer>
+  autocmd QuitPre <buffer> call gita#util#invoker_focus()
+
   " define mappings
   call s:defmap()
 
