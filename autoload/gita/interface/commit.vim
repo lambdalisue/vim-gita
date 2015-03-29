@@ -240,11 +240,11 @@ function! s:defmap() abort " {{{
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
 
-    nmap <buffer><expr> e <SID>smart_map('e', <Plug>(gita-action-open)')
-    nmap <buffer><expr> E <SID>smart_map('E', <Plug>(gita-action-open-v)')
-    nmap <buffer><expr> s <SID>smart_map('s', <Plug>(gita-action-open-s)')
-    nmap <buffer><expr> d <SID>smart_map('d', <Plug>(gita-action-diff)')
-    nmap <buffer><expr> D <SID>smart_map('D', <Plug>(gita-action-diff-v)')
+    nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
+    nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+    nmap <buffer><expr> s <SID>smart_map('s', '<Plug>(gita-action-open-s)')
+    nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
+    nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
   endif
 endfunction " }}}
 function! s:update(...) abort " {{{
