@@ -121,12 +121,12 @@ function! s:action_commit(status, options) abort " {{{
   let meta = gita.git.get_meta()
   let options = extend({ 'force': 0 }, a:options)
   let statuses_map = get(gita.interface.commit, 'statuses_map', {})
-  if empty(meta.merge_head) && empty(statuses_map)
+  if empty(meta.merge_head) && empty(filter(values(statuses_map), 'v:val.is_staged'))
     " nothing to be committed
     return
-  elseif &modified && !options.force
+  elseif &modified
     call gita#util#warn(
-          \ 'You have unsaved changes on the commit message. Save the changes by ":w" or forcibly commit by ":q!" command.',
+          \ 'You have unsaved changes on the commit message. Save the changes by ":w" command.',
           \ 'Unsaved changes exists'
           \)
     return
@@ -157,6 +157,7 @@ function! s:action_commit(status, options) abort " {{{
   " clear
   let gita.interface.commit = {}
   let b:_options = {}
+  call gita#util#buffer_update([])
   if !get(options, 'quitting', 0)
     call s:update()
   endif
@@ -323,10 +324,11 @@ function! s:ac_write(filename) abort " {{{
   setlocal nomodified
 endfunction " }}}
 function! s:ac_quit_pre() abort " {{{
-  let options = deepcopy(b:_options)
-  let options.force = v:cmdbang
-  let options.quitting = 1
-  call s:action_commit({}, options)
+  if !v:cmdbang
+    let options = deepcopy(b:_options)
+    let options.quitting = 1
+    call s:action_commit({}, options)
+  endif
 endfunction " }}}
 
 " Public API
