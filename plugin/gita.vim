@@ -23,54 +23,7 @@ command! -nargs=? -range=% -bang
 " Assign configure variables " {{{
 function! s:assign_configs()
   let g:gita#debug = get(g:, 'gita#debug', 1)
-
-  let s:default_opener_aliases = {
-      \ 'edit':   'edit',
-      \ 'split':  'split',
-      \ 'vsplit': 'vsplit',
-      \ 'left':   'topleft vsplit', 
-      \ 'right':  'rightbelow vsplit', 
-      \ 'above':  'topleft split', 
-      \ 'below':  'rightbelow split', 
-      \ 'tabnew': 'tabnew',
-      \}
-  let g:gita#ui#status#opener_aliases = extend(
-        \ s:default_opener_aliases,
-        \ get(g:, 'gita#ui#status#opener_aliases', {}),
-        \)
-
-  let s:default_hooks = {
-        \ 'commit': {
-        \   'post': ['gita#statusline#clear'],
-        \ },
-        \ 'push': {
-        \   'post': ['gita#statusline#clear'],
-        \ },
-        \ 'pull': {
-        \   'post': ['gita#statusline#clear'],
-        \ },
-        \}
-  let g:gita#hooks = extend(
-        \ s:default_hooks,
-        \ get(g:, 'gita#hooks', {}),
-        \)
 endfunction
-call s:assign_configs() " }}}
-" Assign constant variables " {{{
-function! s:assign_consts()
-  let const = {}
-  let const.status_filetype = 'gita-status'
-  let const.status_bufname = has('unix') ? 'gita:status' : 'gita_status'
-  let const.commit_filetype = 'gita-commit'
-  let const.commit_bufname = has('unix') ? 'gita:commit' : 'gita_commit'
-  let const.interface_pattern = printf('\v%%(%s|%s)',
-        \ const.status_bufname,
-        \ const.commit_bufname,
-        \)
-  lockvar const
-  let g:gita#ui#status#const = const
-endfunction
-call s:assign_consts() "}}}
 
 
 let &cpo = s:save_cpo
