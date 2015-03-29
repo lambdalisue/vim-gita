@@ -157,7 +157,7 @@ function! s:action_commit(status, options) abort " {{{
   " clear
   let gita.interface.commit = {}
   let b:_options = {}
-  silent %delete! _
+  silent %delete _
   call gita#util#buffer_clear_undo()
   if !get(options, 'quitting', 0)
     call s:update()
