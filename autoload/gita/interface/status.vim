@@ -175,6 +175,19 @@ function! s:action_add(statuses, options) abort " {{{
           \)
   endif
 endfunction " }}}
+function! s:action_rm(statuses, options) abort " {{{
+  let statuses = s:ensure_list(a:statuses)
+  let options = extend({ 'force': 0 }, a:options)
+  let result = s:get_gita().git.rm(options, map(statuses, 'v:val.path'))
+  if result.status == 0
+    call s:update()
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
+  endif
+endfunction " }}}
 function! s:action_reset(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
   let options = extend({
@@ -211,6 +224,7 @@ endfunction " }}}
 function! s:action_toggle(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
   let add_statuses = []
+  let rm_statuses = []
   let reset_statuses = []
   for status in statuses
     if status.is_staged && status.is_unstaged
@@ -222,12 +236,17 @@ function! s:action_toggle(statuses, options) abort " {{{
       endif
     elseif status.is_staged
         call add(reset_statuses, status)
+    elseif status.index ==# ' ' && status.worktree ==# 'D'
+        call add(rm_statuses, status)
     else
         call add(add_statuses, status)
     endif
   endfor
   if !empty(add_statuses)
     call s:action_add(add_statuses, a:options)
+  endif
+  if !empty(rm_statuses)
+    call s:action_rm(rm_statuses, a:options)
   endif
   if !empty(reset_statuses)
     call s:action_reset(reset_statuses, a:options)
@@ -303,6 +322,8 @@ function! s:defmap() abort " {{{
 
   nnoremap <silent><buffer> <Plug>(gita-action-add)      :<C-u>call <SID>action('add')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-ADD)      :<C-u>call <SID>action('add', { 'force': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-rm)       :<C-u>call <SID>action('rm')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-RM)       :<C-u>call <SID>action('RM', { 'force': 1 })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-reset)    :<C-u>call <SID>action('reset')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-checkout) :<C-u>call <SID>action('checkout')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT) :<C-u>call <SID>action('checkout', { 'force': 1 })<CR>
@@ -312,6 +333,8 @@ function! s:defmap() abort " {{{
 
   vnoremap <silent><buffer> <Plug>(gita-action-add)      :<C-u>call <SID>action('add', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-ADD)      :<C-u>call <SID>action('add', 1, { 'force': 1 })<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-rm)       :<C-u>call <SID>action('rm', 1)<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-RM)       :<C-u>call <SID>action('RM', 1, { 'force': 1 })<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-reset)    :<C-u>call <SID>action('reset', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-checkout) :<C-u>call <SID>action('checkout', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT) :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
@@ -320,6 +343,7 @@ function! s:defmap() abort " {{{
   vnoremap <silent><buffer> <Plug>(gita-action-discard)  :<C-u>call <SID>action('discard', 1)<CR>
 
   " aliases (long name)
+  nmap <buffer> <Plug>(gita-action-unstage)         <Plug>(gita-action-reset)
   nmap <buffer> <Plug>(gita-action-help-mappings)   <Plug>(gita-action-help-m)
   nmap <buffer> <Plug>(gita-action-help-symbols)    <Plug>(gita-action-help-s)
   nmap <buffer> <Plug>(gita-action-commit-amend)    <Plug>(gita-action-commit-a)
@@ -347,11 +371,12 @@ function! s:defmap() abort " {{{
     nmap <buffer><expr> C  <SID>smart_map('C', '<Plug>(gita-action-conflict3-v)')
 
     nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
+    nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
     nmap <buffer><expr> -= <SID>smart_map('-=', '<Plug>(gita-action-TOGGLE)')
     nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
     nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
-    nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
-    nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-reset)')
+    nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-rm)')
+    nmap <buffer><expr> -R <SID>smart_map('-R', '<Plug>(gita-action-RM)')
     nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
     nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
     nmap <buffer><expr> -d <SID>smart_map('-d', '<Plug>(gita-action-discard)')
@@ -433,6 +458,18 @@ function! gita#interface#status#smart_map(lhs, rhs) abort " {{{
     return
   endif
   call call('s:smart_map', [a:lhs, a:rhs])
+endfunction " }}}
+function! gita#interface#status#get_selected_status() abort " {{{
+  if s:validate_filetype('gita#interface#status#get_selected_status()')
+    return
+  endif
+  return call('s:get_selected_status', a:000)
+endfunction " }}}
+function! gita#interface#status#get_selected_statuses() abort " {{{
+  if s:validate_filetype('gita#interface#status#get_selected_statuses()')
+    return
+  endif
+  return call('s:get_selected_statuses', a:000)
 endfunction " }}}
 function! gita#interface#status#define_highlights() abort " {{{
   highlight default link GitaComment    Comment
