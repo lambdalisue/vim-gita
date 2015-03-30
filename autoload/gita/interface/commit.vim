@@ -15,6 +15,7 @@ let s:const.filetype = 'gita-commit'
 
 let s:Prelude = gita#util#import('Prelude')
 let s:List = gita#util#import('Data.List')
+let s:Dict = gita#util#import('Data.Dict')
 
 function! s:ensure_list(x) abort " {{{
   return s:Prelude.is_list(a:x) ? a:x : [a:x]
@@ -164,9 +165,9 @@ function! s:action_commit(status, options) abort " {{{
 
   call gita#util#doautocmd('commit-post')
   " clear
-  let gita.interface.commit = {}
-  let gita.interface.commit.use_empty_commitmsg_next = 1
   let b:_options = {}
+  let gita.interface.commit = {}
+  let gita.interface.commit.commitmsg_cached = []
   if !get(options, 'quitting', 0)
     call s:update()
   endif
@@ -193,9 +194,14 @@ function! s:open(...) abort " {{{
   call gita#util#interface_open(s:const.bufname)
   silent execute 'setlocal filetype=' . s:const.filetype
 
+  if get(options, 'new', 0)
+    call gita#util#buffer_update([])
+    let gita.interface.commit = {}
+    let b:_options = {}
+  endif
   let b:_gita = gita
   let b:_invoker = invoker
-  let b:_options = options
+  let b:_options = s:Dict.omit(options, ['new'])
 
   " check if construction is required
   if exists('b:_constructed') && !get(g:, 'gita#debug', 0)
@@ -300,12 +306,9 @@ function! s:update(...) abort " {{{
 
   " create a default commit message
   let modified_reserved = 0
-  if get(gita.interface.commit, 'use_empty_commitmsg_next', 0)
-    let commitmsg = []
-    unlet! gita.interface.commit.use_empty_commitmsg_next
-  elseif has_key(gita.interface.commit, 'commitmsg_cached')
+  if has_key(gita.interface.commit, 'commitmsg_cached')
     let commitmsg = gita.interface.commit.commitmsg_cached
-    let modified_reserved = 1
+    let modified_reserved = empty(commitmsg) ? 0 : 1
     unlet! gita.interface.commit.commitmsg_cached
   elseif has_key(gita.interface.commit, 'commitmsg')
     let commitmsg = gita.interface.commit.commitmsg
