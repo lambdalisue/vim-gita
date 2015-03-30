@@ -484,6 +484,7 @@ function! s:action_toggle(statuses, options) abort " {{{
   let options.ignore_empty_warning = 1
   call s:action_stage(stage_statuses, options)
   call s:action_unstage(unstage_statuses, options)
+  call s:update()
 endfunction " }}}
 function! s:action_discard(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
@@ -515,9 +516,9 @@ function! s:action_discard(statuses, options) abort " {{{
   endif
   if get(options, 'confirm', 1)
     call gita#util#warn(join([
-          \ 'A discard action will discard all local changes on working tree'
-          \ 'and the operation is irreversible, mean that you have no chance'
-          \ 'to revert the operation.'
+          \ 'A discard action will discard all local changes on working tree',
+          \ 'and the operation is irreversible, mean that you have no chance',
+          \ 'to revert the operation.',
           \]))
     if !gita#util#asktf('Are you sure you want to discard the changes?')
       call gita#util#info(
@@ -533,6 +534,7 @@ function! s:action_discard(statuses, options) abort " {{{
   let options.commit = 'INDEX'
   let options.force = 1
   call s:action_checkout(checkout_statuses, options)
+  call s:update()
 endfunction " }}}
 
 function! s:open(...) abort " {{{
