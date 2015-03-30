@@ -14,11 +14,13 @@
 # c     : Open a LOCAL and REMOTE of a selected file (when the file is conflicted)
 # C     : Open a BASE, LOCAL and REMOTE of a selected file (when the file is conflicted)
 #
-# --    : Stage/Unstage (Toggle) changes of a selected file
 # <<    : Stage changes of a selected file
 # >>    : Unstage changes of a selected file
+# --    : Stage/Unstage (Toggle) changes of a selected file
+# ==    : Discard changes of a selected file on working tree
+#
 # -a    : Add a selected file
-# -r    : Remove a selected file
+# -r    : Reset a selected file
+# -d    : Remove a selected file
 # -c    : Checkout a specified version of a selected file
-# -d    : Discard changes of a selected file (the operation is irreversible)
 #
