@@ -238,47 +238,6 @@ function! s:open(...) abort " {{{
   " update contents
   call s:update()
 endfunction " }}}
-function! s:defmap() abort " {{{
-  nnoremap <silent><buffer> <Plug>(gita-action-help-m)   :<C-u>call <SID>action('help', { 'about': 'commit_mapping' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-help-s)   :<C-u>call <SID>action('help', { 'about': 'short_format' })<CR>
-
-  nnoremap <silent><buffer> <Plug>(gita-action-update)   :<C-u>call <SID>action('update')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-switch)   :<C-u>call <SID>action('open_status')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-commit)   :<C-u>call <SID>action('commit')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-COMMIT)   :<C-u>call <SID>action('commit', { 'force(: 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open)     :<C-u>call <SID>action('open', { 'opener': 'edit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-h)   :<C-u>call <SID>action('open', { 'opener': 'botright split' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-v)   :<C-u>call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-s)   :<C-u>call <SID>action('open', { 'opener': 'select' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff', { 'opener': 'edit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff', { 'opener': 'botright split' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff', { 'opener': 'botright vsplit' })<CR>
-
-  " aliases (long name)
-  nmap <buffer> <Plug>(gita-action-help-mappings)   <Plug>(gita-action-help-m)
-  nmap <buffer> <Plug>(gita-action-help-symbols)    <Plug>(gita-action-help-s)
-  nmap <buffer> <Plug>(gita-action-open-horizontal) <Plug>(gita-action-open-h)
-  nmap <buffer> <Plug>(gita-action-open-vertical)   <Plug>(gita-action-open-v)
-  nmap <buffer> <Plug>(gita-action-open-select)     <Plug>(gita-action-open-s)
-  nmap <buffer> <Plug>(gita-action-diff-horizontal) <Plug>(gita-action-diff-h)
-  nmap <buffer> <Plug>(gita-action-diff-vertical)   <Plug>(gita-action-diff-v)
-
-  if get(g:, 'gita#interface#commit#enable_default_keymap', 1)
-    nmap <buffer><silent> q  :<C-u>quit<CR>
-    nmap <buffer> <C-l> <Plug>(gita-action-update)
-    nmap <buffer> ?m <Plug>(gita-action-help-m)
-    nmap <buffer> ?s <Plug>(gita-action-help-s)
-
-    nmap <buffer> cc <Plug>(gita-action-switch)
-    nmap <buffer> CC <Plug>(gita-action-commit)
-
-    nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
-    nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
-    nmap <buffer><expr> s <SID>smart_map('s', '<Plug>(gita-action-open-s)')
-    nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
-    nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
-  endif
-endfunction " }}}
 function! s:update(...) abort " {{{
   let gita = s:get_gita()
   let meta = gita.git.get_meta({ 'no_cache': 1 })
@@ -343,6 +302,47 @@ function! s:update(...) abort " {{{
 
   if modified_reserved
     setlocal modified
+  endif
+endfunction " }}}
+function! s:defmap() abort " {{{
+  nnoremap <silent><buffer> <Plug>(gita-action-help-m)   :<C-u>call <SID>action('help', { 'about': 'commit_mapping' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-help-s)   :<C-u>call <SID>action('help', { 'about': 'short_format' })<CR>
+
+  nnoremap <silent><buffer> <Plug>(gita-action-update)   :<C-u>call <SID>action('update')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-switch)   :<C-u>call <SID>action('open_status')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-commit)   :<C-u>call <SID>action('commit')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-COMMIT)   :<C-u>call <SID>action('commit', { 'force(: 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open)     :<C-u>call <SID>action('open', { 'opener': 'edit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-h)   :<C-u>call <SID>action('open', { 'opener': 'botright split' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-v)   :<C-u>call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-open-s)   :<C-u>call <SID>action('open', { 'opener': 'select' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff', { 'opener': 'edit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff', { 'opener': 'botright split' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff', { 'opener': 'botright vsplit' })<CR>
+
+  " aliases (long name)
+  nmap <buffer> <Plug>(gita-action-help-mappings)   <Plug>(gita-action-help-m)
+  nmap <buffer> <Plug>(gita-action-help-symbols)    <Plug>(gita-action-help-s)
+  nmap <buffer> <Plug>(gita-action-open-horizontal) <Plug>(gita-action-open-h)
+  nmap <buffer> <Plug>(gita-action-open-vertical)   <Plug>(gita-action-open-v)
+  nmap <buffer> <Plug>(gita-action-open-select)     <Plug>(gita-action-open-s)
+  nmap <buffer> <Plug>(gita-action-diff-horizontal) <Plug>(gita-action-diff-h)
+  nmap <buffer> <Plug>(gita-action-diff-vertical)   <Plug>(gita-action-diff-v)
+
+  if get(g:, 'gita#interface#commit#enable_default_keymap', 1)
+    nmap <buffer><silent> q  :<C-u>quit<CR>
+    nmap <buffer> <C-l> <Plug>(gita-action-update)
+    nmap <buffer> ?m <Plug>(gita-action-help-m)
+    nmap <buffer> ?s <Plug>(gita-action-help-s)
+
+    nmap <buffer> cc <Plug>(gita-action-switch)
+    nmap <buffer> CC <Plug>(gita-action-commit)
+
+    nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
+    nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+    nmap <buffer><expr> s <SID>smart_map('s', '<Plug>(gita-action-open-s)')
+    nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
+    nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
   endif
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{

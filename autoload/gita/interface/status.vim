@@ -203,7 +203,7 @@ function! s:validate_status_checkout(status, options) abort " {{{
   endif
 endfunction " }}}
 function! s:validate_status_ours(status, options) abort " {{{
-  if a:status.is_checkedout
+  if !a:status.is_conflicted
     call gita#util#info(printf(
           \ 'No ours version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
           \ a:status.path,
@@ -222,19 +222,13 @@ function! s:validate_status_ours(status, options) abort " {{{
             \ a:status.path,
             \))
       return 1
-    elseif a:status.sign ==# 'UD'
-      call gita#util#info(printf(
-            \ 'No ours version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
     else
       return 0
     endif
   endif
 endfunction " }}}
 function! s:validate_status_theirs(status, options) abort " {{{
-  if a:status.is_checkedout
+  if !a:status.is_conflicted
     call gita#util#info(printf(
           \ 'No theirs version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
           \ a:status.path,
@@ -247,15 +241,40 @@ function! s:validate_status_theirs(status, options) abort " {{{
             \ a:status.path,
             \))
       return 1
+    elseif a:status.sign ==# 'UD'
+      call gita#util#info(printf(
+            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  endif
+endfunction " }}}
+function! s:validate_status_conflict(status, options) abort " {{{
+  if !a:status.is_conflicted
+    call gita#util#info(printf(
+          \ 'A conflict action cannot be performed on a non conflicted file "%s".',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    if a:status.sign ==# 'DD'
+      call gita#util#info(printf(
+            \ 'A conflic action cannot be performed on a both deleted conflict file "%s".',
+            \ a:status.path,
+            \))
+      return 1
     elseif a:status.sign ==# 'DU'
       call gita#util#info(printf(
-            \ 'No theirs version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ 'A conflic action cannot be performed on a deleted by us conflict file "%s".',
             \ a:status.path,
             \))
       return 1
     elseif a:status.sign ==# 'UD'
       call gita#util#info(printf(
-            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ 'A conflic action cannot be performed on a deleted by them conflict file "%s".',
             \ a:status.path,
             \))
       return 1
@@ -343,10 +362,13 @@ function! s:action_diff_compare(status, options) abort " {{{
   endif
   call gita#interface#diff#compare(a:status, commit, options)
 endfunction " }}}
-function! s:action_conflict_2way(status, options) abort " {{{
+function! s:action_conflict2(status, options) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
         \}, a:options)
+  if s:validate_status_conflict(a:status, options)
+    return
+  endif
   if options.opener ==# 'select'
     let winnum = gita#util#choosewin()
     let opener = 'edit'
@@ -354,12 +376,15 @@ function! s:action_conflict_2way(status, options) abort " {{{
     let opener = options.opener
     call gita#util#invoker_focus()
   endif
-  call gita#interface#conflict#2way(a:status, options)
+  call gita#interface#conflict#open2(a:status, options)
 endfunction " }}}
-function! s:action_conflict_3way(status, options) abort " {{{
+function! s:action_conflict3(status, options) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
         \}, a:options)
+  if s:validate_status_conflict(a:status, options)
+    return
+  endif
   if options.opener ==# 'select'
     let winnum = gita#util#choosewin()
     let opener = 'edit'
@@ -367,7 +392,7 @@ function! s:action_conflict_3way(status, options) abort " {{{
     let opener = options.opener
     call gita#util#invoker_focus()
   endif
-  call gita#interface#conflict#3way(a:status, options)
+  call gita#interface#conflict#open3(a:status, options)
 endfunction " }}}
 function! s:action_add(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
@@ -516,7 +541,7 @@ function! s:action_ours(statuses, options) abort " {{{
     endif
     return
   endif
-  let result = s:get_gita().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  let result = s:get_gita().git.checkout(options, '', map(valid_statuses, 'v:val.path'))
   if result.status == 0
     call gita#util#doautocmd('checkout-post')
   else
@@ -546,7 +571,7 @@ function! s:action_theirs(statuses, options) abort " {{{
     endif
     return
   endif
-  let result = s:get_gita().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  let result = s:get_gita().git.checkout(options, '', map(valid_statuses, 'v:val.path'))
   if result.status == 0
     call gita#util#doautocmd('checkout-post')
   else
@@ -567,8 +592,10 @@ function! s:action_stage(statuses, options) abort " {{{
   let rm_statuses = []
   for status in statuses
     if status.is_conflicted
-      call gita#util#info(
-            \ printf('A conflicted file cannot be staged. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+      call gita#util#info(printf(join([
+            \ 'A conflicted file "%s" cannot be staged.',
+            \ 'Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ ]), status.path)
             \)
       continue
     elseif status.is_unstaged && status.worktree ==# 'D'
@@ -605,8 +632,10 @@ function! s:action_toggle(statuses, options) abort " {{{
   let unstage_statuses = []
   for status in statuses
     if status.is_conflicted
-      call gita#util#info(
-            \ printf('A conflicted file cannot be toggled. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+      call gita#util#info(printf(join([
+            \ 'A conflicted file "%s" cannot be toggle.',
+            \ 'Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ ]), status.path)
             \)
       continue
     elseif status.is_staged && status.is_unstaged
@@ -741,6 +770,44 @@ function! s:open(...) abort " {{{
   " update contents
   call s:update()
 endfunction " }}}
+function! s:update(...) abort " {{{
+  let gita = s:get_gita()
+  let options = extend(b:_options, get(a:000, 0, {}))
+  let result = gita.git.get_parsed_status(
+        \ extend({ 'no_cache': 1 }, options),
+        \)
+  if get(result, 'status', 0)
+    redraw | call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
+    return
+  endif
+
+  " create statuses lines & map
+  let statuses_map = {}
+  let statuses_lines = []
+  for status in result.all
+    call add(statuses_lines, status.record)
+    let statuses_map[status.record] = status
+  endfor
+  let gita.interface.status.statuses_map = statuses_map
+
+  " create buffer lines
+  let buflines = s:List.flatten([
+        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ s:get_help('status_mapping'),
+        \ s:get_help('short_format'),
+        \ gita#util#interface_get_misc_lines(),
+        \ statuses_lines,
+        \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
+        \])
+
+  " update content
+  setlocal modifiable
+  call gita#util#buffer_update(buflines)
+  setlocal nomodifiable
+endfunction " }}}
 function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-help-m)   :<C-u>call <SID>action('help', { 'about': 'status_mapping' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-help-s)   :<C-u>call <SID>action('help', { 'about': 'short_format' })<CR>
@@ -756,10 +823,10 @@ function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff_open', { 'opener': 'edit' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 0 })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-h) :<C-u>call <SID>action('conflict_2way', { 'opener': 'tabnew', 'vertical': 0 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-v) :<C-u>call <SID>action('conflict_2way', { 'opener': 'tabnew', 'vertical': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-h) :<C-u>call <SID>action('conflict_3way', { 'opener': 'tabnew', 'vertical': 0 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-v) :<C-u>call <SID>action('conflict_3way', { 'opener': 'tabnew', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-h) :<C-u>call <SID>action('conflict2', { 'opener': 'tabnew', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict2-v) :<C-u>call <SID>action('conflict2', { 'opener': 'tabnew', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-h) :<C-u>call <SID>action('conflict3', { 'opener': 'tabnew', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-conflict3-v) :<C-u>call <SID>action('conflict3', { 'opener': 'tabnew', 'vertical': 1 })<CR>
 
   nnoremap <silent><buffer> <Plug>(gita-action-add)      :<C-u>call <SID>action('add')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-ADD)      :<C-u>call <SID>action('add', { 'force': 1 })<CR>
@@ -816,8 +883,8 @@ function! s:defmap() abort " {{{
     nmap <buffer><expr> s  <SID>smart_map('s', '<Plug>(gita-action-open-s)')
     nmap <buffer><expr> d  <SID>smart_map('d', '<Plug>(gita-action-diff)')
     nmap <buffer><expr> D  <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
-    nmap <buffer><expr> c  <SID>smart_map('c', '<Plug>(gita-action-conflict2-v)')
-    nmap <buffer><expr> C  <SID>smart_map('C', '<Plug>(gita-action-conflict3-v)')
+    nmap <buffer><expr> s  <SID>smart_map('s', '<Plug>(gita-action-conflict2-v)')
+    nmap <buffer><expr> S  <SID>smart_map('S', '<Plug>(gita-action-conflict3-v)')
 
     " operation
     nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
@@ -851,44 +918,6 @@ function! s:defmap() abort " {{{
     vmap <buffer> -o <Plug>(gita-action-ours)
     vmap <buffer> -t <Plug>(gita-action-theirs)
   endif
-endfunction " }}}
-function! s:update(...) abort " {{{
-  let gita = s:get_gita()
-  let options = extend(b:_options, get(a:000, 0, {}))
-  let result = gita.git.get_parsed_status(
-        \ extend({ 'no_cache': 1 }, options),
-        \)
-  if get(result, 'status', 0)
-    redraw | call gita#util#error(
-          \ result.stdout,
-          \ printf('Fail: %s', join(result.args)),
-          \)
-    return
-  endif
-
-  " create statuses lines & map
-  let statuses_map = {}
-  let statuses_lines = []
-  for status in result.all
-    call add(statuses_lines, status.record)
-    let statuses_map[status.record] = status
-  endfor
-  let gita.interface.status.statuses_map = statuses_map
-
-  " create buffer lines
-  let buflines = s:List.flatten([
-        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
-        \ s:get_help('status_mapping'),
-        \ s:get_help('short_format'),
-        \ gita#util#interface_get_misc_lines(),
-        \ statuses_lines,
-        \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
-        \])
-
-  " update content
-  setlocal modifiable
-  call gita#util#buffer_update(buflines)
-  setlocal nomodifiable
 endfunction " }}}
 function! s:ac_quit() abort " {{{
   call gita#util#invoker_focus()
