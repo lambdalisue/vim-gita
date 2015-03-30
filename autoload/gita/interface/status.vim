@@ -78,12 +78,15 @@ function! s:validate_status_add(status, options) abort " {{{
           \))
     return 1
   elseif a:status.is_conflicted
-    " TODO think over the behavior
-    call gita#util#error(printf(
-          \ 'An conflicted file "%s" cannot be added. No behavior has been defined yet.',
-          \ a:status.path,
-          \))
-    return 1
+    if a:status.sign ==# 'DD'
+      call gita#util#error(printf(
+            \ 'A both deleted conflict file "%s" cannot be added. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
   else
     call gita#util#info(printf(
           \ 'No changes of "%s" exist on working tree.',
@@ -113,12 +116,33 @@ function! s:validate_status_rm(status, options) abort " {{{
           \))
     return 1
   elseif a:status.is_conflicted
-    " TODO think over the behavior
-    call gita#util#error(printf(
-          \ 'A conflicted file "%s" cannot be deleted. No behavior has been defined yet.',
-          \ a:status.path,
-          \))
-    return 1
+    if a:status.sign ==# 'AU'
+      call gita#util#error(printf(
+            \ 'A added by us conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UA'
+      call gita#util#error(printf(
+            \ 'A added by them conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'AA'
+      call gita#util#error(printf(
+            \ 'A both added conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UU'
+      call gita#util#error(printf(
+            \ 'A both modified conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
   else
     " it should not be called
     call gita#util#error(printf(
@@ -138,9 +162,8 @@ function! s:validate_status_reset(status, options) abort " {{{
           \))
     return 1
   elseif a:status.is_conflicted
-    " TODO think over the behavior
     call gita#util#error(printf(
-          \ 'A conflicted file "%s" cannot be reset. No behavior has been defined yet.',
+          \ 'A conflicted file "%s" cannot be reset. ',
           \ a:status.path,
           \))
     return 1
@@ -170,14 +193,75 @@ function! s:validate_status_checkout(status, options) abort " {{{
           \))
     return 1
   elseif a:status.is_conflicted
-    " TODO think over the behavior
     call gita#util#error(printf(
-          \ 'A conflicted file "%s" cannot be checked out. No behavior has been defined yet.',
+          \ 'A conflicted file "%s" cannot be checked out. Use <Plug>(gita-action-ours) or <Plug>(gita-action-theirs) instead.',
           \ a:status.path,
           \))
     return 1
   else
     return 0
+  endif
+endfunction " }}}
+function! s:validate_status_ours(status, options) abort " {{{
+  if a:status.is_checkedout
+    call gita#util#info(printf(
+          \ 'No ours version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    if a:status.sign ==# 'DD'
+      call gita#util#info(printf(
+            \ 'No ours version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'DU'
+      call gita#util#info(printf(
+            \ 'No ours version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UD'
+      call gita#util#info(printf(
+            \ 'No ours version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  endif
+endfunction " }}}
+function! s:validate_status_theirs(status, options) abort " {{{
+  if a:status.is_checkedout
+    call gita#util#info(printf(
+          \ 'No theirs version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    if a:status.sign ==# 'DD'
+      call gita#util#info(printf(
+            \ 'No theirs version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'DU'
+      call gita#util#info(printf(
+            \ 'No theirs version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UD'
+      call gita#util#info(printf(
+            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
   endif
 endfunction " }}}
 
@@ -413,6 +497,66 @@ function! s:action_checkout(statuses, options) abort " {{{
   endif
   call s:update()
 endfunction " }}}
+function! s:action_ours(statuses, options) abort " {{{
+  let statuses = s:ensure_list(a:statuses)
+  let options = extend({}, a:options)
+  let options.ours = 1
+  let valid_statuses = []
+  for status in statuses
+    if s:validate_status_ours(status, options)
+      continue
+    endif
+    call add(valid_statuses, status)
+  endfor
+  if empty(valid_statuses)
+    if !get(options, 'ignore_empty_warning', 0)
+      call gita#util#warn(
+            \ 'No valid files were selected for ours action',
+            \)
+    endif
+    return
+  endif
+  let result = s:get_gita().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
+    call gita#util#doautocmd('checkout-post')
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
+  endif
+  call s:update()
+endfunction " }}}
+function! s:action_theirs(statuses, options) abort " {{{
+  let statuses = s:ensure_list(a:statuses)
+  let options = extend({}, a:options)
+  let options.theirs = 1
+  let valid_statuses = []
+  for status in statuses
+    if s:validate_status_theirs(status, options)
+      continue
+    endif
+    call add(valid_statuses, status)
+  endfor
+  if empty(valid_statuses)
+    if !get(options, 'ignore_empty_warning', 0)
+      call gita#util#warn(
+            \ 'No valid files were selected for ours action',
+            \)
+    endif
+    return
+  endif
+  let result = s:get_gita().git.checkout(options, commit, map(valid_statuses, 'v:val.path'))
+  if result.status == 0
+    call gita#util#doautocmd('checkout-post')
+  else
+    call gita#util#error(
+          \ result.stdout,
+          \ printf('Fail: %s', join(result.args)),
+          \)
+  endif
+  call s:update()
+endfunction " }}}
 
 function! s:action_stage(statuses, options) abort " {{{
   let statuses = s:ensure_list(a:statuses)
@@ -422,7 +566,12 @@ function! s:action_stage(statuses, options) abort " {{{
   let add_statuses = []
   let rm_statuses = []
   for status in statuses
-    if status.is_unstaged && status.worktree ==# 'D'
+    if status.is_conflicted
+      call gita#util#info(
+            \ printf('A conflicted file cannot be staged. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \)
+      continue
+    elseif status.is_unstaged && status.worktree ==# 'D'
       call add(rm_statuses, status)
     else
       if s:validate_status_add(status, options)
@@ -455,7 +604,12 @@ function! s:action_toggle(statuses, options) abort " {{{
   let stage_statuses = []
   let unstage_statuses = []
   for status in statuses
-    if status.is_staged && status.is_unstaged
+    if status.is_conflicted
+      call gita#util#info(
+            \ printf('A conflicted file cannot be toggled. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \)
+      continue
+    elseif status.is_staged && status.is_unstaged
       if get(g:, 'gita#interface#status#action_prefer_unstage', 0)
         call add(stage_statuses, status)
       else
@@ -465,12 +619,6 @@ function! s:action_toggle(statuses, options) abort " {{{
       call add(unstage_statuses, status)
     elseif status.is_untracked || status.is_unstaged || status.is_ignored
       call add(stage_statuses, status)
-    else
-      " conflicted
-      call gita#util#info(
-            \ printf('A conflicted file "%s" cannot be toggled.', status.path)
-            \)
-      continue
     endif
   endfor
   if empty(stage_statuses) && empty(unstage_statuses)
@@ -620,6 +768,8 @@ function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-reset)    :<C-u>call <SID>action('reset')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-checkout) :<C-u>call <SID>action('checkout')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT) :<C-u>call <SID>action('checkout', { 'force': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-ours)     :<C-u>call <SID>action('ours')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-theirs)   :<C-u>call <SID>action('theirs')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-stage)    :<C-u>call <SID>action('stage')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-unstage)  :<C-u>call <SID>action('unstage')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-toggle)   :<C-u>call <SID>action('toggle')<CR>
@@ -632,8 +782,10 @@ function! s:defmap() abort " {{{
   vnoremap <silent><buffer> <Plug>(gita-action-reset)    :<C-u>call <SID>action('reset', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-checkout) :<C-u>call <SID>action('checkout', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-CHECKOUT) :<C-u>call <SID>action('checkout', 1, { 'force': 1 })<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-stage)    :<C-u>call <SID>action('stage')<CR>
-  vnoremap <silent><buffer> <Plug>(gita-action-unstage)  :<C-u>call <SID>action('unstage')<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-ours)     :<C-u>call <SID>action('ours', 1)<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-theirs)   :<C-u>call <SID>action('theirs', 1)<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-stage)    :<C-u>call <SID>action('stage', 1)<CR>
+  vnoremap <silent><buffer> <Plug>(gita-action-unstage)  :<C-u>call <SID>action('unstage', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-toggle)   :<C-u>call <SID>action('toggle', 1)<CR>
   vnoremap <silent><buffer> <Plug>(gita-action-discard)  :<C-u>call <SID>action('discard', 1)<CR>
 
@@ -681,6 +833,8 @@ function! s:defmap() abort " {{{
     nmap <buffer><expr> -D <SID>smart_map('-D', '<Plug>(gita-action-RM)')
     nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
     nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+    nmap <buffer><expr> -o <SID>smart_map('-o', '<Plug>(gita-action-ours)')
+    nmap <buffer><expr> -t <SID>smart_map('-t', '<Plug>(gita-action-theirs)')
 
     vmap <buffer> << <Plug>(gita-action-stage)
     vmap <buffer> >> <Plug>(gita-action-unstage)
@@ -694,6 +848,8 @@ function! s:defmap() abort " {{{
     vmap <buffer> -D <Plug>(gita-action-RM)
     vmap <buffer> -c <Plug>(gita-action-checkout)
     vmap <buffer> -C <Plug>(gita-action-CHECKOUT)
+    vmap <buffer> -o <Plug>(gita-action-ours)
+    vmap <buffer> -t <Plug>(gita-action-theirs)
   endif
 endfunction " }}}
 function! s:update(...) abort " {{{
