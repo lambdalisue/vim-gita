@@ -30,7 +30,7 @@ function! s:smart_redraw() abort " {{{
   endif
 endfunction " }}}
 
-function! s:2way_open(status, ...) abort " {{{
+function! s:open2(status, ...) abort " {{{
   let status  = a:status
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
@@ -54,10 +54,13 @@ function! s:2way_open(status, ...) abort " {{{
   let ORIG_bufname = bufname('%')
   let filetype = &filetype
   let ORIG = getline(1, '$')
+  let LOCAL  = a:status.sign =~# '\v%(DD|DU)' ? [] : s:C.strip_theirs(ORIG)
+  let REMOTE = a:status.sign =~# '\v%(DD|UD)' ? [] : s:C.get_theirs(a:status.path)
 
   " LOCAL
   let LOCAL_bufname = ORIG_bufname . '.LOCAL'
-  silent execute 'enew ' . LOCAL_bufname
+  silent execute 'enew'
+  silent execute 'file ' . LOCAL_bufname
   silent execute 'setlocal filetype=' . filetype
   let LOCAL_bufnum = bufnr('%')
   setlocal buftype=acwrite bufhidden=wipe noswapfile
@@ -67,13 +70,13 @@ function! s:2way_open(status, ...) abort " {{{
     autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
     autocmd QuitPre <buffer> call s:ac_quit_pre()
   augroup END
-  let LOCAL = s:C.strip_theirs(ORIG)
   call gita#util#buffer_update(LOCAL)
   diffthis
 
   " REMOTE
   let REMOTE_bufname = ORIG_bufname . '.REMOTE'
-  silent execute printf('%s botright new %s', options.vertical ? 'vert' : '', REMOTE_bufname)
+  silent execute printf('%s botright split enew', options.vertical ? 'vert' : '')
+  silent execute 'file ' . REMOTE_bufname
   silent execute 'setlocal filetype=' . filetype
   setlocal buftype=nofile bufhidden=wipe noswapfile
   let REMOTE_bufnum = bufnr('%')
@@ -82,7 +85,6 @@ function! s:2way_open(status, ...) abort " {{{
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:ac_quit_pre()
   augroup END
-  let REMOTE = s:C.get_ours(a:status.path)
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
@@ -96,7 +98,7 @@ function! s:2way_open(status, ...) abort " {{{
   silent execute 'wincmd ='
   silent execute bufwinnr(LOCAL_bufnum) 'wincmd w'
 endfunction " }}}
-function! s:3way_open(status, ...) abort " {{{
+function! s:open3(status, ...) abort " {{{
   let status  = a:status
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
@@ -120,10 +122,14 @@ function! s:3way_open(status, ...) abort " {{{
   let ORIG_bufname = bufname('%')
   let filetype = &filetype
   let ORIG = getline(1, '$')
+  let MERGE  = s:C.strip_conflict(ORIG)
+  let LOCAL  = a:status.sign =~# '\v%(DD|DU)' ? [] : s:C.get_ours(a:status.path)
+  let REMOTE = a:status.sign =~# '\v%(DD|UD)' ? [] : s:C.get_theirs(a:status.path)
 
   " MERGE
   let MERGE_bufname = ORIG_bufname . '.MERGE'
-  silent execute 'enew ' . MERGE_bufname
+  silent execute 'enew'
+  silent execute 'file ' . MERGE_bufname
   silent execute 'setlocal filetype=' . filetype
   let MERGE_bufnum = bufnr('%')
   setlocal buftype=acwrite bufhidden=wipe noswapfile
@@ -135,24 +141,23 @@ function! s:3way_open(status, ...) abort " {{{
     autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
     autocmd QuitPre <buffer> call s:ac_quit_pre()
   augroup END
-  let MERGE = s:C.strip_conflict(ORIG)
   call gita#util#buffer_update(MERGE)
   diffthis
 
 
   " LOCAL
   let LOCAL_bufname = ORIG_bufname . '.LOCAL'
-  silent execute printf('%s topleft new %s', options.vertical ? 'vert' : '', LOCAL_bufname)
+  silent execute printf('%s topleft split enew', options.vertical ? 'vert' : '')
+  silent execute 'file ' . LOCAL_bufname
   silent execute 'setlocal filetype=' . filetype
   setlocal buftype=nofile bufhidden=wipe noswapfile
   let LOCAL_bufnum = bufnr('%')
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', bufname)
+  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
   augroup vim-gita-diff
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:ac_quit_pre()
   augroup END
-  let LOCAL = s:C.get_ours(a:status.path)
   setlocal modifiable
   call gita#util#buffer_update(LOCAL)
   setlocal nomodifiable
@@ -160,17 +165,17 @@ function! s:3way_open(status, ...) abort " {{{
 
   " REMOTE
   let REMOTE_bufname = ORIG_bufname . '.REMOTE'
-  silent execute printf('%s botright new %s', options.vertical ? 'vert' : '', REMOTE_bufname)
+  silent execute printf('%s botright split enew', options.vertical ? 'vert' : '')
+  silent execute 'file ' . REMOTE_bufname
   silent execute 'setlocal filetype=' . filetype
   setlocal buftype=nofile bufhidden=wipe noswapfile
   let REMOTE_bufnum = bufnr('%')
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', bufname)
+  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
   augroup vim-gita-diff
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:ac_quit_pre()
   augroup END
-  let REMOTE = s:C.get_ours(a:status.path)
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
@@ -188,7 +193,7 @@ function! s:3way_open(status, ...) abort " {{{
   silent execute 'wincmd ='
   silent execute bufwinnr(MERGE_bufnum) 'wincmd w'
 endfunction " }}}
-function! s:ac_write() abort " {{{
+function! s:ac_write(filename) abort " {{{
   let filename = fnamemodify(expand(b:_ORIG_bufname), ':p')
   if a:filename != filename
     " a new filename is given. save the content to the new file
@@ -226,13 +231,13 @@ function! s:ac_quit_pre() abort " {{{
   augroup END
 endfunction " }}}
 
-function! gita#interface#conflict#2way_open(status, ...) abort " {{{
+function! gita#interface#conflict#open2(status, ...) abort " {{{
   let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
-  call call('s:2way_open', extend([status], a:000))
+  call call('s:open2', extend([status], a:000))
 endfunction " }}}
-function! gita#interface#conflict#3way_open(status, ...) abort " {{{
+function! gita#interface#conflict#open3(status, ...) abort " {{{
   let status = s:P.is_dict(a:status) ? a:status : { 'path': a:status }
-  call call('s:3way_open', extend([status], a:000))
+  call call('s:open3', extend([status], a:000))
 endfunction " }}}
 function! gita#interface#conflict#smart_redraw() abort " {{{
   call call('s:smart_redraw')

@@ -29,8 +29,8 @@ function! s:smart_redraw() abort " {{{
   endif
 endfunction " }}}
 
-function! s:open(filename, commit, ...) abort " {{{
-  let path    = get(status, 'path2', status.path)
+function! s:open(status, commit, ...) abort " {{{
+  let path    = get(a:status, 'path2', a:status.path)
   let gita    = s:get_gita(path)
   let options = extend({
         \ 'opener': 'edit',
