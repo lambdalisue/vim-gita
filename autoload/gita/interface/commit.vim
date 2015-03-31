@@ -132,7 +132,10 @@ function! s:action_commit(status, options) abort " {{{
   let options = extend({ 'force': 0 }, a:options)
   let statuses_map = get(gita.interface.commit, 'statuses_map', {})
   if empty(meta.merge_head) && empty(filter(values(statuses_map), 'v:val.is_staged'))
-    " nothing to be committed
+    redraw | call gita#util#info(
+          \ 'Nothing to be commited. Stage changes first.',
+          \)
+    return
     return
   elseif &modified
     redraw | call gita#util#warn(
