@@ -237,6 +237,7 @@ function! g:lightline.my.git_status() " {{{
 endfunction " }}}
 ```
 
+
 ### Commands
 
 All Git commands can be executed via Gita command like

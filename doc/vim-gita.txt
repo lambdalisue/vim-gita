@@ -161,7 +161,7 @@ It will open a commit window which indicate the current status of next
 commit. If the current buffer is not under a git working tree, it won't open 
 the window.
 
-The commit window exsits mainly for editing a commit message, thus most of
+The commit window exists mainly for editing a commit message, thus most of
 status manipulation keys are not available in the window. To manipulate the
 status again, hit cc to return the status window. Hit ?m to see a helo of
 default mappings available in the commit window.
@@ -192,13 +192,13 @@ conflicted file (a conflicted file of both added, added by us, added by them,
 or both modified).
 
 In a 2-way diff, the left or top window is a local version and right or bottom
-window is a remote version. Any modification on a remote version is perhibited
+window is a remote version. Any modification on a remote version is prohibited
 and if you call :w on the local version, the changes will be written into the
 local file.
 
 In a 3-way diff, the left or top window is a local version, the middle window
 is a merge version, and the right or bottom window is a remote version. Any
-modification on a local or remote version is perhibited. You can get a changes
+modification on a local or remote version is prohibited. You can get a changes
 of local version with dol (diff obtain from local) and of remote version with
 dor (diff obtain from remote) in the merge window. If you hit dp on the local
 or remote window, the changes will be put on the merge window. If you call :w
@@ -298,7 +298,7 @@ values will be automatically cleared.
 If you want to execute status, commit, or diff command in a way which other
 commands do. Add '!' to tell a Gita to NOT use specialized interface. The
 following example will call a status command in a way which other commands do
-and no status window will be appeard.
+and no status window will be appeared.
 >
 	:Gita! status
 <
