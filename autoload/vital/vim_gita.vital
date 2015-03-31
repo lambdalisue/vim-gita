@@ -1,0 +1,10 @@
+vim_gita
+a94e63e
+
+Prelude
+Data.List
+VCS.Git
+Data.Dict
+System.Filepath
+ArgumentParser
+VCS.Git.Conflict

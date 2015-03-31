@@ -11,8 +11,7 @@ set cpo&vim
 
 function! s:get_vital() " {{{
   if !exists('s:_vital_module_Vital')
-    " TODO replace it to 'vim_gita'
-    let s:_vital_module_Vital = vital#of('vital')
+    let s:_vital_module_Vital = vital#of('vim_gita')
   endif
   return s:_vital_module_Vital
 endfunction " }}}
