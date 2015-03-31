@@ -170,37 +170,6 @@ function! gita#util#buffer_clear_undo() abort " {{{
   silent execute 'setlocal undolevels=' . saved_undolevels
 endfunction " }}}
 
-" Window
-function! gita#util#choosewin() abort " {{{
-  let winnum  = winnr()
-  let winnums = filter(range(1, winnr('$')), '!s:choosewin_is_ignored(v:val)')
-  let options = {
-        \ 'auto_choose': 1,
-        \}
-  try
-    let choice = choosewin#start(winnums, options)
-    if !empty(choice)
-      let [tabnum, winnum] = choice
-      execute 'tabnext' tabnum
-      return winnum
-    endif
-  catch
-    call gita#util#warn(
-          \ 'An opener "select" require "t9md/choosewin" to be installed.'
-          \ 'Dependencies are not installed.',
-          \)
-    return -1
-  endtry
-endfunction
-function! s:choosewin_is_ignored(winnum) abort
-  let ignored_filetypes = [
-        \ 'gita-status', 'gita-commit', 'gista-list',
-        \ 'unite', 'vimfiler', 'vimshell', 'nerdtree',
-        \ 'gundo', 'tagbar',
-        \]
-  return index(ignored_filetypes, getbufvar(winbufnr(a:winnum), '&filetype')) != -1
-endfunction " }}}
-
 " Invoker
 function! gita#util#invoker_get(...) abort " {{{
   let bufname = get(a:000, 0, '%')

@@ -21,6 +21,14 @@ function! s:GitaCommit(opts) abort " {{{
 endfunction " }}}
 function! s:GitaDiff(opts) abort " {{{
   let commit = empty(get(a:opts, '__unknown__', [])) ? '' : join(a:opts.__unknown__)
+  if empty(commit)
+    let commit = gita#util#ask('Diff to: ', 'INDEX')
+    if strlen(commit) == 0
+      redraw || call gita#util#warn('No valid commit was selected. The operation is canceled.')
+      return
+    endif
+  endif
+  let commit = commit ==# 'INDEX' ? '' : commit
   if get(a:opts, 'compare', 1)
     call gita#interface#diff#compare(expand('%'), commit, a:opts)
   else

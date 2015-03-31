@@ -22,8 +22,8 @@ function! s:to_string(value) " {{{
     return string(a:value)
   endif
 endfunction " }}}
-function! s:get_info() abort " {{{
-  let gita = gita#get()
+function! s:get_info(...) abort " {{{
+  let gita = call('gita#get', a:000)
   if gita.enabled
     let meta = gita.git.get_meta()
     let info = {
@@ -154,6 +154,7 @@ augroup vim-gita-statusline
   autocmd User vim-gita-fetch-post  call gita#statusline#clear()
   autocmd User vim-gita-push-post   call gita#statusline#clear()
   autocmd User vim-gita-pull-post   call gita#statusline#clear()
+  autocmd User vim-gita-submodule-post call gita#statusline#clear()
 augroup END
 
 let &cpo = s:save_cpo

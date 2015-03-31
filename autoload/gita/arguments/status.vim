@@ -18,10 +18,6 @@ function! s:get_parser() abort " {{{
           \ 'name': 'Show the working tree status in Gita interface',
           \})
     call s:parser.add_argument(
-          \ '--force-construction',
-          \ 're-construct the buffer (debug)', {},
-          \)
-    call s:parser.add_argument(
           \ '--untracked-files', '-u',
           \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
           \   'choices': ['all', 'normal', 'no'],
