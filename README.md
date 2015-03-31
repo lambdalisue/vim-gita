@@ -1,5 +1,7 @@
 vim-gita &alpha;
 ===============================================================================
+![Screencast (status to commit)](./doc/status-commit.gif)
+
 *vim-gita* is an alternative git manipluation plugin.
 It provide the following features:
 
@@ -139,6 +141,8 @@ The following mappings are available in the window
 
 
 ### Diff
+
+![Screencast (diff)](./doc/diff.gif)
 
 To visualize the difference of the current buffer between working tree and index, branch, or commit, execute the following command or hit `d` or `D` in a status/commit window:
 
