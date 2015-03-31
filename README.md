@@ -152,6 +152,8 @@ It will prompt a input window to ask which commit you want to compare with.
 
 ### Conflict
 
+![Screencast (conflict)](./doc/conflict-3way.gif)
+
 To solve a conflicted file, move the cursor on a conflicted file and hit `s` or `S` in a status/commit window.
 It will open a 2-way or 3-way diff to solve a conflicted file (a conflicted file of both added, added by us, added by them, or both modified).
 
@@ -275,6 +277,7 @@ ToDo
 - [x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
 - [x] Add a way to display a current git status in statusline/tabline
 - [x] Allow to execute a git raw command with :Gita
+- [ ] Fix commit message issue
 - [ ] Add options to status/commit/diff command
 - [ ] Add conflict command like status/commit/diff command
 - [ ] Add git blame interface

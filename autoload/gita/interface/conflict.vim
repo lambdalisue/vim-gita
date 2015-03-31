@@ -81,10 +81,8 @@ function! s:open2(status, ...) abort " {{{
   setlocal buftype=nofile bufhidden=wipe noswapfile
   let REMOTE_bufnum = bufnr('%')
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  augroup vim-gita-diff
-    autocmd! * <buffer>
-    autocmd QuitPre <buffer> call s:ac_quit_pre()
-  augroup END
+  autocmd! * <buffer>
+  autocmd QuitPre <buffer> call s:ac_quit_pre()
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
@@ -125,6 +123,9 @@ function! s:open3(status, ...) abort " {{{
   let MERGE  = s:C.strip_conflict(ORIG)
   let LOCAL  = a:status.sign =~# '\v%(DD|DU)' ? [] : s:C.get_ours(a:status.path)
   let REMOTE = a:status.sign =~# '\v%(DD|UD)' ? [] : s:C.get_theirs(a:status.path)
+  augroup vim-gita-conflict
+    autocmd! * <buffer>
+  augroup END
 
   " MERGE
   let MERGE_bufname = ORIG_bufname . '.MERGE'
@@ -136,11 +137,9 @@ function! s:open3(status, ...) abort " {{{
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   silent execute printf('nnoremap <buffer><silent> dol :<C-u>diffget %s.LOCAL<CR>', ORIG_bufname)
   silent execute printf('nnoremap <buffer><silent> dor :<C-u>diffget %s.REMOTE<CR>', ORIG_bufname)
-  augroup vim-gita-conflict
-    autocmd! * <buffer>
-    autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-    autocmd QuitPre <buffer> call s:ac_quit_pre()
-  augroup END
+  autocmd! * <buffer>
+  autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
+  autocmd QuitPre <buffer> call s:ac_quit_pre()
   call gita#util#buffer_update(MERGE)
   diffthis
 
@@ -154,10 +153,8 @@ function! s:open3(status, ...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
-  augroup vim-gita-diff
-    autocmd! * <buffer>
-    autocmd QuitPre <buffer> call s:ac_quit_pre()
-  augroup END
+  autocmd! * <buffer>
+  autocmd QuitPre <buffer> call s:ac_quit_pre()
   setlocal modifiable
   call gita#util#buffer_update(LOCAL)
   setlocal nomodifiable
@@ -172,10 +169,8 @@ function! s:open3(status, ...) abort " {{{
   let REMOTE_bufnum = bufnr('%')
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
-  augroup vim-gita-diff
-    autocmd! * <buffer>
-    autocmd QuitPre <buffer> call s:ac_quit_pre()
-  augroup END
+  autocmd! * <buffer>
+  autocmd QuitPre <buffer> call s:ac_quit_pre()
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
@@ -194,12 +189,12 @@ function! s:open3(status, ...) abort " {{{
   silent execute bufwinnr(MERGE_bufnum) 'wincmd w'
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
-  let filename = fnamemodify(expand(b:_ORIG_bufname), ':p')
-  if a:filename != filename
+  if a:filename != expand('%:p')
     " a new filename is given. save the content to the new file
     execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
     return
   endif
+  let filename = fnamemodify(expand(b:_ORIG_bufname), ':p')
   if writefile(getline(1, '$'), filename) == 0
     setlocal nomodified
   endif
