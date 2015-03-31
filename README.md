@@ -266,20 +266,20 @@ See more documents on [vim-gita.txt](./doc/vim-gita.txt) or execute `:help vim-g
 ToDo
 -------------------------------------------------------------------------------
 
--[x] Add base structure of the plugin
--[x] Add status manipulation window
--[x] Add commit message editing window
--[x] Add actual commit execution on the window
--[x] Add 2-way diff window
--[x] Add 2-way diff (LOCAL, REMOTE) to help solving conflict
--[x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
--[x] Add a way to display a current git status in statusline/tabline
--[x] Allow to execute a git raw command with :Gita
--[ ] Add options to status/commit/diff command
--[ ] Add conflict command like status/commit/diff command
--[ ] Add git blame interface
--[ ] Browse a selected file region on GitHub/GitHub enterprise
--[ ] Allow to execute commands in async mode via vimproc
+[x] Add base structure of the plugin
+[x] Add status manipulation window
+[x] Add commit message editing window
+[x] Add actual commit execution on the window
+[x] Add 2-way diff window
+[x] Add 2-way diff (LOCAL, REMOTE) to help solving conflict
+[x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
+[x] Add a way to display a current git status in statusline/tabline
+[x] Allow to execute a git raw command with :Gita
+[ ] Add options to status/commit/diff command
+[ ] Add conflict command like status/commit/diff command
+[ ] Add git blame interface
+[ ] Browse a selected file region on GitHub/GitHub enterprise
+[ ] Allow to execute commands in async mode via vimproc
 
 License
 -------------------------------------------------------------------------------
