@@ -1,4 +1,4 @@
-vim-gita &alpha;
+vim-gita &alpha; version
 ===============================================================================
 *vim-gita* is an alternative git manipluation plugin.
 It provide the following features:
