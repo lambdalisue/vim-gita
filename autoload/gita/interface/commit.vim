@@ -111,17 +111,45 @@ function! s:action_open(status, options) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
         \}, a:options)
-  if options.opener ==# 'select'
-    let winnum = gita#util#choosewin()
-    let opener = 'edit'
-  else
-    let opener = options.opener
-    call gita#util#invoker_focus()
-  endif
-  call gita#util#buffer_open(get(a:status, 'path2', a:status.path), opener)
+  call gita#util#invoker_focus()
+  call gita#util#buffer_open(
+        \ get(a:status, 'path2', a:status.path),
+        \ options.opener
+        \)
 endfunction " }}}
-function! s:action_diff(status, options) abort " {{{
-  call gita#util#error('Not implemented yet.')
+function! s:action_diff_open(status, options) abort " {{{
+  let options = extend({
+        \ 'opener': 'edit',
+        \}, a:options)
+  if !has_key(options, 'commit')
+    let commit = gita#util#ask('Checkout from: ', 'HEAD')
+    if strlen(commit) == 0
+      redraw || call gita#util#warn('No valid commit was selected. The operation is canceled.')
+      return
+    endif
+  else
+    let commit = options.commit
+  endif
+  let commit = commit ==# 'INDEX' ? '' : commit
+  call gita#util#invoker_focus()
+  call gita#interface#diff#open(a:status, commit, options)
+endfunction " }}}
+function! s:action_diff_compare(status, options) abort " {{{
+  let options = extend({
+        \ 'opener': 'tabnew',
+        \}, a:options)
+  if !has_key(options, 'commit')
+    let commit = gita#util#ask('Checkout from: ', 'HEAD')
+    if strlen(commit) == 0
+      redraw || call gita#util#warn('No valid commit was selected. The operation is canceled.')
+      return
+    endif
+  else
+    let commit = options.commit
+  endif
+  let commit = commit ==# 'INDEX' ? '' : commit
+  call gita#util#invoker_focus()
+  call gita#interface#diff#compare(a:status, commit, options)
 endfunction " }}}
 function! s:action_commit(status, options) abort " {{{
   if s:validate_filetype('s:action_commit()')
@@ -314,36 +342,25 @@ function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-update)   :<C-u>call <SID>action('update')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-switch)   :<C-u>call <SID>action('open_status')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-commit)   :<C-u>call <SID>action('commit')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-COMMIT)   :<C-u>call <SID>action('commit', { 'force(: 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-COMMIT)   :<C-u>call <SID>action('commit', { 'force': 1 })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open)     :<C-u>call <SID>action('open', { 'opener': 'edit' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-h)   :<C-u>call <SID>action('open', { 'opener': 'botright split' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-v)   :<C-u>call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-open-s)   :<C-u>call <SID>action('open', { 'opener': 'select' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff', { 'opener': 'edit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff', { 'opener': 'botright split' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff', { 'opener': 'botright vsplit' })<CR>
-
-  " aliases (long name)
-  nmap <buffer> <Plug>(gita-action-help-mappings)   <Plug>(gita-action-help-m)
-  nmap <buffer> <Plug>(gita-action-help-symbols)    <Plug>(gita-action-help-s)
-  nmap <buffer> <Plug>(gita-action-open-horizontal) <Plug>(gita-action-open-h)
-  nmap <buffer> <Plug>(gita-action-open-vertical)   <Plug>(gita-action-open-v)
-  nmap <buffer> <Plug>(gita-action-open-select)     <Plug>(gita-action-open-s)
-  nmap <buffer> <Plug>(gita-action-diff-horizontal) <Plug>(gita-action-diff-h)
-  nmap <buffer> <Plug>(gita-action-diff-vertical)   <Plug>(gita-action-diff-v)
+  nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff_open', { 'opener': 'edit' })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 1 })<CR>
 
   if get(g:, 'gita#interface#commit#enable_default_keymap', 1)
     nmap <buffer><silent> q  :<C-u>quit<CR>
     nmap <buffer> <C-l> <Plug>(gita-action-update)
-    nmap <buffer> ?m <Plug>(gita-action-help-m)
-    nmap <buffer> ?s <Plug>(gita-action-help-s)
+    nmap <buffer> ?m    <Plug>(gita-action-help-m)
+    nmap <buffer> ?s    <Plug>(gita-action-help-s)
 
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
 
     nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
     nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
-    nmap <buffer><expr> s <SID>smart_map('s', '<Plug>(gita-action-open-s)')
     nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
     nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
   endif

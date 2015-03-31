@@ -1,20 +1,31 @@
-vim-gita [WIP]
+vim-gita &alpha;
 ===============================================================================
-![vim-gita screencast](./doc/screencast1.gif)
+*vim-gita* is an alternative git manipluation plugin.
+It provide the following features:
 
-*vim-gita* is a plugin for manipulating Git. It provide the following features
+1. Show and manipulate the current status of index and working tree of a git
+   working space
+2. Edit and post a commit message of a git working space
+3. Show a difference of a file between working tree and a particular commits
+4. Help to solve a conflict via 2-way or 3-way diff window
+5. Show a current status of a git working space in statusline (or tabline)
+6. Help to execute a git command
 
--   `:Gita status` which is for manipulating index (staged) and working tree (unstaged)
--   `:Gita commit` which is for writing a commit message
--   `:Gita diff` which is for comparing a difference (Not implemented yet)
--   `:Gita blame` which is for blaming (Not implemented yet)
--   `:Gita {command}` which is for executing a git command (e.g. `:Gita push` is alternative of `:!git -c color.ui=false push`)
+This plugin was strongly inspired by [tpope/vim-fugitive][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
+The most of the features are powerd by [vim-jp/vital.vim][], [lambdalisue/vital-System-Cache-Unified][], [lambdalisue/vital-ArgumentParser][], and [lambdalisue/vital-VCS-Git][].
+[tpope/vim-fugitive]:                       https://github.com/tpope/vim-fugitive
+[Shougo/vim-vcs]:                           https://github.com/Shougo/vim-vcs
+[Shougo/neobundle.vim]:                     https://github.com/Shougo/neobundle.vim
+[gmarik/Vundle.vim]:                        https://github.com/gmarik/Vundle.vim
+[vim-jp/vital.vim]:                         https://github.com/vim-jp/vital.vim
+[lambdalisue/vim-gista]:                    https://github.com/lambdalisue/vim-gista
+[lambdalisue/vital-VCS-Git]:                https://github.com/lambdalisue/vital-VCS-Git
+[lambdalisue/vital-ArgumentParser]:         https://github.com/lambdalisue/vital-ArgumentParser
+[lambdalisue/vital-System-Cache-Unified]:   https://github.com/lambdalisue/vital-System-Cache-Unified
 
-The original concepts and strategies are taken from [tpope/vim-fugitive](https://github.com/tpope/vim-fugitive), [Shougo/vim-vcs](https://github.com/Shougo/vim-vcs), and [lambdalisue/vim-gista](https://github.com/lambdalisue/vim-gista).
-
-How to install
+Install
 -------------------------------------------------------------------------------
-The [repository](https://github.com/lambdalisue/vim-gita) follow a standard directory structure of vim plugin thus you can use [Vundle.vim](https://github.com/gmarik/Vundle.vim) or [neobundle.vim](https://github.com/Shougo/neobundle.vim) to install vim-gita like:
+The repository follow a standard directory structure thus you can use [gmarik/Vundle.vim], [Shougo/neobundle.vim], or other vim plugin manager to install vim-gita like:
 
 ```vim
 " Vundle.vim
@@ -25,91 +36,155 @@ NeoBundle 'lambdalisue/vim-gita'
 
 " neobundle.vim (Lazy)
 NeoBundleLazy 'lambdalisue/vim-gita', {
-    \ 'autoload': {
-    \    'commands': ['Gita'],
-    \    'mappings': '<Plug>(gita-',
-    \}}
+        \ 'autoload': {
+        \   'commands': ['Gita'],
+        \}}
 ```
 
-If you are not using any vim plugin managers, you can copy the repository to your $VIM directory to enable the plugin but I strongly recommend you to try one of those vim plugin managers.
+If you are not using any vim plugin manager, you can copy the repository to your $VIM directory to enable the plugin.
 
-
-How to use
+Usage
 -------------------------------------------------------------------------------
 
-All commands start from `:Gita`. The command provides completion thus type `:Gita <TAB>` show all commands vim-gita supports (WIP, not all commands are tested yet).
+Basically you will follow the following steps to commit your changes
 
+1. Add/Delete/Modify several files
+2. Open a status window
+3. Stage/Unstage several files which required to be committed
+4. Open a commit window
+5. Open a file in diff mode to write your commit message
+5. Close the window (or hit `CC`) to commit
+
+And following steps to solve conflicts in merge/rebase
+
+1. Execute a git command via `:Gita` command
+2. Open a status window
+3. Open a 2-way or 3-way diff for conflicted files
+4. Press `-a` to mark conflicted files as solved
+5. Open a commit window and commit the changes
+
+See the details of each interface below.
 
 ### Status
 
-`:Gita status` open a new buffer called `gita:status` (or `gita_status` in windows).
-The buffer show similar information which you can get from `git status --short`. (See [git-status(1)](https://www.kernel.org/pub/software/scm/git/docs/git-status.html).)
+To display a current status of a git working tree, execute the following command on a file buffer
 
-![vim-gita screencast2](./doc/screencast2.gif)
+    :Gita status
 
-You can add/remove files from/to index and working tree via the following keymaps:
+It will open a status window which indicate the current status of the git working tree (of the current buffer belongs).
+If the current buffer is not under a git working tree, it won't open the window.
 
-| Map      | Action                                                    |
-|----------|-----------------------------------------------------------|
-| `q`      | Close the buffer                                          |
-| `<CR>`   | Open selected file                                        |
-| `<S-CR>` | Not implemented yet                                       |
-| `e`      | Open selected file                                        |
-| `E`      | Open selected file (vsplit)                               |
-| `<C-e>`  | Open selected file (split)                                |
-| `d`      | Not implemented yet                                       |
-| `D`      | Not implemented yet                                       |
-| `<C-d>`  | Not implemented yet                                       |
-| `<C-l>`  | Update status                                             |
-| `cc`     | Open a commit buffer                                      |
-| `cA`     | Open a new commit buffer (--amend)                        |
-| `cC`     | Open a new commit buffer                                  |
-| `-a`     | Add to index (`git add`)                                  |
-| `-A`     | Add to index forcibly (`git add --force`)                 |
-| `-r`     | Remove from index (`git rm`)                              |
-| `-R`     | Remove from index forcibly (`git rm --force`)             |
-| `-h`     | Remove from cache (`git rm --cached)`                     |
-| `-c`     | Checkout from HEAD (`git checkout HEAD)`                  |
-| `-C`     | Checkout from HEAD forcibly (`git checkout HEAD --force)` |
-| `-=`     | Revert (checkout/delete) file                             |
-| `--`     | Toggle (add/rm/rm --cached) file                          |
+The status window exists mainly for stage/unstage changes, hit `?m` to see the default mappings for manipulating statuses.
 
-File operating actions are also available in visual mode to execute actions on the multiple files.
+In the status window, you will see the current status of the git working tree in 'Short Format' (`git status --short`). Hit `?s` to see a help of 'Short Format'.
+
+The following mappings are available in the window
+
+| Key          | Description                                                           |
+|--------------|-----------------------------------------------------------------------|
+| `q`          | Close the window                                                      |
+| `?m`         | Toggle a help for mapping                                             |
+| `?s`         | Toggle a help abount 'Short Format'                                   |
+| `<C-l>`      | Update the status                                                     |
+| `cc`         | Switch to a commit window                                             |
+| `cC`         | Switch to a new commit window                                         |
+| `cA`         | Switch to a new amend commit window                                   |
+| `e`          | Open a file via `edit`                                                |
+| `E`          | Open a file via `vsplit`                                              |
+| `d`          | Open a diff file via `edit`                                           |
+| `D`          | Open a file in diff mode via `vsplit`                                 |
+| `s`          | Open a conflicted file in 2-way diff mode to solve conflicts          |
+| `S`          | Open a conflicted file in 3-way diff mode to solve conflicts          |
+| `<<`         | Stage changes of a file                                               |
+| `>>`         | Unstage changes of a file                                             |
+| `--`         | Toggle stage/unstage changes of a file                                |
+| `==`         | Discard changes of a file on worktree (the operation is irreversible) |
+| `-a` or `-A` | Add a file to index                                                   |
+| `-d` or `-D` | Delete a file from index                                              |
+| `-r`         | Reset a file of index                                                 |
+| `-c` or `-C` | Checkout a file from a specified commit                               |
+
 
 ### Commit
 
-`:Gita commit` open a new buffer called `gita:commit` (or `gita_commit` in windows).
-The buffer show similar information which you can get from `git status --short`. (See [git-status(1)](https://www.kernel.org/pub/software/scm/git/docs/git-status.html).)
+To prepare a commit, execute the following command to open a commit window to edit a commit message (or hit `cc`, `cC`, or `cA` in a status window).
 
-You can edit a commit message and the commit will executed when user hit `CC` or close the buffer window.
-All modifications are cached when user hit `:w`, thus you can go/back to/from gita-status buffer without loosing draft commit message via `cc`.
+    :Gita commit
 
-![vim-gita screencast3](./doc/screencast3.gif)
+It will open a commit window which indicate the current status of next commit.
+If the current buffer is not under a git working tree, it won't open the window.
 
-Additionally, the following keymaps are available:
+The commit window exsits mainly for editing a commit message, thus most of status manipulation keys are not available in the window.
+To manipulate the status again, hit `cc` to return the status window.
+Hit `?m` to see a helo of default mappings available in the commit window.
 
-| Map      | Action                                                    |
-|----------|-----------------------------------------------------------|
-| `q`      | Close the buffer                                          |
-| `<CR>`   | Open selected file                                        |
-| `<S-CR>` | Not implemented yet                                       |
-| `e`      | Open selected file                                        |
-| `E`      | Open selected file (vsplit)                               |
-| `<C-e>`  | Open selected file (split)                                |
-| `d`      | Not implemented yet                                       |
-| `D`      | Not implemented yet                                       |
-| `<C-d>`  | Not implemented yet                                       |
-| `<C-l>`  | Update status                                             |
-| `cc`     | Open a status buffer                                      |
-| `CC`     | Execute commit                                            |
+In the commit window, you also see the current status of the git working tree in 'Short Format' (`git status --short`). Hit `?s` to see a help of 'Short Format'.
+
+An actual commit will performed when user hit `CC` or the commit window is closed.
+
+The following mappings are available in the window
+
+| Key          | Description                                                           |
+|--------------|-----------------------------------------------------------------------|
+| `q`          | Close the window                                                      |
+| `?m`         | Toggle a help for mapping                                             |
+| `?s`         | Toggle a help abount 'Short Format'                                   |
+| `<C-l>`      | Update the status                                                     |
+| `cc`         | Switch to a status window                                             |
+| `CC`         | Perform an actual commit command                                      |
+| `e`          | Open a file via `edit`                                                |
+| `E`          | Open a file via `vsplit`                                              |
+| `d`          | Open a diff file via `edit`                                           |
+| `D`          | Open a file in diff mode via `vsplit`                                 |
 
 
-### Statusline/Tabline
+### Diff
 
-![vim-gita statusline](./doc/screenshot1.png)
+To visualize the difference of the current buffer between working tree and index, branch, or commit, execute the following command or hit `d` or `D` in a status/commit window:
 
-vim-gita provide a statusline function. The function simply return a string thus you can use the function in vim's statusline or some statusline plugins like [lightline.vim](https://github.com/itchyny/lightline.vim).
-The following is my settings for lightline.vim. It use tabline instead of statusline.
+    :Gita diff
+
+It will prompt a input window to ask which commit you want to compare with.
+
+### Conflict
+
+To solve a conflicted file, move the cursor on a conflicted file and hit `s` or `S` in a status/commit window.
+It will open a 2-way or 3-way diff to solve a conflicted file (a conflicted file of both added, added by us, added by them, or both modified).
+
+In a 2-way diff, the left or top window is a LOCAL version and right or bottom window is a REMOTE version.
+Any modification on a REMOTE version is prohibited and if you call `:w` on the LOCAL version, the changes will be written into the
+local file.
+
+In a 3-way diff, the left or top window is a LOCAL version, the middle window is a MERGE version, and the right or bottom window is a REMOTE version.
+Any modification on a LOCAL or REMOTE version is prohibited.
+You can get a changes of LOCAL version with hitting `dol` (diff obtain from local) and of REMOTE version with hitting `dor` (diff obtain from remote) in the MERGE window.
+If you hit `dp` on the LOCAL or REMOTE window, the changes will be put on the MERGE window.
+If you call `:w` on the MERGE version, the changes will be written into the local file.
+
+After you solve all conflicts, open a status window and mark the file as solved by hitting `-a`.
+
+
+### Statusline
+
+vim-gita provide several components to show a current status on vim's statusline (or tabline).
+All status used in the components are well cached thus you don't have to worry about the performance (the caches will be cleared when a particular `vim-gita-{commnad}-post` autocmd is called).
+Use `gita#statusline#preset()` to get a preset or `gita#statusline#format()` to create your own component.
+
+```vim
+" Example usage of gita#statusline#preset()
+echo gita#statusline#preset('branch')
+" vim-gita/master <> origin/master
+echo gita#statusline#preset('status')
+" !5 +2 "4 *4
+echo gita#statusline#preset('traffic')
+" <5 >4
+
+" Example usage of gita#statusline#format()
+echo gita#statusline#format('%ln/%lb # %rn/%rb')
+" vim-gita/master # origin/master
+```
+
+The following is my tabline setting via [itchyny/lightline.vim](https://github.com/itchyny/lightline.vim)
 
 ```vim
 let g:lightline = {
@@ -161,6 +236,45 @@ function! g:lightline.my.git_status() " {{{
   return winwidth(0) > 70 ? gita#statusline#preset('status') : ''
 endfunction " }}}
 ```
+
+### Commands
+
+All Git commands can be executed via Gita command like
+
+    :Gita push
+
+It will execute a push command and display the result. With this way, vim-gita's autocmd will be executed and cached values will be automatically cleared.
+
+If you want to execute status, commit, or diff command in a way which other commands do.
+Add `!` to tell a Gita to NOT use specialized interface. 
+The following example will call a status command in a way which other commands do and no status window will be appeared.
+
+    :Gita! status
+
+
+Documents
+-------------------------------------------------------------------------------
+
+See more documents on [vim-gita.txt](./doc/vim-gita.txt) or execute `:help vim-gita`
+
+
+ToDo
+-------------------------------------------------------------------------------
+
+-[x] Add base structure of the plugin
+-[x] Add status manipulation window
+-[x] Add commit message editing window
+-[x] Add actual commit execution on the window
+-[x] Add 2-way diff window
+-[x] Add 2-way diff (LOCAL, REMOTE) to help solving conflict
+-[x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
+-[x] Add a way to display a current git status in statusline/tabline
+-[x] Allow to execute a git raw command with :Gita
+-[ ] Add options to status/commit/diff command
+-[ ] Add conflict command like status/commit/diff command
+-[ ] Add git blame interface
+-[ ] Browse a selected file region on GitHub/GitHub enterprise
+-[ ] Allow to execute commands in async mode via vimproc
 
 License
 -------------------------------------------------------------------------------

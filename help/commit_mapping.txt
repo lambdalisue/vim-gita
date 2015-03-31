@@ -7,7 +7,6 @@
 # 
 # e     : Open a selected file
 # E     : Open a selected file via vsplit
-# s     : Open a selected file in a selected window (t9md/vim-choosewin is required)
 # d     : Open a diff between a current and a specified version of a selected file
 # D     : Open a current and a specified version of a selected file in diff mode
 #

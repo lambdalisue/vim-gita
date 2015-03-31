@@ -18,10 +18,6 @@ function! s:get_parser() abort " {{{
           \ 'name': 'Record changes to the repository via Gita interface',
           \})
     call s:parser.add_argument(
-          \ '--force-construction',
-          \ 're-construct the buffer (debug)', {},
-          \)
-    call s:parser.add_argument(
           \ '--author',
           \ 'override author for commit', {
           \   'type': 'value',
