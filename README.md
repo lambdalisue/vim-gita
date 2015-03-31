@@ -1,4 +1,4 @@
-vim-gita &alpha;
+vim-gita &alpha; version
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
