@@ -11,17 +11,6 @@ scriptencoding utf8
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:to_string(value) " {{{
-  if gita#util#is_string(a:value)
-    return a:value
-  elseif gita#util#is_numeric(a:value)
-    return a:value ? string(a:value) : ''
-  elseif gita#util#is_list(a:value) || gita#util#is_dict(a:value)
-    return empty(a:value) ? string(a:value) : ''
-  else
-    return string(a:value)
-  endif
-endfunction " }}}
 function! s:get_info(...) abort " {{{
   let gita = call('gita#get', a:000)
   if gita.enabled
@@ -73,28 +62,7 @@ function! s:get_statuses() abort " {{{
   endif
 endfunction " }}}
 function! s:format(format, info) abort " {{{
-  " format rule:
-  "   %{<left>|<right>}<key>
-  "     '<left><value><right>' if <value> != ''
-  "     ''                     if <value> == ''
-  "   %{<left>}<key>
-  "     '<left><value>'        if <value> != ''
-  "     ''                     if <value> == ''
-  "   %{|<right>}<key>
-  "     '<value><right>'       if <value> != ''
-  "     ''                     if <value> == ''
-  if empty(a:info)
-    return ''
-  endif
-  let pattern_base = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
-  let str = copy(a:format)
-  for [key, value] in items(s:format_map)
-    let result = s:to_string(get(a:info, value, ''))
-    let pattern = printf(pattern_base, key)
-    let repl = strlen(result) ? printf('\1%s\2', result) : ''
-    let str = substitute(str, pattern, repl, 'g')
-  endfor
-  return substitute(str, '\v^\s+|\s+$', '', 'g')
+  return gita#util#format(a:format, s:format_map, a:info)
 endfunction
 let s:format_map = {
       \ 'ln': 'local_name',

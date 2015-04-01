@@ -36,6 +36,7 @@ Usage				|vim-gita-usage|
   Commit			|vim-gita-usage-commit|
   Diff				|vim-gita-usage-diff|
   Commands			|vim-gita-usage-commands|
+  Browse			|vim-gita-usage-browse|
   Statusline			|vim-gita-usage-statusline|
 Interface			|vim-gita-interface|
   Commands			|vim-gita-interface-commands|
@@ -208,6 +209,30 @@ After you solve all conflicts, open a status window and mark the file as
 solved by hitting -a (<Plug>(gita-action-add)).
 
 ------------------------------------------------------------------------------
+BROWSE						*vim-gita-usage-browse*
+
+To open a current line or a selected region of a git managed file, execute the
+following command
+>
+	:Gita browse
+<
+It will open a corresponding url in your default browser. Currently GitHub and
+BitBucket is supported (user can add extra patterns with
+|g:gita#interface#browse#extra_translate_patterns|).
+
+You can just echo or yank the url if you specify --echo or --yank option like
+below
+>
+	:Gita --yank
+<
+If you want to open, echo, or yank url of other files, just list filenames
+before options like
+>
+	:Gita README.md LICENSE.md --echo
+<
+If you want to specify a exact version of the file, add --exact option.
+
+------------------------------------------------------------------------------
 STATUSLINE					*vim-gita-usage-statusline*
 
 vim-gita provide several components to show a current status on vim's
@@ -376,6 +401,24 @@ COMMANDS					*vim-gita-interface-commands*
 	Ref:
 	- lambdalisue/vim-unified-diff
 	  https://github.com/lambdalisue/vim-unified-diff
+
+					*:Gita-browse*
+:Gita browse [{file}] [--open,--echo,--yank] [-e,--exact]
+
+	Open remote files of specified files in a system default browser, and
+	highlight a selected lines if possible.
+	Currently GitHub.com and Bitbucket.org are supported.
+
+	If you specify --echo option, it won't open a browser and just
+	echo the url. If you specify --yank, it won't open a browser and
+	just yank the url.
+
+	If you want to use an exact version of the file, add -e or --exact
+	option then the URL is constructed by a remote hash reference instead
+	of a remote branch name.
+
+	See |g:gita#interface#browse#extra_translation_patterns| to add your
+	own translation rule.
 
 :Gita {command} {options}		*:Gita-command*
                                         *vim-gita-{command}-post*
@@ -569,6 +612,66 @@ g:gita#interface#commit#enable_default_keymap
 	If it is 1, default keymaps will be defined in a commit window.
 	The default is 1.
 
+			*g:gita#interface#browse#translation_patterns*
+g:gita#interface#browse#translation_patterns
+
+	A |List| of |List| used for translating a remote url to browserble
+	url. See |g:gita#interface#browse#extra_translation_patterns| for the
+	detail.
+
+	The default value is the following
+>
+	\ [
+	\  ['\vgit\@(github\.com):([^/]+)/(.+)%(\.git|)',
+	\   'https://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-L|}le',
+	\   'https://\1/\2/\3/blob/%rh/%pt%{?at=|}rb%{#L|}ls%{-L|}le'],
+	\  ['\vhttps?://(github\.com)/([^/]+)/(.+)',
+	\   'https://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-L|}le',
+	\   'https://\1/\2/\3/blob/%rh/%pt%{?at=|}rb%{#L|}ls%{-L|}le'],
+	\  ['\vgit\@(bitbucket\.org):([^/]+)/(.+)%(\.git|)',
+	\   'https://\1/\2/\3/src/%rb/%pt%{#cl-|}ls',
+	\   'https://\1/\2/\3/src/%rh/%pt%{?at=|}rb%{#cl-|}ls'],
+	\  ['\vhttps?://(bitbucket\.org)/([^/]+)/(.+)',
+	\   'https://\1/\2/\3/src/%rb/%pt%{#cl-|}ls',
+	\   'https://\1/\2/\3/src/%rh/%pt%{?at=|}rb%{#cl-|}ls'],
+	\ ]
+<
+			*g:gita#interface#browse#extra_translation_patterns*
+g:gita#interface#browse#extra_translation_patterns
+
+	An extra translation pattern |List| which will be added to
+	|g:gita#interface#browse#translation_patterns|.
+	Each list item must be a |List| which have two or three |String|.
+	The first string is a URL pattern used as {pat} attribute of
+	|substitute()|. The second and third (optional) string are substitution
+	pattern which is used as {sub} attribute of |substitute()|.
+	The third string is used when --exact option is specified. If the
+	pattern does not have the third string, the second string will be used
+	even in that case.
+
+	After substitution, the following format string are replaced by
+	a rule which explained in |gita#statusline#format()| part.
+
+	'lb' A local branch name. It might not exist in the remote.
+	'lh' A local branch hash. It might not exist in the remote.
+	'rb' A remote branch name which the current branch is connected.
+	'rh' A remote branch hash which the current branch is connected.
+	'pt' A relative file path from a top of git working tree
+	'ls' A start line number of selection
+	'le' A end line number of selection
+
+	Example: Add a pattern for GitLab
+>
+	let g:gita#interface#browse#extra_translation_patterns = [
+	    \ ['\vgit@(gitlab\.hashnote\.net):([^/]+)/(.+)%(\.git|)',
+	    \  'http://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-}le',
+	    \  'http://\1/\2/\3/blob/%rh/%pt%{#L|}ls%{-}le'],
+	    \ ['\vhttps?://(gitlab\.hashnote\.net):([^/]+)/(.+)',
+	    \  'http://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-}le',
+	    \  'http://\1/\2/\3/blob/%rh/%pt%{#L|}ls%{-}le'],
+	    \]
+<
+
 ------------------------------------------------------------------------------
 MAPPINGS					*vim-gita-interface-mappings*
 
@@ -685,10 +788,10 @@ TODO								*vim-gita-todo*
 [x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
 [x] Add a way to display a current git status in statusline/tabline
 [x] Allow to execute a git raw command with :Gita
+[x] Browse a selected file region on GitHub/GitHub enterprise
 [ ] Add options to status/commit/diff command
 [ ] Add conflict command like status/commit/diff command
 [ ] Add git blame interface
-[ ] Browse a selected file region on GitHub/GitHub enterprise
 [ ] Allow to execute commands in async mode via vimproc
 
 
