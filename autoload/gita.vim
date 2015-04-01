@@ -73,21 +73,22 @@ function! gita#get(...) abort " {{{
   if bufexists(bufname)
     let bufnum  = bufnr(bufname)
     let buftype = getbufvar(bufnum, '&buftype')
-    let gita    = getbufvar(bufnum, '_gita', {})
-    if empty(gita) || (empty(buftype) && bufname !=# gita.bufname)
+    let gita    = getbufvar(bufnum, '_gita', deepcopy(s:gita))
+    if empty(gita) || empty(gita.bufname) || (empty(buftype) && bufname !=# gita.bufname)
       if empty(buftype)
         let git = s:Git.find(fnamemodify(bufname, ':p'))
-        let gita = extend(deepcopy(s:gita), {
+        let gita = extend(gita, {
               \ 'enabled': !empty(git),
               \ 'bufname': bufname,
               \ 'git': git,
               \})
       else
-        " Not a file
-        let gita = extend(deepcopy(s:gita), {
-              \ 'enabled': 0,
-              \ 'bufname': bufname,
-              \ 'git': {},
+        " Not a file, use a current directory
+        let git = s:Git.find(getcwd())
+        let gita = extend(gita, {
+              \ 'enabled': !empty(git),
+              \ 'bufname': '',
+              \ 'git': git,
               \})
       endif
       call gita#set(gita, bufname)
