@@ -1,5 +1,5 @@
 vim_gita
-a94e63e
+2d31904
 
 Prelude
 Data.List
@@ -8,3 +8,5 @@ Data.Dict
 System.Filepath
 ArgumentParser
 VCS.Git.Conflict
+Vim.Buffer
+Vim.BufferManager
