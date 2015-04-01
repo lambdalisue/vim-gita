@@ -180,11 +180,11 @@ It will open a corresponding url in your default browser. Currently GitHub.com a
 
 You can just echo or yank the url if you specify `--echo` or `--yank` option like below
 
-    :Gita --yank
+    :Gita browse --yank
 
 If you want to open, echo, or yank url of other files, just list filenames before options like
 
-    :Gita README.md LICENSE.md --echo
+    :Gita browse README.md LICENSE.md --echo
 
 If you want to specify a exact version of the file, add `--exact` option.
 
