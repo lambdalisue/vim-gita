@@ -196,9 +196,7 @@ function! s:action_commit(status, options) abort " {{{
 
   call gita#util#doautocmd('commit-post')
   " clear
-  let b:_options = {}
-  let gita.interface.commit = {}
-  let gita.interface.commit.commitmsg_cached = []
+  let b:_options.new = 1
   if !get(options, 'quitting', 0)
     call s:update()
   endif
