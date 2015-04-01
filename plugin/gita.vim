@@ -16,7 +16,7 @@ function! s:GitaComplete(...) abort " {{{
   return call('gita#arguments#complete', a:000)
 endfunction " }}}
 
-command! -nargs=? -range=% -bang
+command! -nargs=? -range -bang
       \ -complete=customlist,s:GitaComplete Gita
       \ :call s:Gita(<q-bang>, [<line1>, <line2>], <f-args>)
 

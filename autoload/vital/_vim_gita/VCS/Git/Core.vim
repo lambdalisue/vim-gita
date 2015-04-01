@@ -139,6 +139,22 @@ function! s:get_merge_msg(repository) abort " {{{
   let filename = s:Path.join(a:repository, 'MERGE_MSG')
   return s:_readfile(filename)
 endfunction " }}}
+function! s:get_local_hash(repository, branch) abort " {{{
+  let filename = s:Path.join(a:repository, 'refs', 'heads', a:branch)
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_remote_hash(repository, remote, branch) abort " {{{
+  let filename = s:Path.join(a:repository, 'refs', 'remotes', a:remote, a:branch)
+  let hash = s:_readline(filename)
+  if empty(hash)
+    " sometime the file is missing
+    let filename = s:Path.join(a:repository, 'packed-refs')
+    let packed_refs = join(s:_readfile(filename), "\n")
+    let pattern = printf('\v\zs[^\n]{-}\ze\srefs/remotes/%s/%s\n?', a:remote, a:branch)
+    let hash = matchstr(packed_refs, pattern)
+  endif
+  return hash
+endfunction " }}}
 
 " Config (without using 'git config'. read '.git/config' directly)
 function! s:get_repository_config(repository) abort " {{{

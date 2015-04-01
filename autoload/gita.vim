@@ -35,6 +35,28 @@ function! s:GitaDiff(opts) abort " {{{
     call gita#interface#diff#open(expand('%'), commit, a:opts)
   endif
 endfunction " }}}
+function! s:GitaBrowse(opts) abort " {{{
+  if get(a:opts, 'open', 0)
+    for filename in a:opts.filenames
+      call gita#interface#browse#open(filename, a:opts)
+    endfor
+  elseif get(a:opts, 'echo', 0)
+    for filename in a:opts.filenames
+      echo gita#interface#browse#url(filename, a:opts)
+    endfor
+  elseif get(a:opts, 'yank', 0)
+    let contents = []
+    for filename in a:opts.filenames
+      call add(contents, gita#interface#browse#url(filename, a:opts))
+    endfor
+    call gita#util#yank(join(contents, "\n"))
+    call gita#util#info(
+          \ len(contents) > 1
+          \   ? printf('%d urls are yanked', len(contents))
+          \   : 'A url is yanked',
+          \)
+  endif
+endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git    = s:Git.find(expand('%'))
   let result = git.exec(a:opts.args)
@@ -63,6 +85,8 @@ function! gita#Gita(opts) abort " {{{
     return s:GitaCommit(a:opts)
   elseif name ==# 'diff'
     return s:GitaDiff(a:opts)
+  elseif name ==# 'browse'
+    return s:GitaBrowse(a:opts)
   else
     return s:GitaDefault(a:opts)
   endif

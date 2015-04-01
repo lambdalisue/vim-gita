@@ -10,3 +10,4 @@ ArgumentParser
 VCS.Git.Conflict
 Vim.Buffer
 Vim.BufferManager
+System.File

@@ -153,6 +153,9 @@ function! s:get_meta(repository, ...) abort " {{{
   let meta.current_branch = meta.head =~? 'refs/heads/'
         \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
         \ : meta.head[:6]
+  let meta.current_branch_hash = s:Core.get_local_hash(
+        \ a:repository, meta.current_branch
+        \)
   if !opts.exclude_repository_config
     let meta.repository_config = s:Core.get_repository_config(a:repository)
     let meta.current_branch_remote = s:Core.get_branch_remote(meta.repository_config, meta.current_branch)
@@ -161,6 +164,9 @@ function! s:get_meta(repository, ...) abort " {{{
     let meta.current_remote_url = s:Core.get_remote_url(meta.repository_config, meta.current_branch_remote)
     let meta.comment_char = s:Core.get_comment_char(meta.repository_config)
     let meta.current_remote_branch = matchstr(meta.current_branch_merge, 'refs/heads/\zs.\+$')
+    let meta.current_remote_branch_hash = s:Core.get_remote_hash(
+          \ a:repository, meta.current_branch_remote, meta.current_remote_branch,
+          \)
   endif
   return meta
 endfunction " }}}
