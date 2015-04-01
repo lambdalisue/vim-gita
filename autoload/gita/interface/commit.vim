@@ -196,7 +196,9 @@ function! s:action_commit(status, options) abort " {{{
 
   call gita#util#doautocmd('commit-post')
   " clear
-  let b:_options.new = 1
+  let b:_options = {}
+  let gita.interface.commit = {}
+  let gita.interface.commit.commitmsg_cached = []
   if !get(options, 'quitting', 0)
     call s:update()
   endif
@@ -370,14 +372,19 @@ function! s:ac_write(filename) abort " {{{
     return
   endif
   " cache commitmsg
-  let gita = s:get_gita()
-  let gita.interface.commit.commitmsg = s:get_current_commitmsg()
+  let options = get(b:, '_options', {})
+  if !get(options, 'quitting', 0)
+    let gita = s:get_gita()
+    let gita.interface.commit.commitmsg = s:get_current_commitmsg()
+  endif
   setlocal nomodified
 endfunction " }}}
 function! s:ac_quit(...) abort " {{{
-  let options = deepcopy(b:_options)
-  let options.quitting = 1
-  call s:action_commit({}, options)
+  if !v:cmdbang
+    let options = deepcopy(b:_options)
+    let options.quitting = 1
+    call s:action_commit({}, options)
+  endif
   call gita#util#invoker_focus()
 endfunction " }}}
 
