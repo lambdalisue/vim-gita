@@ -11,7 +11,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:Dict = gita#util#import('Data.Dict')
-let s:Git = gita#util#import('VCS.Git')
+let s:Git  = gita#util#import('VCS.Git')
+let s:GitC = gita#util#import('VCS.Git.Core')
 
 function! s:GitaStatus(opts) abort " {{{
   call gita#interface#status#open(a:opts)
@@ -98,7 +99,7 @@ function! gita#get(...) abort " {{{
     let bufnum  = bufnr(bufname)
     let buftype = getbufvar(bufnum, '&buftype')
     let gita    = getbufvar(bufnum, '_gita', deepcopy(s:gita))
-    if empty(gita) || empty(gita.bufname) || (empty(buftype) && bufname !=# gita.bufname)
+    if empty(get(gita, 'bufname', '')) || (empty(buftype) && bufname !=# gita.bufname)
       if empty(buftype)
         let git = s:Git.find(fnamemodify(bufname, ':p'))
         let gita = extend(gita, {
@@ -136,6 +137,21 @@ function! gita#set(gita, ...) abort " {{{
 endfunction " }}}
 
 let s:gita = {}
+function! s:gita.get_fetch_head() abort " {{{
+  return s:GitC.get_fetch_head(self.git.repository)
+endfunction " }}}
+function! s:gita.get_orig_head() abort " {{{
+  return s:GitC.get_orig_head(self.git.repository)
+endfunction " }}}
+function! s:gita.get_merge_head() abort " {{{
+  return s:GitC.get_merge_head(self.git.repository)
+endfunction " }}}
+function! s:gita.get_merge_msg() abort " {{{
+  return s:GitC.get_merge_msg(self.git.repository)
+endfunction " }}}
+function! s:gita.get_commit_editmsg() abort " {{{
+  return s:GitC.get_commit_editmsg(self.git.repository)
+endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

@@ -16,6 +16,7 @@ let s:const.filetype = 'gita-commit'
 let s:Prelude = gita#util#import('Prelude')
 let s:List = gita#util#import('Data.List')
 let s:Dict = gita#util#import('Data.Dict')
+let s:Core = gita#util#import('VCS.Git.Core')
 
 function! s:ensure_list(x) abort " {{{
   return s:Prelude.is_list(a:x) ? a:x : [a:x]
@@ -95,6 +96,8 @@ function! s:action_help(status, options) abort " {{{
   call s:update(a:options)
 endfunction " }}}
 function! s:action_update(status, options) abort " {{{
+  let gita = gita#get()
+  let gita.interface.commit.commitmsg_cached = s:get_current_commitmsg()
   call s:update(a:options)
   redraw!
 endfunction " }}}
@@ -164,7 +167,6 @@ function! s:action_commit(status, options) abort " {{{
           \ 'Nothing to be commited. Stage changes first.',
           \)
     return
-    return
   elseif &modified
     redraw | call gita#util#warn(
           \ 'You have unsaved changes on the commit message. Save the changes by ":w" command.',
@@ -211,7 +213,7 @@ endfunction " }}}
 function! s:open(...) abort " {{{
   let gita    = s:get_gita()
   let invoker = gita#util#invoker_get()
-  let options = extend({}, get(a:000, 0, {}))
+  let options = extend(get(b:, 'options', {}), get(a:000, 0, {}))
 
   if !gita.enabled
     redraw | call gita#util#info(
@@ -226,9 +228,8 @@ function! s:open(...) abort " {{{
   silent execute 'setlocal filetype=' . s:const.filetype
 
   if get(options, 'new', 0)
-    call gita#util#buffer_update([])
+    let options = get(a:000, 0, {})
     let gita.interface.commit = {}
-    let b:_options = {}
   endif
   let b:_gita = gita
   let b:_invoker = invoker
@@ -271,7 +272,6 @@ function! s:open(...) abort " {{{
 endfunction " }}}
 function! s:update(...) abort " {{{
   let gita = s:get_gita()
-  let meta = gita.git.get_meta({ 'no_cache': 1 })
   let options = extend(b:_options, get(a:000, 0, {}))
   let result = gita.git.get_parsed_commit(
         \ extend({ 'no_cache': 1 }, options),
@@ -295,23 +295,29 @@ function! s:update(...) abort " {{{
   let gita.interface.commit.statuses_map = statuses_map
 
   " create a default commit message
+  let commit_mode = ''
   let modified_reserved = 0
   if has_key(gita.interface.commit, 'commitmsg_cached')
     let commitmsg = gita.interface.commit.commitmsg_cached
-    let modified_reserved = empty(commitmsg) ? 0 : 1
+    let modified_reserved = 1
+    " clear temporary commitmsg
     unlet! gita.interface.commit.commitmsg_cached
   elseif has_key(gita.interface.commit, 'commitmsg')
     let commitmsg = gita.interface.commit.commitmsg
-  elseif !empty(meta.merge_head)
-    let commitmsg = [
-          \ meta.merge_msg,
-          \]
+  elseif !empty(gita.get_merge_head())
+    let commit_mode = 'merge'
+    let commitmsg = gita.get_merge_msg()
   elseif get(options, 'amend', 0)
-    let commitmsg = [
-          \ gita.git.get_last_commitmsg(),
-          \]
+    let commit_mode = 'amend'
+    if gita.get_fetch_head() == gita.get_orig_head()
+      " no cached commit message is available
+      " execute git and get a last commitmsg
+      let commitmsg = gita.git.get_last_commitmsg()
+    else
+      let commitmsg = gita.get_commit_editmsg()
+    endif
   else
-    let commitmsg = s:get_current_commitmsg()
+    let commitmsg = []
   endif
 
   " create buffer lines
@@ -321,8 +327,8 @@ function! s:update(...) abort " {{{
         \ s:get_help('commit_mapping'),
         \ s:get_help('short_format'),
         \ gita#util#interface_get_misc_lines(),
-        \ !empty(meta.merge_msg) ? ['# This branch is in MERGE mode.'] : [],
-        \ get(options, 'amend', 0) ? ['# This branch is in AMEND mode.'] : [],
+        \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
+        \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \ statuses_lines,
         \])
   let buflines = buflines[0] =~# '\v^#' ? extend([''], buflines) : buflines
@@ -379,12 +385,15 @@ function! s:ac_write(filename) abort " {{{
   endif
   setlocal nomodified
 endfunction " }}}
-function! s:ac_quit(...) abort " {{{
-  if !v:cmdbang
-    let options = deepcopy(b:_options)
-    let options.quitting = 1
-    call s:action_commit({}, options)
-  endif
+function! s:ac_quit() abort " {{{
+  " Note:
+  " A vim help said the current buffer '%' may be different from the buffer
+  " being unloaded <afile> in BufWinLeave autocmd but if I consider the case,
+  " the code will " be more complicated thus now I simply trust that the
+  " current buffer is the buffer being unloaded.
+  let options = deepcopy(b:_options)
+  let options.quitting = 1
+  call s:action_commit({}, options)
   call gita#util#invoker_focus()
 endfunction " }}}
 

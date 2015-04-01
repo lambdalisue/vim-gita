@@ -702,7 +702,7 @@ endfunction " }}}
 function! s:open(...) abort " {{{
   let gita    = s:get_gita()
   let invoker = gita#util#invoker_get()
-  let options = extend({}, get(a:000, 0, {}))
+  let options = extend(get(b:, 'options', {}), get(a:000, 0, {}))
 
   if !gita.enabled
     redraw | call gita#util#info(
