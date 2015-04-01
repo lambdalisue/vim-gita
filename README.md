@@ -169,6 +169,24 @@ If you call `:w` on the MERGE version, the changes will be written into the loca
 
 After you solve all conflicts, open a status window and mark the file as solved by hitting `-a`.
 
+### Browse
+
+To open a current line or a selected region of a git managed file, execute the
+following command
+
+    :Gita browse
+
+It will open a corresponding url in your default browser. Currently GitHub.com and BitBucket.org is supported (user can add extra patterns with `g:gita#interface#browse#extra_translate_patterns`).
+
+You can just echo or yank the url if you specify `--echo` or `--yank` option like below
+
+    :Gita --yank
+
+If you want to open, echo, or yank url of other files, just list filenames before options like
+
+    :Gita README.md LICENSE.md --echo
+
+If you want to specify a exact version of the file, add `--exact` option.
 
 ### Statusline
 
