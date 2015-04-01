@@ -164,7 +164,6 @@ function! s:action_commit(status, options) abort " {{{
           \ 'Nothing to be commited. Stage changes first.',
           \)
     return
-    return
   elseif &modified
     redraw | call gita#util#warn(
           \ 'You have unsaved changes on the commit message. Save the changes by ":w" command.',
