@@ -171,6 +171,9 @@ After you solve all conflicts, open a status window and mark the file as solved 
 
 ### Browse
 
+Click the screenshot below to see the Demo in Youtube.
+[![Gita browse demo](https://img.youtube.com/vi/s6oQsATfJrM/0.jpg)](https://www.youtube.com/watch?v=s6oQsATfJrM)
+
 To open a current line or a selected region of a git managed file, execute the
 following command
 
