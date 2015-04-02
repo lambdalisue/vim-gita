@@ -299,6 +299,7 @@ ToDo
 - [ ] Add options to status/commit/diff command
 - [ ] Add conflict command like status/commit/diff command
 - [ ] Add git blame interface
+- [ ] Improve command execution (e.g. `:Gita add` to add a current buffer)
 - [ ] Allow to execute commands in async mode via vimproc
 
 License
