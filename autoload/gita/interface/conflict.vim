@@ -253,5 +253,3 @@ call s:config()
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 "vim: stts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
-
-
