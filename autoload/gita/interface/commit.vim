@@ -113,16 +113,20 @@ function! s:action_open(status, options) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
         \}, a:options)
+  let bufname = bufname('%')
   call gita#util#invoker_focus()
   call gita#util#buffer_open(
         \ get(a:status, 'path2', a:status.path),
         \ options.opener
         \)
+  " update invoker
+  call gita#util#invoker_set(gita#util#invoker_get(), bufname)
 endfunction " }}}
 function! s:action_diff_open(status, options) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
         \}, a:options)
+  let bufname = bufname('%')
   if !has_key(options, 'commit')
     let commit = gita#util#ask('Checkout from: ', 'HEAD')
     if strlen(commit) == 0
@@ -135,6 +139,8 @@ function! s:action_diff_open(status, options) abort " {{{
   let commit = commit ==# 'INDEX' ? '' : commit
   call gita#util#invoker_focus()
   call gita#interface#diff#open(a:status, commit, options)
+  " update invoker
+  call gita#util#invoker_set(gita#util#invoker_get(), bufname)
 endfunction " }}}
 function! s:action_diff_compare(status, options) abort " {{{
   let options = extend({
