@@ -16,7 +16,6 @@ let s:const.filetype = 'gita-commit'
 let s:Prelude = gita#util#import('Prelude')
 let s:List = gita#util#import('Data.List')
 let s:Dict = gita#util#import('Data.Dict')
-let s:Core = gita#util#import('VCS.Git.Core')
 
 function! s:ensure_list(x) abort " {{{
   return s:Prelude.is_list(a:x) ? a:x : [a:x]
