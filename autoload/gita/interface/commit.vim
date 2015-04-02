@@ -223,7 +223,10 @@ function! s:open(...) abort " {{{
     return
   endif
 
-  call gita#util#interface_open(s:const.bufname)
+  call gita#util#interface_open(s:const.bufname, 'support_window', {
+        \ 'opener': 'topleft 20 split',
+        \ 'range':  'tabpage',
+        \})
   silent execute 'setlocal filetype=' . s:const.filetype
 
   if get(options, 'new', 0)

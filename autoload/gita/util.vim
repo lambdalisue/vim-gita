@@ -206,15 +206,14 @@ function! gita#util#invoker_focus(...) abort " {{{
 endfunction " }}}
 
 " Interface
-function! gita#util#interface_open(name) abort " {{{
-  if !exists('s:interface_buffer_manager')
+function! gita#util#interface_open(name, group, ...) abort " {{{
+  let config = get(a:000, 0, {})
+  let vname = printf('interface_buffer_manager_%s', a:group)
+  if !has_key(s:, vname)
     let BM = gita#util#import('Vim.BufferManager')
-    let s:interface_buffer_manager = BM.new({
-          \   'opener': 'topleft 20 split',
-          \   'range': 'tabpage',
-          \})
+    let s:{vname} = BM.new(config)
   endif
-  return s:interface_buffer_manager.open(a:name, get(a:000, 0, {}))
+  return s:{vname}.open(a:name, get(a:000, 0, {}))
 endfunction " }}}
 function! gita#util#interface_get_misc_lines() abort " {{{
   let gita = gita#get()
