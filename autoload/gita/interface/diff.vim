@@ -100,7 +100,10 @@ function! s:compare(status, commit, ...) abort " {{{
   endif
 
   " LOCAL
-  call gita#util#buffer_open(path, options.opener)
+  call gita#util#interface_open(path, 'diff_LOCAL', {
+        \ 'opener': options.opener,
+        \ 'range': 'all',
+        \})
   let LOCAL_bufnum = bufnr('%')
   let LOCAL_bufname = bufname('%')
   let filetype = &filetype
@@ -111,14 +114,16 @@ function! s:compare(status, commit, ...) abort " {{{
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
   augroup END
-  diffthis
 
   " REMOTE
   let REMOTE_bufname = printf('%s.%s', LOCAL_bufname, a:commit)
   let opener = options.vertical ? 'vert new' : 'new'
-  silent execute printf('%s %s', opener, REMOTE_bufname)
+  call gita#util#interface_open(REMOTE_bufname, 'diff_REMOTE', {
+        \ 'opener': opener,
+        \ 'range': 'all',
+        \})
+  "silent execute printf('%s %s', opener, REMOTE_bufname)
   let REMOTE_bufnum = bufnr('%')
-  silent execute printf('file %s', REMOTE_bufname)
   silent execute printf('setlocal filetype=%s', filetype)
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
   if g:gita#interface#diff#define_smart_redraw
@@ -128,7 +133,6 @@ function! s:compare(status, commit, ...) abort " {{{
     autocmd! * <buffer>
     autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
   augroup END
-
   setlocal modifiable
   call gita#util#buffer_update(split(result.stdout, '\v\r?\n'))
   setlocal nomodifiable
@@ -137,8 +141,10 @@ function! s:compare(status, commit, ...) abort " {{{
   call setbufvar(LOCAL_bufnum, '_REMOTE_bufnum', REMOTE_bufnum)
   call setbufvar(REMOTE_bufnum, '_LOCAL_bufnum', LOCAL_bufnum)
 
-  silent execute 'wincmd ='
+  wincmd =
   silent execute bufwinnr(LOCAL_bufnum) 'wincmd w'
+  diffthis
+  diffupdate
 endfunction " }}}
 function! s:diff_ac_quit_pre() abort " {{{
   let mybufnum = bufnr('%')
@@ -193,5 +199,3 @@ call s:config()
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 "vim: stts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
-
-
