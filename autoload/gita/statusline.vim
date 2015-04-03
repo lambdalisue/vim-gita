@@ -20,8 +20,8 @@ function! s:get_info(...) abort " {{{
           \ 'local_branch': meta.current_branch,
           \ 'remote_name': meta.current_branch_remote,
           \ 'remote_branch': meta.current_remote_branch,
-          \ 'outgoing': gita.git.count_commits_ahead_of_remote(),
-          \ 'incoming': gita.git.count_commits_behind_remote(),
+          \ 'outgoing': meta.commits_ahead_of_remote,
+          \ 'incoming': meta.commits_behind_remote,
           \}
     let info = extend(info, s:get_statuses())
   else
@@ -83,7 +83,7 @@ let s:format_map = {
 function! s:clear() abort " {{{
   let gita = gita#get()
   if gita.enabled
-    call gita.git.cache.clear()
+    call gita.git.cache.repository.clear()
   endif
 endfunction " }}}
 

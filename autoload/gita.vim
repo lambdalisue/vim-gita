@@ -137,21 +137,6 @@ function! gita#set(gita, ...) abort " {{{
 endfunction " }}}
 
 let s:gita = {}
-function! s:gita.get_fetch_head() abort " {{{
-  return s:GitC.get_fetch_head(self.git.repository)
-endfunction " }}}
-function! s:gita.get_orig_head() abort " {{{
-  return s:GitC.get_orig_head(self.git.repository)
-endfunction " }}}
-function! s:gita.get_merge_head() abort " {{{
-  return s:GitC.get_merge_head(self.git.repository)
-endfunction " }}}
-function! s:gita.get_merge_msg() abort " {{{
-  return s:GitC.get_merge_msg(self.git.repository)
-endfunction " }}}
-function! s:gita.get_commit_editmsg() abort " {{{
-  return s:GitC.get_commit_editmsg(self.git.repository)
-endfunction " }}}
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
