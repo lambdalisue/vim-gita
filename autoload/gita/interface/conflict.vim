@@ -20,7 +20,7 @@ function! s:get_gita(...) abort " {{{
 endfunction " }}}
 function! s:get_is_bufhidden(expr) abort " {{{
   let bufhidden = getbufvar(a:expr, '&bufhidden')
-  return bufhidden == 'hidden' || &hidden
+  return bufhidden == 'hidden' || (bufhidden == '' && &hidden)
 endfunction " }}}
 function! s:smart_redraw() abort " {{{
   if &diff
@@ -35,10 +35,9 @@ function! s:open2(status, ...) abort " {{{
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
   let options = extend({
-        \ 'opener': 'tabnew',
+        \ 'opener': 'tabedit',
         \ 'vertical': 1,
         \}, get(a:000, 0, {}))
-
   if !gita.enabled
     redraw | call gita#util#info(
           \ printf(
@@ -48,63 +47,73 @@ function! s:open2(status, ...) abort " {{{
     return
   endif
 
-  " ORIGINAL
-  call gita#util#buffer_open(path, options.opener)
-  let ORIG_bufnum = bufnr('%')
-  let ORIG_bufname = bufname('%')
-  let filetype = &filetype
-  let ORIG = getline(1, '$')
+  " Get a content of ORIG, LOCAL, REMOTE
+  let ORIG = bufexists(path) ? getbufline(path, 1, '$') : readfile(path)
   let LOCAL  = a:status.sign =~# '\v%(DD|DU)' ? [] : s:C.strip_theirs(ORIG)
   let REMOTE = a:status.sign =~# '\v%(DD|UD)' ? [] : s:C.get_theirs(a:status.path)
 
+  " Create a buffer names of LOCAL, REMOTE
+  let LOCAL_bufname = printf("%s.LOCAL.%s",
+        \ fnamemodify(path, ':r'),
+        \ fnamemodify(path, ':e'),
+        \)
+  let REMOTE_bufname = printf("%s.REMOTE.%s",
+        \ fnamemodify(path, ':r'),
+        \ fnamemodify(path, ':e'),
+        \)
+
   " LOCAL
-  let LOCAL_bufname = ORIG_bufname . '.LOCAL'
-  silent execute 'enew'
-  silent execute 'file ' . LOCAL_bufname
-  silent execute 'setlocal filetype=' . filetype
+  silent call gita#util#interface_open(LOCAL_bufname, 'conflict_2way_LOCAL', {
+        \ 'opener': options.opener,
+        \ 'range': 'all',
+        \})
   let LOCAL_bufnum = bufnr('%')
   setlocal buftype=acwrite bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   augroup vim-gita-conflict
     autocmd! * <buffer>
-    autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-    autocmd QuitPre <buffer> call s:ac_quit_pre()
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
   augroup END
   call gita#util#buffer_update(LOCAL)
-  diffthis
 
   " REMOTE
-  let REMOTE_bufname = ORIG_bufname . '.REMOTE'
-  silent execute printf('%s botright split enew', options.vertical ? 'vert' : '')
-  silent execute 'file ' . REMOTE_bufname
-  silent execute 'setlocal filetype=' . filetype
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  silent call gita#util#interface_open(REMOTE_bufname, 'conflict_2way_REMOTE', {
+        \ 'opener': printf('%s botright split', options.vertical ? 'vert' : ''),
+        \ 'range': 'all',
+        \})
   let REMOTE_bufnum = bufnr('%')
+  setlocal buftype=acwrite bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
+  augroup vim-gita-conflict
+    autocmd! * <buffer>
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
+  augroup END
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
   diffthis
 
-  call setbufvar(LOCAL_bufnum, '_ORIG_bufnum', ORIG_bufnum)
-  call setbufvar(LOCAL_bufnum, '_ORIG_bufname', ORIG_bufname)
+  call setbufvar(LOCAL_bufnum, '_ORIG_path', path)
   call setbufvar(LOCAL_bufnum, '_REMOTE_bufnum', REMOTE_bufnum)
+  call setbufvar(LOCAL_bufnum, '_EDITABLE_bufnum', LOCAL_bufnum)
+  call setbufvar(REMOTE_bufnum, '_path', path)
   call setbufvar(REMOTE_bufnum, '_LOCAL_bufnum', LOCAL_bufnum)
+  call setbufvar(REMOTE_bufnum, '_EDITABLE_bufnum', LOCAL_bufnum)
 
-  silent execute 'wincmd ='
-  silent execute bufwinnr(LOCAL_bufnum) 'wincmd w'
+  execute bufwinnr(LOCAL_bufnum) 'wincmd w'
+  diffthis
+  diffupdate
 endfunction " }}}
 function! s:open3(status, ...) abort " {{{
   let status  = a:status
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
   let options = extend({
-        \ 'opener': 'tabnew',
+        \ 'opener': 'tabedit',
         \ 'vertical': 1,
         \}, get(a:000, 0, {}))
-
   if !gita.enabled
     redraw | call gita#util#info(
           \ printf(
@@ -114,116 +123,142 @@ function! s:open3(status, ...) abort " {{{
     return
   endif
 
-  " ORIGINAL
-  call gita#util#buffer_open(path, options.opener)
-  let ORIG_bufnum = bufnr('%')
-  let ORIG_bufname = bufname('%')
-  let filetype = &filetype
-  let ORIG = getline(1, '$')
+  " Get a content of ORIG, MERGE, LOCAL, REMOTE
+  let ORIG = bufexists(path) ? getbufline(path, 1, '$') : readfile(path)
   let MERGE  = s:C.strip_conflict(ORIG)
   let LOCAL  = a:status.sign =~# '\v%(DD|DU)' ? [] : s:C.get_ours(a:status.path)
   let REMOTE = a:status.sign =~# '\v%(DD|UD)' ? [] : s:C.get_theirs(a:status.path)
-  augroup vim-gita-conflict
-    autocmd! * <buffer>
-  augroup END
+
+  " Create a buffer names of MERGE, LOCAL, REMOTE
+  let MERGE_bufname = printf("%s.MERGE.%s",
+        \ fnamemodify(path, ':r'),
+        \ fnamemodify(path, ':e'),
+        \)
+  let LOCAL_bufname = printf("%s.LOCAL.%s",
+        \ fnamemodify(path, ':r'),
+        \ fnamemodify(path, ':e'),
+        \)
+  let REMOTE_bufname = printf("%s.REMOTE.%s",
+        \ fnamemodify(path, ':r'),
+        \ fnamemodify(path, ':e'),
+        \)
 
   " MERGE
-  let MERGE_bufname = ORIG_bufname . '.MERGE'
-  silent execute 'enew'
-  silent execute 'file ' . MERGE_bufname
-  silent execute 'setlocal filetype=' . filetype
+  silent call gita#util#interface_open(MERGE_bufname, 'conflict_3way_MERGE', {
+        \ 'opener': options.opener,
+        \ 'range': 'all',
+        \})
   let MERGE_bufnum = bufnr('%')
   setlocal buftype=acwrite bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  silent execute printf('nnoremap <buffer><silent> dol :<C-u>diffget %s.LOCAL<CR>', ORIG_bufname)
-  silent execute printf('nnoremap <buffer><silent> dor :<C-u>diffget %s.REMOTE<CR>', ORIG_bufname)
-  autocmd! * <buffer>
-  autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
+  execute printf('nnoremap <buffer><silent> dol :<C-u>diffget %s<CR>', LOCAL_bufname)
+  execute printf('nnoremap <buffer><silent> dor :<C-u>diffget %s<CR>', REMOTE_bufname)
+  augroup vim-gita-conflict
+    autocmd! * <buffer>
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
+  augroup END
   call gita#util#buffer_update(MERGE)
-  diffthis
-
 
   " LOCAL
-  let LOCAL_bufname = ORIG_bufname . '.LOCAL'
-  silent execute printf('%s topleft split enew', options.vertical ? 'vert' : '')
-  silent execute 'file ' . LOCAL_bufname
-  silent execute 'setlocal filetype=' . filetype
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  silent call gita#util#interface_open(LOCAL_bufname, 'conflict_3way_LOCAL', {
+        \ 'opener': printf('%s topleft split', options.vertical ? 'vert' : ''),
+        \ 'range': 'all',
+        \})
   let LOCAL_bufnum = bufnr('%')
+  setlocal buftype=acwrite bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
-  autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
+  execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s<CR>', MERGE_bufname)
+  augroup vim-gita-conflict
+    autocmd! * <buffer>
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
+  augroup END
   setlocal modifiable
   call gita#util#buffer_update(LOCAL)
   setlocal nomodifiable
   diffthis
 
   " REMOTE
-  let REMOTE_bufname = ORIG_bufname . '.REMOTE'
-  silent execute printf('%s botright split enew', options.vertical ? 'vert' : '')
-  silent execute 'file ' . REMOTE_bufname
-  silent execute 'setlocal filetype=' . filetype
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  silent call gita#util#interface_open(REMOTE_bufname, 'conflict_3way_REMOTE', {
+        \ 'opener': printf('%s botright split', options.vertical ? 'vert' : ''),
+        \ 'range': 'all',
+        \})
   let REMOTE_bufnum = bufnr('%')
+  setlocal buftype=acwrite bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  silent execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s.MERGE<CR>', ORIG_bufname)
-  autocmd! * <buffer>
-  autocmd QuitPre <buffer> call s:ac_quit_pre()
+  execute printf('nnoremap <buffer><silent> dp :<C-u>diffput %s<CR>', MERGE_bufname)
+  augroup vim-gita-conflict
+    autocmd! * <buffer>
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
+  augroup END
   setlocal modifiable
   call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
   diffthis
 
-  call setbufvar(MERGE_bufnum, '_ORIG_bufnum', ORIG_bufnum)
-  call setbufvar(MERGE_bufnum, '_ORIG_bufname', ORIG_bufname)
+  call setbufvar(MERGE_bufnum, '_ORIG_path', path)
   call setbufvar(MERGE_bufnum, '_LOCAL_bufnum', LOCAL_bufnum)
   call setbufvar(MERGE_bufnum, '_REMOTE_bufnum', REMOTE_bufnum)
+  call setbufvar(MERGE_bufnum, '_EDITABLE_bufnum', MERGE_bufnum)
   call setbufvar(LOCAL_bufnum, '_MERGE_bufnum', MERGE_bufnum)
   call setbufvar(LOCAL_bufnum, '_REMOTE_bufnum', REMOTE_bufnum)
+  call setbufvar(LOCAL_bufnum, '_EDITABLE_bufnum', MERGE_bufnum)
   call setbufvar(REMOTE_bufnum, '_MERGE_bufnum', MERGE_bufnum)
   call setbufvar(REMOTE_bufnum, '_LOCAL_bufnum', LOCAL_bufnum)
+  call setbufvar(REMOTE_bufnum, '_EDITABLE_bufnum', MERGE_bufnum)
 
-  silent execute 'wincmd ='
-  silent execute bufwinnr(MERGE_bufnum) 'wincmd w'
+  wincmd =
+  execute bufwinnr(MERGE_bufnum) 'wincmd w'
+  diffthis
+  diffupdate
 endfunction " }}}
-function! s:ac_write(filename) abort " {{{
-  if a:filename != expand('%:p')
-    " a new filename is given. save the content to the new file
-    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
-    return
+function! s:ac_write_cmd() abort " {{{
+  let new_filename = fnamemodify(expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  if new_filename !=# old_filename
+    execute printf('w%s %s %s',
+          \ v:cmdbang ? '!' : '',
+          \ fnameescape(v:cmdarg),
+          \ fnameescape(new_filename),
+          \)
   endif
-  let filename = fnamemodify(expand(b:_ORIG_bufname), ':p')
-  if writefile(getline(1, '$'), filename) == 0
-    setlocal nomodified
+  if bufnr('%') == b:_EDITABLE_bufnum
+    let filename = fnamemodify(expand(b:_ORIG_path), ':p')
+    if writefile(getline(1, '$'), filename) == 0
+      setlocal nomodified
+    endif
   endif
 endfunction " }}}
 function! s:ac_quit_pre() abort " {{{
-  let mybufnum = bufnr('%')
-  let bufnums = [
-        \ get(b:, '_MERGE_bufnum', -1),
-        \ get(b:, '_LOCAL_bufnum', -1),
-        \ get(b:, '_REMOTE_bufnum', -1),
-        \]
-  for bufnum in bufnums
-    if bufexists(bufnum) && bufnum != mybufnum
-      let winnum = bufwinnr(bufnum)
-      silent execute winnum 'wincmd w'
-      silent diffoff
-      augroup vim-gita-conflict
-        autocmd! * <buffer>
-      augroup END
-      if s:get_is_bufhidden(bufnum) || !getbufvar(bufnum, '&modified', 0)
-        silent execute printf('noautocmd %dquit', winnum)
+  " Synchronize &modified to prevent closing when the editable buffer (LOCAL
+  " in 2-way, MERGE in 3-way) is modified
+  let &modified = getbufvar(b:_EDITABLE_bufnum, '&modified', 0)
+  " Close related buffers only when no modification are applied to the
+  " editable buffer or closed with cmdbang
+  " Note: v:cmdbang is only for read/write file.
+  if !&modified || histget('cmd') =~# '\v!$'
+    diffoff
+    augroup vim-gita-conflict
+      autocmd! * <buffer>
+    augroup END
+    let bufnums = [
+          \ get(b:, '_MERGE_bufnum', -1),
+          \ get(b:, '_LOCAL_bufnum', -1),
+          \ get(b:, '_REMOTE_bufnum', -1),
+          \]
+    for bufnum in bufnums
+      if bufexists(bufnum)
+        execute printf('noautocmd %dwincmd w', bufwinnr(bufnum))
+        diffoff
+        augroup vim-gita-conflict
+          autocmd! * <buffer>
+        augroup END
+        silent noautocmd quit!
       endif
-    endif
-  endfor
-  silent execute bufwinnr(mybufnum) 'wincmd w'
-  silent diffoff
-  augroup vim-gita-conflict
-    autocmd! * <buffer>
-  augroup END
+    endfor
+  endif
 endfunction " }}}
 
 function! gita#interface#conflict#open2(status, ...) abort " {{{
