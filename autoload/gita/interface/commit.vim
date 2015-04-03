@@ -312,17 +312,17 @@ function! s:update(...) abort " {{{
     unlet! gita.interface.commit.commitmsg_cached
   elseif has_key(gita.interface.commit, 'commitmsg')
     let commitmsg = gita.interface.commit.commitmsg
-  elseif !empty(gita.get_merge_head())
+  elseif !empty(gita.git.get_merge_head())
     let commit_mode = 'merge'
-    let commitmsg = gita.get_merge_msg()
+    let commitmsg = gita.git.get_merge_msg()
   elseif get(options, 'amend', 0)
     let commit_mode = 'amend'
-    if gita.get_fetch_head() == gita.get_orig_head()
+    if gita.git.get_fetch_head() == gita.git.get_orig_head()
       " no cached commit message is available
       " execute git and get a last commitmsg
       let commitmsg = gita.git.get_last_commitmsg()
     else
-      let commitmsg = gita.get_commit_editmsg()
+      let commitmsg = gita.git.get_commit_editmsg()
     endif
   else
     let commitmsg = []

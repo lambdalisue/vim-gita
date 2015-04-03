@@ -50,7 +50,7 @@ endfunction " }}}
 
 function! s:strip_ours(buflines, ...) " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
-  let region_pattern = printf('%s\_.{-}%s',
+  let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.ours,
         \ s:const.patterns.separator,
         \)
@@ -60,7 +60,7 @@ function! s:strip_ours(buflines, ...) " {{{
 endfunction " }}}
 function! s:strip_theirs(buflines, ...) " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
-  let region_pattern = printf('%s\_.{-}%s',
+  let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.separator,
         \ s:const.patterns.theirs,
         \)
@@ -70,7 +70,7 @@ function! s:strip_theirs(buflines, ...) " {{{
 endfunction " }}}
 function! s:strip_conflict(buflines, ...) " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
-  let region_pattern = printf('%s\_.{-}%s',
+  let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.ours,
         \ s:const.patterns.theirs,
         \)

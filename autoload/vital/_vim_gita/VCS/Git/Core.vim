@@ -97,9 +97,6 @@ function! s:get_absolute_path(worktree, path) abort " {{{
 endfunction " }}}
 
 " Meta (without using 'git rev-parse'. read '.git/*' directory)
-function! s:get_index_updated_time(repository) abort " {{{
-  return getftime(s:Path.join(a:repository, 'index'))
-endfunction " }}}
 function! s:get_head(repository) abort " {{{
   " The current ref that you’re looking at.
   let filename = s:Path.join(a:repository, 'HEAD')
@@ -150,7 +147,7 @@ function! s:get_remote_hash(repository, remote, branch) abort " {{{
     " sometime the file is missing
     let filename = s:Path.join(a:repository, 'packed-refs')
     let packed_refs = join(s:_readfile(filename), "\n")
-    let pattern = printf('\v\zs[^\n]{-}\ze\srefs/remotes/%s/%s\n?', a:remote, a:branch)
+    let pattern = printf('\v\zs[^\r\n]{-}\ze\srefs/remotes/%s/%s\n?', a:remote, a:branch)
     let hash = matchstr(packed_refs, pattern)
   endif
   return hash

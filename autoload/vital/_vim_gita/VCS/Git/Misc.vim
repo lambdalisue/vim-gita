@@ -138,39 +138,6 @@ function! s:get_parsed_config(...) " {{{
   return s:ConfigParser.parse(result.stdout)
 endfunction " }}}
 
-function! s:get_meta(repository, ...) abort " {{{
-  let opts = extend({
-        \ 'exclude_repository_config': 0,
-        \}, get(a:000, 0, {}))
-  let meta = {}
-  let meta.head = s:Core.get_head(a:repository)
-  let meta.fetch_head = s:Core.get_fetch_head(a:repository)
-  let meta.orig_head = s:Core.get_orig_head(a:repository)
-  let meta.merge_head = s:Core.get_merge_head(a:repository)
-  let meta.merge_mode = s:Core.get_merge_mode(a:repository)
-  let meta.commit_editmsg = s:Core.get_commit_editmsg(a:repository)
-  let meta.merge_msg = s:Core.get_merge_msg(a:repository)
-  let meta.current_branch = meta.head =~? 'refs/heads/'
-        \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
-        \ : meta.head[:6]
-  let meta.current_branch_hash = s:Core.get_local_hash(
-        \ a:repository, meta.current_branch
-        \)
-  if !opts.exclude_repository_config
-    let meta.repository_config = s:Core.get_repository_config(a:repository)
-    let meta.current_branch_remote = s:Core.get_branch_remote(meta.repository_config, meta.current_branch)
-    let meta.current_branch_merge = s:Core.get_branch_merge(meta.repository_config, meta.current_branch)
-    let meta.current_remote_fetch = s:Core.get_remote_fetch(meta.repository_config, meta.current_branch_remote)
-    let meta.current_remote_url = s:Core.get_remote_url(meta.repository_config, meta.current_branch_remote)
-    let meta.comment_char = s:Core.get_comment_char(meta.repository_config)
-    let meta.current_remote_branch = matchstr(meta.current_branch_merge, 'refs/heads/\zs.\+$')
-    let meta.current_remote_branch_hash = s:Core.get_remote_hash(
-          \ a:repository, meta.current_branch_remote, meta.current_remote_branch,
-          \)
-  endif
-  return meta
-endfunction " }}}
-
 function! s:get_last_commitmsg(...) " {{{
   let opts = get(a:000, 0, {})
   let result = s:Core.exec(['log', '-1', '--pretty=%B'], opts)
