@@ -350,7 +350,7 @@ function! s:action_diff_open(status, options) abort " {{{
 endfunction " }}}
 function! s:action_diff_compare(status, options) abort " {{{
   let options = extend({
-        \ 'opener': 'tabnew',
+        \ 'opener': 'tabedit',
         \}, a:options)
   if !has_key(options, 'commit')
     let commit = gita#util#ask('Checkout from: ', 'INDEX')
@@ -814,12 +814,12 @@ function! s:defmap() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-open-h)   :<C-u>call <SID>action('open', { 'opener': 'botright split' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-open-v)   :<C-u>call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-diff)     :<C-u>call <SID>action('diff_open', { 'opener': 'edit' })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 0 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabnew', 'vertical': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-solve2-h) :<C-u>call <SID>action('solve2', { 'opener': 'tabnew', 'vertical': 0 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-solve2-v) :<C-u>call <SID>action('solve2', { 'opener': 'tabnew', 'vertical': 1 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-solve3-h) :<C-u>call <SID>action('solve3', { 'opener': 'tabnew', 'vertical': 0 })<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-solve3-v) :<C-u>call <SID>action('solve3', { 'opener': 'tabnew', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-h)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabedit', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-diff-v)   :<C-u>call <SID>action('diff_compare', { 'opener': 'tabedit', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-solve2-h) :<C-u>call <SID>action('solve2', { 'opener': 'tabedit', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-solve2-v) :<C-u>call <SID>action('solve2', { 'opener': 'tabedit', 'vertical': 1 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-solve3-h) :<C-u>call <SID>action('solve3', { 'opener': 'tabedit', 'vertical': 0 })<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-solve3-v) :<C-u>call <SID>action('solve3', { 'opener': 'tabedit', 'vertical': 1 })<CR>
 
   nnoremap <silent><buffer> <Plug>(gita-action-add)      :<C-u>call <SID>action('add')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-ADD)      :<C-u>call <SID>action('add', { 'force': 1 })<CR>

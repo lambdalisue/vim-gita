@@ -19,7 +19,7 @@ function! s:get_gita(...) abort " {{{
 endfunction " }}}
 function! s:get_is_bufhidden(expr) abort " {{{
   let bufhidden = getbufvar(a:expr, '&bufhidden')
-  return bufhidden == 'hidden' || &hidden
+  return bufhidden == 'hidden' || (bufhidden == '' && &hidden)
 endfunction " }}}
 function! s:smart_redraw() abort " {{{
   if &diff
@@ -58,15 +58,16 @@ function! s:open(status, commit, ...) abort " {{{
           \)
     return
   endif
-  
-  " open diff
-  silent execute options.opener 'new'
-  silent execute printf('file %s.%s.diff', path, a:commit)
-  silent execute 'filetype detect'
+  let DIFF = split(result.stdout, '\v\r?\n')
+  let DIFF_bufname = printf("%s.%s.diff",
+        \ path,
+        \ empty(a:commit) ? 'INDEX' : a:commit,
+        \)
+  silent call gita#util#buffer_open(DIFF_bufname, options.opener)
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
 
   setlocal modifiable
-  call gita#util#buffer_update(split(result.stdout, '\v\r?\n'))
+  call gita#util#buffer_update(DIFF)
   setlocal nomodifiable
 endfunction " }}}
 function! s:compare(status, commit, ...) abort " {{{
@@ -74,7 +75,7 @@ function! s:compare(status, commit, ...) abort " {{{
   let path    = get(status, 'path2', status.path)
   let gita    = s:get_gita(path)
   let options = extend({
-        \ 'opener': 'tabnew',
+        \ 'opener': 'tabedit',
         \ 'vertical': 1,
         \}, get(a:000, 0, {}))
 
@@ -87,7 +88,6 @@ function! s:compare(status, commit, ...) abort " {{{
     return
   endif
 
-  " TODO Use opened buffer if the buffer is in diff mode.
 
   let args = ['show', printf('%s:%s', a:commit, a:status.path)]
   let result = gita.git.exec(args)
@@ -98,6 +98,12 @@ function! s:compare(status, commit, ...) abort " {{{
           \)
     return
   endif
+  let REMOTE = split(result.stdout, '\v\r?\n')
+  let REMOTE_bufname = printf("%s.%s.REMOTE.%s",
+        \ fnamemodify(path, ':r'),
+        \ empty(a:commit) ? 'INDEX' : a:commit,
+        \ fnamemodify(path, ':e'),
+        \)
 
   " LOCAL
   call gita#util#interface_open(path, 'diff_LOCAL', {
@@ -105,71 +111,81 @@ function! s:compare(status, commit, ...) abort " {{{
         \ 'range': 'all',
         \})
   let LOCAL_bufnum = bufnr('%')
-  let LOCAL_bufname = bufname('%')
-  let filetype = &filetype
   if g:gita#interface#diff#define_smart_redraw
     nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   endif
   augroup vim-gita-diff
     autocmd! * <buffer>
-    autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
   augroup END
 
   " REMOTE
-  let REMOTE_bufname = printf('%s.%s', LOCAL_bufname, a:commit)
   let opener = options.vertical ? 'vert new' : 'new'
   call gita#util#interface_open(REMOTE_bufname, 'diff_REMOTE', {
         \ 'opener': opener,
         \ 'range': 'all',
         \})
-  "silent execute printf('%s %s', opener, REMOTE_bufname)
   let REMOTE_bufnum = bufnr('%')
-  silent execute printf('setlocal filetype=%s', filetype)
-  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-  if g:gita#interface#diff#define_smart_redraw
-    nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
-  endif
+  setlocal buftype=acwrite bufhidden=wipe noswapfile
+  nnoremap <buffer><silent> <C-l> :<C-u>call <SID>smart_redraw()<CR>
   augroup vim-gita-diff
     autocmd! * <buffer>
-    autocmd QuitPre <buffer> call s:diff_ac_quit_pre()
+    autocmd BufWriteCmd <buffer> call s:ac_write_cmd()
+    autocmd QuitPre     <buffer> call s:ac_quit_pre()
   augroup END
   setlocal modifiable
-  call gita#util#buffer_update(split(result.stdout, '\v\r?\n'))
+  call gita#util#buffer_update(REMOTE)
   setlocal nomodifiable
   diffthis
 
   call setbufvar(LOCAL_bufnum, '_REMOTE_bufnum', REMOTE_bufnum)
+  call setbufvar(LOCAL_bufnum, '_EDITABLE_bufnum', LOCAL_bufnum)
   call setbufvar(REMOTE_bufnum, '_LOCAL_bufnum', LOCAL_bufnum)
+  call setbufvar(REMOTE_bufnum, '_EDITABLE_bufnum', LOCAL_bufnum)
 
-  wincmd =
-  silent execute bufwinnr(LOCAL_bufnum) 'wincmd w'
+  execute bufwinnr(LOCAL_bufnum) 'wincmd w'
   diffthis
   diffupdate
 endfunction " }}}
-function! s:diff_ac_quit_pre() abort " {{{
-  let mybufnum = bufnr('%')
-  let bufnums = [
-        \ get(b:, '_LOCAL_bufnum', -1),
-        \ get(b:, '_REMOTE_bufnum', -1),
-        \]
-  for bufnum in bufnums
-    if bufexists(bufnum) && bufnum != mybufnum
-      let winnum = bufwinnr(bufnum)
-      silent execute winnum 'wincmd w'
-      silent diffoff
-      augroup vim-gita-diff
-        autocmd! * <buffer>
-      augroup END
-      if s:get_is_bufhidden(bufnum) || !getbufvar(bufnum, '&modified', 0)
-        silent execute printf('noautocmd %dquit', winnum)
+function! s:ac_write_cmd() abort " {{{
+  let new_filename = fnamemodify(expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  if new_filename !=# old_filename
+    execute printf('w%s %s %s',
+          \ v:cmdbang ? '!' : '',
+          \ fnameescape(v:cmdarg),
+          \ fnameescape(new_filename),
+          \)
+  endif
+endfunction " }}}
+function! s:ac_quit_pre() abort " {{{
+  " Synchronize &modified to prevent closing when the editable buffer (LOCAL
+  " in 2-way, MERGE in 3-way) is modified
+  let is_hidden = s:get_is_bufhidden(b:_EDITABLE_bufnum)
+  let &modified = getbufvar(b:_EDITABLE_bufnum, '&modified', 0)
+  " Close related buffers only when no modification are applied to the
+  " editable buffer or closed with cmdbang
+  " Note: v:cmdbang is only for read/write file.
+  if is_hidden || !&modified || histget('cmd') =~# '\v!$'
+    diffoff
+    augroup vim-gita-diff
+      autocmd! * <buffer>
+    augroup END
+    let bufnums = [
+          \ get(b:, '_LOCAL_bufnum', -1),
+          \ get(b:, '_REMOTE_bufnum', -1),
+          \]
+    for bufnum in bufnums
+      if bufexists(bufnum)
+        execute printf('noautocmd %dwincmd w', bufwinnr(bufnum))
+        diffoff
+        augroup vim-gita-diff
+          autocmd! * <buffer>
+        augroup END
+        silent noautocmd quit!
       endif
-    endif
-  endfor
-  silent execute bufwinnr(mybufnum) 'wincmd w'
-  silent diffoff
-  augroup vim-gita-diff
-    autocmd! * <buffer>
-  augroup END
+    endfor
+  endif
 endfunction " }}}
 
 function! gita#interface#diff#open(status, commit, ...) abort " {{{
@@ -199,3 +215,7 @@ call s:config()
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 "vim: stts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+"
+"
+"
+"
