@@ -147,6 +147,10 @@ function! gita#util#asktf(message, ...) abort " {{{
 endfunction " }}}
 
 " Buffer
+function! gita#util#buffer_get_name(name, ...) abort " {{{
+  let sep = has('unix') ? ':' : '#'
+  return join(['vim-gita'] + a:000 + [a:name], sep)
+endfunction " }}}
 function! gita#util#buffer_open(buffer, ...) abort " {{{
   let B = gita#util#import('Vim.Buffer')
   let opener = get(a:000, 0, get(g:, 'gita#buffer#opener', 'edit'))
@@ -273,26 +277,13 @@ function! gita#util#interface_get_help(about) abort " {{{
   return get(s:, vname)
 endfunction " }}}
 
-" Autocmd
+" Misc
 function! gita#util#doautocmd(name) abort " {{{
   let name = printf('vim-gita-%s', a:name)
   if 703 < v:version || (v:version == 703 && has('patch438'))
     silent execute 'doautocmd <nomodeline> User ' . name
   else
     silent execute 'doautocmd User ' . name
-  endif
-endfunction " }}}
-
-" Misc
-function! s:to_string(value) " {{{
-  if gita#util#is_string(a:value)
-    return a:value
-  elseif gita#util#is_numeric(a:value)
-    return a:value ? string(a:value) : ''
-  elseif gita#util#is_list(a:value) || gita#util#is_dict(a:value)
-    return empty(a:value) ? string(a:value) : ''
-  else
-    return string(a:value)
   endif
 endfunction " }}}
 function! gita#util#format(format, format_map, data) abort " {{{
@@ -318,11 +309,40 @@ function! gita#util#format(format, format_map, data) abort " {{{
     let str = substitute(str, pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
+endfunction
+function! s:to_string(value)
+  if gita#util#is_string(a:value)
+    return a:value
+  elseif gita#util#is_numeric(a:value)
+    return a:value ? string(a:value) : ''
+  elseif gita#util#is_list(a:value) || gita#util#is_dict(a:value)
+    return empty(a:value) ? string(a:value) : ''
+  else
+    return string(a:value)
+  endif
 endfunction " }}}
 function! gita#util#yank(content) " {{{
   let @" = a:content
   if has('clipboard')
     call setreg(v:register, a:content)
+  endif
+endfunction " }}}
+function! gita#util#smart_define(lhs, rhs, ...) abort " {{{
+  let mode = get(a:000, 0, '')
+  let opts = extend({
+        \ 'noremap': 0,
+        \ 'silent': 0,
+        \ 'buffer': 0,
+        \}, get(a:000, 1, {}))
+
+  if !hasmapto(a:rhs, mode) && empty(maparg(a:lhs, mode))
+    silent execute printf('%s%smap %s%s %s %s',
+          \ mode,
+          \ opts.noremap ? 'nore' : '',
+          \ opts.silent ? '<silent>' : '',
+          \ opts.buffer ? '<buffer>' : '',
+          \ a:lhs, a:rhs,
+          \)
   endif
 endfunction " }}}
 
