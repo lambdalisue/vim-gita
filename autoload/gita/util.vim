@@ -172,6 +172,15 @@ function! gita#util#buffer_clear_undo() abort " {{{
   silent execute "normal a \<BS>\<ESC>"
   silent execute 'setlocal undolevels=' . saved_undolevels
 endfunction " }}}
+function! gita#util#buffer_is_listed_in_tabpage(expr) abort " {{{
+  let bufnum = bufnr(a:expr)
+  if bufnum == -1
+    return 0
+  endif
+  let buflist = tabpagebuflist()
+  call gita#util#debug('buflist', buflist)
+  return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
+endfunction " }}}
 
 " Invoker
 function! gita#util#invoker_get(...) abort " {{{

@@ -17,10 +17,6 @@ function! s:get_gita(...) abort " {{{
   let gita.interface.diff = get(gita.interface, 'diff', {})
   return gita
 endfunction " }}}
-function! s:get_is_bufhidden(expr) abort " {{{
-  let bufhidden = getbufvar(a:expr, '&bufhidden')
-  return bufhidden == 'hidden' || (bufhidden == '' && &hidden)
-endfunction " }}}
 function! s:smart_redraw() abort " {{{
   if &diff
     diffupdate | redraw!
@@ -104,7 +100,9 @@ function! s:compare(status, commit, ...) abort " {{{
         \)
 
   " LOCAL
-  silent call gita#util#buffer_open(path, options.opener)
+  silent call gita#util#interface_open(path, 'diff_LOCAL', {
+        \ 'opener': options.opener,
+        \})
   let LOCAL_bufnum = bufnr('%')
   nnoremap <buffer><silent> <Plug>(gita-smart-redraw) :<C-u>call <SID>smart_redraw()<CR>
   call gita#util#smart_define('<C-l>', '<Plug>(gita-smart-redraw)', 'n', { 'buffer': 1 })
@@ -115,8 +113,14 @@ function! s:compare(status, commit, ...) abort " {{{
   diffthis
 
   " REMOTE
-  let opener = options.vertical ? 'vert split' : 'split'
-  silent call gita#util#buffer_open(REF_bufname, opener)
+  if gita#util#buffer_is_listed_in_tabpage(REF_bufname)
+    let opener = 'edit'
+  else
+    let opener = options.vertical ? 'vert split' : 'split'
+  endif
+  silent call gita#util#interface_open(REF_bufname, 'diff_REF', {
+        \ 'opener': opener,
+        \})
   let REF_bufnum = bufnr('%')
   setlocal buftype=nofile bufhidden=wipe noswapfile
   nnoremap <buffer><silent> <Plug>(gita-smart-redraw) :<C-u>call <SID>smart_redraw()<CR>
