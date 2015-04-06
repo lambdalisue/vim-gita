@@ -51,14 +51,15 @@ function! s:_listalize(value) abort " {{{
   return [a:value]
 endfunction " }}}
 function! s:shellwords(str) abort " {{{
-  let sd = '\([^ \t''"]\+\)'        " Space/Tab separated texts
-  let sq = '''\zs\([^'']\+\)\ze'''  " Single quotation wrapped text
-  let dq = '"\zs\([^"]\+\)\ze"'     " Double quotation wrapped text
+  let sd = '[^ \t''"]\+'        " Space/Tab separated texts
+  let sq = '''\zs[^'']\+\ze'''  " Single quotation wrapped text
+  let dq = '"\zs[^"]\+\ze"'     " Double quotation wrapped text
   let pattern = printf('\%%(%s\|%s\|%s\)', sq, dq, sd)
   " Split texts by spaces between sd/sq/dq
-  let words = split(a:str, printf('%s\zs\s*\ze', pattern))
+  let words = split(a:str, printf('%s*\zs\(\s\+\|$\)\ze', pattern))
   " Extract wrapped words
-  let words = map(words, 'matchstr(v:val, "^" . pattern . "$")')
+  let pattern = '^\zs\%("[^"]\+"\|''[^'']\+''\|.*\)\ze$'
+  let words = map(words, 'matchstr(v:val, pattern)')
   return words
 endfunction " }}}
 
@@ -103,6 +104,8 @@ function! s:new(...) abort " {{{
         \ 'validate_required': 1,
         \ 'validate_kinds': 1,
         \ 'validate_unknown': 1,
+        \ 'support_equal_assign': 1,
+        \ 'support_nonequal_assign': 1,
         \}, get(a:000, 0, {}))
   let consts = {
         \ 'true': s:_true(),
@@ -241,18 +244,23 @@ function! s:parser._parse_cmdline(cmdline, ...) abort " {{{
     let cword = shellwords[cursor]
     let nword = (length == cursor + 1) ? '' : shellwords[cursor+1]
     if cword =~# '^--\?'
-      let name = matchstr(cword, '^--\?\zs.*\ze')
+      let m = matchlist(cword, '\v^\-\-?([^=]*)%(\=(.*)|)')
+      let name = m[1]
       " translate short argument name to long argument name
       if has_key(self._short_arguments, name)
         let name = self._short_arguments[name].name
       endif
       " is the specified argument registered?
       if has_key(self._long_arguments, name)
-        if empty(nword) || nword =~# '^--\?'
+        if !empty(m[2]) && self.settings.support_equal_assign
+          let Value = substitute(m[2], '^["'']\|["'']$', '', 'g')
+        elseif empty(nword) || nword =~# '^--\?'
           let Value = self.true
-        else
+        elseif self.settings.support_nonequal_assign
           let Value = nword
           let cursor += 1
+        else
+          let Value = self.true
         endif
         let args[name] = Value
         call add(args.__args__, name)

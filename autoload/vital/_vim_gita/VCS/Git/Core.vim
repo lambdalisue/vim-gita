@@ -147,7 +147,11 @@ function! s:get_remote_hash(repository, remote, branch) abort " {{{
     " sometime the file is missing
     let filename = s:Path.join(a:repository, 'packed-refs')
     let packed_refs = join(s:_readfile(filename), "\n")
-    let pattern = printf('\v\zs[^\r\n]{-}\ze\srefs/remotes/%s/%s\n?', a:remote, a:branch)
+    " Note:
+    "   Vim document said '.' does not hit a new line but it is a LIE.
+    "   And the behavior of regexpengine=1 is quite annoying thus the
+    "   following discusting regex is required...
+    let pattern = printf('\v(\w|\s)*\ze\srefs/remotes/%s/%s', a:remote, a:branch)
     let hash = matchstr(packed_refs, pattern)
   endif
   return hash
@@ -206,29 +210,24 @@ endfunction " }}}
 
 " Execution
 function! s:system(args, ...) abort " {{{
+  let saved_cwd = getcwd()
   let args = s:List.flatten(a:args)
   let opts = extend({
         \ 'stdin': '',
         \ 'timeout': 0,
-        \ 'cwd': '',
+        \ 'cwd': saved_cwd,
         \}, get(a:000, 0, {}))
   let original_opts = deepcopy(opts)
   " prevent E677
   if strlen(opts.stdin)
     let opts.input = opts.stdin
   endif
-  let saved_cwd = ''
-  if opts.cwd !=# ''
-    let saved_cwd = fnamemodify(getcwd(), ':p')
-    let cwd = s:Prelude.path2directory(opts.cwd)
-    silent execute 'lcd ' fnameescape(cwd)
-  endif
   try
+    let cwd = s:Prelude.path2directory(opts.cwd)
+    silent execute 'lcd' fnameescape(cwd)
     let stdout = s:Process.system(args, opts)
   finally
-    if saved_cwd !=# ''
-      silent execute 'lcd ' fnameescape(saved_cwd)
-    endif
+    silent execute 'lcd' fnameescape(saved_cwd)
   endtry
   " remove trailing newline
   let stdout = substitute(stdout, '\v%(\r?\n)$', '', '')
