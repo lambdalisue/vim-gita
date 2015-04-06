@@ -78,6 +78,11 @@ function! gita#Gita(opts) abort " {{{
   if empty(a:opts)
     " validation failed
     return
+  elseif !gita#get().enabled
+    call gita#util#warn(
+          \ 'No git working directory is found on a current buffer',
+          \)
+    return
   endif
   let name = get(a:opts, '_name', '')
   if name ==# 'status'
