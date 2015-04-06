@@ -280,7 +280,10 @@ function! s:open(...) abort " {{{
 endfunction " }}}
 function! s:update(...) abort " {{{
   let gita = s:get_gita()
-  let options = extend(b:_options, get(a:000, 0, {}))
+  let options = extend(b:_options, extend(
+        \ get(g:, 'gita#interface#commit#default_options', {}),
+        \ get(a:000, 0, {}))
+        \)
   let result = gita.git.get_parsed_commit(
         \ extend({ 'no_cache': 1 }, options),
         \)

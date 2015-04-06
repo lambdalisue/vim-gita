@@ -38,7 +38,11 @@ function! s:opts2args(opts, defaults) abort " {{{
         else
           call add(args, printf('--%s', substitute(key, '_', '-', 'g')))
         endif
-      elseif s:Prelude.is_string(default) && default =~# '\v^\=' && default !=# printf('=%s', val)
+      elseif s:Prelude.is_string(default) && default =~# '\v^\='
+        if (s:Prelude.is_number(val) && val == 1)
+          unlet! val
+          let val = default[1:]
+        endif
         if strlen(key) == 1
           call add(args, printf('-%s%s', key, val))
         else
@@ -104,10 +108,9 @@ function! s:get_parsed_commit(...) " {{{
         \ 'verbose': 0,
         \ 'quiet': 0,
         \ 'status': 0,
-        \ 'no_status': 0,
         \} 
   let opts = get(a:000, 0, {})
-  let args = ['commit', '--dry-run', '--porcelain'] + s:opts2args(opts, defs)
+  let args = ['commit', '--dry-run', '--porcelain', '--no-status'] + s:opts2args(opts, defs)
   let result = s:Core.exec(args, s:Dict.omit(opts, keys(defs)))
   " Note:
   "   I'm not sure but apparently the exit status is 1

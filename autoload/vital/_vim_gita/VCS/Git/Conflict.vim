@@ -18,9 +18,9 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:const.markers.separator   = repeat('\=', 7)
   let s:const.markers.theirs = repeat('\>', 7)
   let s:const.patterns = {}
-  let s:const.patterns.ours = printf('%s[^\n]*', s:const.markers.ours)
-  let s:const.patterns.separator = printf('%s[^\n]*', s:const.markers.separator)
-  let s:const.patterns.theirs = printf('%s[^\n]*', s:const.markers.theirs)
+  let s:const.patterns.ours = printf('%s[^\n]{-}%(\n|$)', s:const.markers.ours)
+  let s:const.patterns.separator = printf('%s[^\n]{-}%(\n|$)', s:const.markers.separator)
+  let s:const.patterns.theirs = printf('%s[^\n]{-}%(\n|$)', s:const.markers.theirs)
   lockvar s:const
   let self.const = s:const
 endfunction " }}}
