@@ -43,13 +43,23 @@ function! s:_get_finder() abort " {{{
 endfunction " }}}
 function! s:_get_finder_cache() abort " {{{
   if !exists('s:finder_cache')
-    let s:finder_cache = s:get_config().cache.finder.new()
+    let config = s:get_config()
+    let s:finder_cache = call(
+          \ config.cache.finder.new,
+          \ config.cache.finder_args,
+          \ config.cache.finder,
+          \)
   endif
   return s:finder_cache
 endfunction " }}}
 function! s:_get_instance_cache() abort " {{{
   if !exists('s:instance_cache')
-    let s:instance_cache = s:get_config().cache.instance.new()
+    let config = s:get_config()
+    let s:instance_cache = call(
+          \ config.cache.instance.new,
+          \ config.cache.instance_args,
+          \ config.cache.instance,
+          \)
   endif
   return s:instance_cache
 endfunction " }}}
@@ -62,6 +72,10 @@ function! s:get_config() abort " {{{
         \   'instance': s:Cache,
         \   'repository': s:Cache,
         \   'uptime':   s:Cache,
+        \   'finder_args': [],
+        \   'instance_args': [],
+        \   'repository_args': [],
+        \   'uptime_args': [],
         \ },
         \}
   return extend(default, deepcopy(s:config))
@@ -82,12 +96,21 @@ function! s:new(worktree, repository, ...) abort " {{{
   if !empty(git) && !opts.no_cache
     return git
   endif
+  let config = s:get_config()
   let git = extend(deepcopy(s:git), {
         \ 'worktree': a:worktree,
         \ 'repository': a:repository,
         \ 'cache': {
-        \   'repository': s:get_config().cache.repository.new(),
-        \   'uptime': s:get_config().cache.uptime.new(),
+        \   'repository': call(
+        \     config.cache.repository.new,
+        \     config.cache.repository_args,
+        \     config.cache.repository
+        \   ),
+        \   'uptime': call(
+        \     config.cache.uptime.new,
+        \     config.cache.uptime_args,
+        \     config.cache.uptime
+        \   ),
         \ }
         \})
   call cache.set(a:worktree, git)
@@ -368,7 +391,7 @@ function! s:git.get_meta() abort " {{{
   let meta.merge_head = self.get_merge_head()
   let meta.commit_editmsg = self.get_commit_editmsg()
   let meta.last_commitmsg =
-        \ meta.fetch_head ==# meta.orig_head
+        \ empty(meta.commit_editmsg)
         \ ? self.get_last_commitmsg()
         \ : meta.commit_editmsg
   let meta.merge_msg = self.get_merge_msg()
