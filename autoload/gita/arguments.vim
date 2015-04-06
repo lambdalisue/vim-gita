@@ -25,6 +25,7 @@ function! gita#arguments#parse(bang, range, ...) abort " {{{
   else
     let opts = {'args': s:ArgumentParser.shellwords(cmdline)}
   endif
+  let opts.bang = bang
   if !empty(opts)
     " ArgumentParser return empty string for --help
     let opts._name = name

@@ -85,17 +85,18 @@ function! gita#Gita(opts) abort " {{{
     return
   endif
   let name = get(a:opts, '_name', '')
-  if name ==# 'status'
-    return s:GitaStatus(a:opts)
-  elseif name ==# 'commit'
-    return s:GitaCommit(a:opts)
-  elseif name ==# 'diff'
-    return s:GitaDiff(a:opts)
-  elseif name ==# 'browse'
-    return s:GitaBrowse(a:opts)
-  else
-    return s:GitaDefault(a:opts)
+  if !a:opts.bang
+    if name ==# 'status'
+      return s:GitaStatus(a:opts)
+    elseif name ==# 'commit'
+      return s:GitaCommit(a:opts)
+    elseif name ==# 'diff'
+      return s:GitaDiff(a:opts)
+    elseif name ==# 'browse'
+      return s:GitaBrowse(a:opts)
+    endif
   endif
+  return s:GitaDefault(a:opts)
 endfunction " }}}
 
 function! gita#get(...) abort " {{{
