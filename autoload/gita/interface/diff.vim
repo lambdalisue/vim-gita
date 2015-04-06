@@ -33,7 +33,7 @@ function! s:open(status, commit, ...) abort " {{{
         \ 'no_prefix': 1,
         \ 'no_color': 1,
         \ 'unified': '0',
-        \ 'R': 1,
+        \ 'R': 0,
         \ 'histogram': 1,
         \}, get(a:000, 0, {}))
 
