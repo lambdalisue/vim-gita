@@ -105,8 +105,7 @@ endfunction " }}}
 function! s:get_fetch_head(repository) abort " {{{
   " The SHAs of branch/remote heads that were updated during the last git fetch
   let filename = s:Path.join(a:repository, 'FETCH_HEAD')
-  let line = s:_readline(filename)
-  return matchstr(line, '\v^[^ ]+')
+  return s:_readfile(filename)
 endfunction " }}}
 function! s:get_orig_head(repository) abort " {{{
   " When doing a merge, this is the SHA of the branch you’re merging into.
