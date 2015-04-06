@@ -97,7 +97,7 @@ function! gita#statusline#info(...) " {{{
 endfunction " }}}
 function! gita#statusline#format(format, ...) " {{{
   let info = get(a:000, 0, s:get_info())
-  return call(s:format(a:format, info))
+  return s:format(a:format, info)
 endfunction " }}}
 function! gita#statusline#preset(name, ...) " {{{
   let info = get(a:000, 0, s:get_info())
