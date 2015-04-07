@@ -31,7 +31,7 @@ function! s:get_info(...) abort " {{{
 endfunction " }}}
 function! s:get_statuses() abort " {{{
   let gita = gita#get()
-  let options = get(g:, 'gita#statusline#status_default_options', {})
+  let options = get(g:, 'gita#interface#status#default_options', {})
   if gita.enabled
     let statuses = gita.git.get_parsed_status(options)
     if get(statuses, 'status', 0) != 0
