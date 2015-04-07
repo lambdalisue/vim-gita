@@ -31,12 +31,25 @@ function! s:get_info(...) abort " {{{
 endfunction " }}}
 function! s:get_statuses() abort " {{{
   let gita = gita#get()
-  let options = get(g:, 'gita#interface#status#default_options', {})
+  let options = extend(
+        \ get(b:, '_options', {}),
+        \ extend(
+        \  get(g:, 'gita#interface#status#default_options', {}),
+        \  get(a:000, 0, {})
+        \ )
+        \)
   if gita.enabled
     let statuses = gita.git.get_parsed_status(options)
     if get(statuses, 'status', 0) != 0
       call gita#util#debug(statuses.stdout)
-      return
+      return {
+            \ 'conflicted': 0,
+            \ 'unstaged': 0,
+            \ 'added': 0,
+            \ 'deleted': 0,
+            \ 'renamed': 0,
+            \ 'modified': 0,
+            \}
     endif
     " Note:
     "   the 'statuses' is cached, mean that 'untracked' doesn't reflect the
