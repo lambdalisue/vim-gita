@@ -288,7 +288,13 @@ function! s:git.get_parsed_status(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
+  let opts = s:Dict.pick(options, [
+        \ 'branch',
+        \ 'untracked_files',
+        \ 'ignore_submodules',
+        \ 'ignored',
+        \ 'z'
+        \])
   let name = s:Path.join('index', 'parsed_status', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'status') || options.no_cache)
@@ -304,7 +310,35 @@ function! s:git.get_parsed_commit(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
+  let opts = s:Dict.pick(options, [
+        \ 'all',
+        \ 'patch',
+        \ 'reuse_message',
+        \ 'reedit_message',
+        \ 'fixup',
+        \ 'squash',
+        \ 'reset_author',
+        \ 'short',
+        \ 'z',
+        \ 'file',
+        \ 'author',
+        \ 'date',
+        \ 'message',
+        \ 'template',
+        \ 'signoff',
+        \ 'no_verify',
+        \ 'allow_empty',
+        \ 'allow_empty_message',
+        \ 'cleanup',
+        \ 'edit',
+        \ 'amend',
+        \ 'include',
+        \ 'only',
+        \ 'untracked_files',
+        \ 'verbose',
+        \ 'quiet',
+        \ 'status',
+        \])
   let name = s:Path.join('index', 'parsed_commit', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'commit') || options.no_cache)
@@ -320,7 +354,18 @@ function! s:git.get_parsed_config(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
+  let opts = s:Dict.pick(options, [
+        \ 'local',
+        \ 'global',
+        \ 'system',
+        \ 'file',
+        \ 'blob',
+        \ 'bool',
+        \ 'int',
+        \ 'bool_or_int',
+        \ 'path',
+        \ 'includes',
+        \])
   let name = s:Path.join('index', 'parsed_config', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'config') || options.no_cache)
@@ -390,10 +435,6 @@ function! s:git.get_meta() abort " {{{
   let meta.orig_head = self.get_orig_head()
   let meta.merge_head = self.get_merge_head()
   let meta.commit_editmsg = self.get_commit_editmsg()
-  let meta.last_commitmsg =
-        \ empty(meta.commit_editmsg)
-        \ ? self.get_last_commitmsg()
-        \ : meta.commit_editmsg
   let meta.merge_msg = self.get_merge_msg()
   let meta.current_branch = meta.head =~? 'refs/heads/'
         \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
