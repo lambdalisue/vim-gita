@@ -43,23 +43,13 @@ function! s:_get_finder() abort " {{{
 endfunction " }}}
 function! s:_get_finder_cache() abort " {{{
   if !exists('s:finder_cache')
-    let config = s:get_config()
-    let s:finder_cache = call(
-          \ config.cache.finder.new,
-          \ config.cache.finder_args,
-          \ config.cache.finder,
-          \)
+    let s:finder_cache = s:get_config().cache.finder.new()
   endif
   return s:finder_cache
 endfunction " }}}
 function! s:_get_instance_cache() abort " {{{
   if !exists('s:instance_cache')
-    let config = s:get_config()
-    let s:instance_cache = call(
-          \ config.cache.instance.new,
-          \ config.cache.instance_args,
-          \ config.cache.instance,
-          \)
+    let s:instance_cache = s:get_config().cache.instance.new()
   endif
   return s:instance_cache
 endfunction " }}}
@@ -72,10 +62,6 @@ function! s:get_config() abort " {{{
         \   'instance': s:Cache,
         \   'repository': s:Cache,
         \   'uptime':   s:Cache,
-        \   'finder_args': [],
-        \   'instance_args': [],
-        \   'repository_args': [],
-        \   'uptime_args': [],
         \ },
         \}
   return extend(default, deepcopy(s:config))
@@ -96,21 +82,12 @@ function! s:new(worktree, repository, ...) abort " {{{
   if !empty(git) && !opts.no_cache
     return git
   endif
-  let config = s:get_config()
   let git = extend(deepcopy(s:git), {
         \ 'worktree': a:worktree,
         \ 'repository': a:repository,
         \ 'cache': {
-        \   'repository': call(
-        \     config.cache.repository.new,
-        \     config.cache.repository_args,
-        \     config.cache.repository
-        \   ),
-        \   'uptime': call(
-        \     config.cache.uptime.new,
-        \     config.cache.uptime_args,
-        \     config.cache.uptime
-        \   ),
+        \   'repository': s:get_config().cache.repository.new(),
+        \   'uptime': s:get_config().cache.uptime.new(),
         \ }
         \})
   call cache.set(a:worktree, git)
@@ -288,13 +265,7 @@ function! s:git.get_parsed_status(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'branch',
-        \ 'untracked_files',
-        \ 'ignore_submodules',
-        \ 'ignored',
-        \ 'z'
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_status', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'status') || options.no_cache)
@@ -310,35 +281,7 @@ function! s:git.get_parsed_commit(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'all',
-        \ 'patch',
-        \ 'reuse_message',
-        \ 'reedit_message',
-        \ 'fixup',
-        \ 'squash',
-        \ 'reset_author',
-        \ 'short',
-        \ 'z',
-        \ 'file',
-        \ 'author',
-        \ 'date',
-        \ 'message',
-        \ 'template',
-        \ 'signoff',
-        \ 'no_verify',
-        \ 'allow_empty',
-        \ 'allow_empty_message',
-        \ 'cleanup',
-        \ 'edit',
-        \ 'amend',
-        \ 'include',
-        \ 'only',
-        \ 'untracked_files',
-        \ 'verbose',
-        \ 'quiet',
-        \ 'status',
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_commit', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'commit') || options.no_cache)
@@ -354,18 +297,7 @@ function! s:git.get_parsed_config(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'local',
-        \ 'global',
-        \ 'system',
-        \ 'file',
-        \ 'blob',
-        \ 'bool',
-        \ 'int',
-        \ 'bool_or_int',
-        \ 'path',
-        \ 'includes',
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_config', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'config') || options.no_cache)
@@ -435,6 +367,10 @@ function! s:git.get_meta() abort " {{{
   let meta.orig_head = self.get_orig_head()
   let meta.merge_head = self.get_merge_head()
   let meta.commit_editmsg = self.get_commit_editmsg()
+  let meta.last_commitmsg =
+        \ meta.fetch_head ==# meta.orig_head
+        \ ? self.get_last_commitmsg()
+        \ : meta.commit_editmsg
   let meta.merge_msg = self.get_merge_msg()
   let meta.current_branch = meta.head =~? 'refs/heads/'
         \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
