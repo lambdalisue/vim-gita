@@ -105,7 +105,8 @@ endfunction " }}}
 function! s:get_fetch_head(repository) abort " {{{
   " The SHAs of branch/remote heads that were updated during the last git fetch
   let filename = s:Path.join(a:repository, 'FETCH_HEAD')
-  return s:_readfile(filename)
+  let line = s:_readline(filename)
+  return matchstr(line, '\v^[^ ]+')
 endfunction " }}}
 function! s:get_orig_head(repository) abort " {{{
   " When doing a merge, this is the SHA of the branch you’re merging into.
@@ -209,24 +210,29 @@ endfunction " }}}
 
 " Execution
 function! s:system(args, ...) abort " {{{
-  let saved_cwd = getcwd()
   let args = s:List.flatten(a:args)
   let opts = extend({
         \ 'stdin': '',
         \ 'timeout': 0,
-        \ 'cwd': saved_cwd,
+        \ 'cwd': '',
         \}, get(a:000, 0, {}))
   let original_opts = deepcopy(opts)
   " prevent E677
   if strlen(opts.stdin)
     let opts.input = opts.stdin
   endif
-  try
+  let saved_cwd = ''
+  if opts.cwd !=# ''
+    let saved_cwd = fnamemodify(getcwd(), ':p')
     let cwd = s:Prelude.path2directory(opts.cwd)
-    silent execute 'lcd' fnameescape(cwd)
+    silent execute 'lcd ' fnameescape(cwd)
+  endif
+  try
     let stdout = s:Process.system(args, opts)
   finally
-    silent execute 'lcd' fnameescape(saved_cwd)
+    if saved_cwd !=# ''
+      silent execute 'lcd ' fnameescape(saved_cwd)
+    endif
   endtry
   " remove trailing newline
   let stdout = substitute(stdout, '\v%(\r?\n)$', '', '')
