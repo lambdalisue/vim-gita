@@ -320,13 +320,7 @@ function! s:update(...) abort " {{{
     let commitmsg = gita.git.get_merge_msg()
   elseif get(options, 'amend', 0)
     let commit_mode = 'amend'
-    if gita.git.get_fetch_head() == gita.git.get_orig_head()
-      " no cached commit message is available
-      " execute git and get a last commitmsg
-      let commitmsg = gita.git.get_last_commitmsg()
-    else
-      let commitmsg = gita.git.get_commit_editmsg()
-    endif
+    let commitmsg = gita.git.get_last_commitmsg()
   else
     let commitmsg = []
   endif
