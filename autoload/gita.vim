@@ -60,7 +60,7 @@ function! s:GitaBrowse(opts) abort " {{{
 endfunction " }}}
 function! s:GitaDefault(opts) abort " {{{
   let git    = s:Git.find(expand('%'))
-  let result = git.exec(a:opts.args)
+  let result = git.exec(a:opts.__args__)
   if result.status == 0
     call gita#util#info(
           \ result.stdout,
@@ -84,8 +84,8 @@ function! gita#Gita(opts) abort " {{{
           \)
     return
   endif
-  let name = get(a:opts, '_name', '')
-  if !a:opts.bang
+  let name = get(a:opts, '__name__', '')
+  if !a:opts.__bang__
     if name ==# 'status'
       return s:GitaStatus(a:opts)
     elseif name ==# 'commit'

@@ -47,7 +47,6 @@ function! s:Manager.open(bufname, ...) abort
   let new_bufnr = bufnr('%')
   let self._bufnrs[new_bufnr] = a:bufname
 
-  call self.opened(a:bufname)
   return {
   \   'loaded': loaded,
   \   'newwin': moved,
@@ -69,6 +68,7 @@ function! s:Manager.close(...) abort
 endfunction
 
 function! s:Manager.opened(bufname) abort
+  throw 'vital: Vim.BufferManager: not implemented yet'
 endfunction
 
 function! s:Manager.config(...) abort
@@ -83,7 +83,7 @@ function! s:Manager.config(...) abort
     let self._config[a:1] = a:2
     return self
   endif
-  throw 'Vital.Vim.BufferManager: invalid argument for config()'
+  throw 'vital: Vim.BufferManager: invalid argument for config()'
 endfunction
 
 function! s:Manager.user_config(config) abort
