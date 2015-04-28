@@ -66,7 +66,7 @@ function! s:GitaDefault(opts) abort " {{{
           \ result.stdout,
           \ printf('Ok: "%s"', join(result.args))
           \)
-    call gita#util#doautocmd(a:opts._name . '-post')
+    call gita#util#doautocmd(a:opts.__name__ . '-post')
   else
     call gita#util#info(
           \ result.stdout,
