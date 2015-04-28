@@ -34,6 +34,7 @@ function! gita#argument#parse(bang, range, ...) abort " {{{
   let opts = parser.parse(a:bang, a:range, cmdline)
 
   if opts.__bang__ || !has_key(opts, 'action') || opts.action !~# s:gita_command_names_pattern
+    let opts.__name__ = get(opts, 'action', '')
     return opts
   endif
 
