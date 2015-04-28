@@ -1,32 +1,25 @@
-"******************************************************************************
-" vim-gita arguments/status
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-" (C) 2015, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
 let s:Path = gita#util#import('System.Filepath')
 let s:ArgumentParser = gita#util#import('ArgumentParser')
 
-function! s:get_parser() abort " {{{
+function! gita#argument#status#get_parser() abort " {{{
   if !exists('s:parser')
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Show the working tree status in Gita interface',
           \})
+    let types = s:ArgumentParser.types
     call s:parser.add_argument(
-          \ '--untracked-files', '-u',
+          \ '--untracked-files',
           \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'alias': 'u',
           \   'choices': ['all', 'normal', 'no'],
           \   'default': 'all',
           \ })
     call s:parser.add_argument(
           \ '--ignored',
           \ 'show ignored files', {
-          \   'kind': 'switch',
           \ })
     call s:parser.add_argument(
           \ '--ignore-submodules',
@@ -37,22 +30,6 @@ function! s:get_parser() abort " {{{
   endif
   return s:parser
 endfunction " }}}
-
-function! gita#arguments#status#parse(bang, range, ...) abort " {{{
-  let cmdline = get(a:000, 0, '')
-  let settings = get(a:000, 1, {})
-  let parser = s:get_parser()
-  let args = [a:bang, a:range, cmdline, settings]
-  let opts = call(parser.parse, args, parser)
-  return opts
-endfunction " }}}
-function! gita#arguments#status#complete(arglead, cmdline, cursorpos) abort " {{{
-  let parser = s:get_parser()
-  let args = [a:arglead, a:cmdline, a:cursorpos]
-  let complete = call(parser.complete, args, parser)
-  return complete
-endfunction " }}}
-
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
