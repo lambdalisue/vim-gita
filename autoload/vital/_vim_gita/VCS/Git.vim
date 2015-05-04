@@ -288,13 +288,7 @@ function! s:git.get_parsed_status(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'branch',
-        \ 'untracked_files',
-        \ 'ignore_submodules',
-        \ 'ignored',
-        \ 'z'
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_status', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'status') || options.no_cache)
@@ -310,35 +304,7 @@ function! s:git.get_parsed_commit(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'all',
-        \ 'patch',
-        \ 'reuse_message',
-        \ 'reedit_message',
-        \ 'fixup',
-        \ 'squash',
-        \ 'reset_author',
-        \ 'short',
-        \ 'z',
-        \ 'file',
-        \ 'author',
-        \ 'date',
-        \ 'message',
-        \ 'template',
-        \ 'signoff',
-        \ 'no_verify',
-        \ 'allow_empty',
-        \ 'allow_empty_message',
-        \ 'cleanup',
-        \ 'edit',
-        \ 'amend',
-        \ 'include',
-        \ 'only',
-        \ 'untracked_files',
-        \ 'verbose',
-        \ 'quiet',
-        \ 'status',
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_commit', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'commit') || options.no_cache)
@@ -354,18 +320,7 @@ function! s:git.get_parsed_config(...) abort " {{{
   let options = self._get_call_opts(extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {})))
-  let opts = s:Dict.pick(options, [
-        \ 'local',
-        \ 'global',
-        \ 'system',
-        \ 'file',
-        \ 'blob',
-        \ 'bool',
-        \ 'int',
-        \ 'bool_or_int',
-        \ 'path',
-        \ 'includes',
-        \])
+  let opts = s:Dict.omit(options, ['no_cache'])
   let name = s:Path.join('index', 'parsed_config', string(opts))
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'config') || options.no_cache)
@@ -435,6 +390,10 @@ function! s:git.get_meta() abort " {{{
   let meta.orig_head = self.get_orig_head()
   let meta.merge_head = self.get_merge_head()
   let meta.commit_editmsg = self.get_commit_editmsg()
+  let meta.last_commitmsg =
+        \ empty(meta.commit_editmsg)
+        \ ? self.get_last_commitmsg()
+        \ : meta.commit_editmsg
   let meta.merge_msg = self.get_merge_msg()
   let meta.current_branch = meta.head =~? 'refs/heads/'
         \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
@@ -458,54 +417,57 @@ endfunction " }}}
 
 " Git commands
 function! s:git.add(options, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'dry_run',
-        \ 'verbose',
-        \ 'force',
-        \ 'interactive',
-        \ 'patch',
-        \ 'edit',
-        \ 'update',
-        \ 'all',
-        \ 'intent_to_add',
-        \ 'refresh',
-        \ 'ignore_errors',
-        \ 'ignore_missing',
-        \])
-  let args = extend(['add'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'dry_run': 0,
+        \ 'verbose': 0,
+        \ 'force': 0,
+        \ 'interactive': 0,
+        \ 'patch': 0,
+        \ 'edit': 0,
+        \ 'update': 0,
+        \ 'all': 0,
+        \ 'intent_to_add': 0,
+        \ 'refresh': 0,
+        \ 'ignore_errors': 0,
+        \ 'ignore_missing': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['add'], s:Misc.opts2args(a:options, defaults))
   let filenames = s:_listalize(get(a:000, 0, []))
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.rm(options, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'force',
-        \ 'dry_run',
-        \ 'r',
-        \ 'cached',
-        \ 'ignore_unmatch',
-        \ 'quiet',
-        \])
-  let args = extend(['rm'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'force': 0,
+        \ 'dry_run': 0,
+        \ 'r': 0,
+        \ 'cached': 0,
+        \ 'ignore_unmatch': 0,
+        \ 'quiet': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['rm'], s:Misc.opts2args(a:options, defaults))
   let filenames = s:_listalize(get(a:000, 0, []))
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.reset(options, commit, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'quiet',
-        \ 'patch',
-        \ 'intent_to_add',
-        \ 'mixed',
-        \ 'soft',
-        \ 'merge',
-        \ 'keep',
-        \])
-  let args = extend(['reset'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'quiet': 0,
+        \ 'patch': 0,
+        \ 'intent_to_add': 0,
+        \ 'mixed': 0,
+        \ 'soft': 0,
+        \ 'merge': 0,
+        \ 'keep': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['reset'], s:Misc.opts2args(a:options, defaults))
   if strlen(a:commit)
     call add(args, a:commit)
   endif
@@ -513,26 +475,27 @@ function! s:git.reset(options, commit, ...) abort " {{{
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.checkout(options, commit, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'quiet',
-        \ 'force',
-        \ 'ours',
-        \ 'theirs',
-        \ 'b',
-        \ 'B',
-        \ 'track',
-        \ 'no_track',
-        \ 'l',
-        \ 'detach',
-        \ 'orphan',
-        \ 'merge',
-        \ 'conflict',
-        \ 'patch',
-        \])
-  let args = extend(['checkout'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'quiet': 0,
+        \ 'force': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
+        \ 'b': '',
+        \ 'B': '',
+        \ 'track': 0,
+        \ 'no_track': 0,
+        \ 'l': 0,
+        \ 'detach': 0,
+        \ 'orphan': '',
+        \ 'merge': 0,
+        \ 'conflict': '=merge',
+        \ 'patch': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['checkout'], s:Misc.opts2args(a:options, defaults))
   if strlen(a:commit)
     call add(args, a:commit)
   endif
@@ -540,126 +503,129 @@ function! s:git.checkout(options, commit, ...) abort " {{{
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.status(options, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'short',
-        \ 'branch',
-        \ 'porcelain',
-        \ 'untracked_files',
-        \ 'ignore_submodules',
-        \ 'ignored',
-        \ 'z',
-        \])
-  let args = extend(['status'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'short': 0,
+        \ 'branch': 0,
+        \ 'porcelain': 0,
+        \ 'untracked_files': '=all',
+        \ 'ignore_submodules': '=all',
+        \ 'ignored': 0,
+        \ 'z': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['status'], s:Misc.opts2args(a:options, defaults))
   let filenames = s:_listalize(get(a:000, 0, []))
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.commit(options, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'all',
-        \ 'patch',
-        \ 'reuse_message',
-        \ 'reedit_message',
-        \ 'fixup',
-        \ 'squash',
-        \ 'reset_author',
-        \ 'short',
-        \ 'porcelain',
-        \ 'z',
-        \ 'file',
-        \ 'author',
-        \ 'date',
-        \ 'message',
-        \ 'template',
-        \ 'signoff',
-        \ 'no_verify',
-        \ 'allow_empty',
-        \ 'allow_empty_message',
-        \ 'cleanup',
-        \ 'edit',
-        \ 'amend',
-        \ 'include',
-        \ 'only',
-        \ 'untracked_files',
-        \ 'verbose',
-        \ 'quiet',
-        \ 'dry_run',
-        \ 'status',
-        \ 'no_status',
-        \])
-  let args = extend(['commit'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'all': 0,
+        \ 'patch': 0,
+        \ 'reuse_message': '=',
+        \ 'reedit_message': '=',
+        \ 'fixup': '=',
+        \ 'squash': '=',
+        \ 'reset_author': 0,
+        \ 'short': 0,
+        \ 'porcelain': 0,
+        \ 'z': 0,
+        \ 'file': '=',
+        \ 'author': '=',
+        \ 'date': '=',
+        \ 'message': '=',
+        \ 'template': '=',
+        \ 'signoff': 0,
+        \ 'no_verify': 0,
+        \ 'allow_empty': 0,
+        \ 'allow_empty_message': 0,
+        \ 'cleanup': '=default',
+        \ 'edit': 0,
+        \ 'amend': 0,
+        \ 'include': 0,
+        \ 'only': 0,
+        \ 'untracked_files': '=all',
+        \ 'verbose': 0,
+        \ 'quiet': 0,
+        \ 'dry_run': 0,
+        \ 'status': 0,
+        \ 'no_status': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['commit'], s:Misc.opts2args(a:options, defaults))
   let filenames = s:_listalize(get(a:000, 0, []))
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 function! s:git.diff(options, commit, ...) abort " {{{
-  let opts = s:Dict.pick(a:options, [
-        \ 'patch',
-        \ 'unified',
-        \ 'raw',
-        \ 'patch_with_raw',
-        \ 'minimal',
-        \ 'patience',
-        \ 'histogram',
-        \ 'stat',
-        \ 'numstat',
-        \ 'shortstat',
-        \ 'dirstat',
-        \ 'summary',
-        \ 'patch_with_stat',
-        \ 'z',
-        \ 'name_only',
-        \ 'name_status',
-        \ 'submodule',
-        \ 'color',
-        \ 'no_color',
-        \ 'word_diff',
-        \ 'word_diff_regex',
-        \ 'color_words',
-        \ 'no_renames',
-        \ 'check',
-        \ 'full_index',
-        \ 'binary',
-        \ 'abbrev',
-        \ 'break_rewrites',
-        \ 'find_renames',
-        \ 'find_copies',
-        \ 'find_copies_harder',
-        \ 'irreversible_delete',
-        \ 'l',
-        \ 'diff_filter',
-        \ 'S',
-        \ 'G',
-        \ 'pickaxe_all',
-        \ 'pickaxe_regex',
-        \ 'O',
-        \ 'R',
-        \ 'relative',
-        \ 'text',
-        \ 'ignore_space_at_eol',
-        \ 'ignore_space_change',
-        \ 'ignore_all_space',
-        \ 'inter_hunk_context',
-        \ 'function_context',
-        \ 'exit_code',
-        \ 'quiet',
-        \ 'ext_diff',
-        \ 'no_ext_diff',
-        \ 'textconv',
-        \ 'no_textconv',
-        \ 'ignore_submodules',
-        \ 'src_prefix',
-        \ 'dst_prefix',
-        \ 'no_prefix',
-        \])
-  let args = extend(['diff'], s:Misc.dict2args(opts))
+  let defaults = {
+        \ 'patch': 0,
+        \ 'unified': '=',
+        \ 'raw': 0,
+        \ 'patch_with_raw': 0,
+        \ 'minimal': 0,
+        \ 'patience': 0,
+        \ 'histogram': 0,
+        \ 'stat': '=',
+        \ 'numstat': 0,
+        \ 'shortstat': 0,
+        \ 'dirstat': '=',
+        \ 'summary': 0,
+        \ 'patch_with_stat': 0,
+        \ 'z': 0,
+        \ 'name_only': 0,
+        \ 'name_status': 0,
+        \ 'submodule': '=log',
+        \ 'color': '=never',
+        \ 'no_color': 0,
+        \ 'word_diff': '=plain',
+        \ 'word_diff_regex': '=',
+        \ 'color_words': '=',
+        \ 'no_renames': 0,
+        \ 'check': 0,
+        \ 'full_index': 0,
+        \ 'binary': 0,
+        \ 'abbrev': '=',
+        \ 'break_rewrites': '=',
+        \ 'find_renames': '=',
+        \ 'find_copies': '=',
+        \ 'find_copies_harder': 0,
+        \ 'irreversible_delete': 0,
+        \ 'l': '=',
+        \ 'diff_filter': '=',
+        \ 'S': '=',
+        \ 'G': '=',
+        \ 'pickaxe_all': 0,
+        \ 'pickaxe_regex': 0,
+        \ 'O': '=',
+        \ 'R': 0,
+        \ 'relative': '=',
+        \ 'text': 0,
+        \ 'ignore_space_at_eol': 0,
+        \ 'ignore_space_change': 0,
+        \ 'ignore_all_space': 0,
+        \ 'inter_hunk_context': '=',
+        \ 'function_context': 0,
+        \ 'exit_code': 0,
+        \ 'quiet': 0,
+        \ 'ext_diff': 0,
+        \ 'no_ext_diff': 0,
+        \ 'textconv': 0,
+        \ 'no_textconv': 0,
+        \ 'ignore_submodules': '=all',
+        \ 'src_prefix': '=',
+        \ 'dst_prefix': '=',
+        \ 'no_prefix': 0,
+        \} 
+  let opts = s:Dict.omit(a:options, keys(defaults))
+  let args = extend(['diff'], s:Misc.opts2args(a:options, defaults))
   if get(a:options, 'cached', 0)
     call add(args, '--cached')
   endif
@@ -670,7 +636,7 @@ function! s:git.diff(options, commit, ...) abort " {{{
   if len(filenames) > 0
     call add(args, ['--', filenames])
   endif
-  return self.exec(args, a:options)
+  return self.exec(args, opts)
 endfunction " }}}
 
 let &cpo = s:save_cpo
