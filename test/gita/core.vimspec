@@ -1,0 +1,182 @@
+Describe gita#core
+  Context #new([{expr}])
+    It should throw an exception if non existing buffer is specified
+      Throws /vim-gita: the buffer "foo" does not exist/ gita#core#new('foo')
+    End
+
+    Context A file buffer in a git repository
+      Before
+        let bufname = g:P.join(g:repository_root, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It should return a gita instance
+        let gita = gita#core#new(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a different gita instance
+        let gita1 = gita#core#new(bufname)
+        let gita2 = gita#core#new(bufname)
+        Assert NotSame(gita1, gita2)
+      End
+    End
+
+    Context A file buffer in a non git repository
+      Before
+        let bufname = g:P.join(g:non_repository_root, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It should return a gita instance
+        let gita = gita#core#new(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a different gita instance
+        let gita1 = gita#core#new(bufname)
+        let gita2 = gita#core#new(bufname)
+        Assert NotSame(gita1, gita2)
+      End
+    End
+
+    Context A non file buffer
+      Before
+        let bufname = 'non-file'
+        silent execute printf('new %s', bufname)
+        setlocal buftype=nofile
+      End
+      It should return a gita instance of a current working directory
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:repository_root)
+          let gita = gita#core#new(bufname)
+          Assert Equals(gita.enabled, 1)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+
+          silent execute printf('cd %s', g:non_repository_root)
+          let gita = gita#core#new(bufname)
+          Assert Equals(gita.enabled, 0)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
+      End
+    End
+  End
+
+  Context #get([{expr}])
+    It should throw an exception if non existing buffer is specified
+      Throws /vim-gita: the buffer "foo" does not exist/ gita#core#get('foo')
+    End
+
+    Context A file buffer in a git repository
+      Before
+        let bufname = g:P.join(g:repository_root, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It should return a gita instance
+        let gita = gita#core#get(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a same gita instance
+        let gita1 = gita#core#get(bufname)
+        let gita2 = gita#core#get(bufname)
+        Assert Same(gita1, gita2)
+      End
+      It should not return a same gita instance if bufname has changed
+        let gita1 = gita#core#get(bufname)
+        silent execute printf('file %s', bufname . '.mod')
+        let gita2 = gita#core#get(bufname . '.mod')
+        Assert NotSame(gita1, gita2)
+        Assert Equals(gita1.bufnum, gita2.bufnum)
+      End
+    End
+
+    Context A file buffer in a non git repository
+      Before
+        let bufname = g:P.join(g:non_repository_root, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It should return a gita instance
+        let gita = gita#core#get(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a same gita instance
+        let gita1 = gita#core#get(bufname)
+        let gita2 = gita#core#get(bufname)
+        Assert Same(gita1, gita2)
+      End
+      It should not return a same gita instance if bufname has changed
+        let gita1 = gita#core#get(bufname)
+        silent execute printf('file %s', bufname . '.mod')
+        let gita2 = gita#core#get(bufname . '.mod')
+        Assert NotSame(gita1, gita2)
+        Assert Equals(gita1.bufnum, gita2.bufnum)
+      End
+    End
+
+    Context A non file buffer
+      Before
+        let bufname = 'non-file'
+        silent execute printf('new %s', bufname)
+        setlocal buftype=nofile
+      End
+      It should return a gita instance of a current working directory
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:repository_root)
+          let gita = gita#core#get(bufname)
+          Assert Equals(gita.enabled, 1)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+
+          silent execute printf('cd %s', g:non_repository_root)
+          let gita = gita#core#get(bufname)
+          Assert Equals(gita.enabled, 0)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
+      End
+      It should return a same gita instance
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:repository_root)
+          let gita1 = gita#core#get(bufname)
+          let gita2 = gita#core#get(bufname)
+          Assert Same(gita1, gita2)
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
+      End
+      It should not return a same gita instance if a current working directory has changed
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:repository_root)
+          let gita1 = gita#core#get(bufname)
+          silent execute printf('cd %s', g:P.join(g:repository_root, 'foo'))
+          let gita2 = gita#core#get(bufname)
+          Assert NotSame(gita1, gita2)
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
+      End
+    End
+  End
+End
