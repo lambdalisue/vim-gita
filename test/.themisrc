@@ -1,0 +1,26 @@
+let g:V = vital#of('vim_gita')
+let g:P = g:V.import('System.Filepath')
+let g:F = g:V.import('System.File')
+
+function! s:setup() abort
+  let root = tempname()
+  let g:repository_root = g:P.join(root, 'repository_root')
+  let g:non_repository_root = g:P.join(root, 'non_repository_root')
+
+  if isdirectory(g:repository_root)
+    call g:F.rmdir(g:repository_root, 'r')
+  endif
+  if isdirectory(g:non_repository_root)
+    call g:F.rmdir(g:non_repository_root, 'r')
+  endif
+
+  call mkdir(g:P.join(g:repository_root, 'foo', 'bar', 'hoge'), 'p')
+  call mkdir(g:P.join(g:non_repository_root, 'foo', 'bar', 'hoge'), 'p')
+
+  call system(printf('git init %s', g:repository_root))
+endfunction
+call s:setup()
+
+let s:assert = themis#helper('assert')
+call themis#option('recursive', 1)
+call themis#helper('command').with(s:assert)
