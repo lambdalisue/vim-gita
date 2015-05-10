@@ -16,8 +16,9 @@ function! gita#argument#commit#get_parser() abort " {{{
           \   'alias': 'a',
           \ })
     call s:parser.add_argument(
-          \ '--include', '-i',
+          \ '--include',
           \ 'add specified files to index for commit', {
+          \   'alias': 'i',
           \   'type': types.value,
           \ })
     call s:parser.add_argument(
