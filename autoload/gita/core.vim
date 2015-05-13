@@ -6,14 +6,8 @@ let s:Git = gita#utils#import('VCS.Git')
 
 " Private functions
 function! s:new_gita(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  if !bufexists(expr)
-    throw printf(
-          \ 'vim-gita: the buffer "%s" does not exist',
-          \ expr,
-          \)
-  endif
-  let buftype = getbufvar(expr, '&buftype')
+  let expr = get(a:000, 0, "%")
+  let buftype = getbufvar(expr, '&buftype', 'noname')
   if empty(buftype)
     let git = s:Git.find(fnamemodify(bufname(expr), ':p'))
     let gita = extend(deepcopy(s:gita), {
@@ -38,15 +32,9 @@ function! s:new_gita(...) abort " {{{
   return gita
 endfunction " }}}
 function! s:get_gita(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  if !bufexists(expr)
-    throw printf(
-          \ 'vim-gita: the buffer "%s" does not exist',
-          \ expr,
-          \)
-  endif
+  let expr = get(a:000, 0, "%")
   let gita = getbufvar(expr, '_gita', {})
-  if empty(gita) || gita.is_expired()
+  if empty(gita) || (has_key(gita, 'is_expired') && gita.is_expired())
     return s:new_gita(expr)
   else
     return gita
@@ -67,9 +55,10 @@ endfunction " }}}
 " Gita instance
 let s:gita = {}
 function! s:gita.is_expired() abort " {{{
-  let bufname = bufname(self.bufnum)
-  let buftype = getbufvar(self.bufnum, '&buftype')
-  if empty(buftype) && bufname !=# self.bufname
+  let bufnum = get(self, 'bufnum', -1)
+  let bufname = bufname(bufnum)
+  let buftype = getbufvar(bufnum, '&buftype')
+  if empty(buftype) && bufname !=# get(self, 'bufname', '')
     return 1
   elseif !empty(buftype) && getcwd() !=# self.cwd
     return 1
