@@ -29,19 +29,19 @@ function! gita#utils#debug(...) abort " {{{
   if !get(g:, 'gita#debug', 0)
     return
   endif
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echo('Comment', 'DEBUG: vim-gita: ' . join(args))
 endfunction " }}}
 function! gita#utils#info(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echo('Title', join(args))
 endfunction " }}}
 function! gita#utils#warn(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echo('WarningMsg', join(args))
 endfunction " }}}
 function! gita#utils#error(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echo('Error', join(args))
 endfunction " }}}
 
@@ -60,19 +60,19 @@ function! gita#utils#debugmsg(...) abort " {{{
   if !get(g:, 'gita#debug', 0)
     return
   endif
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echomsg('Comment', 'DEBUG: vim-gita: ' . join(args))
 endfunction " }}}
 function! gita#utils#infomsg(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echomsg('Title', join(args))
 endfunction " }}}
 function! gita#utils#warnmsg(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echomsg('WarningMsg', join(args))
 endfunction " }}}
 function! gita#utils#errormsg(...) abort " {{{
-  let args = map(deepcopy(a:000), 'string(v:val)')
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#util#echomsg('Error', join(args))
 endfunction " }}}
 
@@ -114,6 +114,10 @@ function! gita#utils#yank_string(content) abort " {{{
     call setreg(v:register, a:content)
   endif
 endfunction " }}}
+function! gita#utils#ensure_string(x) abort " {{{
+  let P = gita#utils#import('Prelude')
+  return P.is_string(a:x) ? a:x : [a:x]
+endfunction " }}}
 function! gita#utils#smart_string(value) abort " {{{
   let P = gita#util#import('Prelude')
   if P.is_string(a:value)
@@ -149,7 +153,53 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
     let str = substitute(str, pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
-endfunction
+endfunction " }}}
+
+" list
+function! gita#utils#ensure_list(x) abort " {{{
+  let P = gita#utils#import('Prelude')
+  return P.is_list(a:x) ? a:x : [a:x]
+endfunction " }}}
+
+" status
+function! gita#utils#get_virtual_status(path, ...) abort " {{{
+  let abspath = fnamemodify(a:path, ':p')
+  let status = extend({
+        \ 'is_virtual': 1,
+        \ 'index': '',
+        \ 'worktree': '',
+        \ 'path': abspath,
+        \ 'record': printf('   %s', abspath),
+        \ 'sign': '',
+        \ 'is_conflict': 0,
+        \ 'is_staged': 0,
+        \ 'is_unstaged': 0,
+        \ 'is_untracked': 0,
+        \ 'is_ignored': 0,
+        \}, get(a:000, 0, {}))
+  return status
+endfunction " }}}
+
+" misc
+function! gita#utils#doautocmd(name) abort " {{{
+  let name = printf('vim-gita-%s', a:name)
+  if 703 < v:version || (v:version == 703 && has('patch438'))
+    silent execute 'doautocmd <nomodeline> User ' . name
+  else
+    silent execute 'doautocmd User ' . name
+  endif
+endfunction " }}}
+function! gita#utils#open_gita_issue(url) abort " {{{
+  let url = 'https://github.com/lambdalisue/vim-gita/issues'
+  let F = gita#utils#import('System.File')
+  if gita#utils#asktf('Do you want to open a gita issue page?')
+    call gita#utils#info(printf(
+          \ 'Open "%s" ...',
+          \ url,
+          \))
+    call F.open(url)
+  endif
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
