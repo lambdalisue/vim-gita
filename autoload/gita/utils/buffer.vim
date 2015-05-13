@@ -28,15 +28,15 @@ function! s:open(name, group, ...) abort " {{{
 endfunction " }}}
 function! s:update(buflines) abort " {{{
   let saved_cursor = getpos('.')
-  let saved_modifiable = &modifiable
-  let saved_undolevels = &undolevels
-  setlocal modifiable
-  setlocal undolevels=-1
+  let saved_modifiable = &l:modifiable
+  let saved_undolevels = &l:undolevels
+  let &l:modifiable=1
+  let &l:undolevels=-1
   silent %delete _
   call setline(1, a:buflines)
   call setpos('.', saved_cursor)
-  let &modifiable = saved_modifiable
-  let &undolevels = saved_undolevels
+  let &l:modifiable = saved_modifiable
+  let &l:undolevels = saved_undolevels
   setlocal nomodified
 endfunction " }}}
 function! s:clear_undo_history() abort " {{{
