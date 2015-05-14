@@ -2,7 +2,7 @@ vim-gita &alpha; version
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
-*vim-gita* is an alternative git manipluation plugin.
+*vim-gita* is an alternative git manipulation plugin.
 It provide the following features:
 
 1. Show and manipulate the current status of index and working tree of a git
@@ -14,7 +14,7 @@ It provide the following features:
 6. Help to execute a git command
 
 This plugin was strongly inspired by [tpope/vim-fugitive][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
-The most of the features are powerd by [vim-jp/vital.vim][], [lambdalisue/vital-System-Cache-Unified][], [lambdalisue/vital-ArgumentParser][], and [lambdalisue/vital-VCS-Git][].
+The most of the features are powered by [vim-jp/vital.vim][], [lambdalisue/vital-System-Cache-Unified][], [lambdalisue/vital-ArgumentParser][], and [lambdalisue/vital-VCS-Git][].
 [tpope/vim-fugitive]:                       https://github.com/tpope/vim-fugitive
 [Shougo/vim-vcs]:                           https://github.com/Shougo/vim-vcs
 [Shougo/neobundle.vim]:                     https://github.com/Shougo/neobundle.vim
@@ -116,9 +116,9 @@ To prepare a commit, execute the following command to open a commit window to ed
 It will open a commit window which indicate the current status of next commit.
 If the current buffer is not under a git working tree, it won't open the window.
 
-The commit window exsits mainly for editing a commit message, thus most of status manipulation keys are not available in the window.
+The commit window exists mainly for editing a commit message, thus most of status manipulation keys are not available in the window.
 To manipulate the status again, hit `cc` to return the status window.
-Hit `?m` to see a helo of default mappings available in the commit window.
+Hit `?m` to see a help of default mappings available in the commit window.
 
 In the commit window, you also see the current status of the git working tree in 'Short Format' (`git status --short`). Hit `?s` to see a help of 'Short Format'.
 
@@ -193,7 +193,7 @@ If you want to specify a exact version of the file, add `--exact` option.
 ### Statusline
 
 vim-gita provide several components to show a current status on vim's statusline (or tabline).
-All status used in the components are well cached thus you don't have to worry about the performance (the caches will be cleared when a particular `vim-gita-{commnad}-post` autocmd is called).
+All status used in the components are well cached thus you don't have to worry about the performance (the caches will be cleared when a particular `vim-gita-{command}-post` autocmd is called).
 Use `gita#statusline#preset()` to get a preset or `gita#statusline#format()` to create your own component.
 
 ```vim
