@@ -102,7 +102,3 @@ endfunction " }}}
 function! gita#utils#status#action_help(...) abort " {{{
   call call('s:action_help', a:000)
 endfunction " }}}
-
-
-let &cpo = s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
