@@ -47,13 +47,13 @@ Interface			|vim-gita-interface|
     Commit window		|vim-gita-interface-mappings-commit|
     Diff window			|vim-gita-interface-mappings-diff|
     Conflict (2-way) window	|vim-gita-interface-mappings-conflict-2-way|
-    Conflict (3-way) window	|vim-gita-interface-mappings-conficlit-3-way|
+    Conflict (3-way) window	|vim-gita-interface-mappings-conflict-3-way|
 ToDo				|vim-gita-todo|
 
 ==============================================================================
 INTRODUCTION					*vim-gita-introduction*
 
-*vim-gita* is an alternative git manipluation plugin.
+*vim-gita* is an alternative git manipulation plugin.
 It provide the following features:
 
 1. Show and manipulate the current status of index and working tree of a git
@@ -66,7 +66,7 @@ It provide the following features:
 
 This plugin was strongly inspired by tpope/vim-fugitive, thinca/vim-vcs,
 Shougo/vim-vcs, and lambdalisue/vim-gista. The most of the features are
-powerd by vim-jp/vital.vim, lambdalisue/vital-System-Cache-Unified,
+powered by vim-jp/vital.vim, lambdalisue/vital-System-Cache-Unified,
 lambdalisue/vital-ArgumentParser, and lambdalisue/vital-VCS-Git.
 
 References:
@@ -164,7 +164,7 @@ the window.
 
 The commit window exists mainly for editing a commit message, thus most of
 status manipulation keys are not available in the window. To manipulate the
-status again, hit cc to return the status window. Hit ?m to see a helo of
+status again, hit cc to return the status window. Hit ?m to see a help of
 default mappings available in the commit window.
 
 In the commit window, you also see the current status of the git working tree
@@ -238,7 +238,7 @@ STATUSLINE					*vim-gita-usage-statusline*
 vim-gita provide several components to show a current status on vim's
 statusline (or tabline). All status used in the components are well cached
 thus you don't have to worry about the performance (the caches will be cleared
-when a particular |vim-gita-{commnad}-post| autocmd is called).
+when a particular |vim-gita-{command}-post| autocmd is called).
 Use |gita#statusline#preset()| to get a preset or |gita#statusline#format()| to
 create your own component.
 >
@@ -542,7 +542,7 @@ gita#statusline#preset({name})		*gita#statusline#preset()*
 
 gita#statusline#clear()			*gita#statusline#clear()*
 
-	Clera a git status cache used in |gita#statusline#format()| of a current
+	Clear a git status cache used in |gita#statusline#format()| of a current
 	buffer. This function is automatically called when user execute the
 	following command/actions
 
@@ -555,7 +555,7 @@ gita#statusline#clear()			*gita#statusline#clear()*
 	The cache system check a timestamp of .git/index file thus any
 	operation which update the file automatically update the cache,
 	however the command/actions above does not update the file thus the
-	cahce required to be cleard.
+	cache required to be cleared.
 
 					*gita#interface#status#smart_map()*
 gita#interface#status#smart_map({lhs}, {rhs})
@@ -615,7 +615,7 @@ g:gita#interface#commit#enable_default_keymap
 			*g:gita#interface#browse#translation_patterns*
 g:gita#interface#browse#translation_patterns
 
-	A |List| of |List| used for translating a remote url to browserble
+	A |List| of |List| used for translating a remote url to browsable
 	url. See |g:gita#interface#browse#extra_translation_patterns| for the
 	detail.
 
