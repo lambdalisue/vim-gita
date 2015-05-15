@@ -452,16 +452,11 @@ function! s:action_add(statuses, options) abort " {{{
     return
   endif
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.add(options, files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('add-post')
-  endif
+  let args = ['add', '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -474,16 +469,11 @@ function! s:action_rm(statuses, options) abort " {{{
     return
   endif
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.rm(options, files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('rm-post')
-  endif
+  let args = ['rm', '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_reset(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -496,16 +486,11 @@ function! s:action_reset(statuses, options) abort " {{{
     return
   endif
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.reset(options, '', files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('reset-post')
-  endif
+  let args = ['reset', '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -530,16 +515,11 @@ function! s:action_checkout(statuses, options) abort " {{{
   let target = target ==# 'INDEX' ? '' : target
 
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.checkout(options, target, files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('checkout-post')
-  endif
+  let args = ['checkout', target, '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_checkout_ours(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -554,16 +534,11 @@ function! s:action_checkout_ours(statuses, options) abort " {{{
   endif
 
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.checkout(options, '', files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('checkout-post')
-  endif
+  let args = ['checkout', '--ours', '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_checkout_theirs(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -578,16 +553,11 @@ function! s:action_checkout_theirs(statuses, options) abort " {{{
   endif
 
   let gita = s:get_gita()
-  let files = map(statuses, 'gita.git.get_absolute_path(v:val.path)')
-  let result = gita.git.checkout(options, '', files)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd('checkout-post')
-  endif
+  let args = ['checkout', '--theirs', '--'] + map(
+        \ deepcopy(statuses),
+        \ 'gita.git.get_absolute_path(v:val.path)'
+        \)
+  call gita.exec(args)
 endfunction " }}}
 function! s:action_stage(statuses, options) abort " {{{
   let statuses = gita#utils#ensure_list(a:statuses)
@@ -729,37 +699,6 @@ function! s:action_discard(statuses, options) abort " {{{
   let options.commit = 'INDEX'
   let options.force = 1
   call s:action_checkout(checkout_statuses, options)
-endfunction " }}}
-
-function! s:get_parser() abort " {{{
-  if !exists('s:parser') || get(g:, 'gita#debug', 0)
-    let s:parser = s:A.new({
-          \ 'name': 'Gita status',
-          \ 'description': 'show the working tree status in Gita interface',
-          \})
-    let t = s:A.types
-    call s:parser.add_argument(
-          \ '--untracked-files', '-u',
-          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
-          \   'choices': ['all', 'normal', 'no'],
-          \   'default': 'all',
-          \ })
-    call s:parser.add_argument(
-          \ '--ignored',
-          \ 'show ignored files',
-          \)
-    call s:parser.add_argument(
-          \ '--ignore-submodules',
-          \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
-          \   'choices': ['all', 'dirty', 'untracked'],
-          \   'default': 'all',
-          \})
-  endif
-  return s:parser
-endfunction " }}}
-function! s:parse(...) abort " {{{
-  let parser = s:get_parser()
-  return call(parser.parse, a:000, parser)
 endfunction " }}}
 
 
