@@ -161,23 +161,27 @@ function! gita#utils#ensure_list(x) abort " {{{
   return P.is_list(a:x) ? a:x : [a:x]
 endfunction " }}}
 
-" status
-function! gita#utils#get_virtual_status(path, ...) abort " {{{
-  let abspath = fnamemodify(a:path, ':p')
-  let status = extend({
-        \ 'is_virtual': 1,
-        \ 'index': '',
-        \ 'worktree': '',
-        \ 'path': abspath,
-        \ 'record': printf('   %s', abspath),
-        \ 'sign': '',
-        \ 'is_conflict': 0,
-        \ 'is_staged': 0,
-        \ 'is_unstaged': 0,
-        \ 'is_untracked': 0,
-        \ 'is_ignored': 0,
-        \}, get(a:000, 0, {}))
-  return status
+" opts
+function! gita#utils#opts2args(x) abort " {{{
+  let P = gita#utils#import('Prelude')
+  let args = []
+  for [key, value] in items(a:x)
+    if key =~# '\v^__.*__$'
+      continue
+    elseif P.is_number(value) && value
+      if strlen(key) == 1
+        call add(args, printf('-%s', key))
+      else
+        call add(args, printf('--%s', substitute(key, '_', '-', 'g')))
+      endif
+    else
+      if strlen(key) == 1
+        call add(args, printf('-%s%s', key, value))
+      else
+        call add(args, printf('--%s=%s', substitute(key, '_', '-', 'g'), value))
+      endif
+  endfor
+  return args
 endfunction " }}}
 
 " misc

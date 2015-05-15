@@ -2,7 +2,79 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:S = gita#utils#import('VCS.Git.StatusParser')
+
 " Private
+function! s:filter_statuses(statuses, options, validator) abort " {{{
+  let statuses = gita#utils#ensure_list(a:statuses)
+  let options = deepcopy(a:options)
+  let valid_statuses = []
+  for status in statuses
+    if a:validator.validate(status, options)
+      continue
+    endif
+    call add(valid_statuses, status)
+  endfor
+  if empty(valid_statuses)
+    if !get(options, 'ignore_empty_warning', 0)
+      call gita#utils#warn(
+            \ 'No valid statuses were specified.',
+            \)
+    endif
+  endif
+  return valid_statuses
+endfunction " }}}
+
+
+" Public
+function! gita#utils#status#filter_statuses(...) abort " {{{
+  return call('s:filter_statuses', a:000)
+endfunction " }}}
+
+" Private
+function! s:get_statuses(...) abort " {{{
+  let gita = gita#core#get()
+  let opts = get(a:000, 0, {})
+  let files = get(a:000, 1, [])
+  if !gita.enabled
+    return []
+  endif
+  let args = [
+        \ 'status', 
+        \ '--porcelain',
+        \ '--ignore-submodules=all',  " to improve the response of the command
+        \]
+  if !empty(files)
+    let args = args + ['--'] + map(
+          \ deepcopy(files),
+          \ 'gita.git.get_absolute_path(v:val)'
+          \)
+  endif
+  let stdout = gita.exec(args, opts)
+  if empty(stdout)
+    return {}
+  endif
+  let statuses = s:S.parse(stdout)
+  return statuses
+endfunction " }}}
+function! s:get_statuses_of(paths) abort " {{{
+  let gita = gita#core#get()
+  let args = [
+        \ 'status', 
+        \ '--porcelain',
+        \ '--ignore-submodules=all', 
+        \]
+  let args = args + ['--'] + map(
+        \ deepcopy(paths),
+        \ 'gita.git.get_absolute_path(v:val)'
+        \)
+  let stdout = gita.exec(args)
+  if empty(stdout)
+    return {}
+  endif
+  let statuses = s:S.parse(stdout)
+  return statuses
+endfunction " }}}
 function! s:get_status_header(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = gita#core#get(expr)
