@@ -13,19 +13,18 @@ function! s:new() abort " {{{
   return invoker
 endfunction " }}}
 function! s:get() abort " {{{
-  let invoker = get(b:, '_invoker', {})
+  let invoker = get(w:, '_gita_invoker', {})
   if empty(invoker)
     let invoker = s:new()
-    call s:set(invoker)
   endif
   return invoker
 endfunction " }}}
 function! s:set(invoker) abort " {{{
-  let b:_invoker = a:invoker
+  let w:_gita_invoker = a:invoker
 endfunction " }}}
 function! s:clear() abort " {{{
-  if has_key(b:, '_invoker')
-    unlet b:_invoker
+  if has_key(w:, '_gita_invoker')
+    unlet w:_gita_invoker
   endif
 endfunction " }}}
 

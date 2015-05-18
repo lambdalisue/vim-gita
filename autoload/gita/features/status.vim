@@ -9,6 +9,7 @@ let s:const.filetype = 'gita-status'
 " Modules
 let s:P = gita#utils#import('Prelude')
 let s:L = gita#utils#import('Data.List')
+let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
 
 
@@ -20,10 +21,10 @@ function! s:get_invoker(...) abort " {{{
   return call('gita#utils#invoker#get', a:000)
 endfunction " }}}
 function! s:get_statuses_map() abort " {{{
-  return get(b:, '_gita_statuses_map', {})
+  return get(w:, '_gita_statuses_map', {})
 endfunction " }}}
 function! s:set_statuses_map(statuses_map) abort " {{{
-  let b:_gita_statuses_map = deepcopy(a:statuses_map)
+  let w:_gita_statuses_map = deepcopy(a:statuses_map)
 endfunction " }}}
 function! s:get_statuses_within(start, end) abort " {{{
   " Use with 'range' a:startline, a:lastline
@@ -89,7 +90,7 @@ endfunction " }}}
 
 function! s:open(...) abort " {{{
   let options = extend(
-        \ get(b:, '_options', {}),
+        \ get(w:, '_gita_options', {}),
         \ get(a:000, 0, {}),
         \)
   let gita    = s:get_gita()
@@ -115,16 +116,24 @@ function! s:open(...) abort " {{{
         \})
   silent execute printf('setlocal filetype=%s', s:const.filetype)
 
+  if get(options, 'new', 0)
+    let options = get(a:000, 0, {})
+  endif
+
   " update buffer variables
-  let b:_gita = gita
-  let b:_options = options
+  let w:_gita = gita
+  let w:_gita_options = s:D.omit(options, [
+        \ 'new',
+        \])
   call invoker.update_winnum()
   call gita#utils#invoker#set(invoker)
 
   " check if construction is required
-  if exists('b:_constructed') && !get(g:, 'gita#debug', 0)
+  if get(b:, '_gita_constructed') && !get(g:, 'gita#debug', 0)
+    call s:update(options)
     return
   endif
+  let b:_gita_constructed = 1
 
   " construction
   setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
@@ -150,11 +159,10 @@ function! s:open(...) abort " {{{
 
   call s:defmap()
   call s:update(options)
-  let b:_constructed = 1
 endfunction " }}}
 function! s:update(...) abort " {{{
   let options = extend(
-        \ get(b:, '_options', {}),
+        \ get(w:, '_gita_options', {}),
         \ get(a:000, 0, {}),
         \)
   let gita = s:get_gita()
@@ -170,7 +178,7 @@ function! s:update(...) abort " {{{
     call gita#utils#infomsg(
           \ result.stdout,
           \)
-    return -1
+    return
   endif
 
   " create statuses lines & map
@@ -187,7 +195,7 @@ function! s:update(...) abort " {{{
         \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
         \ gita#utils#help#get('status_mapping'),
         \ gita#utils#help#get('short_format'),
-        \ s:get_status_header(),
+        \ s:get_status_header(gita),
         \ statuses_lines,
         \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
         \])
@@ -196,19 +204,19 @@ function! s:update(...) abort " {{{
   call gita#utils#buffer#update(buflines)
 endfunction " }}}
 function! s:defmap() abort " {{{
-  noremap <silent><buffer> <Plug>(gita-action-help-m)   :call <SID>action('help', { 'name': 'status_mapping' })
-  noremap <silent><buffer> <Plug>(gita-action-help-s)   :call <SID>action('help', { 'name': 'short_format' })
+  noremap <silent><buffer> <Plug>(gita-action-help-m)   :call <SID>action('help', { 'name': 'status_mapping' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-help-s)   :call <SID>action('help', { 'name': 'short_format' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-update)   :call <SID>action('update')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch)   :call <SID>action('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit)   :call <SID>action('open_commit', { 'new': 1, 'amend': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit-a) :call <SID>action('open_commit', { 'new': 1, 'amend': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-open)     :call <SID>action('open', { 'opener': 'edit' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open)     :call <SID>action('open')<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-h)   :call <SID>action('open', { 'opener': 'botright split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-v)   :call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-diff)     :call <SID>action('diff_open', { 'opener': 'edit' })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-diff-h)   :call <SID>action('diff_compare', { 'vertical': 0 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-diff-v)   :call <SID>action('diff_compare', { 'vertical': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff)     :call <SID>action('diff_open')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-h)   :call <SID>action('diff_diff', { 'vertical': 0 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-v)   :call <SID>action('diff_diff', { 'vertical': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve2-h) :call <SID>action('solve2', { 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve2-v) :call <SID>action('solve2', { 'vertical': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-h) :call <SID>action('solve3', { 'vertical': 0 })<CR>
@@ -287,23 +295,76 @@ function! s:ac_quit() abort " {{{
 endfunction " }}}
 
 function! s:action(name, ...) range abort " {{{
-  let options  = extend(deepcopy(b:_options), get(a:000, 0, {}))
+  let update_required_action_pattern = printf('^\%%(%s\)', join([
+        \ 'help',
+        \ 'add', 'rm', 'reset',
+        \ 'checkout', 'checkout_ours', 'checkout_theirs',
+        \ 'stage', 'unstage', 'toggle', 'discard',
+        \], '\|'))
+  let options  = extend(deepcopy(w:_gita_options), get(a:000, 0, {}))
   let statuses = s:get_statuses_within(a:firstline, a:lastline)
   let args = [statuses, options]
   call call(printf('s:action_%s', a:name), args)
-  call s:update()
+  if a:name =~# update_required_action_pattern
+    call s:update()
+  endif
 endfunction " }}}
 function! s:action_update(statuses, options) abort " {{{
-  call s:update()
+  call s:update(a:options)
+endfunction " }}}
+function! s:action_open_commit(statuses, options) abort " {{{
+  call gita#features#commit#open(a:options)
 endfunction " }}}
 function! s:action_open(statuses, options) abort " {{{
   let gita = s:get_gita()
+  let invoker = s:get_invoker()
   let opener = get(a:options, 'opener', 'edit')
   for status in a:statuses
     let abspath = s:get_status_abspath(gita, status)
+    call invoker.focus()
     call gita#utils#buffer#open(abspath, '', {
           \ 'opener': opener,
           \})
+  endfor
+endfunction " }}}
+function! s:action_diff_open(statuses, options) abort " {{{
+  let commit = get(a:options, 'commit', '')
+  if empty(commit)
+    let commit = gita#utils#ask('Compare the file with: ', 'INDEX')
+    if empty(commit)
+      call gita#utils#warn(
+            \ 'The operation has canceled by user.',
+            \)
+      return
+    endif
+  endif
+  let commit = commit ==# 'INDEX' ? '' : commit
+  let gita = s:get_gita()
+  let invoker = s:get_invoker()
+  for status in a:statuses
+    let path = get(status, 'path2', get(status, 'path'))
+    call invoker.focus()
+    call gita#features#diff#open(path, commit, a:options)
+  endfor
+endfunction " }}}
+function! s:action_diff_diff(statuses, options) abort " {{{
+  let commit = get(a:options, 'commit', '')
+  if empty(commit)
+    let commit = gita#utils#ask('Compare the file with: ', 'INDEX')
+    if empty(commit)
+      call gita#utils#warn(
+            \ 'The operation has canceled by user.',
+            \)
+      return
+    endif
+  endif
+  let commit = commit ==# 'INDEX' ? '' : commit
+  let gita = s:get_gita()
+  let invoker = s:get_invoker()
+  for status in a:statuses
+    let path = get(status, 'path2', get(status, 'path'))
+    call invoker.focus()
+    call gita#features#diff#diff(path, commit, a:options)
   endfor
 endfunction " }}}
 function! s:action_help(statuses, options) abort " {{{
@@ -479,7 +540,7 @@ function! s:action_toggle(statuses, options) abort " {{{
             \))
       continue
     elseif status.is_staged && status.is_unstaged
-      if get(g:, 'gita#features#status_buffer#toggle_prefer_unstage', 0)
+      if get(g:, 'gita#features#status#action_toggle#prefer_unstage', 0)
         call add(reset_statuses, status)
       else
         call add(stage_statuses, status)
@@ -799,6 +860,18 @@ endfunction " }}}
 function! gita#features#status#smart_map(...) abort " {{{
   return call('s:smart_map', a:000)
 endfunction " }}}
+function! gita#features#status#action_open(...) abort " {{{
+  call call('s:action_open', a:000)
+endfunction " }}}
+function! gita#features#status#action_diff_open(...) abort " {{{
+  call call('s:action_diff_open', a:000)
+endfunction " }}}
+function! gita#features#status#action_diff_diff(...) abort " {{{
+  call call('s:action_diff_diff', a:000)
+endfunction " }}}
+function! gita#features#status#action_help(...) abort " {{{
+  call call('s:action_help', a:000)
+endfunction " }}}
 
 " API
 function! gita#features#status#open(...) abort " {{{
@@ -806,6 +879,26 @@ function! gita#features#status#open(...) abort " {{{
 endfunction " }}}
 function! gita#features#status#update(...) abort " {{{
   call call('s:update', a:000)
+endfunction " }}}
+function! gita#features#status#define_highlights() abort " {{{
+  highlight link GitaComment    Comment
+  highlight link GitaConflicted Error
+  highlight link GitaUnstaged   Constant
+  highlight link GitaStaged     Special
+  highlight link GitaUntracked  GitaUnstaged
+  highlight link GitaIgnored    Identifier
+  highlight link GitaBranch     Title
+endfunction " }}}
+function! gita#features#status#define_syntax() abort " {{{
+  syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
+  syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
+  syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
+  syntax match GitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
+  syntax match GitaIgnored    /\v^\!\!\s.*$/
+  syntax match GitaUntracked  /\v^\?\?\s.*$/
+  syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
+  syntax match GitaComment    /\v^.*$/ contains=ALL
+  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
 endfunction " }}}
 
 

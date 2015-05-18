@@ -154,6 +154,9 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
+function! gita#utils#remove_ansi_sequences(str) abort " {{{
+  return substitute(a:str, '\e\[\d\{1,3}[mK]', '', 'g')
+endfunction " }}}
 
 " list
 function! gita#utils#ensure_list(x) abort " {{{
