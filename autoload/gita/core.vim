@@ -8,9 +8,9 @@ let s:G = gita#utils#import('VCS.Git')
 
 " Private functions
 function! s:new_gita(...) abort " {{{
-  let expr = get(a:000, 0, "%")
-  let buftype = getbufvar(expr, '&buftype')
+  let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
+  let buftype = getbufvar(expr, 'buftype')
   if empty(buftype) && !empty(bufname)
     let git = s:G.find(fnamemodify(bufname, ':p'))
   else
@@ -20,20 +20,20 @@ function! s:new_gita(...) abort " {{{
   let gita = extend(deepcopy(s:gita), {
         \ 'enabled': !empty(git),
         \ 'bufname': bufname,
-        \ 'bufnum':  bufnr(expr),
+        \ 'bufnum':  bufnr('%'),
         \ 'cwd':     getcwd(),
         \ 'git':     git,
         \})
-  call setbufvar(expr, '_gita', gita)
+  call setwinvar(bufwinnr(expr), '_gita', gita)
   return gita
 endfunction " }}}
 function! s:get_gita(...) abort " {{{
-  let expr = get(a:000, 0, "%")
-  let gita = getbufvar(expr, '_gita', {})
+  let expr = get(a:000, 0, '%')
+  let gita = getwinvar(bufwinnr(expr), '_gita', {})
   if empty(gita) || (has_key(gita, 'is_expired') && gita.is_expired())
-    let gita = s:new_gita(expr)
+    let gita = s:new_gita()
   endif
-  return gita
+  return extend(deepcopy(s:gita), gita)
 endfunction " }}}
 
 

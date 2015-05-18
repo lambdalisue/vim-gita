@@ -9,7 +9,7 @@ function! s:open(name, group, ...) abort " {{{
     let B = gita#utils#import('Vim.Buffer')
     let opener = get(config, 'opener', 'edit')
     let loaded = B.open(a:name, opener)
-    let bufnr = bufnr()
+    let bufnr = bufnr('%')
     return {
           \ 'loaded': loaded,
           \ 'bufnr': bufnr,
@@ -54,6 +54,10 @@ function! s:is_listed_in_tabpage(expr) abort " {{{
   let buflist = tabpagebuflist()
   return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
 endfunction " }}}
+function! s:bufname(name, ...) abort " {{{
+  let sep = has('unix') ? ':' : '#'
+  return join(['gita'] + a:000 + [a:name], sep)
+endfunction " }}}
 
 
 " Public functions
@@ -69,7 +73,9 @@ endfunction " }}}
 function! gita#utils#buffer#is_listed_in_tabpage(...) abort " {{{
   return call('s:is_listed_in_tabpage', a:000)
 endfunction " }}}
-
+function! gita#utils#buffer#bufname(...) abort " {{{
+  return call('s:bufname', a:000)
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

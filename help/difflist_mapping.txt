@@ -1,0 +1,11 @@
+#
+# DIFFLIST MAPPING
+#
+# <C-l> : Update status
+# 
+# e     : Open a selected file
+# E     : Open a selected file via vsplit
+# d     : Open a diff between a current and a specified version of a selected file
+# D     : Open a current and a specified version of a selected file in diff mode
+#
+

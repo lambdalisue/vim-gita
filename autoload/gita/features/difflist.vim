@@ -1,9 +1,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
-
 let s:const = {}
-let s:const.bufname = has('unix') ? 'gita:commit' : 'gita_commit'
-let s:const.filetype = 'gita-commit'
+let s:const.bufname = has('unix') ? 'gita:difflist' : 'gita_difflist'
+let s:const.filetype = 'gita-difflist'
 
 
 " Modules
@@ -11,6 +10,7 @@ let s:P = gita#utils#import('Prelude')
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
 " Private
@@ -38,9 +38,6 @@ endfunction " }}}
 function! s:smart_map(...) abort " {{{
   return call('gita#features#status#smart_map', a:000)
 endfunction " }}}
-function! s:get_current_commitmsg() abort " {{{
-  return filter(getline(1, '$'), 'v:val !~# "^#"')
-endfunction " }}}
 
 function! s:open(...) abort " {{{
   let options = extend(
@@ -64,7 +61,11 @@ function! s:open(...) abort " {{{
     return
   endif
 
-  call gita#utils#buffer#open(s:const.bufname, 'support_window', {
+  let bufname = printf('%s:%s',
+        \ s:const.bufname,
+        \ get(options, 'commit', 'INDEX')
+        \)
+  call gita#utils#buffer#open(bufname, 'support_window', {
         \ 'opener': 'topleft 15 split',
         \ 'range': 'tabpage',
         \})
@@ -90,7 +91,7 @@ function! s:open(...) abort " {{{
   let b:_gita_constructed = 1
 
   " construction
-  setlocal buftype=acwrite bufhidden=hide noswapfile nobuflisted
+  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
   setlocal winfixwidth winfixheight
 
   autocmd! * <buffer>
@@ -120,76 +121,45 @@ function! s:update(...) abort " {{{
         \)
   let gita = s:get_gita()
 
-  let result = gita.git.get_parsed_commit(extend({
-        \ 'no_cache': 1,
-        \}, options))
-  if get(result, 'status', 0)
-    redraw
-    call gita#utils#errormsg(
-          \ printf('vim-gita: Fail: %s', join(result.args)),
-          \)
-    call gita#utils#infomsg(
-          \ result.stdout,
-          \)
+  let args = filter([
+        \ 'diff',
+        \ '--no-prefix',
+        \ '--no-color',
+        \ '--name-status',
+        \ get(options, 'commit', ''),
+        \], '!empty(v:val)')
+  let result = gita.exec(args)
+  if result.status != 0
     return
   endif
+  let statuses = s:S.parse(substitute(result.stdout, '\t', '  ', 'g'))
 
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
-  for status in result.all
-    let line = printf('# %s', status.record)
+  for status in statuses.all
+    let line = printf('%s', status.record)
     call add(statuses_lines, line)
     let statuses_map[line] = status
   endfor
   call s:set_statuses_map(statuses_map)
 
-  " create a default commit message
-  let commit_mode = ''
-  let modified_reserved = 0
-  if has_key(options, 'commitmsg_cached')
-    let commitmsg = options.commitmsg_cached
-    let modified_reserved = 1
-    " clear temporary commitmsg
-    unlet! options.commitmsg_cached
-  elseif has_key(options, 'commitmsg_saved')
-    let commitmsg = options.commitmsg_saved
-  elseif !empty(gita.git.get_merge_head())
-    let commit_mode = 'merge'
-    let commitmsg = gita.git.get_merge_msg()
-  elseif get(options, 'amend', 0)
-    let commit_mode = 'amend'
-    let commitmsg = gita.git.get_last_commitmsg()
-  else
-    let commitmsg = []
-  endif
-
   " create buffer lines
   let buflines = s:L.flatten([
-        \ commitmsg,
         \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
-        \ gita#utils#help#get('commit_mapping'),
+        \ gita#utils#help#get('difflist_mapping'),
         \ gita#utils#help#get('short_format'),
-        \ s:get_status_header(gita),
-        \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
-        \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \ statuses_lines,
         \])
-  let buflines = buflines[0] =~# '\v^#' ? extend([''], buflines) : buflines
 
   " update content
   call gita#utils#buffer#update(buflines)
-  if modified_reserved
-    setlocal modified
-  endif
 endfunction " }}}
 function! s:defmap() abort " {{{
-  noremap <silent><buffer> <Plug>(gita-action-help-m)   :call <SID>action('help', { 'name': 'commit_mapping' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-help-m)   :call <SID>action('help', { 'name': 'difflist_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-s)   :call <SID>action('help', { 'name': 'short_format' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-update)   :call <SID>action('update')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-switch)   :call <SID>action('open_status')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-commit)   :call <SID>action('commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-open)     :call <SID>action('open')<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-h)   :call <SID>action('open', { 'opener': 'botright split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-v)   :call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
@@ -203,27 +173,11 @@ function! s:defmap() abort " {{{
     nmap <buffer> ?m    <Plug>(gita-action-help-m)
     nmap <buffer> ?s    <Plug>(gita-action-help-s)
 
-    nmap <buffer> cc <Plug>(gita-action-switch)
-    nmap <buffer> CC <Plug>(gita-action-commit)
-
     nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
     nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
     nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
     nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
   endif
-endfunction " }}}
-function! s:ac_write(filename) abort " {{{
-  if a:filename != expand('%:p')
-    " a new filename is given. save the content to the new file
-    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
-    return
-  endif
-  " cache commitmsg if it is called without quitting
-  let options = get(w:, '_gita_options', {})
-  if !get(options, 'quitting', 0)
-    let options.commitmsg_saved = s:get_current_commitmsg()
-  endif
-  setlocal nomodified
 endfunction " }}}
 function! s:ac_quit() abort " {{{
   " Note:
@@ -231,10 +185,6 @@ function! s:ac_quit() abort " {{{
   " being unloaded <afile> in BufWinLeave autocmd but if I consider the case,
   " the code will " be more complicated thus now I simply trust that the
   " current buffer is the buffer being unloaded.
-  let w:_gita_options = extend(w:_gita_options, {
-        \ 'quitting': 1,
-        \})
-  call s:action_commit({}, w:_gita_options)
   call gita#utils#invoker#focus()
   call gita#utils#invoker#clear()
 endfunction " }}}
@@ -242,25 +192,17 @@ endfunction " }}}
 function! s:action(name, ...) range abort " {{{
   let update_required_action_pattern = printf('^\%%(%s\)', join([
         \ 'help',
-        \ 'commit',
         \], '\|'))
   let options  = extend(deepcopy(w:_gita_options), get(a:000, 0, {}))
   let statuses = s:get_statuses_within(a:firstline, a:lastline)
   let args = [statuses, options]
   call call(printf('s:action_%s', a:name), args)
-  if a:name =~# update_required_action_pattern && !get(options, 'quitting')
+  if a:name =~# update_required_action_pattern
     call s:update()
   endif
 endfunction " }}}
 function! s:action_update(statuses, options) abort " {{{
   call s:update(a:options)
-endfunction " }}}
-function! s:action_open_status(status, options) abort " {{{
-  if &modified
-    let b:_gita_options.commitmsg_cached = s:get_current_commitmsg()
-    setlocal nomodified
-  endif
-  call gita#features#status#open(a:options)
 endfunction " }}}
 function! s:action_open(...) abort " {{{
   call call('gita#features#status#action_open', a:000)
@@ -274,76 +216,20 @@ endfunction " }}}
 function! s:action_help(...) abort " {{{
   call call('gita#features#status#action_help', a:000)
 endfunction " }}}
-function! s:action_commit(statuses, options) abort " {{{
-  let gita = s:get_gita()
-  let meta = gita.git.get_meta()
-  let options = extend({ 'force': 0 }, a:options)
-  let statuses_map = s:get_statuses_map()
-  if empty(meta.merge_head) && empty(filter(values(statuses_map), 'v:val.is_staged'))
-    redraw
-    call gita#utils#warn(
-          \ 'Nothing to be commited. Stage changes first.',
-          \)
-    return
-  elseif &modified
-    redraw
-    call gita#utils#warn(
-          \ 'You have unsaved changes on the commit message. Save the changes by ":w" command.',
-          \)
-    return
-  endif
-
-  let commitmsg = s:get_current_commitmsg()
-  if join(commitmsg, '') =~# '\v^\s*$'
-    redraw
-    call gita#utils#info(
-          \ 'No commit message is available (all lines start from "#" are truncated). The operation has canceled.',
-          \)
-    return
-  endif
-
-  " commit
-  let tempfile = tempname()
-  call writefile(commitmsg, tempfile)
-  let args = ['commit', '--file', tempfile]
-  if get(options, 'amend', 0)
-    let args = args + ['--amend']
-  endif
-  let result = gita.exec(args)
-  if result.status == 0
-    let w:_gita_options = { 'new': 1 }
-    call gita#utils#info(result.stdout)
-  endif
-endfunction " }}}
 
 
 " API
-function! gita#features#commit#open(...) abort " {{{
+function! gita#features#difflist#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
-function! gita#features#commit#update(...) abort " {{{
+function! gita#features#difflist#update(...) abort " {{{
   call call('s:update', a:000)
 endfunction " }}}
-function! gita#features#commit#define_highlights() abort " {{{
+function! gita#features#difflist#define_highlights() abort " {{{
   call gita#features#status#define_highlights()
-  " github
-  highlight default link GitaGitHubKeyword Keyword
-  highlight default link GitaGitHubIssue   Define
 endfunction " }}}
-function! gita#features#commit#define_syntax() abort " {{{
-  syntax match GitaStaged     /\v^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
-  syntax match GitaUnstaged   /\v^# [ MADRC][ MD]/hs=s+3 contains=ALL
-  syntax match GitaStaged     /\v^# [ MADRC]\s.*$/hs=s+5 contains=ALL
-  syntax match GitaUnstaged   /\v^# .[MDAU?].*$/hs=s+5 contains=ALL
-  syntax match GitaIgnored    /\v^# \!\!\s.*$/hs=s+2
-  syntax match GitaUntracked  /\v^# \?\?\s.*$/hs=s+2
-  syntax match GitaConflicted /\v^# %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2
-  syntax match GitaComment    /\v^#.*$/ contains=ALL
-  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
-  syntax keyword GitaImportant AMEND MERGE
-  " github
-  syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved
-  syntax match   GitaGitHubIssue   '\v%([^ /#]+/[^ /#]+#\d+|#\d+)'
+function! gita#features#difflist#define_syntax() abort " {{{
+  call gita#features#status#define_syntax()
 endfunction " }}}
 
 
