@@ -167,6 +167,25 @@ endfunction " }}}
 function! gita#utils#status#smart_map(...) abort " {{{
   return call('s:smart_map', a:000)
 endfunction " }}}
+function! gita#utils#status#status2path(status, ...) abort " {{{
+  let gita = get(a:000, 0, {})
+  if empty(gita)
+    let gita = gita#core#get()
+  endif
+  let path = get(a:stats, 'path2', a:status.path)
+  return gita.git.get_absolute_path(path)
+endfunction " }}}
+function! gita#utils#status#statuses2pathlist(statuses, ...) abort " {{{
+  let gita = get(a:000, 0, {})
+  if empty(gita)
+    let gita = gita#core#get()
+  endif
+  let pathlist = []
+  for status in a:statuses
+    call add(pathlist, gita#utils#status#status2path(status, gita)
+  endfor
+  return pathlist
+endfunction " }}}
 
 function! gita#utils#status#action_open(...) abort " {{{
   call call('s:action_open', a:000)

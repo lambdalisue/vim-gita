@@ -68,6 +68,10 @@ endfunction " }}}
 function! gita#utils#invoker#clear(...) abort " {{{
   return call('s:clear', a:000)
 endfunction " }}}
+function! gita#utils#invoker#focus(...) abort "{{{
+  let invoker = call('s:get', a:000)
+  call invoker.focus()
+endfunction " }}}
 
 
 let &cpo = s:save_cpo

@@ -10,37 +10,81 @@ let s:const.filetype = 'gita-status'
 let s:P = gita#utils#import('Prelude')
 let s:L = gita#utils#import('Data.List')
 let s:F = gita#utils#import('System.File')
-let s:A = gita#utils#import('ArgumentParser')
 
 
-" Private functions
+" Private
 function! s:get_gita(...) abort " {{{
-  let gita = call('gita#core#get', a:000)
-  let gita.features = get(gita, 'features', {})
-  let gita.features.status = get(gita.features, 'status', {})
-  return gita
+  return call('gita#core#get', a:000)
 endfunction " }}}
-function! s:smart_map(...) abort " {{{
-  return call('gita#utils#status#smart_map', a:000)
+function! s:get_invoker(...) abort " {{{
+  return call('gita#utils#invoker#get', a:000)
 endfunction " }}}
-function! s:filter_statuses(statuses, options, validate) abort " {{{
-  let statuses = gita#utils#ensure_list(a:statuses)
-  let options = deepcopy(a:options)
-  let valid_statuses = []
-  for status in statuses
-    if a:validate(status, options)
-      continue
+function! s:get_statuses_map() abort " {{{
+  return get(b:, '_gita_statuses_map', {})
+endfunction " }}}
+function! s:set_statuses_map(statuses_map) abort " {{{
+  let b:_gita_statuses_map = deepcopy(a:statuses_map)
+endfunction " }}}
+function! s:get_statuses_within(start, end) abort " {{{
+  " Use with 'range' a:startline, a:lastline
+  let statuses_map = s:get_statuses_map()
+  let statuses = []
+  for n in range(a:start, a:end)
+    let status = get(statuses_map, getline(n), {})
+    if !empty(status)
+      call add(statuses, status)
     endif
-    call add(valid_statuses, status)
   endfor
-  if empty(valid_statuses)
-    if !get(options, 'ignore_empty_warning', 0)
-      call gita#utils#warn(
-            \ 'No valid statuses were specified.',
-            \)
+  return statuses
+endfunction " }}}
+function! s:get_status_header(gita) abort " {{{
+  let meta = a:gita.git.get_meta()
+  let name = fnamemodify(a:gita.git.worktree, ':t')
+  let branch = meta.current_branch
+  let remote_name = meta.current_branch_remote
+  let remote_branch = meta.current_remote_branch
+  let outgoing = a:gita.git.count_commits_ahead_of_remote()
+  let incoming = a:gita.git.count_commits_behind_remote()
+  let is_connected = !(empty(remote_name) || empty(remote_branch))
+
+  let lines = []
+  if is_connected
+    call add(lines,
+          \ printf('# Index and working tree status on a branch `%s/%s` <> `%s/%s`',
+          \   name, branch, remote_name, remote_branch
+          \))
+    if outgoing > 0 && incoming > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) ahead and %d commit(s) behind of `%s/%s`',
+            \   outgoing, incoming, remote_name, remote_branch,
+            \))
+    elseif outgoing > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) ahead of `%s/%s`',
+            \   outgoing, remote_name, remote_branch,
+            \))
+    elseif incoming > 0
+      call add(lines,
+            \ printf('# The branch is %d commit(s) behind `%s/%s`',
+            \   incoming, remote_name, remote_branch,
+            \))
     endif
+  else
+    call add(lines,
+          \ printf('# Index and working tree status on a branch `%s/%s`',
+          \   name, branch
+          \))
+
   endif
-  return valid_statuses
+  return lines
+endfunction " }}}
+function! s:get_status_abspath(gita, status) abort " {{{
+  let path = get(a:status, 'path2', a:status.path)
+  return a:gita.git.get_absolute_path(path)
+endfunction " }}}
+function! s:smart_map(lhs, rhs) abort " {{{
+  " check if the cursor is on a status line or not
+  return empty(s:get_statuses_within(a:firstline, a:firstline)) ? a:lhs : a:rhs
 endfunction " }}}
 
 function! s:open(...) abort " {{{
@@ -48,18 +92,24 @@ function! s:open(...) abort " {{{
         \ get(b:, '_options', {}),
         \ get(a:000, 0, {}),
         \)
-  let gita = s:get_gita()
-  let invoker = gita#utils#invoker#get()
+  let gita    = s:get_gita()
+  let invoker = s:get_invoker()
 
   if !gita.enabled
-    redraw | call gita#utils#info(printf(
-          \ 'Git is not available in the current buffer "%s".',
-          \ bufname('%'),
-          \))
-    return -1
+    redraw
+    call gita#utils#warn(
+          \ 'Gita is not available in the current buffer.',
+          \)
+    call gita#utils#debugmsg(
+          \ 'gita#features#status#s:open',
+          \ printf('bufname: "%s"', bufname('%')),
+          \ printf('cwd: "%s"', getcwd()),
+          \ printf('gita: "%s"', gita),
+          \)
+    return
   endif
 
-  let ret = gita#utils#buffer#open(s:const.bufname, 'support_window', {
+  call gita#utils#buffer#open(s:const.bufname, 'support_window', {
         \ 'opener': 'topleft 15 split',
         \ 'range': 'tabpage',
         \})
@@ -68,12 +118,12 @@ function! s:open(...) abort " {{{
   " update buffer variables
   let b:_gita = gita
   let b:_options = options
-  call gita#utils#invoker#set(invoker)
   call invoker.update_winnum()
+  call gita#utils#invoker#set(invoker)
 
   " check if construction is required
   if exists('b:_constructed') && !get(g:, 'gita#debug', 0)
-    return ret.bufnr
+    return
   endif
 
   " construction
@@ -101,7 +151,6 @@ function! s:open(...) abort " {{{
   call s:defmap()
   call s:update(options)
   let b:_constructed = 1
-  return ret.bufnr
 endfunction " }}}
 function! s:update(...) abort " {{{
   let options = extend(
@@ -131,14 +180,14 @@ function! s:update(...) abort " {{{
     call add(statuses_lines, status.record)
     let statuses_map[status.record] = status
   endfor
-  call gita#utils#status#set_statuses_map(statuses_map)
+  call s:set_statuses_map(statuses_map)
 
   " create buffer lines
   let buflines = s:L.flatten([
         \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
         \ gita#utils#help#get('status_mapping'),
         \ gita#utils#help#get('short_format'),
-        \ gita#utils#status#get_status_header(),
+        \ s:get_status_header(),
         \ statuses_lines,
         \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
         \])
@@ -179,7 +228,7 @@ function! s:defmap() abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-toggle)   :call <SID>action('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)  :call <SID>action('discard')<CR>
 
-  if get(g:, 'gita#commands#status#enable_default_keymap', 1)
+  if get(g:, 'gita#features#status#enable_default_keymap', 1)
     nmap <buffer><silent> q  :<C-u>quit<CR>
     nmap <buffer> <C-l> <Plug>(gita-action-update)
 
@@ -197,13 +246,13 @@ function! s:defmap() abort " {{{
     nmap <buffer><expr> s  <SID>smart_map('s', '<Plug>(gita-action-solve2-v)')
     nmap <buffer><expr> S  <SID>smart_map('S', '<Plug>(gita-action-solve3-v)')
 
-    " operation
+    " operations
     nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
     nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
 
-    " raw operation
+    " raw operations
     nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
     nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
     nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
@@ -214,11 +263,13 @@ function! s:defmap() abort " {{{
     nmap <buffer><expr> -o <SID>smart_map('-o', '<Plug>(gita-action-ours)')
     nmap <buffer><expr> -t <SID>smart_map('-t', '<Plug>(gita-action-theirs)')
 
+    " operations (range)
     vmap <buffer> << <Plug>(gita-action-stage)
     vmap <buffer> >> <Plug>(gita-action-unstage)
     vmap <buffer> -- <Plug>(gita-action-toggle)
     vmap <buffer> == <Plug>(gita-action-discard)
 
+    " raw operations (range)
     vmap <buffer> -a <Plug>(gita-action-add)
     vmap <buffer> -A <Plug>(gita-action-ADD)
     vmap <buffer> -r <Plug>(gita-action-reset)
@@ -231,203 +282,13 @@ function! s:defmap() abort " {{{
   endif
 endfunction " }}}
 function! s:ac_quit() abort " {{{
-  let invoker = gita#utils#invoker#get()
-  call invoker.focus()
+  call gita#utils#invoker#focus()
   call gita#utils#invoker#clear()
-endfunction " }}}
-
-function! s:validate_add(status, options) abort " {{{
-  if a:status.is_unstaged || a:status.is_untracked
-    return 0
-  elseif a:status.is_ignored && get(a:options, 'force', 0)
-    return 0
-  elseif a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An ignored file "%s" cannot be added. Use <Plug>(gita-action-ADD) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'A both deleted conflict file "%s" cannot be added. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  else
-    call gita#utils#warn(printf(
-          \ 'No changes of "%s" exist on working tree.',
-          \ a:status.path,
-          \))
-    return 1
-  endif
-endfunction " }}}
-function! s:validate_rm(status, options) abort " {{{
-  if (a:status.is_staged || a:status.is_unstaged) && a:status.worktree ==# 'D'
-    " the file is already removed from filesystem thus it should be able to
-    " remove from index without a warning
-    return 0
-  elseif a:status.is_staged || a:status.is_unstaged
-    if get(a:options, 'force', 0)
-      return 0
-    else
-      call gita#utils#warn(printf(
-            \ 'A file "%s" has changes and cannot be deleted. Use <Plug>(gita-action-RM) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    endif
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be deleted.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    if a:status.sign ==# 'AU'
-      call gita#utils#warn(printf(
-            \ 'A added by us conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UA'
-      call gita#utils#warn(printf(
-            \ 'A added by them conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'AA'
-      call gita#utils#warn(printf(
-            \ 'A both added conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UU'
-      call gita#utils#warn(printf(
-            \ 'A both modified conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  else
-    " it should not be called
-    call gita#utils#errormsg(printf(
-          \ 'An unexpected pattern "%s" is called for "rm".',
-          \ a:status.sign,
-          \))
-    call gita#utils#open_gita_issue()
-    return 1
-  endif
-endfunction " }}}
-function! s:validate_reset(status, options) abort " {{{
-  if a:status.is_staged
-    return 0
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be reset.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'A conflicted file "%s" cannot be reset. ',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    call gita#utils#warn(printf(
-          \ 'No changes of "%s" exist on index.',
-          \ a:status.path,
-          \))
-    return 1
-  endif
-endfunction " }}}
-function! s:validate_checkout(status, options) abort " {{{
-  if a:status.is_unstaged
-    if get(a:options, 'force', 0)
-      return 0
-    else
-      call gita#utils#warn(printf(
-            \ 'A file "%s" has unstaged changes. Use <Plug>(gita-action-CHECKOUT) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    endif
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be checked out.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'A conflicted file "%s" cannot be checked out. Use <Plug>(gita-action-ours) or <Plug>(gita-action-theirs) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    return 0
-  endif
-endfunction " }}}
-function! s:validate_checkout_ours(status, options) abort " {{{
-  if !a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'No ours version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'No ours version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'DU'
-      call gita#utils#warn(printf(
-            \ 'No ours version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  endif
-endfunction " }}}
-function! s:validate_checkout_theirs(status, options) abort " {{{
-  if !a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'No theirs version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'No theirs version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UD'
-      call gita#utils#warn(printf(
-            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  endif
 endfunction " }}}
 
 function! s:action(name, ...) range abort " {{{
   let options  = extend(deepcopy(b:_options), get(a:000, 0, {}))
-  let statuses = gita#utils#status#get_selected_statuses(a:firstline, a:lastline)
+  let statuses = s:get_statuses_within(a:firstline, a:lastline)
   let args = [statuses, options]
   call call(printf('s:action_%s', a:name), args)
   call s:update()
@@ -436,11 +297,20 @@ function! s:action_update(statuses, options) abort " {{{
   call s:update()
 endfunction " }}}
 function! s:action_open(statuses, options) abort " {{{
-  call gita#utils#status#action_open(a:statuses, a:options)
+  let gita = s:get_gita()
+  let opener = get(a:options, 'opener', 'edit')
+  for status in a:statuses
+    let abspath = s:get_status_abspath(gita, status)
+    call gita#utils#buffer#open(abspath, '', {
+          \ 'opener': opener,
+          \})
+  endfor
 endfunction " }}}
 function! s:action_help(statuses, options) abort " {{{
-  call gita#utils#status#help(a:statuses, a:options)
+  let name = a:options.name
+  call gita#utils#help#toggle(name)
 endfunction " }}}
+
 function! s:action_add(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
         \ a:statuses,
@@ -686,8 +556,9 @@ function! s:action_discard(statuses, options) abort " {{{
     endif
   endif
   " delete untracked files
+  let gita = s:get_gita()
   for status in delete_statuses
-    let path = get(status, 'path2', get(status, 'path', ''))
+    let path = s:get_status_abspath(gita, status)
     if isdirectory(path)
       silent! call s:F.rmdir(path, 'r')
     elseif filewritable(path)
@@ -700,13 +571,240 @@ function! s:action_discard(statuses, options) abort " {{{
   let options.force = 1
   call s:action_checkout(checkout_statuses, options)
 endfunction " }}}
+function! s:filter_statuses(statuses, options, validate) abort " {{{
+  let statuses = gita#utils#ensure_list(a:statuses)
+  let options = deepcopy(a:options)
+  let valid_statuses = []
+  for status in statuses
+    if a:validate(status, options)
+      continue
+    endif
+    call add(valid_statuses, status)
+  endfor
+  if empty(valid_statuses)
+    if !get(options, 'ignore_empty_warning', 0)
+      call gita#utils#warn(
+            \ 'No valid statuses were specified.',
+            \)
+    endif
+  endif
+  return valid_statuses
+endfunction " }}}
+function! s:validate_add(status, options) abort " {{{
+  if a:status.is_unstaged || a:status.is_untracked
+    return 0
+  elseif a:status.is_ignored && get(a:options, 'force', 0)
+    return 0
+  elseif a:status.is_ignored
+    call gita#utils#warn(printf(
+          \ 'An ignored file "%s" cannot be added. Use <Plug>(gita-action-ADD) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  elseif a:status.is_conflicted
+    if a:status.sign ==# 'DD'
+      call gita#utils#warn(printf(
+            \ 'A both deleted conflict file "%s" cannot be added. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  else
+    call gita#utils#warn(printf(
+          \ 'No changes of "%s" exist on working tree.',
+          \ a:status.path,
+          \))
+    return 1
+  endif
+endfunction " }}}
+function! s:validate_rm(status, options) abort " {{{
+  if (a:status.is_staged || a:status.is_unstaged) && a:status.worktree ==# 'D'
+    " the file is already removed from filesystem thus it should be able to
+    " remove from index without a warning
+    return 0
+  elseif a:status.is_staged || a:status.is_unstaged
+    if get(a:options, 'force', 0)
+      return 0
+    else
+      call gita#utils#warn(printf(
+            \ 'A file "%s" has changes and cannot be deleted. Use <Plug>(gita-action-RM) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    endif
+  elseif a:status.is_untracked || a:status.is_ignored
+    call gita#utils#warn(printf(
+          \ 'An untracked/ignored file "%s" cannot be deleted.',
+          \ a:status.path,
+          \))
+    return 1
+  elseif a:status.is_conflicted
+    if a:status.sign ==# 'AU'
+      call gita#utils#warn(printf(
+            \ 'A added by us conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UA'
+      call gita#utils#warn(printf(
+            \ 'A added by them conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'AA'
+      call gita#utils#warn(printf(
+            \ 'A both added conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UU'
+      call gita#utils#warn(printf(
+            \ 'A both modified conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  else
+    " it should not be called
+    call gita#utils#errormsg(printf(
+          \ 'An unexpected pattern "%s" is called for "rm".',
+          \ a:status.sign,
+          \))
+    call gita#utils#open_gita_issue()
+    return 1
+  endif
+endfunction " }}}
+function! s:validate_reset(status, options) abort " {{{
+  if a:status.is_staged
+    return 0
+  elseif a:status.is_untracked || a:status.is_ignored
+    call gita#utils#warn(printf(
+          \ 'An untracked/ignored file "%s" cannot be reset.',
+          \ a:status.path,
+          \))
+    return 1
+  elseif a:status.is_conflicted
+    call gita#utils#warn(printf(
+          \ 'A conflicted file "%s" cannot be reset. ',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    call gita#utils#warn(printf(
+          \ 'No changes of "%s" exist on index.',
+          \ a:status.path,
+          \))
+    return 1
+  endif
+endfunction " }}}
+function! s:validate_checkout(status, options) abort " {{{
+  if a:status.is_unstaged
+    if get(a:options, 'force', 0)
+      return 0
+    else
+      call gita#utils#warn(printf(
+            \ 'A file "%s" has unstaged changes. Use <Plug>(gita-action-CHECKOUT) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    endif
+  elseif a:status.is_untracked || a:status.is_ignored
+    call gita#utils#warn(printf(
+          \ 'An untracked/ignored file "%s" cannot be checked out.',
+          \ a:status.path,
+          \))
+    return 1
+  elseif a:status.is_conflicted
+    call gita#utils#warn(printf(
+          \ 'A conflicted file "%s" cannot be checked out. Use <Plug>(gita-action-ours) or <Plug>(gita-action-theirs) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    return 0
+  endif
+endfunction " }}}
+function! s:validate_checkout_ours(status, options) abort " {{{
+  if !a:status.is_conflicted
+    call gita#utils#warn(printf(
+          \ 'No ours version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    if a:status.sign ==# 'DD'
+      call gita#utils#warn(printf(
+            \ 'No ours version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'DU'
+      call gita#utils#warn(printf(
+            \ 'No ours version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  endif
+endfunction " }}}
+function! s:validate_checkout_theirs(status, options) abort " {{{
+  if !a:status.is_conflicted
+    call gita#utils#warn(printf(
+          \ 'No theirs version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
+          \ a:status.path,
+          \))
+    return 1
+  else
+    if a:status.sign ==# 'DD'
+      call gita#utils#warn(printf(
+            \ 'No theirs version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    elseif a:status.sign ==# 'UD'
+      call gita#utils#warn(printf(
+            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  endif
+endfunction " }}}
 
 
-" Public function
-function! gita#commands#status#open(...) abort " {{{
+" Public
+function! gita#features#status#get_statuses_map(...) abort " {{{
+  return call('s:get_statuses_map', a:000)
+endfunction " }}}
+function! gita#features#status#set_statuses_map(...) abort " {{{
+  return call('s:set_statuses_map', a:000)
+endfunction " }}}
+function! gita#features#status#get_statuses_within(...) abort " {{{
+  return call('s:get_statuses_within', a:000)
+endfunction " }}}
+function! gita#features#status#get_status_header(...) abort " {{{
+  return call('s:get_status_header', a:000)
+endfunction " }}}
+function! gita#features#status#get_status_abspath(...) abort " {{{
+  return call('s:get_status_abspath', a:000)
+endfunction " }}}
+function! gita#features#status#smart_map(...) abort " {{{
+  return call('s:smart_map', a:000)
+endfunction " }}}
+
+" API
+function! gita#features#status#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
-function! gita#commands#status#update(...) abort " {{{
+function! gita#features#status#update(...) abort " {{{
   call call('s:update', a:000)
 endfunction " }}}
 
