@@ -9,27 +9,21 @@ let s:G = gita#utils#import('VCS.Git')
 " Private functions
 function! s:new_gita(...) abort " {{{
   let expr = get(a:000, 0, "%")
-  let buftype = getbufvar(expr, '&buftype', 'noname')
-  if empty(buftype)
-    let git = s:G.find(fnamemodify(bufname(expr), ':p'))
-    let gita = extend(deepcopy(s:gita), {
-          \ 'enabled': !empty(git),
-          \ 'bufname': bufname(expr),
-          \ 'bufnum': bufnr(expr),
-          \ 'cwd': getcwd(),
-          \ 'git': git,
-          \})
+  let buftype = getbufvar(expr, '&buftype')
+  let bufname = bufname(expr)
+  if empty(buftype) && !empty(bufname)
+    let git = s:G.find(fnamemodify(bufname, ':p'))
   else
     " Non file buffer. Use a current working directory instead.
     let git = s:G.find(fnamemodify(getcwd(), ':p'))
-    let gita = extend(deepcopy(s:gita), {
-          \ 'enabled': !empty(git),
-          \ 'bufname': bufname(expr),
-          \ 'bufnum': bufnr(expr),
-          \ 'cwd': getcwd(),
-          \ 'git': git,
-          \})
   endif
+  let gita = extend(deepcopy(s:gita), {
+        \ 'enabled': !empty(git),
+        \ 'bufname': bufname,
+        \ 'bufnum':  bufnr(expr),
+        \ 'cwd':     getcwd(),
+        \ 'git':     git,
+        \})
   call setbufvar(expr, '_gita', gita)
   return gita
 endfunction " }}}
@@ -37,28 +31,9 @@ function! s:get_gita(...) abort " {{{
   let expr = get(a:000, 0, "%")
   let gita = getbufvar(expr, '_gita', {})
   if empty(gita) || (has_key(gita, 'is_expired') && gita.is_expired())
-    return s:new_gita(expr)
-  else
-    return gita
+    let gita = s:new_gita(expr)
   endif
-endfunction " }}}
-function! s:parse_args(...) abort " {{{
-  if a:0 == 0
-    let files = []
-    let opts = {}
-  elseif a:0 == 1
-    if s:P.is_list(a:1)
-      let files = a:1
-      let opts = {}
-    else
-      let files = []
-      let opts = a:1
-    endif
-  else
-    let files = a:1
-    let opts = a:2
-  endif
-  return [files, opts]
+  return gita
 endfunction " }}}
 
 
@@ -87,15 +62,6 @@ function! s:gita.is_expired() abort " {{{
     return 0
   endif
 endfunction " }}}
-function! s:gita.is_enabled_with_warn() abort " {{{
-  if !get(self, 'enabled', 0)
-    call gita#utils#warn(
-          \ 'vim-gita: Gita is not available in the current buffer',
-          \)
-    return 0
-  endif
-  return 1
-endfunction " }}}
 function! s:gita.exec(args, ...) abort " {{{
   let args = deepcopy(a:args)
   let opts = get(a:000, 0, {})
@@ -109,26 +75,6 @@ function! s:gita.exec(args, ...) abort " {{{
     call gita#utils#doautocmd(printf('%s-post', args[0]))
   endif
   return result
-endfunction " }}}
-function! s:gita.get_parsed_statuses(...) abort " {{{
-  let [files, opts] = call('s:parse_args', a:000)
-  if !self.enabled
-    return []
-  endif
-  let args = [
-        \ 'status', 
-        \ '--porcelain',
-        \ '--ignore-submodules=all',  " to improve the response of the command
-        \]
-  if !empty(files)
-    let args = args + ['--'] + self.get_absolute_paths(files)
-  endif
-  let stdout = gita.exec(args, opts)
-  if empty(stdout)
-    return {}
-  endif
-  let statuses = s:S.parse(stdout)
-  return statuses
 endfunction " }}}
 
 let &cpo = s:save_cpo
