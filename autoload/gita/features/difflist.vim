@@ -11,9 +11,37 @@ let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 " Private
+function! s:get_parser() abort " {{{
+  if !exists('s:parser') || get(g:, 'gita#debug', 0)
+    let s:parser = s:A.new({
+          \ 'name': 'Gita show',
+          \ 'description': 'Show files changed from a specified commit in Gita interface',
+          \})
+    call s:parser.add_argument(
+          \ 'commit',
+          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'required': 1,
+          \ })
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'choices': ['all', 'normal', 'no'],
+          \   'default': 'all',
+          \ })
+    call s:parser.add_argument(
+          \ '--ignore-submodules',
+          \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
+          \   'choices': ['all', 'dirty', 'untracked'],
+          \   'default': 'all',
+          \ })
+  endif
+  return s:parser
+endfunction " }}}
+
 function! s:get_gita(...) abort " {{{
   return call('gita#core#get', a:000)
 endfunction " }}}
@@ -218,7 +246,7 @@ function! s:action_help(...) abort " {{{
 endfunction " }}}
 
 
-" API
+" Internal API
 function! gita#features#difflist#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
@@ -232,6 +260,19 @@ function! gita#features#difflist#define_syntax() abort " {{{
   call gita#features#status#define_syntax()
 endfunction " }}}
 
+" External API
+function! gita#features#difflist#run(bang, range, ...) abort " {{{
+  let parser = s:get_parser()
+  let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  if !empty(opts)
+    call s:open(opts)
+  endif
+endfunction " }}}
+function! gita#features#difflist#complete(arglead, cmdline, cursorpos) abort " {{{
+  let parser = s:get_parser()
+  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
+  return candidates
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
