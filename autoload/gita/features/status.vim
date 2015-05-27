@@ -11,9 +11,35 @@ let s:P = gita#utils#import('Prelude')
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 " Private
+function! s:get_parser() abort " {{{
+  if !exists('s:parser') || get(g:, 'gita#debug', 0)
+    let s:parser = s:A.new({
+          \ 'name': 'Show the working tree status in Gita interface',
+          \})
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'choices': ['all', 'normal', 'no'],
+          \   'default': 'all',
+          \ })
+    call s:parser.add_argument(
+          \ '--ignored',
+          \ 'show ignored files', {
+          \ })
+    call s:parser.add_argument(
+          \ '--ignore-submodules',
+          \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
+          \   'choices': ['all', 'dirty', 'untracked'],
+          \   'default': 'all',
+          \ })
+  endif
+  return s:parser
+endfunction " }}}
+
 function! s:get_gita(...) abort " {{{
   return call('gita#core#get', a:000)
 endfunction " }}}
@@ -371,7 +397,6 @@ function! s:action_help(statuses, options) abort " {{{
   let name = a:options.name
   call gita#utils#help#toggle(name)
 endfunction " }}}
-
 function! s:action_add(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
         \ a:statuses,
@@ -841,7 +866,7 @@ function! s:validate_checkout_theirs(status, options) abort " {{{
 endfunction " }}}
 
 
-" Public
+" Internal API
 function! gita#features#status#get_statuses_map(...) abort " {{{
   return call('s:get_statuses_map', a:000)
 endfunction " }}}
@@ -872,8 +897,6 @@ endfunction " }}}
 function! gita#features#status#action_help(...) abort " {{{
   call call('s:action_help', a:000)
 endfunction " }}}
-
-" API
 function! gita#features#status#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
@@ -899,6 +922,21 @@ function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
   syntax match GitaComment    /\v^.*$/ contains=ALL
   syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
+endfunction " }}}
+
+
+" External API
+function! gita#features#status#run(bang, range, ...) abort " {{{
+  let parser = s:get_parser()
+  let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  if !empty(opts)
+    call s:open(opts)
+  endif
+endfunction " }}}
+function! gita#features#status#complete(arglead, cmdline, cursorpos) abort " {{{
+  let parser = s:get_parser()
+  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
+  return candidates
 endfunction " }}}
 
 

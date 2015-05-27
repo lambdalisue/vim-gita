@@ -11,9 +11,37 @@ let s:P = gita#utils#import('Prelude')
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 " Private
+function! s:get_parser() abort " {{{
+  if !exists('s:parser') || get(g:, 'gita#debug', 0)
+    let s:parser = s:A.new({
+          \ 'name': 'Record changes to the repository via Gita interface',
+          \})
+    call s:parser.add_argument(
+          \ '--all', '-a',
+          \ 'commit all changed files',
+          \)
+    call s:parser.add_argument(
+          \ '--reset-author',
+          \ 'the commit is authored by me now (used with -C/-c/--amend)',
+          \)
+    call s:parser.add_argument(
+          \ '--amend',
+          \ 'amend previous commit',
+          \)
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+          \   'choices': ['all', 'normal', 'no'],
+          \   'default': 'all',
+          \ })
+  endif
+  return s:parser
+endfunction " }}}
+
 function! s:get_gita(...) abort " {{{
   return call('gita#core#get', a:000)
 endfunction " }}}
@@ -317,7 +345,7 @@ function! s:action_commit(statuses, options) abort " {{{
 endfunction " }}}
 
 
-" API
+" Internal API
 function! gita#features#commit#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
@@ -344,6 +372,21 @@ function! gita#features#commit#define_syntax() abort " {{{
   " github
   syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved
   syntax match   GitaGitHubIssue   '\v%([^ /#]+/[^ /#]+#\d+|#\d+)'
+endfunction " }}}
+
+
+" External API
+function! gita#features#commit#run(bang, range, ...) abort " {{{
+  let parser = s:get_parser()
+  let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  if !empty(opts)
+    call s:open(opts)
+  endif
+endfunction " }}}
+function! gita#features#commit#complete(arglead, cmdline, cursorpos) abort " {{{
+  let parser = s:get_parser()
+  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
+  return candidates
 endfunction " }}}
 
 

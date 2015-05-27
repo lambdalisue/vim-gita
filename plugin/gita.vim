@@ -17,8 +17,9 @@ function! s:GitaComplete(...) abort " {{{
 endfunction " }}}
 
 command! -nargs=? -range -bang
-      \ -complete=customlist,s:GitaComplete Gita
-      \ :call s:Gita(<q-bang>, [<line1>, <line2>], <f-args>)
+      \ -complete=customlist,s:GitaComplete
+      \ Gita
+      \ :call gita#features#run(<q-bang>, [<line1>, <line2>], <f-args>)
 
 " Assign configure variables " {{{
 let s:default = {
