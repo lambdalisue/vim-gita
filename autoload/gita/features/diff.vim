@@ -4,9 +4,42 @@ set cpo&vim
 
 " Modules
 let s:L = gita#utils#import('Data.List')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 " Private
+function! s:get_parser() abort " {{{
+  if !exists('s:parser') || get(g:, 'gita#debug', 0)
+    let s:parser = s:A.new({
+          \ 'name': 'Gita diff',
+          \ 'description': 'Show or compare a difference of a file in Gita interface',
+          \})
+    call s:parser.add_argument(
+          \ 'commit',
+          \ 'A commit string to specify how to compare the versions', {
+          \   'required': 1,
+          \ })
+    call s:parser.add_argument(
+          \ '--diff', '-d',
+          \ 'Open 2-way diff to compare the difference', {
+          \   'conflicts': ['open'],
+          \ })
+    call s:parser.add_argument(
+          \ '--open', '-o',
+          \ 'Open a diff format buffer to show the difference', {
+          \   'conflicts': ['diff'],
+          \ })
+
+    function! s:parser.hooks.pre_validation(opts) abort
+      " Automatically use '--open' if no conflicted argument is specified
+      if empty(self.get_conflicted_arguments('open', a:opts))
+        let a:opts.open = 1
+      endif
+    endfunction
+  endif
+  return s:parser
+endfunction " }}}
+
 function! s:get_gita(...) abort " {{{
   return call('gita#core#get', a:000)
 endfunction " }}}
@@ -146,12 +179,29 @@ function! s:ac_buf_win_leave() abort " {{{
 endfunction " }}}
 
 
-" Public
+" Internal API
 function! gita#features#diff#open(...) abort " {{{
   call call('s:open', a:000)
 endfunction " }}}
 function! gita#features#diff#diff(...) abort " {{{
   call call('s:diff', a:000)
+endfunction " }}}
+
+
+" External API
+function! gita#features#diff#command(bang, range, ...) abort " {{{
+  let parser = s:get_parser()
+  let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  if get(opts, 'open', 0)
+    call s:open(expand('%'), opts.commit, opts)
+  elseif get(opts, 'diff', 0)
+    call s:diff(expand('%'), opts.commit, opts)
+  endif
+endfunction " }}}
+function! gita#features#diff#complete(arglead, cmdline, cursorpos) abort " {{{
+  let parser = s:get_parser()
+  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
+  return candidates
 endfunction " }}}
 
 
