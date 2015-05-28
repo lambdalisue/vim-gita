@@ -140,18 +140,15 @@ function! s:get_local_hash(repository, branch) abort " {{{
   return s:_readline(filename)
 endfunction " }}}
 function! s:get_remote_hash(repository, remote, branch) abort " {{{
-  let filename = s:Path.join(a:repository, 'refs', 'remotes', a:remote, a:branch)
+  let target = s:Path.join('refs', 'remotes', a:remote, a:branch)
+  let filename = s:Path.join(a:repository, target)
   let hash = s:_readline(filename)
   if empty(hash)
     " sometime the file is missing
     let filename = s:Path.join(a:repository, 'packed-refs')
-    let packed_refs = join(s:_readfile(filename), "\n")
-    " Note:
-    "   Vim document said '.' does not hit a new line but it is a LIE.
-    "   And the behavior of regexpengine=1 is quite annoying thus the
-    "   following discusting regex is required...
-    let pattern = printf('\v(\w|\s)*\ze\srefs/remotes/%s/%s', a:remote, a:branch)
-    let hash = matchstr(packed_refs, pattern)
+    let packed_refs = filter(s:_readfile(filename),
+                      \      'v:val[0] != "#" && v:val[-'.len(target).':] == target')
+    return get(split(get(packed_refs, 0, '')), 0, '')
   endif
   return hash
 endfunction " }}}
