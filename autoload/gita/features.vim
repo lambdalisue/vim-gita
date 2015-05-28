@@ -123,6 +123,10 @@ call s:register('commit',
       \ function('gita#features#commit#command'),
       \ function('gita#features#commit#complete'),
       \)
+call s:register('diff',
+      \ function('gita#features#diff#command'),
+      \ function('gita#features#diff#complete'),
+      \)
 call s:register('difflist',
       \ function('gita#features#difflist#command'),
       \ function('gita#features#difflist#complete'),
