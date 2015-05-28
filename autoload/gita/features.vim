@@ -127,6 +127,10 @@ call s:register('difflist',
       \ function('gita#features#difflist#command'),
       \ function('gita#features#difflist#complete'),
       \)
+call s:register('browse',
+      \ function('gita#features#browse#command'),
+      \ function('gita#features#browse#complete'),
+      \)
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
