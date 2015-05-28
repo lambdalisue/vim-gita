@@ -7,45 +7,40 @@ let s:P = gita#utils#import('Prelude')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-let s:command_registry = {}
-let s:command_pattern = '^$'
+let s:feature_registry = {}
+let s:feature_pattern = '^$'
 
 function! s:is_registered(name) abort " {{{
-  return a:name =~# s:command_pattern
+  return a:name =~# s:feature_pattern
 endfunction " }}}
-function! s:register(name, callbacks) abort " {{{
+function! s:register(name, command, complete) abort " {{{
   if s:is_registered(a:name)
     throw printf(
-          \ 'vim-gita: a command "%s" has already been registered.',
+          \ 'vim-gita: a feature "%s" has already been registered.',
           \ a:name,
           \)
   endif
-  if s:P.is_string(callbacks)
-    let callbacks = {
-          \ 'parse':  function(printf('%s#run', a:callbacks)),
-          \ 'parse':  function(printf('%s#run', a:callbacks)),
-          \ 'complete': function(printf('%s#complete', a:callbacks)),
-          \}
-  else
-    let callbacks = deepcopy(a:callbacks)
-  endif
-  let s:command_registry[a:name] = callbacks
-  let s:command_pattern = printf('^\%%(%s\)$',
-        \ join(keys(s:command_registry), '\|'),
+  let s:feature_registry[a:name] = {
+        \ 'command': a:command,
+        \ 'complete': a:complete
+        \}
+  let s:feature_pattern = printf('^\%%(%s\)$',
+        \ join(keys(s:feature_registry), '\|'),
         \)
 endfunction " }}}
 function! s:unregister(name, callback) abort " {{{
   if !s:is_registered(a:name)
     throw printf(
-          \ 'vim-gita: a command "%s" has not been registered.',
+          \ 'vim-gita: a feature "%s" has not been registered.',
           \ a:name,
           \)
   endif
-  unlet! s:command_registry[a:name]
-  let s:command_pattern = printf('^\%%(%s\)$',
-        \ join(keys(s:command_registry), '\|'),
+  unlet! s:feature_registry[a:name]
+  let s:feature_pattern = printf('^\%%(%s\)$',
+        \ join(keys(s:feature_registry), '\|'),
         \)
 endfunction " }}}
+
 function! s:get_parser() abort " {{{
   if !exists('s:parser') || get(g:, 'gita#debug', 0)
     let s:parser = s:A.new({
@@ -75,7 +70,7 @@ endfunction " }}}
 function! gita#features#unregister(...) abort " {{{
   call call('s:unregister', a:000)
 endfunction " }}}
-function! gita#features#run(bang, range, ...) abort " {{{
+function! gita#features#command(bang, range, ...) abort " {{{
   let opts = s:parse(a:bang, a:range, get(a:000, 0, ''))
   let name = get(opts, 'action', 'help')
 
@@ -97,47 +92,41 @@ function! gita#features#run(bang, range, ...) abort " {{{
     endif
   else
     " execute Gita command
-    let callbacks = s:command_registry[name]
+    let feature = s:feature_registry[name]
     let args = [a:bang, a:range, join(opts.__unknown__)]
-    call call(callbacks.run, args)
+    call call(feature.command, args)
   endif
 endfunction " }}}
-function! gita#features#complete(bang, range, ...) abort " {{{
-  let opts = s:parse(a:bang, a:range, get(a:000, 0, ''))
+function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
+  let bang = a:cmdline =~# '\v^Gita!'
+  let cmdline = substitute(a:cmdline, '\v^Gita!?\s?', '', '')
+  let opts = s:parse(bang, [0, 0], cmdline)
   let name = get(opts, 'action', 'help')
 
   if opts.__bang__ || !s:is_registered(name)
-    " execute git command
-    let gita = gita#core#get()
-    let result = gita.git.exec(opts.__args__)
-    if result.status == 0
-      call gita#utils#info(
-            \ printf('Ok: "%s"', join(result.args)),
-            \)
-      call gita#utils#info(result.stdout)
-      call gita#utils#doautocmd(printf('%s-post', name))
-    else
-      call gita#utils#warn(
-            \ printf('Fail: "%s"', join(result.args)),
-            \)
-      call gita#utils#info(result.stdout)
-    endif
+    let candidates = []
   else
     " execute Gita command
-    call call(
-          \ s:command_registry[name],
-          \ [a:bang, a:range, join(opts.__unknown__)])
+    let feature = s:feature_registry[name]
+    let args = [a:arglead, join(opts.__unknown__), a:cursorpos]
+    call call(feature.complete, args)
   endif
 endfunction " }}}
 
 
 " Register features
-call s:register('status', [
+call s:register('status',
       \ function('gita#features#status#command'),
       \ function('gita#features#status#complete'),
-      \])
-call s:register('commit', 'gita#features#commit')
-call s:register('difflist', 'gita#features#difflist')
+      \)
+call s:register('commit',
+      \ function('gita#features#commit#command'),
+      \ function('gita#features#commit#complete'),
+      \)
+call s:register('difflist',
+      \ function('gita#features#difflist#command'),
+      \ function('gita#features#difflist#complete'),
+      \)
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

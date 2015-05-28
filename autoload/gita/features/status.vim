@@ -926,7 +926,7 @@ endfunction " }}}
 
 
 " External API
-function! gita#features#status#run(bang, range, ...) abort " {{{
+function! gita#features#status#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(opts)

@@ -261,7 +261,7 @@ function! gita#features#difflist#define_syntax() abort " {{{
 endfunction " }}}
 
 " External API
-function! gita#features#difflist#run(bang, range, ...) abort " {{{
+function! gita#features#difflist#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(opts)
