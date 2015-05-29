@@ -104,15 +104,16 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   let name = get(opts, 'action', 'help')
 
   if opts.__bang__ || !s:is_registered(name)
-    let candidates = []
+    let candidates = keys(s:feature_registry)
+    call filter(candidates, printf('v:val =~# "^%s"', a:arglead))
   else
     " execute Gita command
     let feature = s:feature_registry[name]
     let args = [a:arglead, join(opts.__unknown__), a:cursorpos]
-    call call(feature.complete, args)
+    let candidates = call(feature.complete, args)
   endif
+  return candidates
 endfunction " }}}
-
 
 " Register features
 call s:register('status',
