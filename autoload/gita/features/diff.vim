@@ -186,6 +186,9 @@ endfunction " }}}
 function! gita#features#diff#diff(...) abort " {{{
   call call('s:diff', a:000)
 endfunction " }}}
+function! gita#features#diff#smart_redraw(...) abort " {{{
+  return call('s:smart_redraw', a:000)
+endfunction " }}}
 
 
 " External API

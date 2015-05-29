@@ -1,25 +1,17 @@
-"******************************************************************************
-" Another Git manipulation plugin
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-" (C) 2015, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
 function! s:Gita(...) abort " {{{
-  return gita#Gita(call('gita#argument#parse', a:000))
+  call call('gita#features#command', a:000)
 endfunction " }}}
 function! s:GitaComplete(...) abort " {{{
-  return call('gita#argument#complete', a:000)
+  return call('gita#features#complete', a:000)
 endfunction " }}}
 
 command! -nargs=? -range -bang
-      \ -complete=customlist,gita#features#complete
+      \ -complete=customlist,s:GitaComplete
       \ Gita
-      \ :call gita#features#command(<q-bang>, [<line1>, <line2>], <f-args>)
+      \ :call s:Gita(<q-bang>, [<line1>, <line2>], <f-args>)
 
 " Assign configure variables " {{{
 let s:default = {

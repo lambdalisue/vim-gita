@@ -30,19 +30,19 @@ function! gita#utils#debug(...) abort " {{{
     return
   endif
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echo('Comment', 'DEBUG: vim-gita: ' . join(args))
+  call gita#utils#echo('Comment', 'DEBUG: vim-gita: ' . join(args))
 endfunction " }}}
 function! gita#utils#info(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echo('Title', join(args))
+  call gita#utils#echo('Title', join(args))
 endfunction " }}}
 function! gita#utils#warn(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echo('WarningMsg', join(args))
+  call gita#utils#echo('WarningMsg', join(args))
 endfunction " }}}
 function! gita#utils#error(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echo('Error', join(args))
+  call gita#utils#echo('Error', join(args))
 endfunction " }}}
 
 " echomsg
@@ -61,19 +61,19 @@ function! gita#utils#debugmsg(...) abort " {{{
     return
   endif
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echomsg('Comment', 'DEBUG: vim-gita: ' . join(args))
+  call gita#utils#echomsg('Comment', 'DEBUG: vim-gita: ' . join(args))
 endfunction " }}}
 function! gita#utils#infomsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echomsg('Title', join(args))
+  call gita#utils#echomsg('Title', join(args))
 endfunction " }}}
 function! gita#utils#warnmsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echomsg('WarningMsg', join(args))
+  call gita#utils#echomsg('WarningMsg', join(args))
 endfunction " }}}
 function! gita#utils#errormsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
-  call gita#util#echomsg('Error', join(args))
+  call gita#utils#echomsg('Error', join(args))
 endfunction " }}}
 
 " input
@@ -119,7 +119,7 @@ function! gita#utils#ensure_string(x) abort " {{{
   return P.is_string(a:x) ? a:x : [a:x]
 endfunction " }}}
 function! gita#utils#smart_string(value) abort " {{{
-  let P = gita#util#import('Prelude')
+  let P = gita#utils#import('Prelude')
   if P.is_string(a:value)
     return a:value
   elseif P.is_numeric(a:value)
