@@ -57,7 +57,7 @@ function! s:url(opts, ...) abort " {{{
           \ 'gita#features#status#s:open',
           \ printf('bufname: "%s"', bufname('%')),
           \ printf('cwd: "%s"', getcwd()),
-          \ printf('gita: "%s"', gita),
+          \ printf('gita: "%s"', string(gita)),
           \)
     return
   endif

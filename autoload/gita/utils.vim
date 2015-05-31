@@ -188,6 +188,47 @@ function! gita#utils#opts2args(x) abort " {{{
 endfunction " }}}
 
 " misc
+function! gita#utils#get_status(path, ...) abort " {{{
+  let opts = get(a:000, 0, {})
+  let path = fnamemodify(a:path, ':p')
+  let gita = gita#core#get(path)
+  if !gita.enabled
+    redraw
+    call gita#utils#warn(
+          \ 'Gita is not available in the current buffer.',
+          \)
+    call gita#utils#debugmsg(
+          \ 'gita#features#status#s:open',
+          \ printf('bufname: "%s"', bufname('%')),
+          \ printf('cwd: "%s"', getcwd()),
+          \ printf('gita: "%s"', string(gita)),
+          \)
+    return
+  endif
+  let result = gita.git.get_parsed_status(extend({
+        \ 'no_cache': 1,
+        \ 'args': ['--', path],
+        \}, opts))
+  if get(result, 'status', 0)
+    redraw
+    call gita#utils#errormsg(
+          \ printf('vim-gita: Fail: %s', join(result.args)),
+          \)
+    call gita#utils#infomsg(
+          \ result.stdout,
+          \)
+    return
+  endif
+  return get(result.all, 0, {})
+endfunction " }}}
+function! gita#utils#ensure_status(path, ...) abort " {{{
+  let P = gita#utils#import('Prelude')
+  if P.is_string(a:path)
+    return call('gita#utils#get_status', extend([a:path], a:000))
+  else
+    return a:path
+  endif
+endfunction " }}}
 function! gita#utils#doautocmd(name) abort " {{{
   let name = printf('vim-gita-%s', a:name)
   if 703 < v:version || (v:version == 703 && has('patch438'))
