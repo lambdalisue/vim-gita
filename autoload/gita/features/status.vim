@@ -390,7 +390,7 @@ function! s:action_diff_diff(statuses, options) abort " {{{
   for status in a:statuses
     let path = get(status, 'path2', get(status, 'path'))
     call invoker.focus()
-    call gita#features#diff#diff(path, commit, a:options)
+    call gita#features#diff#diff2(path, commit, a:options)
   endfor
 endfunction " }}}
 function! s:action_help(statuses, options) abort " {{{

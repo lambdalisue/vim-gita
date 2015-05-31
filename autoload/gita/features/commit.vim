@@ -148,9 +148,12 @@ function! s:update(...) abort " {{{
         \)
   let gita = s:get_gita()
 
+  let extra_args = get(options, 'amend', 0) ? ['--amend'] : []
   let result = gita.git.get_parsed_commit(extend({
         \ 'no_cache': 1,
-        \}, options))
+        \}, extend({
+        \ 'args': extra_args,
+        \}, options)))
   if get(result, 'status', 0)
     redraw
     call gita#utils#errormsg(
