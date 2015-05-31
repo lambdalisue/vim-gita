@@ -128,10 +128,6 @@ call s:register('diff',
       \ function('gita#features#diff#command'),
       \ function('gita#features#diff#complete'),
       \)
-call s:register('difflist',
-      \ function('gita#features#difflist#command'),
-      \ function('gita#features#difflist#complete'),
-      \)
 call s:register('browse',
       \ function('gita#features#browse#command'),
       \ function('gita#features#browse#complete'),
