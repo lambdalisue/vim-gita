@@ -38,11 +38,11 @@ function! s:get_info(...) abort " {{{
     let status_count.unstaged = len(status.unstaged)
     let status_count.staged = len(status.staged)
     for ss in status.staged
-      if status.index ==# 'A'
+      if ss.index ==# 'A'
         let status_count.added += 1
-      elseif status.index ==# 'D'
+      elseif ss.index ==# 'D'
         let status_count.deleted += 1
-      elseif status.index ==# 'R'
+      elseif ss.index ==# 'R'
         let status_count.renamed += 1
       else
         let status_count.modified += 1
