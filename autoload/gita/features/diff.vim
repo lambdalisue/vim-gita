@@ -97,14 +97,16 @@ function! s:open(path, commit, ...) abort " {{{
     return
   endif
 
+  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')   " remove leading/trailing dots
   let path = gita.git.get_absolute_path(a:path)
   let args = filter([
         \ 'diff',
+        \ '--ignore-submodules',
         \ '--no-prefix',
         \ '--no-color',
         \ '--unified=0',
         \ '--histogram',
-        \ a:commit,
+        \ commit,
         \ '--',
         \ path,
         \], '!empty(v:val)')
@@ -116,7 +118,7 @@ function! s:open(path, commit, ...) abort " {{{
   let DIFF = split(result.stdout, '\v\r?\n')
   let DIFF_bufname = gita#utils#buffer#bufname(
         \ printf('%s.diff', path),
-        \ empty(a:commit) ? 'INDEX' : a:commit,
+        \ empty(commit) ? 'INDEX' : commit,
         \)
   let opener = get(options, 'opener', 'edit')
   call gita#utils#buffer#open(path, '', {
@@ -145,10 +147,11 @@ function! s:diff2(path, commit, ...) abort " {{{
   endif
 
   let LOCAL_bufname = gita.git.get_absolute_path(a:path)
+  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')   " remove leading/trailing dots
   let path = gita.git.get_relative_path(a:path)
   let args = s:L.flatten([
         \ 'show',
-        \ printf('%s:%s', a:commit, path),
+        \ printf('%s:%s', commit, path),
         \])
   let result = gita.exec(args)
   if result.status != 0
@@ -158,7 +161,7 @@ function! s:diff2(path, commit, ...) abort " {{{
   let REF = split(result.stdout, '\v\r?\n')
   let REF_bufname = gita#utils#buffer#bufname(
         \ path,
-        \ empty(a:commit) ? 'INDEX' : a:commit,
+        \ empty(commit) ? 'INDEX' : commit,
         \)
   let opener = get(options, 'opener', 'edit')
 
