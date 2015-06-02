@@ -471,10 +471,10 @@ function! s:action_checkout(statuses, options) abort " {{{
   let target = target ==# 'INDEX' ? '' : target
 
   let gita = s:get_gita()
-  let args = ['checkout', target, '--'] + map(
+  let args = filter(['checkout', target, '--'] + map(
         \ deepcopy(statuses),
         \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
+        \), '!empty(v:val)')
   call gita.exec(args)
 endfunction " }}}
 function! s:action_checkout_ours(statuses, options) abort " {{{
