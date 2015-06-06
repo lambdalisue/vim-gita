@@ -1,6 +1,8 @@
-vim-gita &alpha; version
+vim-gita
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
+
+**vim-gita is still under an &alpha; version**, mean that features, commands, options, etc. would aggressively be changed without any announcements.
 
 *vim-gita* is an alternative git manipluation plugin.
 It provide the following features:
