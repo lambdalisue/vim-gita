@@ -17,6 +17,7 @@ It provide the following features:
 
 This plugin was strongly inspired by [tpope/vim-fugitive][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 The most of the features are powerd by [vim-jp/vital.vim][], [lambdalisue/vital-System-Cache-Unified][], [lambdalisue/vital-ArgumentParser][], and [lambdalisue/vital-VCS-Git][].
+
 [tpope/vim-fugitive]:                       https://github.com/tpope/vim-fugitive
 [Shougo/vim-vcs]:                           https://github.com/Shougo/vim-vcs
 [Shougo/neobundle.vim]:                     https://github.com/Shougo/neobundle.vim

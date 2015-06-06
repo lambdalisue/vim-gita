@@ -77,16 +77,10 @@ function! gita#features#command(bang, range, ...) abort " {{{
   if opts.__bang__ || !s:is_registered(name)
     " execute git command
     let gita = gita#core#get()
-    let result = gita.git.exec(opts.__args__)
+    let result = gita.operations.exec_raw(opts.__args__)
     if result.status == 0
       call gita#utils#info(
             \ printf('Ok: "%s"', join(result.args)),
-            \)
-      call gita#utils#info(result.stdout)
-      call gita#utils#doautocmd(printf('%s-post', name))
-    else
-      call gita#utils#warn(
-            \ printf('Fail: "%s"', join(result.args)),
             \)
       call gita#utils#info(result.stdout)
     endif
@@ -116,6 +110,22 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
 endfunction " }}}
 
 " Register features
+call s:register('add',
+      \ function('gita#features#add#command'),
+      \ function('gita#features#add#complete'),
+      \)
+call s:register('rm',
+      \ function('gita#features#rm#command'),
+      \ function('gita#features#rm#complete'),
+      \)
+call s:register('reset',
+      \ function('gita#features#reset#command'),
+      \ function('gita#features#reset#complete'),
+      \)
+call s:register('checkout',
+      \ function('gita#features#checkout#command'),
+      \ function('gita#features#checkout#complete'),
+      \)
 call s:register('status',
       \ function('gita#features#status#command'),
       \ function('gita#features#status#complete'),

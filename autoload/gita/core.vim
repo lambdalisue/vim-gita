@@ -4,6 +4,7 @@ set cpo&vim
 " Modules
 let s:P = gita#utils#import('Prelude')
 let s:G = gita#utils#import('VCS.Git')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
 " Private functions
@@ -13,6 +14,8 @@ function! s:new_gita(...) abort " {{{
   let buftype = getbufvar(expr, 'buftype')
   if empty(buftype) && !empty(bufname)
     let git = s:G.find(fnamemodify(bufname, ':p'))
+  elseif !buflisted(bufname) && filereadable(expand(expr))
+    let git = s:G.find(fnamemodify(expand(expr), ':p'))
   else
     " Non file buffer. Use a current working directory instead.
     let git = s:G.find(fnamemodify(getcwd(), ':p'))
@@ -24,16 +27,17 @@ function! s:new_gita(...) abort " {{{
         \ 'cwd':     getcwd(),
         \ 'git':     git,
         \})
-  call setwinvar(bufwinnr(expr), '_gita', gita)
+  let gita.operations = gita#operations#new(gita)
+  call setbufvar(expr, '_gita', gita)
   return gita
 endfunction " }}}
 function! s:get_gita(...) abort " {{{
   let expr = get(a:000, 0, '%')
-  let gita = getwinvar(bufwinnr(expr), '_gita', {})
+  let gita = getbufvar(expr, '_gita', {})
   if empty(gita) || (has_key(gita, 'is_expired') && gita.is_expired())
     let gita = s:new_gita()
   endif
-  return extend(deepcopy(s:gita), gita)
+  return gita
 endfunction " }}}
 
 
@@ -62,6 +66,32 @@ function! s:gita.is_expired() abort " {{{
     return 0
   endif
 endfunction " }}}
+function! s:gita.get_parsed_status(...) abort " {{{
+  let options = extend({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, get(a:000, 0, {}))
+  let result = self.operations.status(options)
+  if result.status == 0
+    return s:S.parse(result.stdout)
+  endif
+  return result
+endfunction " }}}
+function! s:gita.get_parsed_commit(...) abort " {{{
+  let options = extend({
+        \ 'porcelain': 1,
+        \ 'dry_run',
+        \ 'no_status',
+        \ 'ignore_submodules': 1,
+        \}, get(a:000, 0, {}))
+  let result = self.operations.commit(options)
+  if result.status == 1
+    return s:S.parse(result.stdout)
+  endif
+  return result
+endfunction " }}}
+
+" Obsolute
 function! s:gita.exec(args, ...) abort " {{{
   let args = deepcopy(a:args)
   let opts = get(a:000, 0, {})
