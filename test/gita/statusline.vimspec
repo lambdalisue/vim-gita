@@ -1,12 +1,11 @@
-Describe gita#info
+Describe gita#statusline
   Before
     let bufname = g:P.join(g:repository_root, 'foo.txt')
-    silent execute printf('new %s', bufname)
   End
 
   Context #get([{expr}])
     It should return a dictionary which indicate the current status of a git repository of a buffer belongs
-      let ret = gita#info#get(bufname)
+      let ret = gita#statusline#get(bufname)
       Assert IsDict(ret)
       Assert KeyExists(ret, 'local_name')
       Assert KeyExists(ret, 'local_branch')
@@ -59,7 +58,7 @@ Describe gita#info
       for key in keys
         let info[key] = key
       endfor
-      let ret = gita#info#format(format, info)
+      let ret = gita#statusline#format(format, info)
       let exp = join(keys)
       Assert Equals(ret, exp)
     End

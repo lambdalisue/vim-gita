@@ -3,7 +3,7 @@ set cpo&vim
 
 
 " Modules
-let s:F = gita#util#import('System.File')
+let s:F = gita#utils#import('System.File')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -30,7 +30,7 @@ function! s:get_parser() abort " {{{
           \   'conflicts': ['open', 'yank'],
           \ })
 
-    function! s:parser.hooks.pre_validation(opts) abort
+    function! s:parser.hooks.pre_validate(opts) abort
       " Automatically use '--open' if no conflicted argument is specified
       if empty(self.get_conflicted_arguments('open', a:opts))
         let a:opts.open = 1

@@ -34,6 +34,10 @@ function! gita#utils#debug(...) abort " {{{
 endfunction " }}}
 function! gita#utils#info(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
+  call gita#utils#echo('None', join(args))
+endfunction " }}}
+function! gita#utils#title(...) abort " {{{
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#utils#echo('Title', join(args))
 endfunction " }}}
 function! gita#utils#warn(...) abort " {{{
@@ -63,9 +67,13 @@ function! gita#utils#debugmsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#utils#echomsg('Comment', 'DEBUG: vim-gita: ' . join(args))
 endfunction " }}}
-function! gita#utils#infomsg(...) abort " {{{
+function! gita#utils#titlemsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
   call gita#utils#echomsg('Title', join(args))
+endfunction " }}}
+function! gita#utils#infomsg(...) abort " {{{
+  let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
+  call gita#utils#echomsg('None', join(args))
 endfunction " }}}
 function! gita#utils#warnmsg(...) abort " {{{
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
@@ -153,9 +161,6 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
     let str = substitute(str, pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
-endfunction " }}}
-function! gita#utils#remove_ansi_sequences(str) abort " {{{
-  return substitute(a:str, '\e\[\d\{1,3}[mK]', '', 'g')
 endfunction " }}}
 
 " list

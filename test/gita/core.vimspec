@@ -1,9 +1,5 @@
 Describe gita#core
   Context #new([{expr}])
-    It should throw an exception if non existing buffer is specified
-      Throws /vim-gita: the buffer "foo" does not exist/ gita#core#new('foo')
-    End
-
     Context A file buffer in a git repository
       Before
         let bufname = g:P.join(g:repository_root, 'foo.txt')
@@ -72,10 +68,6 @@ Describe gita#core
   End
 
   Context #get([{expr}])
-    It should throw an exception if non existing buffer is specified
-      Throws /vim-gita: the buffer "foo" does not exist/ gita#core#get('foo')
-    End
-
     Context A file buffer in a git repository
       Before
         let bufname = g:P.join(g:repository_root, 'foo.txt')

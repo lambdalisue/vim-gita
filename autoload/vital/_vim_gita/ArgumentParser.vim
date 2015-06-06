@@ -343,7 +343,7 @@ function! s:parser.parse(bang, range, ...) abort " {{{
     redraw | echo self.help()
     return {}
   endif
-  call self._call_hook('pre_validation', opts)
+  call self._call_hook('pre_validate', opts)
   try
     call self._validate_opts(opts)
   catch /vital: ArgumentParser:/
@@ -359,7 +359,7 @@ function! s:parser.parse(bang, range, ...) abort " {{{
     endif
     return {}
   endtry
-  call self._call_hook('post_validation', opts)
+  call self._call_hook('post_validate', opts)
   return opts
 endfunction " }}}
 function! s:parser._parse_args(args, ...) abort " {{{
@@ -578,7 +578,7 @@ function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort " {{{
         \ self._parse_args(s:splitargs(cmdline)),
         \ get(a:000, 0, {}),
         \)
-  call self._call_hook('pre_completion', opts)
+  call self._call_hook('pre_complete', opts)
   if empty(a:arglead)
     let candidates = []
     let candidates += self._complete_positional_argument_value(
@@ -615,7 +615,7 @@ function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort " {{{
           \ opts,
           \)
   endif
-  call self._call_hook('post_completion', candidates, opts)
+  call self._call_hook('post_complete', candidates, opts)
   return candidates
 endfunction " }}}
 function! s:parser._complete_optional_argument_value(arglead, cmdline, cursorpos, opts) abort " {{{
@@ -631,6 +631,7 @@ function! s:parser._complete_optional_argument_value(arglead, cmdline, cursorpos
   else
     let candidates = []
   endif
+  call self._call_hook('post_complete_argument_value', candidates, a:opts)
   return candidates
 endfunction " }}}
 function! s:parser._complete_optional_argument(arglead, cmdline, cursorpos, opts) abort " {{{
@@ -643,13 +644,16 @@ function! s:parser._complete_optional_argument(arglead, cmdline, cursorpos, opts
     elseif !empty(argument.superordinates) && empty(self.get_superordinate_arguments(argument.name, a:opts))
       continue
     endif
-    if '--' . argument.name =~# '^' . a:arglead
+    if '--' . argument.name =~# '^' . a:arglead && len(argument.name) > 1
       call add(candidates, '--' . argument.name)
+    elseif '-' . argument.name =~# '^' . a:arglead && len(argument.name) == 1
+      call add(candidates, '-' . argument.name)
     endif
     if !empty(argument.alias) && '-' . argument.alias =~# '^' . a:arglead
       call add(candidates, '-' . argument.alias)
     endif
   endfor
+  call self._call_hook('post_complete_optional_argument', candidates, a:opts)
   return candidates
 endfunction " }}}
 function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorpos, opts) abort " {{{
@@ -671,6 +675,7 @@ function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorp
           \   'opts': a:opts,
           \})
   endif
+  call self._call_hook('post_complete_positional_argument', candidates, a:opts)
   return candidates
 endfunction " }}}
 

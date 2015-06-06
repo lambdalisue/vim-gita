@@ -1,0 +1,119 @@
+Describe gita#operations
+
+  Context #_translate_option({key}, {val}, {scheme})
+    Context Long format
+      It should return "--key='value'" for ('key', 'value', '')
+        let ret = gita#operations#_translate_option('key', 'value', '')
+        Assert Equals(ret, '--key=''value''')
+      End
+
+      It should return "--key" for ('key', 1, '')
+        let ret = gita#operations#_translate_option('key', 1, '')
+        Assert Equals(ret, '--key')
+      End
+
+      It should return "" for ('key', 0, '')
+        let ret = gita#operations#_translate_option('key', 0, '')
+        Assert Equals(ret, '')
+      End
+
+      It should return "-key-value-' for ('key', 'value', '-%k-%v-')
+        let ret = gita#operations#_translate_option('key', 'value', '-%k-%v-')
+        Assert Equals(ret, '-key-value-')
+      End
+
+      It should return "--h-e-l-l-o' for ('h_e_l_l_o', 1, '')
+        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '')
+        Assert Equals(ret, '--h-e-l-l-o')
+
+        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '--%K')
+        Assert Equals(ret, '--h-e-l-l-o')
+      End
+
+      It should return "--h_e_l_l_o' for ('h_e_l_l_o', 1, '--%k')
+        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '--%k')
+        Assert Equals(ret, '--h_e_l_l_o')
+      End
+
+      It should return "--key=value" for ('key', 'value', '--%K%{=}v')
+        let ret = gita#operations#_translate_option('key', 'value', '--%K%{=}v')
+        Assert Equals(ret, '--key=value')
+      End
+    End
+
+    Context Short format
+      It should return "-kvalue" for ('k', 'value', '')
+        let ret = gita#operations#_translate_option('k', 'value', '')
+        Assert Equals(ret, '-kvalue')
+      End
+
+      It should return "-k" for ('k', 1, '')
+        let ret = gita#operations#_translate_option('k', 1, '')
+        Assert Equals(ret, '-k')
+      End
+
+      It should return "" for ('k', 0, '')
+        let ret = gita#operations#_translate_option('k', 0, '')
+        Assert Equals(ret, '')
+      End
+
+      It should return "-k='value'" for ('k', 'value', '-%k%V')
+        let ret = gita#operations#_translate_option('k', 'value', '-%k%V')
+        Assert Equals(ret, '-k''value''')
+      End
+    End
+  End
+
+  Context #_translate_options({options}, {schemes})
+    It should translate options (dict) into arguments (list)
+      let options = {
+            \ 'foo': 1,
+            \ 'bar': 0,
+            \ 'hoge': 'hoge',
+            \ 'f': 1,
+            \ 'b': 0,
+            \ 'h': 'hoge',
+            \}
+      let ret = gita#operations#_translate_options(options, {})
+      Assert Equals(sort(ret), sort([
+            \ '--foo',
+            \ '',
+            \ '--hoge=''hoge''',
+            \ '-f',
+            \ '',
+            \ '-hhoge',
+            \]))
+    End
+
+    It should apply specified schemes of each option
+      let options = {
+            \ 'foo': 1,
+            \ 'bar': 0,
+            \ 'hoge': 'hoge',
+            \}
+      let schemes = {
+            \ 'foo': '---%k',
+            \ 'hoge': '%v',
+            \}
+      let ret = gita#operations#_translate_options(options, schemes)
+      Assert Equals(sort(ret), sort([
+            \ '---foo',
+            \ '',
+            \ 'hoge',
+            \]))
+    End
+  End
+
+  Context #new({gita})
+    It should return an instance of operations
+      let gita = { 'name': 'fake' }
+      let ret = gita#operations#new(gita)
+      Assert Equals(ret.gita, gita)
+      Assert KeyExists(ret, 'exec_raw')
+      Assert KeyExists(ret, 'exec')
+    End
+  End
+
+  " TODO: Write unittest of the operations instance
+End
+
