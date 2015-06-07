@@ -43,6 +43,10 @@ function! s:get_parser() abort " {{{
 endfunction " }}}
 
 function! s:get_gita(...) abort " {{{
+  let gita = get(w:, '_gita', {})
+  if !empty(gita) && !gita.is_expired()
+    return gita
+  endif
   return call('gita#core#get', a:000)
 endfunction " }}}
 function! s:get_invoker(...) abort " {{{
