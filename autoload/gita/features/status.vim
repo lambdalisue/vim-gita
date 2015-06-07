@@ -41,6 +41,10 @@ function! s:get_parser() abort " {{{
 endfunction " }}}
 
 function! s:get_gita(...) abort " {{{
+  let gita = get(w:, '_gita', {})
+  if !empty(gita) && !gita.is_expired()
+    return gita
+  endif
   return call('gita#core#get', a:000)
 endfunction " }}}
 function! s:get_invoker(...) abort " {{{
@@ -403,16 +407,13 @@ function! s:action_add(statuses, options) abort " {{{
         \ a:options,
         \ function('s:validate_add'),
         \)
-  let options = deepcopy(a:options)
   if empty(a:statuses)
     return
   endif
   let gita = s:get_gita()
-  let args = ['add', '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
-  call gita.exec(args)
+  call gita.operations.add({
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -425,11 +426,9 @@ function! s:action_rm(statuses, options) abort " {{{
     return
   endif
   let gita = s:get_gita()
-  let args = ['rm', '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
-  call gita.exec(args)
+  call gita.operations.rm({
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_reset(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -437,16 +436,13 @@ function! s:action_reset(statuses, options) abort " {{{
         \ a:options,
         \ function('s:validate_reset'),
         \)
-  let options = deepcopy(a:options)
   if empty(a:statuses)
     return
   endif
   let gita = s:get_gita()
-  let args = ['reset', '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
-  call gita.exec(args)
+  call gita.operations.reset({
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -454,7 +450,6 @@ function! s:action_checkout(statuses, options) abort " {{{
         \ a:options,
         \ function('s:validate_checkout'),
         \)
-  let options = deepcopy(a:options)
   if empty(a:statuses)
     return
   endif
@@ -471,11 +466,10 @@ function! s:action_checkout(statuses, options) abort " {{{
   let target = target ==# 'INDEX' ? '' : target
 
   let gita = s:get_gita()
-  let args = filter(['checkout', target, '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \), '!empty(v:val)')
-  call gita.exec(args)
+  call gita.operations.checkout({
+        \ 'commit': target,
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_checkout_ours(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -483,18 +477,15 @@ function! s:action_checkout_ours(statuses, options) abort " {{{
         \ a:options,
         \ function('s:validate_checkout_ours'),
         \)
-  let options = deepcopy(a:options)
-  let options.ours = 1
   if empty(a:statuses)
     return
   endif
 
   let gita = s:get_gita()
-  let args = ['checkout', '--ours', '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
-  call gita.exec(args)
+  call gita.operations.checkout({
+        \ 'ours': 1,
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_checkout_theirs(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -502,18 +493,13 @@ function! s:action_checkout_theirs(statuses, options) abort " {{{
         \ a:options,
         \ function('s:validate_checkout_theirs'),
         \)
-  let options = deepcopy(a:options)
-  let options.theirs = 1
   if empty(a:statuses)
     return
   endif
-
-  let gita = s:get_gita()
-  let args = ['checkout', '--theirs', '--'] + map(
-        \ deepcopy(statuses),
-        \ 'gita.git.get_absolute_path(v:val.path)'
-        \)
-  call gita.exec(args)
+  call gita.operations.checkout({
+        \ 'theirs': 1,
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \})
 endfunction " }}}
 function! s:action_stage(statuses, options) abort " {{{
   let statuses = gita#utils#ensure_list(a:statuses)
