@@ -401,8 +401,8 @@ function! gita#features#diff#command(bang, range, ...) abort " {{{
   let opts = parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if get(opts, 'open', 0)
     call s:open(expand('%'), opts.commit, opts)
-  elseif get(opts, 'diff2', 0)
-    call s:diff(expand('%'), opts.commit, opts)
+  elseif get(opts, 'diff', 0)
+    call s:diff2(expand('%'), opts.commit, opts)
   elseif get(opts, 'list', 0)
     call s:list(opts)
   endif
