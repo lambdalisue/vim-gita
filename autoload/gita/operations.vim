@@ -36,7 +36,7 @@ endfunction " }}}
 function! s:translate_options(options, schemes) abort " {{{
   let args = []
   for [key, val]  in items(a:options)
-    if key !~# '^__.\+__$' && key !=# '--'
+    if key !~# '^__.\+__$' && key !~# '\v%(--|fail_silently)'
       let scheme = get(a:schemes, key, '')
       call add(args, s:translate_option(key, val, scheme))
     endif
@@ -59,12 +59,15 @@ endfunction " }}}
 
 
 let s:operations = {}
-function! s:operations.exec_raw(args) abort " {{{
+function! s:operations.exec_raw(args, ...) abort " {{{
   let args = filter(deepcopy(a:args), 'len(v:val)')
+  let opts = extend({
+        \ 'fail_silently': 0,
+        \}, get(a:000, 0, {}))
   let result = self.gita.git.exec(args)
   " remove ANSI sequences in case
   let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
-  if result.status
+  if result.status && !opts.fail_silently
     call gita#utils#errormsg(
           \ printf('vim-gita: Fail: %s', join(result.args)),
           \)
@@ -78,7 +81,7 @@ function! s:operations.exec(command, options, ...) abort " {{{
   let schemes = get(a:000, 0, {})
   let args = s:translate_options(a:options, schemes)
   let args = extend([a:command], args)
-  return self.exec_raw(args)
+  return self.exec_raw(args, a:options)
 endfunction " }}}
 function! s:operations.init(...) abort " {{{
   let options = get(a:000, 0, {})
@@ -149,6 +152,16 @@ function! s:operations.commit(...) abort " {{{
         \ 't': '-%k %v',
         \}
   return self.exec('commit', options, schemes)
+endfunction " }}}
+function! s:operations.branch(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let schemes = {
+        \ 'u': '-%k %v',
+        \ 'contains': '--%k %v',
+        \ 'merged': '--%k %v',
+        \ 'no_merged': '--%k %v',
+        \}
+  return self.exec('branch', options, schemes)
 endfunction " }}}
 
 

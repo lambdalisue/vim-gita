@@ -29,6 +29,11 @@ function! s:get_parser() abort " {{{
           \ 'Echo a URL of a selected region of the remote', {
           \   'conflicts': ['open', 'yank'],
           \ })
+    call s:parser.add_argument(
+          \ 'branch',
+          \ 'A branch or commit which you want to see', {
+          \   'required': 0,
+          \ })
 
     function! s:parser.hooks.pre_validate(opts) abort
       " Automatically use '--open' if no conflicted argument is specified

@@ -11,7 +11,7 @@ let s:S = gita#utils#import('VCS.Git.StatusParser')
 function! s:new_gita(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
-  let buftype = getbufvar(expr, 'buftype')
+  let buftype = getbufvar(expr, '&buftype')
   if empty(buftype) && !empty(bufname)
     let git = s:G.find(fnamemodify(bufname, ':p'))
   elseif !buflisted(bufname) && filereadable(expand(expr))

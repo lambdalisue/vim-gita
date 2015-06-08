@@ -27,6 +27,7 @@ function! s:get_parser() abort " {{{
           \ 'commit',
           \ 'A commit string to specify how to compare the versions', {
           \   'required': 1,
+          \   'complete': function('gita#completes#complete_local_branch'),
           \ })
     call s:parser.add_argument(
           \ '--open', '-o',
@@ -44,7 +45,7 @@ function! s:get_parser() abort " {{{
           \   'conflicts': ['open', 'diff'],
           \ })
 
-    function! s:parser.hooks.pre_validation(opts) abort
+    function! s:parser.hooks.pre_validate(opts) abort
       " Automatically use '--open' if no conflicted argument is specified
       if empty(self.get_conflicted_arguments('open', a:opts))
         let a:opts.open = 1
@@ -55,6 +56,10 @@ function! s:get_parser() abort " {{{
 endfunction " }}}
 
 function! s:get_gita(...) abort " {{{
+  let gita = get(w:, '_gita', {})
+  if !empty(gita) && !gita.is_expired()
+    return gita
+  endif
   return call('gita#core#get', a:000)
 endfunction " }}}
 function! s:get_invoker(...) abort " {{{
@@ -97,20 +102,20 @@ function! s:open(path, commit, ...) abort " {{{
     return
   endif
 
-  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')   " remove leading/trailing dots
+  " Note:
+  "   A value of 'commit' might contains leading/trailing dots
+  "   like 'master...' or '..master' or whatever
+  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')
   let path = gita.git.get_absolute_path(a:path)
-  let args = filter([
-        \ 'diff',
-        \ '--ignore-submodules',
-        \ '--no-prefix',
-        \ '--no-color',
-        \ '--unified=0',
-        \ '--histogram',
-        \ commit,
-        \ '--',
-        \ path,
-        \], '!empty(v:val)')
-  let result = gita.exec(args)
+  let result = gita.operations.diff({
+        \ 'ignore_submodules': 1,
+        \ 'no_prefix': 1,
+        \ 'no_color': 1,
+        \ 'unified': '0',
+        \ 'histogram': 1,
+        \ 'commit': commit,
+        \ '--': [path],
+        \})
   if result.status != 0
     return
   endif
@@ -121,7 +126,7 @@ function! s:open(path, commit, ...) abort " {{{
         \ empty(commit) ? 'INDEX' : commit,
         \)
   let opener = get(options, 'opener', 'edit')
-  call gita#utils#buffer#open(path, '', {
+  call gita#utils#buffer#open(DIFF_bufname, '', {
         \ 'opener': opener,
         \})
   call gita#utils#buffer#update(DIFF)
@@ -146,19 +151,23 @@ function! s:diff2(path, commit, ...) abort " {{{
     return
   endif
 
-  let LOCAL_bufname = gita.git.get_absolute_path(a:path)
-  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')   " remove leading/trailing dots
+  " Note:
+  "   A value of 'commit' might contains leading/trailing dots
+  "   like 'master...' or '..master' or whatever
+  let commit = substitute(a:commit, '\%(^\.\+\|\.\+$\)', '', 'g')
   let path = gita.git.get_relative_path(a:path)
-  let args = s:L.flatten([
-        \ 'show',
-        \ printf('%s:%s', commit, path),
-        \])
-  let result = gita.exec(args)
-  if result.status != 0
-    return
+  let result = gita.operations.show({
+        \ 'object': printf('%s:%s', commit, path),
+        \ 'fail_silently': 1,
+        \})
+  if result.status == 0
+    let REF = split(result.stdout, '\v\r?\n')
+  else
+    " probably the file does not exists in the version
+    let REF = []
   endif
 
-  let REF = split(result.stdout, '\v\r?\n')
+  let LOCAL_bufname = gita.git.get_absolute_path(a:path)
   let REF_bufname = gita#utils#buffer#bufname(
         \ path,
         \ empty(commit) ? 'INDEX' : commit,
@@ -266,15 +275,14 @@ function! s:update(...) abort " {{{
         \)
   let gita = s:get_gita()
 
-  let args = filter([
-        \ 'diff',
-        \ '--no-prefix',
-        \ '--no-color',
-        \ '--name-status',
-        \ get(options, 'commit', ''),
-        \], '!empty(v:val)')
-  let result = gita.exec(args)
+  let result = gita.operations.diff({
+        \ 'no_prefix': 1,
+        \ 'no_color': 1,
+        \ 'name_status': 1,
+        \ 'commit': get(options, 'commit', ''),
+        \})
   if result.status != 0
+    bwipe
     return
   endif
   let statuses = s:S.parse(substitute(result.stdout, '\t', '  ', 'g'))
