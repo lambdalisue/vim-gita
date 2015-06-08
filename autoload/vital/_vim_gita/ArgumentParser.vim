@@ -664,9 +664,9 @@ function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorp
       let npositional += 1
     endif
   endfor
-  if empty(a:arglead)
-    let npositional -= 1
-  endif
+  "if empty(a:arglead)
+  "  let npositional -= 1
+  "endif
   let cpositional = get(self.arguments, get(self.positional, npositional), {})
   if !empty(cpositional)
     let candidates = cpositional.complete(
