@@ -1,7 +1,8 @@
-leta s:save_cpo = &cpo
+let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -91,11 +92,9 @@ function! s:get_parser() abort " {{{
   endfunction
   return s:parser
 endfunction " }}}
-function! s:get_gita(...) abort " {{{
-  return call('gita#core#get', a:000)
-endfunction " }}}
-function! s:exec(...) abort " {{{
-  let gita = s:get_gita()
+
+function! gita#features#add#exec(...) abort " {{{
+  let gita = gita#core#get()
   let options = get(a:000, 0, {})
   " automatically specify the current buffer if nothing is specified
   " and the buffer is a file buffer
@@ -115,22 +114,63 @@ function! s:exec(...) abort " {{{
           \)
     return
   endif
+  let options = s:D.pick(options, [
+        \ '--',
+        \ 'f', 'force',
+        \ 'N', 'intent_to_add',
+        \])
   return gita.operations.add(options)
 endfunction " }}}
 
-
-" Internal API
-function! gita#features#add#exec(...) abort " {{{
-  return call('s:exec', a:000)
+function! gita#features#add#action(statuses, options) abort " {{{
+  let statuses = gita#utils#filter_statuses(
+        \ function('gita#features#add#validate'),
+        \ a:statuses,
+        \ a:options,
+        \)
+  if empty(a:statuses)
+    return
+  endif
+  call gita#features#add#exec(extend({
+        \ '--': map(deepcopy(statuses), 'v:val.path'),
+        \}, a:options))
 endfunction " }}}
-
-
-" External API
+function! gita#features#add#validate(status, options) abort " {{{
+  if a:status.is_unstaged || a:status.is_untracked
+    return 0
+  elseif a:status.is_ignored && get(a:options, 'force', 0)
+    return 0
+  elseif a:status.is_ignored
+    call gita#utils#warn(printf(
+          \ 'An ignored file "%s" cannot be added. Use :Gita add --force instead.',
+          \ a:status.path,
+          \))
+    return 1
+  elseif a:status.is_conflicted
+    if a:status.sign ==# 'DD'
+      " TODO: Confirm if the message is correct.
+      call gita#utils#warn(printf(
+            \ 'A both deleted conflict file "%s" cannot be added. Use :Gita rm instead.',
+            \ a:status.path,
+            \))
+      return 1
+    else
+      return 0
+    endif
+  else
+    call gita#utils#warn(printf(
+          \ 'No changes of "%s" exist on working tree.',
+          \ a:status.path,
+          \))
+    return 1
+  endif
+endfunction " }}}
 function! gita#features#add#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  let options['--'] = get(options, '__unknown__', [])
-  let result = s:exec(options)
+  let result = gita#features#add#exec(extend(
+        \ '--': get(options, '__unknown__', []),
+        \}, options))
   if len(result.stdout)
     call gita#utils#infomsg(result.stdout)
   endif
@@ -140,6 +180,7 @@ function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
+
 
 
 let &cpo = s:save_cpo

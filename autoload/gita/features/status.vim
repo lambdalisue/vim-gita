@@ -41,10 +41,6 @@ function! s:get_parser() abort " {{{
 endfunction " }}}
 
 function! s:get_gita(...) abort " {{{
-  let gita = get(w:, '_gita', {})
-  if !empty(gita) && !gita.is_expired()
-    return gita
-  endif
   return call('gita#core#get', a:000)
 endfunction " }}}
 function! s:get_invoker(...) abort " {{{
@@ -331,7 +327,8 @@ function! s:action(name, ...) range abort " {{{
         \ 'checkout', 'checkout_ours', 'checkout_theirs',
         \ 'stage', 'unstage', 'toggle', 'discard',
         \], '\|'))
-  let options  = extend(deepcopy(w:_gita_options), get(a:000, 0, {}))
+  "let options  = extend(deepcopy(w:_gita_options), get(a:000, 0, {}))
+  let options  = get(a:000, 0, {})
   let statuses = s:get_statuses_within(a:firstline, a:lastline)
   let args = [statuses, options]
   call call(printf('s:action_%s', a:name), args)
@@ -402,18 +399,7 @@ function! s:action_help(statuses, options) abort " {{{
   call gita#utils#help#toggle(name)
 endfunction " }}}
 function! s:action_add(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_add'),
-        \)
-  if empty(a:statuses)
-    return
-  endif
-  let gita = s:get_gita()
-  call gita.operations.add({
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  call gita#features#add#action(a:statuses, a:options)
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
   let statuses = s:filter_statuses(
@@ -516,7 +502,7 @@ function! s:action_stage(statuses, options) abort " {{{
     elseif status.is_unstaged && status.worktree ==# 'D'
       call add(rm_statuses, status)
     else
-      if s:validate_add(status, options)
+      if gita#features#add#validate(status, options)
         continue
       endif
       call add(add_statuses, status)
@@ -661,35 +647,6 @@ function! s:filter_statuses(statuses, options, validate) abort " {{{
     endif
   endif
   return valid_statuses
-endfunction " }}}
-function! s:validate_add(status, options) abort " {{{
-  if a:status.is_unstaged || a:status.is_untracked
-    return 0
-  elseif a:status.is_ignored && get(a:options, 'force', 0)
-    return 0
-  elseif a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An ignored file "%s" cannot be added. Use <Plug>(gita-action-ADD) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'A both deleted conflict file "%s" cannot be added. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  else
-    call gita#utils#warn(printf(
-          \ 'No changes of "%s" exist on working tree.',
-          \ a:status.path,
-          \))
-    return 1
-  endif
 endfunction " }}}
 function! s:validate_rm(status, options) abort " {{{
   if (a:status.is_staged || a:status.is_unstaged) && a:status.worktree ==# 'D'

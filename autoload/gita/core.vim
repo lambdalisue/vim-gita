@@ -33,11 +33,15 @@ function! s:new_gita(...) abort " {{{
 endfunction " }}}
 function! s:get_gita(...) abort " {{{
   let expr = get(a:000, 0, '%')
-  let gita = getbufvar(expr, '_gita', {})
-  if empty(gita) || (has_key(gita, 'is_expired') && gita.is_expired())
-    let gita = s:new_gita()
+  let gita = getwinvar(bufnr(expr), '_gita', {})
+  if !empty(gita) && !gita.is_expired()
+    return gita
   endif
-  return gita
+  let gita = getbufvar(expr, '_gita', {})
+  if !empty(gita) && !gita.is_expired()
+    return gita
+  endif
+  return s:new_gita()
 endfunction " }}}
 
 
