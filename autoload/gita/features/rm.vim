@@ -2,6 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -17,11 +18,6 @@ function! s:get_parser() abort " {{{
           \ 'Override the up-to-date check.',
           \)
     call s:parser.add_argument(
-          \ '--dry-run', '-n', [
-          \   'Don''t actually remove any file(s). Instead, just show if they exist in the index',
-          \   'and would otherwise be removed by the comand.',
-          \])
-    call s:parser.add_argument(
           \ '--recursive', '-r',
           \ 'Allow recursive removal when a leading directory name is given.',
           \)
@@ -31,15 +27,18 @@ function! s:get_parser() abort " {{{
           \   'Working tree files, whether modified or not, will be left alone.',
           \])
     call s:parser.add_argument(
-          \ '--ignore-unmatch',
-          \ 'Exit with a zero status even if no files matched.',
-          \)
-    call s:parser.add_argument(
           \ '--quiet', '-q', [
           \   'Gita rm normally outputs one line (in the form of an rm command) for each file removed.',
           \   'This option suppresses that output.',
           \])
-
+    " A hook function to convert 'verbose' to 'quiet'
+    function! s:parser.hooks.post_validate(opts) abort
+      if !get(a:opts, 'verbose', 0)
+        let a:opts.quiet = 1
+      else
+        unlet a:opts.verbose
+      endif
+    endfunction
     " A hook function to display staged/unstaged (tracked) files in completions
     function! s:parser.hooks.post_complete_optional_argument(candidates, opts) abort
       let gita = s:get_gita()
@@ -61,12 +60,12 @@ function! s:get_parser() abort " {{{
   endif
   return s:parser
 endfunction " }}}
-function! s:get_gita(...) abort " {{{
-  return call('gita#core#get', a:000)
-endfunction " }}}
-function! s:exec(...) abort " {{{
-  let gita = s:get_gita()
+
+
+function! gita#features#rm#exec(...) abort " {{{
+  let gita = gita#core#get()
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   " automatically specify the current buffer if nothing is specified
   " and the buffer is a file buffer
   if empty(&buftype) && empty(get(options, '--', []))
@@ -85,24 +84,36 @@ function! s:exec(...) abort " {{{
           \)
     return
   endif
-  return gita.operations.rm(options)
+  let options = s:D.pick(options, [
+        \ '--',
+        \ 'q', 'quiet',
+        \ 'f', 'force',
+        \ 'r', 'recursive',
+        \ 'cached',
+        \])
+  return gita.operations.rm(options, config)
 endfunction " }}}
-
-
-" Internal API
-function! gita#features#rm#exec(...) abort " {{{
-  return call('s:exec', a:000)
+function! gita#features#rm#action(statuses, options) abort " {{{
+  if empty(a:statuses)
+    return
+  endif
+  let options = extend({
+        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \}, a:options)
+  call gita#features#add#exec(options, {
+        \ 'echo': 'fail',
+        \})
 endfunction " }}}
-
-
-" External API
 function! gita#features#rm#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  let options['--'] = get(options, '__unknown__', [])
-  let result = s:exec(options)
-  if len(result.stdout)
-    call gita#utils#infomsg(result.stdout)
+  if !empty(options)
+    let result = gita#features#rm#exec(extend({
+          \ '--': get(options, '__unknown__', []),
+          \}, options))
+    if len(result.stdout)
+      call gita#utils#infomsg(result.stdout)
+    endif
   endif
 endfunction " }}}
 function! gita#features#rm#complete(arglead, cmdline, cursorpos) abort " {{{

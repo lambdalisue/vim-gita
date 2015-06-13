@@ -2,6 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -106,12 +107,12 @@ function! s:get_parser() abort " {{{
   endfunction
   return s:parser
 endfunction " }}}
-function! s:get_gita(...) abort " {{{
-  return call('gita#core#get', a:000)
-endfunction " }}}
-function! s:exec(...) abort " {{{
-  let gita = s:get_gita()
+
+
+function! gita#features#checkout#exec(...) abort " {{{
+  let gita = gita#core#get()
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   " automatically specify the current buffer if nothing is specified
   " and the buffer is a file buffer
   if empty(&buftype) && empty(get(options, '--', []))
@@ -122,35 +123,45 @@ function! s:exec(...) abort " {{{
     call gita#utils#warn(
           \ 'Gita is not available in the current buffer.',
           \)
-    call gita#utils#debugmsg(
-          \ 'gita#features#add#s:exec',
-          \ printf('bufname: "%s"', bufname('%')),
-          \ printf('cwd: "%s"', getcwd()),
-          \ printf('gita: "%s"', string(gita)),
-          \)
+  endif
+  let options = s:D.pick(options, [
+        \ '--',
+        \ 'q', 'quiet',
+        \ 'f', 'force',
+        \ 'ours', 'theirs',
+        \ 'b', 'B',
+        \ 't', 'track', 'no_track',
+        \ 'l',
+        \ 'detach',
+        \ 'orphan',
+        \ 'commit',
+        \])
+  return gita.operations.checkout(options, config)
+endfunction " }}}
+function! gita#features#checkout#action(statuses, options) abort " {{{
+  if empty(a:statuses)
     return
   endif
-  return gita.operations.add(options)
+  let options = extend({
+        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \}, a:options)
+  call gita#features#checkout#exec(options, {
+        \ 'echo': 'both',
+        \})
 endfunction " }}}
-
-
-" Internal API
-function! gita#features#add#exec(...) abort " {{{
-  return call('s:exec', a:000)
-endfunction " }}}
-
-
-" External API
-function! gita#features#add#command(bang, range, ...) abort " {{{
+function! gita#features#checkout#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  let options['--'] = get(options, '__unknown__', [])
-  let result = s:exec(options)
-  if len(result.stdout)
-    call gita#utils#infomsg(result.stdout)
+  if !empty(options)
+    let result = gita#features#checkout#exec(extend({
+          \ '--': get(options, '__unknown__', []),
+          \}, options))
+    if len(result.stdout)
+      call gita#utils#infomsg(result.stdout)
+    endif
   endif
 endfunction " }}}
-function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{
+function! gita#features#checkout#complete(arglead, cmdline, cursorpos) abort " {{{
   let parser = s:get_parser()
   let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates

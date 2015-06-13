@@ -355,6 +355,9 @@ function! s:action_open(statuses, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:action_diff_open(statuses, options) abort " {{{
+:qa
+
+:qa
   let commit = get(a:options, 'commit', '')
   if empty(commit)
     let commit = gita#utils#ask('Compare the file with: ', 'INDEX')
@@ -398,94 +401,28 @@ function! s:action_help(statuses, options) abort " {{{
   let name = a:options.name
   call gita#utils#help#toggle(name)
 endfunction " }}}
+
 function! s:action_add(statuses, options) abort " {{{
   call gita#features#add#action(a:statuses, a:options)
 endfunction " }}}
 function! s:action_rm(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_rm'),
-        \)
-  let options = deepcopy(a:options)
-  if empty(a:statuses)
-    return
-  endif
-  let gita = s:get_gita()
-  call gita.operations.rm({
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  call gita#features#rm#action(a:statuses, a:options)
 endfunction " }}}
 function! s:action_reset(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_reset'),
-        \)
-  if empty(a:statuses)
-    return
-  endif
-  let gita = s:get_gita()
-  call gita.operations.reset({
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  call gita#features#reset#action(a:statuses, a:options)
 endfunction " }}}
 function! s:action_checkout(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_checkout'),
-        \)
-  if empty(a:statuses)
-    return
-  endif
-
-  let target = get(options, 'target', '')
-  if empty(target)
-    let target = gita#utils#ask('Checkout from: ', 'INDEX')
-    if empty(target)
-      redraw
-      call gita#utils#info('The operation has canceled by user.')
-      return
-    endif
-  endif
-  let target = target ==# 'INDEX' ? '' : target
-
-  let gita = s:get_gita()
-  call gita.operations.checkout({
-        \ 'commit': target,
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  call gita#features#checkout#action(a:statuses, a:options)
 endfunction " }}}
 function! s:action_checkout_ours(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_checkout_ours'),
-        \)
-  if empty(a:statuses)
-    return
-  endif
-
-  let gita = s:get_gita()
-  call gita.operations.checkout({
-        \ 'ours': 1,
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  let options = deepcopy(a:options)
+  let options.ours = 1
+  call gita#features#checkout#action(a:statuses, options)
 endfunction " }}}
 function! s:action_checkout_theirs(statuses, options) abort " {{{
-  let statuses = s:filter_statuses(
-        \ a:statuses,
-        \ a:options,
-        \ function('s:validate_checkout_theirs'),
-        \)
-  if empty(a:statuses)
-    return
-  endif
-  call gita.operations.checkout({
-        \ 'theirs': 1,
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \})
+  let options = deepcopy(a:options)
+  let options.theirs = 1
+  call gita#features#checkout#action(a:statuses, options)
 endfunction " }}}
 function! s:action_stage(statuses, options) abort " {{{
   let statuses = gita#utils#ensure_list(a:statuses)
@@ -502,9 +439,6 @@ function! s:action_stage(statuses, options) abort " {{{
     elseif status.is_unstaged && status.worktree ==# 'D'
       call add(rm_statuses, status)
     else
-      if gita#features#add#validate(status, options)
-        continue
-      endif
       call add(add_statuses, status)
     endif
   endfor
@@ -625,187 +559,9 @@ function! s:action_discard(statuses, options) abort " {{{
   endfor
   " checkout tracked files from HEAD
   let options.ignore_empty_warning = 1
-  let options.commit = 'INDEX'
+  let options.commit = ''
   let options.force = 1
   call s:action_checkout(checkout_statuses, options)
-endfunction " }}}
-function! s:filter_statuses(statuses, options, validate) abort " {{{
-  let statuses = gita#utils#ensure_list(a:statuses)
-  let options = deepcopy(a:options)
-  let valid_statuses = []
-  for status in statuses
-    if a:validate(status, options)
-      continue
-    endif
-    call add(valid_statuses, status)
-  endfor
-  if empty(valid_statuses)
-    if !get(options, 'ignore_empty_warning', 0)
-      call gita#utils#warn(
-            \ 'No valid statuses were specified.',
-            \)
-    endif
-  endif
-  return valid_statuses
-endfunction " }}}
-function! s:validate_rm(status, options) abort " {{{
-  if (a:status.is_staged || a:status.is_unstaged) && a:status.worktree ==# 'D'
-    " the file is already removed from filesystem thus it should be able to
-    " remove from index without a warning
-    return 0
-  elseif a:status.is_staged || a:status.is_unstaged
-    if get(a:options, 'force', 0)
-      return 0
-    else
-      call gita#utils#warn(printf(
-            \ 'A file "%s" has changes and cannot be deleted. Use <Plug>(gita-action-RM) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    endif
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be deleted.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    if a:status.sign ==# 'AU'
-      call gita#utils#warn(printf(
-            \ 'A added by us conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UA'
-      call gita#utils#warn(printf(
-            \ 'A added by them conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'AA'
-      call gita#utils#warn(printf(
-            \ 'A both added conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UU'
-      call gita#utils#warn(printf(
-            \ 'A both modified conflict file "%s" cannot be deleted. Use <Plug>(git-action-add) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  else
-    " it should not be called
-    call gita#utils#errormsg(printf(
-          \ 'An unexpected pattern "%s" is called for "rm".',
-          \ a:status.sign,
-          \))
-    call gita#utils#open_gita_issue()
-    return 1
-  endif
-endfunction " }}}
-function! s:validate_reset(status, options) abort " {{{
-  if a:status.is_staged
-    return 0
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be reset.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'A conflicted file "%s" cannot be reset. ',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    call gita#utils#warn(printf(
-          \ 'No changes of "%s" exist on index.',
-          \ a:status.path,
-          \))
-    return 1
-  endif
-endfunction " }}}
-function! s:validate_checkout(status, options) abort " {{{
-  if a:status.is_unstaged
-    if get(a:options, 'force', 0)
-      return 0
-    else
-      call gita#utils#warn(printf(
-            \ 'A file "%s" has unstaged changes. Use <Plug>(gita-action-CHECKOUT) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    endif
-  elseif a:status.is_untracked || a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An untracked/ignored file "%s" cannot be checked out.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'A conflicted file "%s" cannot be checked out. Use <Plug>(gita-action-ours) or <Plug>(gita-action-theirs) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    return 0
-  endif
-endfunction " }}}
-function! s:validate_checkout_ours(status, options) abort " {{{
-  if !a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'No ours version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'No ours version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'DU'
-      call gita#utils#warn(printf(
-            \ 'No ours version of a deleted by us conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  endif
-endfunction " }}}
-function! s:validate_checkout_theirs(status, options) abort " {{{
-  if !a:status.is_conflicted
-    call gita#utils#warn(printf(
-          \ 'No theirs version of a non conflicted file "%s" is available. Use <Plug>(gita-action-checkout) instead.',
-          \ a:status.path,
-          \))
-    return 1
-  else
-    if a:status.sign ==# 'DD'
-      call gita#utils#warn(printf(
-            \ 'No theirs version of a both deleted conflict file "%s" is available. Use <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    elseif a:status.sign ==# 'UD'
-      call gita#utils#warn(printf(
-            \ 'No theirs version of a deleted by them conflict file "%s" is available. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  endif
 endfunction " }}}
 
 

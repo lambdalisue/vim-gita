@@ -369,9 +369,7 @@ endfunction " }}}
 function! s:action_diff_diff(...) abort " {{{
   call call('gita#features#status#action_diff_diff', a:000)
 endfunction " }}}
-function! s:action_help(...) abort " {{{
-  call call('gita#features#status#action_help', a:000)
-endfunction " }}}
+
 
 
 " Internal API
