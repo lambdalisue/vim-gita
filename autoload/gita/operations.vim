@@ -61,63 +61,80 @@ endfunction " }}}
 let s:operations = {}
 function! s:operations.exec_raw(args, ...) abort " {{{
   let args = filter(deepcopy(a:args), 'len(v:val)')
-  let opts = extend({
-        \ 'fail_silently': 0,
+  let config = extend({
+        \ 'echo': 'both',
+        \ 'doautocmd': 1,
         \}, get(a:000, 0, {}))
   let result = self.gita.git.exec(args)
   " remove ANSI sequences in case
   let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
-  if result.status && !opts.fail_silently
-    call gita#utils#errormsg(
-          \ printf('vim-gita: Fail: %s', join(result.args)),
-          \)
-    call gita#utils#infomsg(result.stdout)
-  else
+  " echo result
+  if config.echo =~# '^\%(both\|success\)' && result.status == 0
+    call gita#utils#title(printf(
+          \ 'vim-gita: Ok: %s', join(result.args),
+          \))
+    call gita#utils#info(result.stdout)
+  elseif config.echo =~# '^\%(both\|fail\)' && result.status != 0
+    call gita#utils#error(printf(
+          \ 'vim-gita: Fail: %s', join(result.args),
+          \))
+    call gita#utils#info(result.stdout)
+  endif
+  " call autocmd
+  if config.doautocmd && result.status == 0
     call gita#utils#doautocmd(printf('%s-post', args[0]))
   endif
   return result
 endfunction " }}}
 function! s:operations.exec(command, options, ...) abort " {{{
   let schemes = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let args = s:translate_options(a:options, schemes)
   let args = extend([a:command], args)
-  return self.exec_raw(args, a:options)
+  return self.exec_raw(args, config)
 endfunction " }}}
 function! s:operations.init(...) abort " {{{
   let options = get(a:000, 0, {})
-  return self.exec('init', options)
+  let config = get(a:000, 1, {})
+  return self.exec('init', options, {}, config)
 endfunction " }}}
 function! s:operations.add(...) abort " {{{
   let options = get(a:000, 0, {})
-  return self.exec('add', options)
+  let config = get(a:000, 1, {})
+  return self.exec('add', options, {}, config)
 endfunction " }}}
 function! s:operations.rm(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   return self.exec('rm', options)
 endfunction " }}}
 function! s:operations.reset(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'commit': '%v',
         \}
-  return self.exec('reset', options, schemes)
+  return self.exec('reset', options, schemes, config)
 endfunction " }}}
 function! s:operations.show(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'object': '%v',
         \}
-  return self.exec('show', options, schemes)
+  return self.exec('show', options, schemes, config)
 endfunction " }}}
 function! s:operations.diff(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'commit': '%v',
         \}
-  return self.exec('diff', options, schemes)
+  return self.exec('diff', options, schemes, config)
 endfunction " }}}
 function! s:operations.clone(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'reference': '--%K %V',
         \ 'o': '-%K %V',
@@ -127,7 +144,7 @@ function! s:operations.clone(...) abort " {{{
         \ 'u': '-%K %V',
         \ 'upload_pack': '--%K %V',
         \ 'c': '-%K %V',
-        \ 'config': '--%K %V',
+        \ 'configig': '--%K %V',
         \ 'depth': '--%K %V',
         \}
   let args = s:translate_options(options, schemes)
@@ -136,14 +153,16 @@ function! s:operations.clone(...) abort " {{{
         \ get(options, 'repository', ''),
         \ get(options, 'directory', ''),
         \])
-  return self.exec_raw(args)
+  return self.exec_raw(args, config)
 endfunction " }}}
 function! s:operations.status(...) abort " {{{
   let options = get(a:000, 0, {})
-  return self.exec('status', options)
+  let config = get(a:000, 1, {})
+  return self.exec('status', options, {}, config)
 endfunction " }}}
 function! s:operations.commit(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'C': '-%k %v',
         \ 'c': '-%k %v',
@@ -151,17 +170,28 @@ function! s:operations.commit(...) abort " {{{
         \ 'm': '-%k %v',
         \ 't': '-%k %v',
         \}
-  return self.exec('commit', options, schemes)
+  return self.exec('commit', options, schemes, config)
 endfunction " }}}
 function! s:operations.branch(...) abort " {{{
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let schemes = {
         \ 'u': '-%k %v',
         \ 'contains': '--%k %v',
         \ 'merged': '--%k %v',
         \ 'no_merged': '--%k %v',
         \}
-  return self.exec('branch', options, schemes)
+  return self.exec('branch', options, schemes, config)
+endfunction " }}}
+function! s:operations.checkout(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let schemes = {
+        \ 'b': '-%k %v',
+        \ 'B': '-%k %v',
+        \ 'commit': '%v',
+        \}
+  return self.exec('checkout', options, schemes, config)
 endfunction " }}}
 
 

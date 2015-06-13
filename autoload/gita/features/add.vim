@@ -16,10 +16,6 @@ function! s:get_parser() abort " {{{
         \ 'description': 'Add file contents to the index',
         \})
   call s:parser.add_argument(
-        \ '--dry-run', '-n',
-        \ 'Don''t actually add the file(s), just show if they exist and/or will be ignored.',
-        \)
-  call s:parser.add_argument(
         \ '--verbose', '-v',
         \ 'Be verbose.',
         \)
@@ -45,7 +41,7 @@ function! s:get_parser() abort " {{{
         \   'tree are updated.',
         \ ], {
         \   'deniable': 1,
-        \   'conflicts': ['ignore_removal'],
+        \   'configlicts': ['ignore_removal'],
         \})
   call s:parser.add_argument(
         \ '--ignore-removal', [
@@ -54,26 +50,15 @@ function! s:get_parser() abort " {{{
         \   'This option is a no0op when no <pathspec> is used.',
         \ ], {
         \   'deniable': 1,
-        \   'conflicts': ['ignore_removal'],
+        \   'configlicts': ['ignore_removal'],
         \})
-  call s:parser.add_argument(
-        \ '--refresh',
-        \ 'Don''t add the file(s), but only refresh their stat() information in the index.',
-        \)
   call s:parser.add_argument(
         \ '--ignore-errors', [
         \ 'If some files could not be added because of errors indexing them, do not abort the operation,',
         \ 'but continue adding the others. The command shall still exit with non-zero status.',
         \])
-  call s:parser.add_argument(
-        \ '--ignore-missings', [
-        \ 'This option can only be used together with --dry-run. By using this option the user can',
-        \ 'check if any of the given files would be ignored, no matter if they are already present',
-        \ 'in the work tree or not.',
-        \])
-
   " A hook function to display unstaged/untracked files in completions
-  function! s:parser.hooks.post_complete_optional_argument(candidates, opts) abort
+  function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort
     let gita = s:get_gita()
     let statuses = gita.get_parsed_status()
     let candidates = deepcopy(extend(
@@ -82,7 +67,7 @@ function! s:get_parser() abort " {{{
           \))
     let candidates = filter(
           \ map(candidates, 'get(v:val, ''path'', '''')'),
-          \ 'len(v:val) && index(a:opts.__unknown__, v:val) == -1',
+          \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
           \)
     let candidates = extend(
           \ a:candidates,
@@ -93,9 +78,11 @@ function! s:get_parser() abort " {{{
   return s:parser
 endfunction " }}}
 
+
 function! gita#features#add#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   " automatically specify the current buffer if nothing is specified
   " and the buffer is a file buffer
   if empty(&buftype) && empty(get(options, '--', []))
@@ -106,73 +93,40 @@ function! gita#features#add#exec(...) abort " {{{
     call gita#utils#warn(
           \ 'Gita is not available in the current buffer.',
           \)
-    call gita#utils#debugmsg(
-          \ 'gita#features#add#s:exec',
-          \ printf('bufname: "%s"', bufname('%')),
-          \ printf('cwd: "%s"', getcwd()),
-          \ printf('gita: "%s"', string(gita)),
-          \)
     return
   endif
   let options = s:D.pick(options, [
         \ '--',
+        \ 'v', 'verbose',
         \ 'f', 'force',
-        \ 'N', 'intent_to_add',
+        \ 'A', 'all',
+        \ 'ignore_removal',
+        \ 'ignore_errors',
         \])
-  return gita.operations.add(options)
+  return gita.operations.add(options, config)
 endfunction " }}}
-
 function! gita#features#add#action(statuses, options) abort " {{{
-  let statuses = gita#utils#filter_statuses(
-        \ function('gita#features#add#validate'),
-        \ a:statuses,
-        \ a:options,
-        \)
   if empty(a:statuses)
     return
   endif
-  call gita#features#add#exec(extend({
-        \ '--': map(deepcopy(statuses), 'v:val.path'),
-        \}, a:options))
-endfunction " }}}
-function! gita#features#add#validate(status, options) abort " {{{
-  if a:status.is_unstaged || a:status.is_untracked
-    return 0
-  elseif a:status.is_ignored && get(a:options, 'force', 0)
-    return 0
-  elseif a:status.is_ignored
-    call gita#utils#warn(printf(
-          \ 'An ignored file "%s" cannot be added. Use :Gita add --force instead.',
-          \ a:status.path,
-          \))
-    return 1
-  elseif a:status.is_conflicted
-    if a:status.sign ==# 'DD'
-      " TODO: Confirm if the message is correct.
-      call gita#utils#warn(printf(
-            \ 'A both deleted conflict file "%s" cannot be added. Use :Gita rm instead.',
-            \ a:status.path,
-            \))
-      return 1
-    else
-      return 0
-    endif
-  else
-    call gita#utils#warn(printf(
-          \ 'No changes of "%s" exist on working tree.',
-          \ a:status.path,
-          \))
-    return 1
-  endif
+  let options = extend({
+        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \ 'ignore_errors': 1,
+        \}, a:options)
+  call gita#features#add#exec(options, {
+        \ 'echo': 'fail',
+        \})
 endfunction " }}}
 function! gita#features#add#command(bang, range, ...) abort " {{{
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  let result = gita#features#add#exec(extend(
-        \ '--': get(options, '__unknown__', []),
-        \}, options))
-  if len(result.stdout)
-    call gita#utils#infomsg(result.stdout)
+  if !empty(options)
+    let result = gita#features#add#exec(extend({
+          \ '--': get(options, '__unknown__', []),
+          \}, options))
+    if len(result.stdout)
+      call gita#utils#infomsg(result.stdout)
+    endif
   endif
 endfunction " }}}
 function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{
@@ -180,7 +134,6 @@ function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
-
 
 
 let &cpo = s:save_cpo
