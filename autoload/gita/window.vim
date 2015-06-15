@@ -12,12 +12,11 @@ function! s:ac_quit() abort " {{{
   " the code will " be more complicated thus now I simply trust that the
   " current buffer is the buffer being unloaded.
   if get(b:, '_winleave', 0)
-    if has_key(w:, '_gita_pre_ac_quit')
-      " Note: used in 'commit' feature
-      call w:_gita_pre_ac_quit()
-    endif
+    let hooks = get(w:, '_gita_hooks', gita#utils#hooks#new())
+    call hooks.call('pre_ac_quit')
     call gita#utils#invoker#focus()
     call gita#utils#invoker#clear()
+    call hooks.call('post_ac_quit')
   endif
 endfunction " }}}
 function! s:action(name, ...) abort range " {{{
@@ -126,10 +125,15 @@ function! gita#window#open(name, ...) abort " {{{
         \ 'new'
         \])
   let w:_gita_actions = get(w:, '_gita_actions', deepcopy(s:actions))
+  let w:_gita_hooks = get(w:, '_gita_hooks', gita#utils#hooks#new())
   call invoker.update_winnum()
   call gita#utils#invoker#set(invoker)
   " check if construction is required
   if get(b:, '_gita_constructed') && !get(g:, 'gita#debug', 0)
+    let filetype = get(config, 'filetype',
+          \ printf('gita-%s', a:name)
+          \)
+    silent execute printf('setlocal filetype=%s', filetype)
     return
   endif
   let b:_gita_constructed = 1

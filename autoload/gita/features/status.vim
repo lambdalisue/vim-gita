@@ -80,6 +80,9 @@ let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
   call gita#features#status#update(a:options)
 endfunction " }}}
+function! s:actions.open_commit(statuses, options) abort " {{{
+  call gita#features#commit#open(a:options)
+endfunction " }}}
 function! s:actions.add(statuses, options) abort " {{{
   if empty(a:statuses)
     return
@@ -254,6 +257,12 @@ function! gita#features#status#open(...) abort " {{{
         \ :<C-u>call gita#window#action('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
         \ :<C-u>call gita#window#action('update')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-switch)
+        \ :<C-u>call gita#window#action('open_commit')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-switch-new)
+        \ :<C-u>call gita#window#action('open_commit', { 'new': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-switch-amend)
+        \ :<C-u>call gita#window#action('open_commit', { 'amend': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-add)
         \ :call gita#window#action('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
@@ -284,6 +293,9 @@ function! gita#features#status#open(...) abort " {{{
   " Define extra actual key mappings
   if get(g:, 'gita#features#status#enable_default_mappings', 1)
     nmap <buffer> <C-l> <Plug>(gita-action-update)
+    nmap <buffer> cc    <Plug>(gita-action-switch)
+    nmap <buffer> cC    <Plug>(gita-action-switch-new)
+    nmap <buffer> cA    <Plug>(gita-action-switch-amend)
     " operations
     nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
