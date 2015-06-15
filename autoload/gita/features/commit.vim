@@ -149,6 +149,9 @@ function! s:actions.commit(statuses, options) abort " {{{
     " force to refresh option in next launch
     let w:_gita_options = extend(w:_gita_options, {
           \ 'new': 1,
+          \ 'amend': 0,
+          \ 'commitmsg_cached': '',
+          \ 'commitmsg_saved': '',
           \})
   endif
   if !get(w:_gita_options, 'quitting')
@@ -182,8 +185,9 @@ function! gita#features#commit#exec(...) abort " {{{
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
   let options = gita#window#extend_options(get(a:000, 0, {}))
+  let config = get(a:000, 1, {})
   " Open the window and extend actions
-  call gita#window#open('commit')
+  call gita#window#open('commit', options, config)
   call gita#window#extend_actions(s:actions)
 
   " Define options and extra AutoCmd
@@ -194,7 +198,7 @@ function! gita#features#commit#open(...) abort " {{{
   augroup END
 
   " Define hook functions
-  function! w:_gita_hooks.pre_ac_quit(...) abort
+  function! b:_gita_hooks.pre_ac_quit(...) abort
     if expand('%') =~# '^gita\[:_\]commit$'
       call s:actions.commit({}, w:_gita_options)
     endif
@@ -217,8 +221,6 @@ function! gita#features#commit#open(...) abort " {{{
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
   endif
-
-  call gita#utils#doautocmd('FileType')
   call gita#features#commit#update(options)
 endfunction " }}}
 function! gita#features#commit#update(...) abort " {{{
@@ -261,7 +263,7 @@ function! gita#features#commit#update(...) abort " {{{
   elseif !empty(gita.git.get_merge_head())
     let commit_mode = 'merge'
     let commitmsg = gita.git.get_merge_msg()
-  elseif get(options, 'amend', 0)
+  elseif get(options, 'amend')
     let commit_mode = 'amend'
     let commitmsg = gita.git.get_last_commitmsg()
   else
