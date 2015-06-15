@@ -6,86 +6,77 @@ let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-" Private
-function! s:get_parser() abort " {{{
-  if !exists('s:parser') || get(g:, 'gita#debug', 0)
-    let s:parser = s:A.new({
-          \ 'name': 'Gita reset',
-          \ 'description': 'Reset current HEAD to the specified state',
-          \})
-    call s:parser.add_argument(
-          \ '--verbose', '-v', [
-          \ 'Be verbose.',
-          \])
-    call s:parser.add_argument(
-          \ '--soft', [
-          \   'Does not touch the index file or the working tree at all (but resets the head to <commit>, just like all modes do).',
-          \   'This leaves all your changed files "Changes to be committed", as git status would put it.',
-          \], {
-          \   'configlicts': ['mixed', 'hard', 'merge', 'keep'],
-          \})
-    call s:parser.add_argument(
-          \ '--mixed', [
-          \   'Resets the index but not the working tree (i.e., the changed files are preserved but not marked for commit) and reports',
-          \   'what has not been updated. This is the default action.',
-          \], {
-          \   'configlicts': ['soft', 'hard', 'merge', 'keep'],
-          \})
-    call s:parser.add_argument(
-          \ '-N', [
-          \   'If this is specified, removed paths are marked as intent-to-add.'
-          \], {
-          \   'superordinates': ['mixed'],
-          \})
-    call s:parser.add_argument(
-          \ '--hard', [
-          \   'Resets the index and working tree. Any changes to tracked files in the working tree since <commit> are discarded.',
-          \], {
-          \   'configlicts': ['soft', 'mixed', 'merge', 'keep'],
-          \})
-    call s:parser.add_argument(
-          \ '--merge', [
-          \   'Resets the index and updates the files in the working tree that are different between <commit> and HEAD, but keeps those which are',
-          \   'different between the index and working tree (i.e. which have changes which have not been added). If a file that is different',
-          \   'between <commit> and the index has unstaged changes, reset is aborted.',
-          \], {
-          \   'configlicts': ['soft', 'mixed', 'hard', 'keep'],
-          \})
-    call s:parser.add_argument(
-          \ '--keep', [
-          \   'Resets index entries and updates files in the working tree that are different between <commit> and HEAD.',
-          \   'If a file that is different between <commit> and HEAD has local changes, reset is aborted.',
-          \], {
-          \   'configlicts': ['soft', 'mixed', 'hard', 'merge'],
-          \})
-
-    " A hook function to convert 'verbose' to 'quiet'
-    function! s:parser.hooks.post_validate(opts) abort
-      if !get(a:opts, 'verbose', 0)
-        let a:opts.quiet = 1
-      else
-        unlet a:opts.verbose
-      endif
-    endfunction
-    " A hook function to display staged files in completions
-    function! s:parser.hooks.post_complete_optionional_argument(candidates, options) abort
-      let gita = s:get_gita()
-      let statuses = gita.get_parsed_status()
-      let candidates = deepcopy(
-            \ get(statuses, 'staged', []),
-            \)
-      let candidates = filter(
-            \ map(candidates, 'get(v:val, ''path'', '''')'),
-            \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
-            \)
-      let candidates = extend(
-            \ a:candidates,
-            \ candidates,
-            \)
-      return candidates
-    endfunction
+let s:parser = s:A.new({
+      \ 'name': 'Gita reset',
+      \ 'description': 'Reset current HEAD to the specified state',
+      \})
+call s:parser.add_argument(
+      \ '--verbose', '-v', [
+      \ 'Be verbose.',
+      \])
+call s:parser.add_argument(
+      \ '--soft', [
+      \   'Does not touch the index file or the working tree at all (but resets the head to <commit>, just like all modes do).',
+      \   'This leaves all your changed files "Changes to be committed", as git status would put it.',
+      \], {
+      \   'configlicts': ['mixed', 'hard', 'merge', 'keep'],
+      \})
+call s:parser.add_argument(
+      \ '--mixed', [
+      \   'Resets the index but not the working tree (i.e., the changed files are preserved but not marked for commit) and reports',
+      \   'what has not been updated. This is the default action.',
+      \], {
+      \   'configlicts': ['soft', 'hard', 'merge', 'keep'],
+      \})
+call s:parser.add_argument(
+      \ '-N', [
+      \   'If this is specified, removed paths are marked as intent-to-add.'
+      \], {
+      \   'superordinates': ['mixed'],
+      \})
+call s:parser.add_argument(
+      \ '--hard', [
+      \   'Resets the index and working tree. Any changes to tracked files in the working tree since <commit> are discarded.',
+      \], {
+      \   'configlicts': ['soft', 'mixed', 'merge', 'keep'],
+      \})
+call s:parser.add_argument(
+      \ '--merge', [
+      \   'Resets the index and updates the files in the working tree that are different between <commit> and HEAD, but keeps those which are',
+      \   'different between the index and working tree (i.e. which have changes which have not been added). If a file that is different',
+      \   'between <commit> and the index has unstaged changes, reset is aborted.',
+      \], {
+      \   'configlicts': ['soft', 'mixed', 'hard', 'keep'],
+      \})
+call s:parser.add_argument(
+      \ '--keep', [
+      \   'Resets index entries and updates files in the working tree that are different between <commit> and HEAD.',
+      \   'If a file that is different between <commit> and HEAD has local changes, reset is aborted.',
+      \], {
+      \   'configlicts': ['soft', 'mixed', 'hard', 'merge'],
+      \})
+function! s:parser.hooks.post_validate(options) abort " {{{
+  if !get(a:options, 'verbose', 0)
+    let a:options.quiet = 1
+  else
+    unlet a:options.verbose
   endif
-  return s:parser
+endfunction " }}}
+function! s:parser.hooks.post_complete_optionional_argument(candidates, options) abort " {{{
+  let gita = s:get_gita()
+  let statuses = gita.get_parsed_status()
+  let candidates = deepcopy(
+        \ get(statuses, 'staged', []),
+        \)
+  let candidates = filter(
+        \ map(candidates, 'get(v:val, ''path'', '''')'),
+        \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
+        \)
+  let candidates = extend(
+        \ a:candidates,
+        \ candidates,
+        \)
+  return candidates
 endfunction " }}}
 
 
@@ -135,8 +126,7 @@ function! gita#features#reset#action(statuses, options) abort " {{{
         \})
 endfunction " }}}
 function! gita#features#reset#command(bang, range, ...) abort " {{{
-  let parser = s:get_parser()
-  let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let result = gita#features#reset#exec(extend({
           \ '--': get(options, '__unknown__', []),
@@ -147,9 +137,7 @@ function! gita#features#reset#command(bang, range, ...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#reset#complete(arglead, cmdline, cursorpos) abort " {{{
-  let parser = s:get_parser()
-  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
-  return candidates
+  return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
 
 
