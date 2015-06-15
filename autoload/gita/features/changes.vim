@@ -41,7 +41,7 @@ function! gita#features#changes#open(...) abort " {{{
   endif
   " Open the window
   let bufname_sep = has('unix') ? ':' : '_'
-  call gita#window#open('changes', {
+  call gita#window#open('changes', options, {
         \ 'bufname': join(['gita', 'changes', options.commit], bufname_sep),
         \})
   call gita#features#changes#update(options)
