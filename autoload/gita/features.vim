@@ -14,7 +14,7 @@ function! s:is_registered(name) abort " {{{
   return a:name =~# s:feature_pattern
 endfunction " }}}
 function! s:register(name, command, complete) abort " {{{
-  if s:is_registered(a:name)
+  if s:is_registered(a:name) && !get(g:, 'gita#debug', 0)
     throw printf(
           \ 'vim-gita: a feature "%s" has already been registered.',
           \ a:name,
@@ -134,6 +134,10 @@ call s:register('status',
 call s:register('commit',
       \ function('gita#features#commit#command'),
       \ function('gita#features#commit#complete'),
+      \)
+call s:register('changes',
+      \ function('gita#features#changes#command'),
+      \ function('gita#features#changes#complete'),
       \)
 call s:register('diff',
       \ function('gita#features#diff#command'),

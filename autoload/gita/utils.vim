@@ -171,29 +171,6 @@ function! gita#utils#ensure_list(x) abort " {{{
   return P.is_list(a:x) ? a:x : [a:x]
 endfunction " }}}
 
-" opts
-function! gita#utils#opts2args(x) abort " {{{
-  let P = gita#utils#import('Prelude')
-  let args = []
-  for [key, value] in items(a:x)
-    if key =~# '\v^__.*__$'
-      continue
-    elseif P.is_number(value) && value
-      if strlen(key) == 1
-        call add(args, printf('-%s', key))
-      else
-        call add(args, printf('--%s', substitute(key, '_', '-', 'g')))
-      endif
-    else
-      if strlen(key) == 1
-        call add(args, printf('-%s%s', key, value))
-      else
-        call add(args, printf('--%s=%s', substitute(key, '_', '-', 'g'), value))
-      endif
-  endfor
-  return args
-endfunction " }}}
-
 " misc
 function! gita#utils#doautocmd(name) abort " {{{
   let name = printf('vim-gita-%s', a:name)
@@ -215,7 +192,11 @@ function! gita#utils#open_gita_issue(url) abort " {{{
   endif
 endfunction " }}}
 
-" status & path
+" status & path 不要
+function! s:get_status_abspath(gita, status) abort " {{{
+  let path = get(a:status, 'path2', a:status.path)
+  return a:gita.git.get_absolute_path(path)
+endfunction " }}}
 function! gita#utils#get_selected_paths(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let Func = getwinvar(bufnr(expr), '_gita_selected_statuses', 0)
@@ -249,5 +230,27 @@ function! gita#utils#filter_statuses(validate, statuses, options) abort " {{{
   return valid_statuses
 endfunction " }}}
 
+" opts
+function! gita#utils#opts2args(x) abort " {{{
+  let P = gita#utils#import('Prelude')
+  let args = []
+  for [key, value] in items(a:x)
+    if key =~# '\v^__.*__$'
+      continue
+    elseif P.is_number(value) && value
+      if strlen(key) == 1
+        call add(args, printf('-%s', key))
+      else
+        call add(args, printf('--%s', substitute(key, '_', '-', 'g')))
+      endif
+    else
+      if strlen(key) == 1
+        call add(args, printf('-%s%s', key, value))
+      else
+        call add(args, printf('--%s=%s', substitute(key, '_', '-', 'g'), value))
+      endif
+  endfor
+  return args
+endfunction " }}}
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

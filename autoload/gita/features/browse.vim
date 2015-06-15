@@ -7,54 +7,11 @@ let s:F = gita#utils#import('System.File')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-" Private
-function! s:complete_branch(...) abort " {{{
-  let branches = call('gita#completes#complete_local_branch', a:000)
-  " remove HEAD
-  return filter(branches, 'v:val !=# "HEAD"')
-endfunction " }}}
-function! s:get_parser() abort " {{{
-  if !exists('s:parser') || get(g:, 'gita#debug', 0)
-    let s:parser = s:A.new({
-          \ 'name': 'Gita browse',
-          \ 'description': 'Browse a selected region of the remote in a system default browser',
-          \})
-    call s:parser.add_argument(
-          \ '--open', '-o',
-          \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
-          \   'conflicts': ['yank', 'echo'],
-          \ })
-    call s:parser.add_argument(
-          \ '--yank', '-y',
-          \ 'Yank a URL of a selected region of the remote.', {
-          \   'conflicts': ['open', 'echo'],
-          \ })
-    call s:parser.add_argument(
-          \ '--echo', '-e',
-          \ 'Echo a URL of a selected region of the remote.', {
-          \   'conflicts': ['open', 'yank'],
-          \ })
-    call s:parser.add_argument(
-          \ '--exact',
-          \ 'Use a git hash reference instead of a branch name to build a URL.', {
-          \ })
-    call s:parser.add_argument(
-          \ 'branch', [
-          \   'A branch or commit which you want to see. If it is omitted, a branch.',
-          \   'If it is omitted, a remote branch of the current branch is used.'
-          \ ], {
-          \   'required': 0,
-          \   'complete': function('s:complete_branch'),
-          \ })
-
-    function! s:parser.hooks.pre_validate(opts) abort
-      " Automatically use '--open' if no conflicted argument is specified
-      if empty(self.get_conflicted_arguments('open', a:opts))
-        let a:opts.open = 1
-      endif
-    endfunction
+function! s:yank_string(content) abort " {{{
+  let @" = a:content
+  if has('clipboard')
+    call setreg(v:register, a:content)
   endif
-  return s:parser
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
   let path = expand(a:expr)
@@ -112,7 +69,11 @@ function! s:find_url(gita, expr, options) abort " {{{
         \ 'lb': 'local_branch',
         \ 'rb': 'remote_branch',
         \}
-  for pattern in g:gita#features#browse#translation_patterns
+  let translation_patterns = extend(
+        \ deepcopy(g:gita#features#browse#translation_patterns),
+        \ g:gita#features#browse#extra_translation_patterns,
+        \)
+  for pattern in translation_patterns
     if data.remote_url =~# pattern[0]
       " Prefer second pattern if 'exact' is specified. Use first pattern if
       " no second pattern exists
@@ -127,6 +88,50 @@ function! s:find_url(gita, expr, options) abort " {{{
         \))
   call gita#utils#debugmsg('data:', data)
   return ''
+endfunction " }}}
+function! s:complete_branch(...) abort " {{{
+  let branches = call('gita#completes#complete_local_branch', a:000)
+  " remove HEAD
+  return filter(branches, 'v:val !=# "HEAD"')
+endfunction " }}}
+
+
+let s:parser = s:A.new({
+      \ 'name': 'Gita browse',
+      \ 'description': 'Browse a selected region of the remote in a system default browser',
+      \})
+call s:parser.add_argument(
+      \ '--open', '-o',
+      \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
+      \   'conflicts': ['yank', 'echo'],
+      \ })
+call s:parser.add_argument(
+      \ '--yank', '-y',
+      \ 'Yank a URL of a selected region of the remote.', {
+      \   'conflicts': ['open', 'echo'],
+      \ })
+call s:parser.add_argument(
+      \ '--echo', '-e',
+      \ 'Echo a URL of a selected region of the remote.', {
+      \   'conflicts': ['open', 'yank'],
+      \ })
+call s:parser.add_argument(
+      \ '--exact',
+      \ 'Use a git hash reference instead of a branch name to build a URL.', {
+      \ })
+call s:parser.add_argument(
+      \ 'branch', [
+      \   'A branch or commit which you want to see. If it is omitted, a branch.',
+      \   'If it is omitted, a remote branch of the current branch is used.'
+      \ ], {
+      \   'required': 0,
+      \   'complete': function('s:complete_branch'),
+      \ })
+function! s:parser.hooks.pre_validate(opts) abort " {{{
+  " Automatically use '--open' if no conflicted argument is specified
+  if empty(self.get_conflicted_arguments('open', a:opts))
+    let a:opts.open = 1
+  endif
 endfunction " }}}
 
 
@@ -178,7 +183,7 @@ function! gita#features#browse#yank(...) abort " {{{
 
   let url = s:find_url(gita, expr, options)
   if !empty(url)
-    call gita#utils#yank_string(url)
+    call s:yank_string(url)
     call gita#utils#info(printf(
           \ '"%s" is yanked.',
           \ url,
@@ -227,7 +232,7 @@ function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
 endfunction " }}}
 
 
-let s:default_translation_patterns =
+let g:gita#features#browse#translation_patterns =
       \ [
       \  ['\vssh://git\@(github\.com)/([^/]+)/(.+)%(\.git|)',
       \   'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
@@ -240,12 +245,6 @@ let s:default_translation_patterns =
       \  ['\vhttps?://(bitbucket\.org)/([^/]+)/(.+)',
       \   'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
       \ ]
-let g:gita#features#browse#translation_patterns =
-      \ get(g:, 'gita#features#browse#translation_patterns',
-      \   extend(s:default_translation_patterns,
-      \     get(g:, 'gita#features#browse#extra_translation_patterns', []),
-      \   )
-      \ )
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
