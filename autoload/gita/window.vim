@@ -12,7 +12,7 @@ function! s:ac_quit() abort " {{{
   " the code will " be more complicated thus now I simply trust that the
   " current buffer is the buffer being unloaded.
   if get(b:, '_winleave', 0)
-    let hooks = get(w:, '_gita_hooks', gita#utils#hooks#new())
+    let hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
     call hooks.call('pre_ac_quit')
     call gita#utils#invoker#focus()
     call gita#utils#invoker#clear()
@@ -20,12 +20,8 @@ function! s:ac_quit() abort " {{{
   endif
 endfunction " }}}
 function! s:action(name, ...) abort range " {{{
-  let options = get(a:000, 0, {})
+  let options = gita#window#extend_options(get(a:000, 0, {}))
   let config = get(a:000, 1, {})
-  if get(config, 'extend_options')
-    let options = gita#window#extend_options(options)
-  endif
-
   let firstline = get(config, 'firstline', a:firstline)
   let lastline = get(config, 'lastline', a:lastline)
   let statuses = gita#window#get_statuses_within(firstline, lastline)
@@ -68,7 +64,7 @@ endfunction " }}}
 function! gita#window#extend_options(options) abort " {{{
   return extend(
         \ deepcopy(get(w:, '_gita_options', {})),
-        \ a:options,
+        \ deepcopy(a:options),
         \)
 endfunction " }}}
 function! gita#window#get_status_at(lineno) abort " {{{
@@ -111,21 +107,21 @@ function! gita#window#open(name, ...) abort " {{{
         \})
 
   " use fresh options
-  if get(options, 'new', 0)
+  if get(options, 'new')
     let options = get(a:000, 0, {})
   endif
   " Note:
   "   w:_gita is prior to b:_gita in gita#core#get()
   "   while the 'range' of support_window is 'tabpage'
   "   no buffer variable should be used to store status
-  "   expect 'b:_gita_construct' which indicate that the
-  "   buffer is already constructed or not.
   let w:_gita = gita
   let w:_gita_options = s:D.omit(options, [
         \ 'new'
         \])
   let w:_gita_actions = get(w:, '_gita_actions', deepcopy(s:actions))
-  let w:_gita_hooks = get(w:, '_gita_hooks', gita#utils#hooks#new())
+  " Note:
+  "   hook belongs to buffer thus b: should be used
+  let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
   call invoker.update_winnum()
   call gita#utils#invoker#set(invoker)
   " check if construction is required
