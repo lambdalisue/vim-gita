@@ -24,7 +24,7 @@ function! s:get_parser() abort " {{{
           \ '--untracked-files', '-u',
           \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
           \   'choices': ['all', 'normal', 'no'],
-          \   'default': 'all',
+          \   'on_default': 'all',
           \ })
     call s:parser.add_argument(
           \ '--ignored',
@@ -34,7 +34,7 @@ function! s:get_parser() abort " {{{
           \ '--ignore-submodules',
           \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
           \   'choices': ['all', 'dirty', 'untracked'],
-          \   'default': 'all',
+          \   'on_default': 'all',
           \ })
   endif
   return s:parser

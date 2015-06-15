@@ -215,7 +215,20 @@ function! gita#utils#open_gita_issue(url) abort " {{{
   endif
 endfunction " }}}
 
-" status
+" status & path
+function! gita#utils#get_selected_paths(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let Func = getwinvar(bufnr(expr), '_gita_selected_statuses', 0)
+  if s:P.is_funcref(Func)
+    let statuses = Func()
+
+  elseif empty(getbufvar(expr, '&buftype'))
+    let selected = [expand(expr)]
+  else
+    let selected = []
+  endif
+  return selected
+endfunction " }}}
 function! gita#utils#filter_statuses(validate, statuses, options) abort " {{{
   let statuses = gita#utils#ensure_list(a:statuses)
   let options = deepcopy(a:options)
