@@ -387,7 +387,7 @@ function! s:parser._parse_args(args, ...) abort " {{{
           let value = s:strip_quotes(nword)
           let cursor += 1
         else
-          let value = 1
+          let value = get(self.arguments[name], 'on_default', 1)
         endif
       elseif substitute(name, '^no-', '', '') =~# arguments_pattern
         let name = substitute(name, '^no-', '', '')
@@ -664,9 +664,9 @@ function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorp
       let npositional += 1
     endif
   endfor
-  "if empty(a:arglead)
-  "  let npositional -= 1
-  "endif
+  if empty(a:arglead)
+    let npositional -= 1
+  endif
   let cpositional = get(self.arguments, get(self.positional, npositional), {})
   if !empty(cpositional)
     let candidates = cpositional.complete(
