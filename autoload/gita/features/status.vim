@@ -248,8 +248,9 @@ function! gita#features#status#exec(...) abort " {{{
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
   let options = gita#window#extend_options(get(a:000, 0, {}))
+  let config = get(a:000, 1, {})
   " Open the window and extend actions
-  call gita#window#open('status')
+  call gita#window#open('status', options, config)
   call gita#window#extend_actions(s:actions)
 
   " Define extra Plug key mappings
@@ -330,8 +331,6 @@ function! gita#features#status#open(...) abort " {{{
     vmap <buffer> -o <Plug>(gita-action-checkout-ours)
     vmap <buffer> -t <Plug>(gita-action-checkout-theirs)
   endif
-
-  call gita#utils#doautocmd('FileType')
   call gita#features#status#update(options)
 endfunction " }}}
 function! gita#features#status#update(...) abort " {{{
