@@ -20,6 +20,10 @@ call s:parser.add_argument(
       \   'complete': function('gita#completes#complete_local_branch'),
       \ })
 
+let s:actions = {}
+function! s:actions.update(statuses, options) abort " {{{
+  call gita#features#changes#update(a:options)
+endfunction " }}}
 
 function! gita#features#changes#open(...) abort " {{{
   let options = gita#window#extend_options(get(a:000, 0, {}))

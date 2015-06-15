@@ -64,24 +64,25 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   let config = extend({
         \ 'echo': 'both',
         \ 'doautocmd': 1,
+        \ 'success_status': 0,
         \}, get(a:000, 0, {}))
   let result = self.gita.git.exec(args)
   " remove ANSI sequences in case
   let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
   " echo result
-  if config.echo =~# '^\%(both\|success\)' && result.status == 0
+  if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
     call gita#utils#title(printf(
           \ 'vim-gita: Ok: %s', join(result.args),
           \))
     call gita#utils#info(result.stdout)
-  elseif config.echo =~# '^\%(both\|fail\)' && result.status != 0
+  elseif config.echo =~# '^\%(both\|fail\)' && result.status != config.success_status
     call gita#utils#error(printf(
           \ 'vim-gita: Fail: %s', join(result.args),
           \))
     call gita#utils#info(result.stdout)
   endif
   " call autocmd
-  if config.doautocmd && result.status == 0
+  if config.doautocmd && result.status == config.success_status
     call gita#utils#doautocmd(printf('%s-post', args[0]))
   endif
   return result
