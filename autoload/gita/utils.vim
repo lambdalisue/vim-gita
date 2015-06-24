@@ -118,16 +118,6 @@ function! gita#utils#asktf(message, ...) abort " {{{
 endfunction " }}}
 
 " string
-function! gita#utils#yank_string(content) abort " {{{
-  let @" = a:content
-  if has('clipboard')
-    call setreg(v:register, a:content)
-  endif
-endfunction " }}}
-function! gita#utils#ensure_string(x) abort " {{{
-  let P = gita#utils#import('Prelude')
-  return P.is_string(a:x) ? a:x : [a:x]
-endfunction " }}}
 function! gita#utils#smart_string(value) abort " {{{
   let P = gita#utils#import('Prelude')
   if P.is_string(a:value)
@@ -165,7 +155,11 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
 
-" list
+" ensure
+function! gita#utils#ensure_string(x) abort " {{{
+  let P = gita#utils#import('Prelude')
+  return P.is_string(a:x) ? a:x : [a:x]
+endfunction " }}}
 function! gita#utils#ensure_list(x) abort " {{{
   let P = gita#utils#import('Prelude')
   return P.is_list(a:x) ? a:x : [a:x]

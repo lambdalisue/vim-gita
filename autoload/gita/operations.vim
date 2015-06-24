@@ -72,12 +72,12 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   " echo result
   if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
     call gita#utils#title(printf(
-          \ 'vim-gita: Ok: %s', join(result.args),
+          \ 'Ok: %s', join(result.args),
           \))
     call gita#utils#info(result.stdout)
   elseif config.echo =~# '^\%(both\|fail\)' && result.status != config.success_status
     call gita#utils#error(printf(
-          \ 'vim-gita: Fail: %s', join(result.args),
+          \ 'Fail: %s', join(result.args),
           \))
     call gita#utils#info(result.stdout)
   endif
@@ -143,7 +143,7 @@ function! s:operations.clone(...) abort " {{{
         \ 'b': '-%K %V',
         \ 'branch': '--%K %V',
         \ 'u': '-%K %V',
-        \ 'upload_pack': '--%K %V',
+        \ 'upload-pack': '--%K %V',
         \ 'c': '-%K %V',
         \ 'configig': '--%K %V',
         \ 'depth': '--%K %V',
@@ -180,7 +180,7 @@ function! s:operations.branch(...) abort " {{{
         \ 'u': '-%k %v',
         \ 'contains': '--%k %v',
         \ 'merged': '--%k %v',
-        \ 'no_merged': '--%k %v',
+        \ 'no-merged': '--%k %v',
         \}
   return self.exec('branch', options, schemes, config)
 endfunction " }}}

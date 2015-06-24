@@ -104,16 +104,14 @@ function! gita#features#checkout#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  " automatically specify the current buffer if nothing is specified
-  " and the buffer is a file buffer
-  if empty(&buftype) && empty(get(options, '--', []))
-    let options['--'] = ['%']
-  endif
   if !gita.enabled
     redraw
     call gita#utils#warn(
           \ 'Gita is not available in the current buffer.',
           \)
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -129,26 +127,13 @@ function! gita#features#checkout#exec(...) abort " {{{
         \])
   return gita.operations.checkout(options, config)
 endfunction " }}}
-function! gita#features#checkout#action(statuses, options) abort " {{{
-  if empty(a:statuses)
-    return
-  endif
-  let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
-        \}, a:options)
-  call gita#features#checkout#exec(options, {
-        \ 'echo': 'both',
-        \})
-endfunction " }}}
 function! gita#features#checkout#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    let result = gita#features#checkout#exec(extend({
-          \ '--': get(options, '__unknown__', []),
-          \}, options))
-    if len(result.stdout)
-      call gita#utils#infomsg(result.stdout)
-    endif
+    let options = extend(options, {
+          \ '--': options.__unknown__,
+          \})
+    call gita#features#checkout#exec(options)
   endif
 endfunction " }}}
 function! gita#features#checkout#complete(arglead, cmdline, cursorpos) abort " {{{

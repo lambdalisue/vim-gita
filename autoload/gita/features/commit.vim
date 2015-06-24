@@ -232,6 +232,7 @@ function! gita#features#commit#update(...) abort " {{{
         \})
   let result = gita#features#commit#exec(options, {
         \ 'echo': '',
+        \ 'doautocmd': 0,
         \ 'success_status': 1,
         \})
   if result.status != 1

@@ -9,7 +9,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita changes',
+      \ 'name': 'Gita diff-ls',
       \ 'description': 'List filenames and statuses different between two commit',
       \})
 call s:parser.add_argument(
@@ -22,10 +22,10 @@ call s:parser.add_argument(
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
-  call gita#features#changes#update(a:options)
+  call gita#features#diff_ls#update(a:options)
 endfunction " }}}
 
-function! gita#features#changes#open(...) abort " {{{
+function! gita#features#diff_ls#open(...) abort " {{{
   let options = gita#window#extend_options(get(a:000, 0, {}))
   " Ask which commit the user want to compare if no 'commit' is specified
   if empty(get(options, 'commit')) || get(options, 'new')
@@ -41,12 +41,13 @@ function! gita#features#changes#open(...) abort " {{{
   endif
   " Open the window
   let bufname_sep = has('unix') ? ':' : '_'
-  call gita#window#open('changes', options, {
-        \ 'bufname': join(['gita', 'changes', options.commit], bufname_sep),
+  call gita#window#open('diff_ls', options, {
+        \ 'bufname': join(['gita', 'diff-ls', options.commit], bufname_sep),
+        \ 'filetype': 'gita-diff-ls',
         \})
-  call gita#features#changes#update(options)
+  call gita#features#diff_ls#update(options)
 endfunction " }}}
-function! gita#features#changes#update(...) abort " {{{
+function! gita#features#diff_ls#update(...) abort " {{{
   let options = gita#window#extend_options(get(a:000, 0, {}))
   let gita = gita#core#get()
   let result = gita.operations.diff({
@@ -83,16 +84,16 @@ function! gita#features#changes#update(...) abort " {{{
         \])
   call gita#utils#buffer#update(buflines)
 endfunction " }}}
-function! gita#features#changes#command(bang, range, ...) abort " {{{
+function! gita#features#diff_ls#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    call gita#features#changes#open(options)
+    call gita#features#diff_ls#open(options)
   endif
 endfunction " }}}
-function! gita#features#changes#complete(arglead, cmdline, cursorpos) abort " {{{
+function! gita#features#diff_ls#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
-function! gita#features#changes#define_highlights() abort " {{{
+function! gita#features#diff_ls#define_highlights() abort " {{{
   highlight link GitaComment    Comment
   highlight link GitaConflicted Error
   highlight link GitaUnstaged   Constant
@@ -101,7 +102,7 @@ function! gita#features#changes#define_highlights() abort " {{{
   highlight link GitaIgnored    Identifier
   highlight link GitaBranch     Title
 endfunction " }}}
-function! gita#features#changes#define_syntax() abort " {{{
+function! gita#features#diff_ls#define_syntax() abort " {{{
   syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
   syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
   syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL

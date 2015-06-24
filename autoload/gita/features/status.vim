@@ -136,13 +136,7 @@ function! s:actions.stage(statuses, options) abort " {{{
   let add_statuses = []
   let rm_statuses = []
   for status in a:statuses
-    if status.is_conflicted
-      call gita#utils#warn(printf(
-            \ 'A conflicted file "%s" cannot be staged. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) directly.',
-            \ status.path,
-            \))
-      continue
-    elseif status.is_unstaged && status.worktree ==# 'D'
+    if status.is_unstaged && status.worktree ==# 'D'
       call add(rm_statuses, status)
     else
       call add(add_statuses, status)
@@ -158,13 +152,7 @@ function! s:actions.toggle(statuses, options) abort " {{{
   let stage_statuses = []
   let reset_statuses = []
   for status in a:statuses
-    if status.is_conflicted
-      call gita#utils#warn(printf(
-            \ 'A conflicted file "%s" cannot be staged/unstaged. Use <Plug>(gita-action-add) or <Plug>(gita-action-rm) directly.',
-            \ status.path,
-            \))
-      continue
-    elseif status.is_staged && status.is_unstaged
+    if status.is_staged && status.is_unstaged
       if get(g:, 'gita#features#status#prefer_unstage_in_toggle', 0)
         call add(reset_statuses, status)
       else
@@ -252,6 +240,9 @@ function! gita#features#status#open(...) abort " {{{
   " Open the window and extend actions
   call gita#window#open('status', options, config)
   call gita#window#extend_actions(s:actions)
+
+  " Define loccal options
+  setlocal nomodifiable
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)

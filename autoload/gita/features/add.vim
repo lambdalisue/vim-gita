@@ -36,7 +36,7 @@ call s:parser.add_argument(
       \   'tree are updated.',
       \ ], {
       \   'deniable': 1,
-      \   'configlicts': ['ignore_removal'],
+      \   'configlicts': ['ignore-removal'],
       \})
 call s:parser.add_argument(
       \ '--ignore-removal', [
@@ -45,7 +45,7 @@ call s:parser.add_argument(
       \   'This option is a no0op when no <pathspec> is used.',
       \ ], {
       \   'deniable': 1,
-      \   'configlicts': ['ignore_removal'],
+      \   'configlicts': ['all'],
       \})
 call s:parser.add_argument(
       \ '--ignore-errors', [
@@ -53,7 +53,7 @@ call s:parser.add_argument(
       \ 'but continue adding the others. The command shall still exit with non-zero status.',
       \])
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  let gita = s:get_gita()
+  let gita = gita#core#get()
   let statuses = gita.get_parsed_status()
   let candidates = deepcopy(extend(
         \ get(statuses, 'unstaged', []),
@@ -75,37 +75,33 @@ function! gita#features#add#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  " automatically specify the current buffer if nothing is specified
-  " and the buffer is a file buffer
-  if empty(&buftype) && empty(get(options, '--', []))
-    let options['--'] = ['%']
-  endif
   if !gita.enabled
     redraw
     call gita#utils#warn(
           \ 'Gita is not available in the current buffer.',
           \)
-    return
+    return { 'status': -1 }
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
         \ 'v', 'verbose',
         \ 'f', 'force',
         \ 'A', 'all',
-        \ 'ignore_removal',
-        \ 'ignore_errors',
+        \ 'ignore-removal',
+        \ 'ignore-errors',
         \])
   return gita.operations.add(options, config)
 endfunction " }}}
 function! gita#features#add#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    let result = gita#features#add#exec(extend({
-          \ '--': get(options, '__unknown__', []),
-          \}, options))
-    if len(result.stdout)
-      call gita#utils#infomsg(result.stdout)
-    endif
+    let options = extend(options, {
+          \ '--': options.__unknown__,
+          \})
+    call gita#features#add#exec(options)
   endif
 endfunction " }}}
 function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{

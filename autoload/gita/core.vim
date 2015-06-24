@@ -34,7 +34,9 @@ endfunction " }}}
 function! s:get_gita(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = getwinvar(bufnr(expr), '_gita', {})
-  if !empty(gita) && !gita.is_expired()
+  if get(g:, 'gita#debug')
+    return s:new_gita()
+  elseif !empty(gita) && !gita.is_expired()
     return gita
   endif
   let gita = getbufvar(expr, '_gita', {})
@@ -94,22 +96,16 @@ function! s:gita.get_parsed_commit(...) abort " {{{
   endif
   return result
 endfunction " }}}
-
-" Obsolute
-function! s:gita.exec(args, ...) abort " {{{
-  let args = deepcopy(a:args)
-  let opts = get(a:000, 0, {})
-  let result = self.git.exec(args, opts)
-  if result.status
-    call gita#utils#errormsg(printf(
-          \ 'vim-gita: Fail: %s', join(result.args)
-          \))
-    call gita#utils#infomsg(result.stdout)
-  else
-    call gita#utils#doautocmd(printf('%s-post', args[0]))
+function! s:gita.fail_on_disabled() abort " {{{
+  if !self.enabled
+    call gita#utils#warn(
+          \ 'Gita is not available on the current buffer.',
+          \)
+    return 1
   endif
-  return result
+  return 0
 endfunction " }}}
+
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
