@@ -104,6 +104,7 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
     " execute Gita command
     let feature = s:feature_registry[name]
     let cmdline = printf('%s %s', name, join(opts.__unknown__))
+    let cmdline = join(opts.__unknown__)
     let args = [a:arglead, cmdline, a:cursorpos]
     let candidates = call(feature.complete, args)
   endif
@@ -127,17 +128,10 @@ call s:register('checkout',
       \ function('gita#features#checkout#command'),
       \ function('gita#features#checkout#complete'),
       \)
-call s:register('status',
-      \ function('gita#features#status#command'),
-      \ function('gita#features#status#complete'),
-      \)
-call s:register('commit',
-      \ function('gita#features#commit#command'),
-      \ function('gita#features#commit#complete'),
-      \)
-call s:register('changes',
-      \ function('gita#features#changes#command'),
-      \ function('gita#features#changes#complete'),
+
+call s:register('show',
+      \ function('gita#features#show#command'),
+      \ function('gita#features#show#complete'),
       \)
 call s:register('diff',
       \ function('gita#features#diff#command'),
@@ -146,6 +140,19 @@ call s:register('diff',
 call s:register('browse',
       \ function('gita#features#browse#command'),
       \ function('gita#features#browse#complete'),
+      \)
+
+call s:register('status',
+      \ function('gita#features#status#command'),
+      \ function('gita#features#status#complete'),
+      \)
+call s:register('commit',
+      \ function('gita#features#commit#command'),
+      \ function('gita#features#commit#complete'),
+      \)
+call s:register('diff-ls',
+      \ function('gita#features#diff_ls#command'),
+      \ function('gita#features#diff_ls#complete'),
       \)
 
 let &cpo = s:save_cpo

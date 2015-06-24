@@ -2,30 +2,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
-
-
-function! s:ensure_commit(options) abort " {{{
-  if empty(get(a:options, 'commit')) || get(a:options, 'new')
-    let commit = gita#utils#ask(
-          \ 'Which commit do you want to compare with? ',
-          \ get(a:options, 'commit', 'HEAD'),
-          \)
-    if empty(commit)
-      call gita#utils#info('Operation has canceled by user')
-      return 0
-    endif
-  else
-    let commit = a:options.commit
-  endif
-  " Note:
-  "   A value of 'commit' might contains leading/trailing dots
-  "   like 'master...' or '..master' or whatever
-  let commit = substitute(commit, '\%(^\.\+\|\.\+$\)', '', 'g')
-  let commit = substitute(commit, '^INDEX$', '', '')
-  let a:options.commit = commit
-  return 1
-endfunction " }}}
 
 
 let s:parser = s:A.new({
@@ -33,10 +11,18 @@ let s:parser = s:A.new({
       \ 'description': 'Show a difference of a file',
       \})
 call s:parser.add_argument(
-      \ 'commit',
-      \ 'A commit string to specify how to compare the versions', {
+      \ 'revision', [
+      \   'A revision (e.g. HEAD) which you want to compare with.',
+      \ ], {
       \   'complete': function('gita#completes#complete_local_branch'),
       \ })
+call s:parser.add_argument(
+      \ 'file', [
+      \   'A filepath which you want to diff the content.',
+      \   'If it is omitted and the current buffer is a file',
+      \   'buffer, the current buffer will be used.',
+      \ ],
+      \)
 call s:parser.add_argument(
       \ '--single', '-1',
       \ 'Open a single buffer to show the difference', {
@@ -47,6 +33,21 @@ call s:parser.add_argument(
       \ 'Open double buffers to compare the difference', {
       \   'conflicts': ['single'],
       \ })
+call s:parser.add_argument(
+      \ '--opener', '-o', [
+      \   'A way to open a new buffer such as "edit", "split", or etc.',
+      \ ], {
+      \ 'type': s:A.types.value,
+      \ },
+      \)
+call s:parser.add_argument(
+      \ '--vertical', '-v', [
+      \   'Vertically open a second buffer (vsplit).',
+      \   'If it is omitted, the buffer is opened horizontally (split).',
+      \ ], {
+      \ 'superordinates': ['double'],
+      \ },
+      \)
 function! s:parser.hooks.pre_validate(options) abort " {{{
   " Automatically use '--singe' if no conflicted argument is specified
   if empty(self.get_conflicted_arguments('single', a:options))
@@ -55,8 +56,44 @@ function! s:parser.hooks.pre_validate(options) abort " {{{
 endfunction " }}}
 
 
-function! gita#features#diff#single(path, ...) abort " {{{
-  let gita = gita#core#get(a:path)
+function! gita#features#diff#exec(...) abort " {{{
+  let gita = gita#core#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if !gita.enabled
+    redraw
+    call gita#utils#warn(
+          \ 'Gita is not available in the current buffer.',
+          \)
+    return { 'status': -1 }
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
+  endif
+  let options = s:D.pick(options, [
+        \ '--',
+        \ 'ignore_submodules',
+        \ 'no_prefix',
+        \ 'no_color',
+        \ 'unified',
+        \ 'histogram',
+        \ 'commit',
+        \])
+  return gita.operations.diff(options, config)
+endfunction " }}}
+function! gita#features#diff#show(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if get(options, 'single')
+    call gita#features#diff#single(options, config)
+  elseif get(options, 'double')
+    call gita#features#diff#double(options, config)
+  else
+    throw 'vim-gita: "single" nor "double" is specified.'
+  endif
+endfunction " }}}
+function! gita#features#diff#single(...) abort " {{{
+  let gita = gita#core#get()
   if !gita.enabled
     redraw
     call gita#utils#warn(
@@ -64,25 +101,43 @@ function! gita#features#diff#single(path, ...) abort " {{{
           \)
     return
   endif
-
-  let options = get(a:000, 0, {})
-  if !s:ensure_commit(options)
-    return
-  endif
-  let abspath = gita.git.get_absolute_path(a:path)
-  let relpath = gita.git.get_relative_path(a:path)
-  " TODO: Add user options
-  let result = gita.operations.diff({
+  let options = extend({
         \ 'ignore_submodules': 1,
         \ 'no_prefix': 1,
         \ 'no_color': 1,
         \ 'unified': '0',
         \ 'histogram': 1,
-        \ 'commit': options.commit,
-        \ '--': [abspath],
-        \}, {
+        \}, get(a:000, 0, {}))
+  " automatically specify the current buffer if nothing is specified
+  " and the buffer is a file buffer
+  if empty(get(options, 'file', ''))
+    if !empty(&buftype)
+      call gita#utils#error(
+            \ 'The current buffer is not a file buffer.',
+            \)
+      call gita#utils#info(
+            \ 'Operation has canceled.'
+            \)
+      return
+    endif
+    let options.file = '%'
+  endif
+  let options.file = expand(options.file)
+  let options.file = gita.git.get_relative_path(options.file)
+  " Ask if no revision is specified.
+  if !gita#features#show#_ensure_revision(options, 'INDEX')
+    return
+  endif
+  let relpath = gita.git.get_relative_path(options.file)
+  let options = extend(
+        \ s:D.omit(options, ['revision', 'file']), {
+        \  'commit': options.revision,
+        \  '--': [options.file],
+        \ })
+  let config = extend({
         \ 'echo': 'fail',
-        \})
+        \}, get(a:000, 1, {}))
+  let result = gita#features#diff#exec(options, config)
   if result.status != 0
     return
   endif
@@ -100,8 +155,8 @@ function! gita#features#diff#single(path, ...) abort " {{{
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable
 endfunction " }}}
-function! gita#features#diff#double(path, ...) abort " {{{
-  let gita = gita#core#get(a:path)
+function! gita#features#diff#double(...) abort " {{{
+  let gita = gita#core#get()
   if !gita.enabled
     redraw
     call gita#utils#warn(
@@ -111,17 +166,10 @@ function! gita#features#diff#double(path, ...) abort " {{{
   endif
 
   let options = get(a:000, 0, {})
-  if !s:ensure_commit(options)
-    return
-  endif
-  let abspath = gita.git.get_absolute_path(a:path)
-  let relpath = gita.git.get_relative_path(a:path)
-  " TODO: Add user options
-  let result = gita.operations.show({
-        \ 'object': printf('%s:%s', options.commit, relpath),
-        \}, {
+  let config = extend({
         \ 'echo': '',
-        \})
+        \}, get(a:000, 1, {}))
+  let result = gita#features#show#exec(options, config)
   if result.status != 0
     let REF = split(result.stdout, '\v\r?\n')
   else
@@ -129,14 +177,17 @@ function! gita#features#diff#double(path, ...) abort " {{{
     " so just show a empty buffer
     let REF = []
   endif
+  " Note:
+  "   options.file and options.revision will be configured by
+  "   gita#features#show#exec
+  let abspath = gita.git.get_absolute_path(options.file)
+  let relpath = gita.git.get_relative_path(options.file)
 
   let LOCAL_bufname = abspath
   let REF_bufname = gita#utils#buffer#bufname(
         \ relpath,
-        \ empty(options.commit) ? 'INDEX' : options.commit,
+        \ empty(options.revision) ? 'INDEX' : options.revision,
         \)
-  let opener = get(options, 'opener', 'edit')
-
   " Open two buffers
   let bufnums = gita#utils#buffer#diff2(
         \ LOCAL_bufname, REF_bufname, 'diff', {
@@ -159,12 +210,7 @@ endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    let path = expand(get(options.__unknown__, 0, '%'))
-    if get(options, 'single')
-      call gita#features#diff#single(path, options)
-    elseif get(options, 'double')
-      call gita#features#diff#double(path, options)
-    endif
+    call gita#features#diff#show(options)
   endif
 endfunction " }}}
 function! gita#features#diff#complete(arglead, cmdline, cursorpos) abort " {{{

@@ -56,6 +56,19 @@ function! s:actions.open(statuses, options) abort " {{{
           \})
   endfor
 endfunction " }}}
+function! s:actions.diff(statuses, options) abort " {{{
+  let gita = gita#core#get()
+  let invoker = gita#utils#invoker#get()
+  for status in a:statuses
+    let path = get(status, 'path2', status.path)
+    call invoker.focus()
+    call gita#features#diff#show(extend({
+          \ 'file': path,
+          \ 'revision': get(a:options, 'revision', 'INDEX'),
+          \ 'new': 1,
+          \}, a:options))
+  endfor
+endfunction " }}}
 
 
 function! gita#window#smart_map(lhs, rhs) abort " {{{
@@ -159,8 +172,11 @@ function! gita#window#open(name, ...) abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-help-m) :<C-u>call <SID>action('help', { 'name': 'window_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-s) :<C-u>call <SID>action('help', { 'name': 'short_format' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-open)   :<C-u>call <SID>action('open')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-open-h) :<C-u>call <SID>action('open', { 'opener': 'botright split' })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-open-v) :<C-u>call <SID>action('open', { 'opener': 'botright vsplit' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-h) :<C-u>call <SID>action('open', { 'opener': 'split' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-v) :<C-u>call <SID>action('open', { 'opener': 'vsplit' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff)   :<C-u>call <SID>action('diff', { 'single': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-h) :<C-u>call <SID>action('diff', { 'double': 1, 'opener': 'split' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-v) :<C-u>call <SID>action('diff', { 'double': 1, 'opener': 'vsplit' })<CR>
 
   if get(g:, printf('gita#features#%s#enable_default_keymap', a:name), 1)
     nmap <buffer> q     <Plug>(gita-action-close)
@@ -168,6 +184,8 @@ function! gita#window#open(name, ...) abort " {{{
     nmap <buffer> ?s    <Plug>(gita-action-help-s)
     nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
     nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+    nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
+    nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
   endif
   
   " Note:

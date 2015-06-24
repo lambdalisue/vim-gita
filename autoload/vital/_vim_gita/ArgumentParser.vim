@@ -66,7 +66,6 @@ function! s:new(...) abort " {{{
         \}, get(a:000, 0, {}))
   let parser = extend(deepcopy(s:parser), s:D.pick(options, [
         \ 'name',
-        \ 'description',
         \ 'auto_help',
         \ 'validate_required',
         \ 'validate_types',
@@ -76,6 +75,11 @@ function! s:new(...) abort " {{{
         \ 'validate_pattern',
         \ 'enable_positional_assign',
         \]))
+  if s:P.is_list(options.description)
+    let parser.description = join(options.description, "\n")
+  else
+    let parser.description = options.description
+  endif
   if parser.auto_help
     call parser.add_argument(
           \ '--help', '-h', 'show this help',
