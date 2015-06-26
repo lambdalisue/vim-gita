@@ -169,7 +169,7 @@ function! gita#features#commit#exec(...) abort " {{{
     call gita#utils#warn(
           \ 'Gita is not available in the current buffer.',
           \)
-    return
+    return { 'status': -1 }
   endif
   let options = s:D.pick(options, [
         \ '--',
