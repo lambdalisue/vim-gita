@@ -235,6 +235,11 @@ function! gita#features#status#exec(...) abort " {{{
   return gita.operations.status(options, config)
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
+  let gita = gita#core#get()
+  if gita.fail_on_disabled()
+    return
+  endif
+
   let options = gita#window#extend_options(get(a:000, 0, {}))
   let config = get(a:000, 1, {})
   " Open the window and extend actions
