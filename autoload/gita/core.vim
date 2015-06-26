@@ -15,12 +15,12 @@ function! s:new_gita(...) abort " {{{
   if empty(buftype) && !empty(bufname)
     let git = s:G.find(fnamemodify(bufname, ':p'))
     if empty(git)
-      let git = s:G.find(fnamemodify(resolve(expand(expr)), ':p'))
+      let git = s:G.find(resolve(expand(expr)))
     endif
   elseif !buflisted(bufname) && filereadable(expand(expr))
     let git = s:G.find(fnamemodify(expand(expr), ':p'))
     if empty(git)
-      let git = s:G.find(fnamemodify(resolve(expand(expr)), ':p'))
+      let git = s:G.find(resolve(expand(expr)))
     endif
   else
     " Non file buffer. Use a current working directory instead.
