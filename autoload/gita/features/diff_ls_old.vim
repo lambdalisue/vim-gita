@@ -7,24 +7,15 @@ let s:D = gita#utils#import('Data.Dict')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
-let s:const = {}
-let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'diff', 'ls'], s:const.bufname_sep)
-let s:const.filetype = 'gita-diff-ls'
 
 let s:parser = s:A.new({
       \ 'name': 'Gita diff-ls',
-      \ 'description': 'Show filenames and statuses different',
+      \ 'description': 'List filenames and statuses different between two commit',
       \})
 call s:parser.add_argument(
-      \ '--window', '-w',
-      \ 'Open a gita:diff:ls window to show changed files (Default behavior)', {
-      \   'deniable': 1,
-      \   'default': 1,
-      \ })
-call s:parser.add_argument(
-      \ 'revision', [
-      \   'A revision (e.g. HEAD) which you want to compare with.',
+      \ 'commit', [
+      \   'A commit string to specify how to compare commits.',
+      \   'If it is omitted, it would be interactively requested.',
       \ ], {
       \   'complete': function('gita#completes#complete_local_branch'),
       \ })
@@ -35,54 +26,36 @@ function! s:actions.update(statuses, options) abort " {{{
 endfunction " }}}
 
 function! gita#features#diff_ls#open(...) abort " {{{
-  let options = extend(
-        \ deepcopy(w:_gita_options),
-        \ get(a:000, 0, {}),
-        \)
+  let options = gita#window#extend_options(get(a:000, 0, {}))
   " Ask which commit the user want to compare if no 'commit' is specified
-  if empty(get(options, 'revision')) || get(options, 'diff_ls_new')
-    let revision = gita#utils#ask(
-          \ 'Which revision do you want to compare with? ',
-          \ get(options, 'revision', 'master'),
+  if empty(get(options, 'commit')) || get(options, 'new')
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to compare with? ',
+          \ get(options, 'commit', 'master'),
           \)
-    if empty(revision)
+    if empty(commit)
       call gita#utils#info('Operation has canceled by user')
       return
     endif
-    let options.revision = revision
+    let options.commit = commit
   endif
-
-  let bufname = join([s:const.bufname, options.revision], s:const.bufname_sep)
-  let result = gita#display#open(bufname, options)
-  if result == -1
-    " gita is not available
-    return
-  else result == 1
-    " the buffer is already constructed
-    call gita#features#diff_ls#update()
-    silent execute printf("setlocal filetype=%s", s:const.filetype)
-    return
-  endif
-  call gita#display#extend_actions(s:actions)
-
-  " Define loccal options
-  setlocal nomodifiable
-
-  noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#display#action('help', { 'name': 'diff_ls_mapping' })<CR>
-
-  call gita#features#diff_ls#update()
-  silent execute printf("setlocal filetype=%s", s:const.filetype)
+  " Open the window
+  let bufname_sep = has('unix') ? ':' : '_'
+  call gita#window#open('diff_ls', options, {
+        \ 'bufname': join(['gita', 'diff-ls', options.commit], bufname_sep),
+        \ 'filetype': 'gita-diff-ls',
+        \})
+  call gita#features#diff_ls#update(options)
 endfunction " }}}
 function! gita#features#diff_ls#update(...) abort " {{{
-  let options = extend(
-        \ deepcopy(w:_gita_options),
-        \ get(a:000, 0, {}),
-        \)
-  let options.no_prefix = 1
-  let options.no_color = 1
-  let options.name_status = 1
-  let result = gita#features#diff#exec(options, {
+  let options = gita#window#extend_options(get(a:000, 0, {}))
+  let gita = gita#core#get()
+  let result = gita.operations.diff({
+        \ 'no_prefix': 1,
+        \ 'no_color': 1,
+        \ 'name_status': 1,
+        \ 'commit': substitute(options.commit, '^INDEX$', '', ''),
+        \}, {
         \ 'echo': 'fail',
         \})
   if result.status != 0
@@ -103,9 +76,9 @@ function! gita#features#diff_ls#update(...) abort " {{{
 
   " update content
   let buflines = s:L.flatten([
-        \ ['# Files difference between "' . options.revision . '".',
+        \ ['# Files changed from "' . options.commit . '".',
         \  '# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
-        \ gita#utils#help#get('diff_ls_mapping'),
+        \ gita#utils#help#get('changes_mapping'),
         \ gita#utils#help#get('short_format'),
         \ statuses_lines,
         \])

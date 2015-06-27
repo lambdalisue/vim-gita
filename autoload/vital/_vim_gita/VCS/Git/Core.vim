@@ -1,12 +1,3 @@
-"******************************************************************************
-" Core functions of Git manipulation.
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-"
-" (C) 2014, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
@@ -206,25 +197,18 @@ endfunction " }}}
 
 " Execution
 function! s:system(args, ...) abort " {{{
-  let saved_cwd = getcwd()
   let args = s:List.flatten(a:args)
   let opts = extend({
         \ 'stdin': '',
         \ 'timeout': 0,
-        \ 'cwd': saved_cwd,
         \}, get(a:000, 0, {}))
   let original_opts = deepcopy(opts)
   " prevent E677
   if strlen(opts.stdin)
     let opts.input = opts.stdin
+    unlet opts.stdin
   endif
-  try
-    let cwd = s:Prelude.path2directory(opts.cwd)
-    silent execute 'lcd' fnameescape(cwd)
-    let stdout = s:Process.system(args, opts)
-  finally
-    silent execute 'lcd' fnameescape(saved_cwd)
-  endtry
+  let stdout = s:Process.system(args, opts)
   " remove trailing newline
   let stdout = substitute(stdout, '\v%(\r?\n)$', '', '')
   let status = s:Process.get_last_status()
@@ -236,25 +220,5 @@ function! s:exec(args, ...) abort " {{{
   return s:system(args, opts)
 endfunction " }}}
 
-function! s:args(args, ...) abort " {{{
-  let opts = get(a:000, 0, {})
-  let args = ['git', '-c', 'color.ui=false']
-  if has_key(opts, 'git_dir')
-    call add(args, '--git-dir')
-    call add(args, fnameescape(fnamemodify(opts.git_dir, ':p')))
-  endif
-  if has_key(opts, 'work_tree')
-    call add(args, '--work-tree')
-    call add(args, fnameescape(fnamemodify(opts.work_tree, ':p')))
-  endif
-  if has_key(opts, 'C')
-    call add(args, '--C')
-    call add(args, fnameescape(fnamemodify(opts.C, ':p')))
-  endif
-  return extend(args, a:args)
-endfunction " }}}
-
 let &cpo = s:save_cpo
-unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
-

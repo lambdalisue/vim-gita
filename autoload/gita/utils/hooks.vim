@@ -5,14 +5,13 @@ set cpo&vim
 let s:hooks = {}
 function! s:hooks.call(name, ...) abort " {{{
   if has_key(self, a:name)
-    call call(self[a:name], a:000, self.__parent)
+    call call(self[a:name], a:000, self)
   endif
 endfunction " }}}
 
 
-function! gita#utils#hooks#new(...) abort " {{{
+function! gita#utils#hooks#new() abort " {{{
   let hooks = deepcopy(s:hooks)
-  let hooks.__parent = get(a:000, 0, hooks)
   return hooks
 endfunction " }}}
 

@@ -9,7 +9,8 @@ let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname = has('unix') ? 'gita:status' : 'gita-status'
+let s:const.bufname_sep = has('unix') ? ':' : '-'
+let s:const.bufname = join(['gita', 'status'], s:const.bufname_sep)
 let s:const.filetype = 'gita-status'
 
 let s:parser = s:A.new({
@@ -110,6 +111,7 @@ function! s:actions.rm(statuses, options) abort " {{{
   endif
   let options = extend({
         \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \ 'quiet': 1,
         \}, a:options)
   call gita#features#rm#exec(options, {
         \ 'echo': 'fail',
@@ -122,6 +124,7 @@ function! s:actions.reset(statuses, options) abort " {{{
   endif
   let options = extend({
         \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \ 'quiet': 1,
         \}, a:options)
   call gita#features#reset#exec(options, {
         \ 'echo': 'fail',
@@ -243,8 +246,13 @@ function! gita#features#status#exec(...) abort " {{{
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
   let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
-  if result == -1 || result == 1
-    " gita is not available or the buffer is already constructed
+  if result == -1
+    " gita is not available
+    return
+  elseif result == 1
+    " the buffer is already constructed
+    call gita#features#status#update()
+    silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
   call gita#display#extend_actions(s:actions)
@@ -260,9 +268,9 @@ function! gita#features#status#open(...) abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-switch)
         \ :<C-u>call gita#display#action('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-new)
-        \ :<C-u>call gita#display#action('open_commit', { 'new': 1 })<CR>
+        \ :<C-u>call gita#display#action('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
-        \ :<C-u>call gita#display#action('open_commit', { 'amend': 1 })<CR>
+        \ :<C-u>call gita#display#action('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-add)
         \ :call gita#display#action('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)

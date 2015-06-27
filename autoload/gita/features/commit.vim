@@ -8,7 +8,8 @@ let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname = has('unix') ? 'gita:commit' : 'gita-commit'
+let s:const.bufname_sep = has('unix') ? ':' : '-'
+let s:const.bufname = join(['gita', 'commit'], s:const.bufname_sep)
 let s:const.filetype = 'gita-commit'
 
 let s:parser = s:A.new({
@@ -84,8 +85,10 @@ endfunction " }}}
 function! s:smart_map(...) abort " {{{
   return call('gita#display#smart_map', a:000)
 endfunction " }}}
-function! s:get_current_commitmsg() abort " {{{
-  return filter(getline(1, '$'), 'v:val !~# "^#"')
+function! s:get_current_commitmsg(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let content = getbufline(expr, 1, '$')
+  return filter(content, 'v:val !~# "^#"')
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
   if a:filename != expand('%:p')
@@ -101,28 +104,12 @@ function! s:ac_write(filename) abort " {{{
         \ "the commit message is saved in a local cache.",
         \)
 endfunction " }}}
-function! s:ac_quitpre() abort " {{{
-  if !&modified
-    call gita#display#action('commit', { 'quitting': 1 })
-  endif
-endfunction " }}}
-
-let s:actions = {}
-function! s:actions.update(statuses, options) abort " {{{
-  call gita#features#commit#update(a:options)
-endfunction " }}}
-function! s:actions.open_status(statuses, options) abort " {{{
-  if &modified
-    let w:_gita_options.commitmsg_cached = s:get_current_commitmsg()
-    setlocal nomodified
-  endif
-  call gita#features#status#open(a:options)
-endfunction " }}}
-function! s:actions.commit(statuses, options) abort " {{{
-  let gita = gita#core#get()
+function! s:commit(expr, options) abort " {{{
+  let gita = gita#core#get(a:expr)
   let meta = gita.git.get_meta()
   " validate situation
-  let staged_statuses = filter(values(w:_gita_statuses_map), 'v:val.is_staged')
+  let statuses_map = getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
+  let staged_statuses = filter(values(statuses_map), 'v:val.is_staged')
   if empty(meta.merge_head) && empty(staged_statuses)
     " not in merge mode and nothing has been staged
     redraw
@@ -130,7 +117,7 @@ function! s:actions.commit(statuses, options) abort " {{{
           \ 'No changes exist for commit. Stage changes first.',
           \)
     return
-  elseif &modified
+  elseif getbufvar(a:expr, '&modified')
     redraw
     call gita#utils#warn(
           \ 'You have unsaved changes on the commit message.',
@@ -140,7 +127,7 @@ function! s:actions.commit(statuses, options) abort " {{{
   endif
 
   " validate commitmsg
-  let commitmsg = s:get_current_commitmsg()
+  let commitmsg = s:get_current_commitmsg(a:expr)
   if join(commitmsg, '') =~# '\v^\s*$'
     redraw
     call gita#utils#info(
@@ -152,22 +139,40 @@ function! s:actions.commit(statuses, options) abort " {{{
   endif
 
   " commit
-  let options = extend(a:options, w:_gita_options)
+  let options = extend(
+        \ a:options,
+        \ getwinvar(bufwinnr(a:expr), '_gita_options', {}),
+        \)
   let options.file = tempname()
   call writefile(commitmsg, options.file)
   let result = gita#features#commit#exec(options, {
         \ 'echo': 'both',
         \})
   if result.status == 0
+    let w = getwinvar(bufwinnr(a:expr), '')
     " remove cached commitmsg
     silent! unlet! gita.commitmsg_saved
-    silent! unlet! w:_gita_options.commitmsg_cached
+    silent! unlet! w._gita_options.commitmsg_cached
     " reset options
-    silent! unlet! w:_gita_options.amend
+    silent! unlet! w._gita_options.amend
   endif
-  if !get(options, 'quitting')
-    call self.update(a:statuses, a:options)
+endfunction " }}}
+
+let s:actions = {}
+function! s:actions.update(statuses, options) abort " {{{
+  call gita#features#commit#update(a:options)
+endfunction " }}}
+function! s:actions.open_status(statuses, options) abort " {{{
+  if &modified
+    let gita = gita#core#get()
+    let gita.commitmsg_cached = s:get_current_commitmsg()
+    setlocal nomodified
   endif
+  call gita#features#status#open(a:options)
+endfunction " }}}
+function! s:actions.commit(statuses, options) abort " {{{
+  call s:commit('%', a:options)
+  call self.update(a:statuses, a:options)
 endfunction " }}}
 
 
@@ -189,24 +194,35 @@ function! gita#features#commit#exec(...) abort " {{{
         \ 'u', 'untracked_files',
         \ 'a', 'all',
         \ 'reset_author',
-        \ 'ammend',
+        \ 'amend',
         \])
   return gita.operations.commit(options, config)
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
   let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
-  if result == -1 || result == 1
-    " gita is not available or the buffer is already constructed
+  if result == -1
+    " gita is not available
+    return
+  elseif result == 1
+    " the buffer is already constructed
+    call gita#features#commit#update()
+    silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
   call gita#display#extend_actions(s:actions)
+
+  " Define hooks
+  function! b:_gita_hooks.ac_bufwinleave_pre(expr) abort
+    if !getbufvar(a:expr, '&modified') && gita#utils#asktf('Do you want to commit changes?', 'yes')
+      call s:commit(a:expr, {})
+    endif
+  endfunction
 
   " Define options and extra AutoCmd
   setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
-    autocmd QuitPre     <buffer> call s:ac_quitpre()
   augroup END
 
   " Define extra Plug key mappings
@@ -258,6 +274,14 @@ function! gita#features#commit#update(...) abort " {{{
     let statuses_map[record] = status
   endfor
   let w:_gita_statuses_map = statuses_map
+
+  " reset commitmsg if 'new_commitmsg' is specified
+  if get(options, 'new_commitmsg')
+    silent! unlet! options.new_commitmsg
+    silent! unlet! w:_gita_options.new_commitmsg
+    silent! unlet! gita.commitmsg_saved
+    silent! unlet! gita.commitmsg_cached
+  endif
 
   " create a default commit message
   let commit_mode = ''
