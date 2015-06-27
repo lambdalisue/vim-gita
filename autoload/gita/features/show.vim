@@ -64,11 +64,7 @@ function! gita#features#show#_ensure_revision(...) abort " {{{
 endfunction " }}}
 function! gita#features#show#exec(...) abort " {{{
   let gita = gita#core#get()
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
   let options = get(a:000, 0, {})
@@ -102,14 +98,6 @@ function! gita#features#show#exec(...) abort " {{{
   return gita.operations.show(options, config)
 endfunction " }}}
 function! gita#features#show#show(...) abort " {{{
-  let gita = gita#core#get()
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
-    return
-  endif
   let options = get(a:000, 0, {})
   let config = extend({
         \ 'echo': 'fail',

@@ -71,7 +71,7 @@ function! s:find_url(gita, expr, options) abort " {{{
         \}
   let translation_patterns = extend(
         \ deepcopy(g:gita#features#browse#translation_patterns),
-        \ g:gita#features#browse#extra_translation_patterns,
+        \ get(g:, 'gita#features#browse#extra_translation_patterns', []),
         \)
   for pattern in translation_patterns
     if data.remote_url =~# pattern[0]
@@ -135,88 +135,91 @@ function! s:parser.hooks.pre_validate(opts) abort " {{{
 endfunction " }}}
 
 
-function! gita#features#browse#find_url(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let options = get(a:000, 1, {})
-  let gita = gita#core#get(expr)
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
-    return
+function! gita#features#browse#exec(...) abort " {{{
+  let gita = gita#core#get()
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
   endif
-  return s:find_url(gita, expr, options)
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
+  endif
+  let urls = map(
+        \ deepcopy(get(options, '--', [])),
+        \ 's:find_url(gita, v:val, options)',
+        \)
+  return {
+        \ 'status': 0,
+        \ 'urls': urls,
+        \}
 endfunction " }}}
 function! gita#features#browse#open(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let options = get(a:000, 1, {})
-  let gita = gita#core#get(expr)
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let result = gita#features#browse#exec(options, config)
+  if result.status != 0
     return
   endif
-
-  let url = s:find_url(gita, expr, options)
-  if !empty(url)
-    call s:F.open(url)
-    call gita#utils#info(printf(
-          \ '"%s" is opened.',
-          \ url,
-          \))
-  endif
+  redraw!
+  for url in result.urls
+    if !empty(url)
+      call s:F.open(url)
+      call gita#utils#info(printf(
+            \ '"%s" is opened.',
+            \ url,
+            \))
+    endif
+  endfor
 endfunction " }}}
 function! gita#features#browse#yank(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let options = get(a:000, 1, {})
-  let gita = gita#core#get(expr)
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let result = gita#features#browse#exec(options, config)
+  if result.status != 0
     return
   endif
 
-  let url = s:find_url(gita, expr, options)
-  if !empty(url)
-    call s:yank_string(url)
-    call gita#utils#info(printf(
-          \ '"%s" is yanked.',
-          \ url,
-          \))
-  endif
+  redraw!
+  for url in result.urls
+    if !empty(url)
+      call s:yank_string(url)
+      call gita#utils#info(printf(
+            \ '"%s" is yanked.',
+            \ url,
+            \))
+    endif
+  endfor
 endfunction " }}}
 function! gita#features#browse#echo(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let options = get(a:000, 1, {})
-  let gita = gita#core#get(expr)
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let result = gita#features#browse#exec(options, config)
+  if result.status != 0
     return
   endif
 
-  let url = s:find_url(gita, expr, options)
-  if !empty(url)
-    call gita#utils#info(url)
-  endif
+  redraw!
+  for url in result.urls
+    if !empty(url)
+      call gita#utils#info(url)
+    endif
+  endfor
 endfunction " }}}
 function! gita#features#browse#command(bang, range, ...) abort " {{{
-  let parser = s:get_parser()
-  let options = parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
+  " automatically assign the current buffer if no file is specified
+  let options['--'] = options.__unknown__
+  if empty(get(options, '--', []))
+    let options['--'] = ['%']
+  endif
   if !empty(options)
     if get(options, 'open')
-      call gita#features#browse#open('%', options)
+      call gita#features#browse#open(options)
     elseif get(options, 'yank')
-      call gita#features#browse#yank('%', options)
+      call gita#features#browse#yank(options)
     elseif get(options, 'echo')
-      call gita#features#browse#echo('%', options)
+      call gita#features#browse#echo(options)
     else
       call gita#utils#debugmsg(
             \ 'No available action is specified',
@@ -226,8 +229,7 @@ function! gita#features#browse#command(bang, range, ...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
-  let parser = s:get_parser()
-  let candidates = parser.complete(a:arglead, a:cmdline, a:cursorpos)
+  let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
 

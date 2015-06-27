@@ -40,9 +40,7 @@ endfunction " }}}
 function! s:get_gita(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = getwinvar(bufnr(expr), '_gita', {})
-  if get(g:, 'gita#debug')
-    return s:new_gita()
-  elseif !empty(gita) && !gita.is_expired()
+  if !empty(gita) && !gita.is_expired()
     return gita
   endif
   let gita = getbufvar(expr, '_gita', {})

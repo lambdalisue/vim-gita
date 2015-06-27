@@ -104,11 +104,8 @@ function! gita#features#checkout#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  if gita.fail_on_disabled()
+    return
   endif
   if !empty(get(options, '--', []))
     call map(options['--'], 'expand(v:val)')
