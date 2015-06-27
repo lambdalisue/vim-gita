@@ -9,7 +9,6 @@ function! s:ac_bufwinleave(expr) abort " {{{
   if getbufvar(a:expr, '_gita_quitpre')
     call setbufvar(a:expr, '_gita_quitpre', 0)
     let hooks = getbufvar(a:expr, '_gita_hooks')
-    echomsg "hooks: " . string(hooks)
     call hooks.call('ac_bufwinleave_pre', a:expr)
     call gita#utils#invoker#focus()
     call gita#utils#invoker#clear()

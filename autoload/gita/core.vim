@@ -77,32 +77,6 @@ function! s:gita.fail_on_disabled() abort " {{{
   return 0
 endfunction " }}}
 
-" obsolute
-function! s:gita.get_parsed_status(...) abort " {{{
-  let options = extend({
-        \ 'porcelain': 1,
-        \ 'ignore_submodules': 1,
-        \}, get(a:000, 0, {}))
-  let result = self.operations.status(options)
-  if result.status == 0
-    return s:S.parse(result.stdout)
-  endif
-  return result
-endfunction " }}}
-function! s:gita.get_parsed_commit(...) abort " {{{
-  let options = extend({
-        \ 'porcelain': 1,
-        \ 'dry_run',
-        \ 'no_status',
-        \ 'ignore_submodules': 1,
-        \}, get(a:000, 0, {}))
-  let result = self.operations.commit(options)
-  if result.status == 1
-    return s:S.parse(result.stdout)
-  endif
-  return result
-endfunction " }}}
-
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

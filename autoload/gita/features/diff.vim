@@ -28,25 +28,14 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_commit'),
       \ })
 call s:parser.add_argument(
-      \ '--no-index',
-      \ 'Compare the given two paths on the filesystem.', {
-      \   'conflicts': ['cached'],
-      \ })
-call s:parser.add_argument(
       \ '--cached',
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
       \   'conflicts': ['no_index'],
       \ })
 call s:parser.add_argument(
-      \ '--single', '-1',
-      \ 'Open a single buffer to show the difference', {
-      \   'conflicts': ['double'],
-      \ })
-call s:parser.add_argument(
-      \ '--double', '-2',
-      \ 'Open double buffers to compare the difference', {
-      \   'conflicts': ['single'],
-      \ })
+      \ '--compare', '-c',
+      \ 'Compare the changes in diff mode',
+      \ )
 call s:parser.add_argument(
       \ '--opener', '-o', [
       \   'A way to open a new buffer such as "edit", "split", or etc.',
@@ -59,52 +48,11 @@ call s:parser.add_argument(
       \   'Vertically open a second buffer (vsplit).',
       \   'If it is omitted, the buffer is opened horizontally (split).',
       \ ], {
-      \ 'superordinates': ['double'],
+      \ 'superordinates': ['compare'],
       \ },
       \)
-function! s:parser.hooks.pre_validate(options) abort " {{{
-  " Automatically use '--singe' if no conflicted argument is specified
-  if empty(self.get_conflicted_arguments('single', a:options))
-    let a:options.single = 1
-  endif
-endfunction " }}}
 
-
-function! gita#features#diff#exec(...) abort " {{{
-  let gita = gita#core#get()
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  if gita.fail_on_disabled()
-    return { 'status': -1 }
-  endif
-  if !empty(get(options, '--', []))
-    call map(options['--'], 'expand(v:val)')
-  endif
-  let options = s:D.pick(options, [
-        \ '--',
-        \ 'ignore_submodules',
-        \ 'no_prefix',
-        \ 'no_color',
-        \ 'unified',
-        \ 'histogram',
-        \ 'no_index',
-        \ 'cached',
-        \ 'commit',
-        \])
-  return gita.operations.diff(options, config)
-endfunction " }}}
-function! gita#features#diff#show(...) abort " {{{
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  if get(options, 'single')
-    call gita#features#diff#show_single(options, config)
-  elseif get(options, 'double')
-    call gita#features#diff#show_double(options, config)
-  else
-    throw 'vim-gita: "single" nor "double" is specified.'
-  endif
-endfunction " }}}
-function! gita#features#diff#show_single(...) abort " {{{
+function! s:diff(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   if gita.fail_on_disabled()
@@ -143,7 +91,7 @@ function! gita#features#diff#show_single(...) abort " {{{
   setlocal nomodifiable
   setlocal filetype=diff
 endfunction " }}}
-function! gita#features#diff#show_double(...) abort " {{{
+function! s:compare(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   if gita.fail_on_disabled()
@@ -209,23 +157,57 @@ function! gita#features#diff#show_double(...) abort " {{{
   diffthis
   diffupdate
 endfunction " }}}
+
+function! gita#features#diff#exec(...) abort " {{{
+  let gita = gita#core#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
+  endif
+  let options = s:D.pick(options, [
+        \ '--',
+        \ 'ignore_submodules',
+        \ 'no_prefix',
+        \ 'no_color',
+        \ 'unified',
+        \ 'histogram',
+        \ 'no_index',
+        \ 'cached',
+        \ 'commit',
+        \ 'name_status',
+        \])
+  return gita.operations.diff(options, config)
+endfunction " }}}
+function! gita#features#diff#show(...) abort " {{{
+  let options = get(a:000, 0, {})
+  if !has_key(options, 'commit')
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to compare with? ',
+          \ 'INDEX',
+          \)
+    if empty(commit)
+      call gita#utils#warn(
+            \ 'The operation has canceled by user',
+            \)
+      return
+    endif
+    let options.commit = commit
+  endif
+  let options.commit = substitute(options.commit, '^INDEX$', '', '')
+  let config = get(a:000, 1, {})
+  if get(options, 'compare')
+    call s:compare(options, config)
+  else
+    call s:diff(options, config)
+  endif
+endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    if !has_key(options, 'commit')
-      let commit = gita#utils#ask(
-            \ 'Which commit do you want to compare with? ',
-            \ 'INDEX',
-            \)
-      if empty(commit)
-        call gita#utils#warn(
-              \ 'The operation has canceled by user',
-              \)
-        return
-      endif
-      let options.commit = commit
-    endif
-    let options.commit = substitute(options.commit, '^INDEX$', '', '')
     let options = extend(options, {
           \ '--': options.__unknown__,
           \})
