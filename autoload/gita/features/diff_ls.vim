@@ -12,6 +12,13 @@ let s:const.bufname_sep = has('unix') ? ':' : '-'
 let s:const.bufname = join(['gita', 'diff', 'ls'], s:const.bufname_sep)
 let s:const.filetype = 'gita-diff-ls'
 
+function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
+  let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
+  return call('gita#completes#complete_local_branch', extend(
+        \ [arglead, a:cmdline, a:cursorpos],
+        \ a:000,
+        \))
+endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita diff-ls',
       \ 'description': 'Show filenames and statuses different',
@@ -23,10 +30,14 @@ call s:parser.add_argument(
       \   'default': 1,
       \ })
 call s:parser.add_argument(
-      \ 'revision', [
-      \   'A revision (e.g. HEAD) which you want to compare with.',
+      \ 'commit', [
+      \   'A commit which you want to compare with.',
+      \   'If nothing is specified, it show changes in working tree relative to the index (staging area for next commit).',
+      \   'If <commit> is specified, it show changes in working tree relative to the named <commit>.',
+      \   'If <commit>..<commit> is specified, it show the changes between two arbitrary <commit>.',
+      \   'If <commit>...<commit> is specified, it show thechanges on the branch containing and up to the second <commit>, starting at a common ancestor of both <commit>.',
       \ ], {
-      \   'complete': function('gita#completes#complete_local_branch'),
+      \   'complete': function('s:complete_commit'),
       \ })
 
 let s:actions = {}
@@ -36,28 +47,29 @@ endfunction " }}}
 
 function! gita#features#diff_ls#open(...) abort " {{{
   let options = extend(
-        \ deepcopy(w:_gita_options),
+        \ deepcopy(get(w:, '_gita_options', {})),
         \ get(a:000, 0, {}),
         \)
   " Ask which commit the user want to compare if no 'commit' is specified
-  if empty(get(options, 'revision')) || get(options, 'diff_ls_new')
-    let revision = gita#utils#ask(
-          \ 'Which revision do you want to compare with? ',
-          \ get(options, 'revision', 'master'),
+  if empty(get(options, 'commit')) || get(options, 'diff_ls_new')
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to compare with? ',
+          \ get(options, 'commit', 'master'),
           \)
-    if empty(revision)
+    if empty(commit)
       call gita#utils#info('Operation has canceled by user')
       return
     endif
-    let options.revision = revision
+    let options.commit = commit
   endif
+  let options.commit = substitute(options.commit, '^INDEX$', '', '')
 
-  let bufname = join([s:const.bufname, options.revision], s:const.bufname_sep)
+  let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
   let result = gita#display#open(bufname, options)
   if result == -1
     " gita is not available
     return
-  else result == 1
+  elseif result == 1
     " the buffer is already constructed
     call gita#features#diff_ls#update()
     silent execute printf("setlocal filetype=%s", s:const.filetype)
@@ -103,7 +115,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
 
   " update content
   let buflines = s:L.flatten([
-        \ ['# Files difference between "' . options.revision . '".',
+        \ ['# Files difference between "' . options.commit . '".',
         \  '# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
         \ gita#utils#help#get('diff_ls_mapping'),
         \ gita#utils#help#get('short_format'),

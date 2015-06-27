@@ -261,6 +261,8 @@ function! gita#features#status#open(...) abort " {{{
   setlocal nomodifiable
 
   " Define extra Plug key mappings
+  noremap <silent><buffer> <Plug>(gita-action-help-s)
+        \ :<C-u>call gita#display#action('help', { 'name': 'short_format' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-m)
         \ :<C-u>call gita#display#action('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
@@ -271,6 +273,12 @@ function! gita#features#status#open(...) abort " {{{
         \ :<C-u>call gita#display#action('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
         \ :<C-u>call gita#display#action('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open)
+        \ :call gita#display#action('open')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-h)
+        \ :call gita#display#action('open', { 'opener': 'split' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-v)
+        \ :call gita#display#action('open', { 'opener': 'vsplit' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-add)
         \ :call gita#display#action('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
@@ -300,10 +308,18 @@ function! gita#features#status#open(...) abort " {{{
 
   " Define extra actual key mappings
   if get(g:, 'gita#features#status#enable_default_mappings', 1)
+    nmap <buffer> q     :<C-u>q<CR>
     nmap <buffer> <C-l> <Plug>(gita-action-update)
+    nmap <buffer> ?s    <Plug>(gita-action-help-s)
+    nmap <buffer> ?m    <Plug>(gita-action-help-m)
     nmap <buffer> cc    <Plug>(gita-action-switch)
     nmap <buffer> cC    <Plug>(gita-action-switch-new)
     nmap <buffer> cA    <Plug>(gita-action-switch-amend)
+
+    nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
+    nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+    nmap <buffer><expr> <C-e> <SID>smart_map('<C-e>', '<Plug>(gita-action-open-h)')
+
     " operations
     nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
