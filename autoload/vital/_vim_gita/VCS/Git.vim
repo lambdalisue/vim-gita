@@ -16,19 +16,25 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:List = a:V.import('Data.List')
   let s:Prelude = a:V.import('Prelude')
   let s:Path = a:V.import('System.Filepath')
-  let s:Cache = a:V.import('System.Cache.Simple')
+  let s:Cache = a:V.import('System.Cache.Memory')
   let s:Core = a:V.import('VCS.Git.Core')
-  let s:Misc = a:V.import('VCS.Git.Misc')
   let s:Finder = a:V.import('VCS.Git.Finder')
+  let s:StatusParser = a:V.import('VCS.Git.StatusParser')
+  let s:ConfigParser = a:V.import('VCS.Git.ConfigParser')
 
   let s:SEPARATOR = s:Path.separator()
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
   return [
-        \ 'System.Cache.Simple',
+        \ 'Prelude',
+        \ 'Data.Dict',
+        \ 'Data.List',
+        \ 'System.Filepath',
+        \ 'System.Cache.Memory',
         \ 'VCS.Git.Core',
-        \ 'VCS.Git.Misc',
         \ 'VCS.Git.Finder',
+        \ 'VCS.Git.StatusParser',
+        \ 'VCS.Git.ConfigParser',
         \]
 endfunction " }}}
 function! s:_listalize(val) abort " {{{
@@ -136,11 +142,6 @@ function! s:git.is_updated(pathspec, ...) abort " {{{
   let actual = getftime(s:Path.join(self.repository, path))
   call self.cache.uptime.set(name, actual)
   return actual == -1 || actual > cached
-endfunction " }}}
-function! s:git._get_call_opts(...) abort " {{{
-  return extend({
-        \ 'cwd': self.worktree,
-        \}, get(a:000, 0, {}))
 endfunction " }}}
 
 " VCS.Git.Core
@@ -279,107 +280,173 @@ function! s:git.get_comment_char(...) abort " {{{
   return s:Core.get_comment_char(config)
 endfunction " }}}
 function! s:git.exec(args, ...) abort " {{{
-  let opts = extend(self._get_call_opts(), get(a:000, 0, {}))
-  return s:Core.exec(a:args, opts)
+  " Note:
+  "   -C might not work in old git but I'm not sure which version...
+  "   In that case, I should use --git-dir/--work-tree instead.
+  " Ref: https://github.com/cohama/agit.vim/issues/15
+  let args = extend([
+        \ '-C', self.worktree,
+        \ ], a:args)
+  return s:Core.exec(args, get(a:000, 0, {}))
 endfunction " }}}
 
-" VCS.Git.Misc
+" Misc
 function! s:git.get_parsed_status(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_status', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'parsed_status',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'status') || options.no_cache)
         \ ? {}
-        \ : cache.get(name, {})
+        \ : cache.get(cname, {})
   if empty(result)
-    let result = s:Misc.get_parsed_status(opts)
-    call cache.set(name, result)
+    let args = extend(
+          \ ['status', '--porcelain'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return result
+    endif
+    let result = s:StatusParser.parse(result.stdout, { 'fail_silently': 1 })
+    call cache.set(cname, result)
   endif
   return result
 endfunction " }}}
 function! s:git.get_parsed_commit(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_commit', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'parsed_commit',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'commit') || options.no_cache)
         \ ? {}
-        \ : cache.get(name, {})
+        \ : cache.get(cname, {})
   if empty(result)
-    let result = s:Misc.get_parsed_commit(opts)
-    call cache.set(name, result)
+    let args = extend(
+          \ ['commit', '--porcelain', '--dry-run', '--no-status'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    " Note: I don't know why but apparently a correct exit status is 1
+    if result.status != 1
+      return result
+    endif
+    let result = s:StatusParser.parse(result.stdout, { 'fail_silently': 1 })
+    call cache.set(cname, result)
   endif
   return result
 endfunction " }}}
 function! s:git.get_parsed_config(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_config', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'parsed_config',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
   let result = (self.is_updated('index', 'config') || options.no_cache)
         \ ? {}
-        \ : cache.get(name, {})
+        \ : cache.get(cname, {})
   if empty(result)
-    let result = s:Misc.get_parsed_config(opts)
-    call cache.set(name, result)
+    let args = extend(
+          \ ['config', '--list'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return result
+    endif
+    let result = s:ConfigParser.parse(result.stdout)
+    call cache.set(cname, result)
   endif
   return result
 endfunction " }}}
 function! s:git.get_last_commitmsg(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'last_commitmsg', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'last_commitmsg',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'last_commitmsg') || options.no_cache)
+  let commitmsg = (self.is_updated('index', 'last_commitmsg') || options.no_cache)
         \ ? []
-        \ : cache.get(name, [])
-  if empty(result)
-    unlet! result
-    let result = s:Misc.get_last_commitmsg(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, [])
+  if empty(commitmsg)
+    let args = extend(
+          \ ['log', '-1', '--pretty=%B'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return result
+    endif
+    let commitmsg = split(result.stdout, '\v\r?\n')
+    call cache.set(cname, commitmsg)
   endif
-  return result
+  return commitmsg
 endfunction " }}}
 function! s:git.count_commits_ahead_of_remote(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'commits_ahead_of_remote', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'commits_ahead_of_remote',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'commits_ahead_of_remote') || options.no_cache)
+  let ncommits = (self.is_updated('index', 'commits_ahead_of_remote') || options.no_cache)
         \ ? -1
-        \ : cache.get(name, -1)
-  if result == -1
-    let result = s:Misc.count_commits_ahead_of_remote(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, -1)
+  if ncommits == -1
+    let args = extend(
+          \ ['log', '--oneline', '@{upstream}..'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return 0
+    endif
+    let ncommits = len(split(result.stdout, '\v\r?\n'))
+    call cache.set(cname, ncommits)
   endif
-  return result
+  return ncommits
 endfunction " }}}
 function! s:git.count_commits_behind_remote(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'commits_behind_remote', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'commits_behind_remote',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'commits_behind_remote') || options.no_cache)
+  let ncommits = (self.is_updated('index', 'commits_behind_remote') || options.no_cache)
         \ ? -1
-        \ : cache.get(name, -1)
-  if result == -1
-    let result = s:Misc.count_commits_behind_remote(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, -1)
+  if ncommits == -1
+    let args = extend(
+          \ ['log', '--oneline', '..@{upstream}'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return 0
+    endif
+    let ncommits = len(split(result.stdout, '\v\r?\n'))
+    call cache.set(cname, ncommits)
   endif
-  return result
+  return ncommits
 endfunction " }}}
 
 " Helper

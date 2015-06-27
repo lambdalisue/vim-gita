@@ -7,8 +7,9 @@ let s:G = gita#utils#import('VCS.Git')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
-" Private functions
-function! s:new_gita(...) abort " {{{
+" Public functions
+function! gita#core#new(...) abort " {{{
+  " return a new gita instance
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
   let buftype = getbufvar(expr, '&buftype')
@@ -37,7 +38,8 @@ function! s:new_gita(...) abort " {{{
   call setbufvar(expr, '_gita', gita)
   return gita
 endfunction " }}}
-function! s:get_gita(...) abort " {{{
+function! gita#core#get(...) abort " {{{
+  " return a cached or new gita instance
   let expr = get(a:000, 0, '%')
   let gita = getwinvar(bufnr(expr), '_gita', {})
   if !empty(gita) && !gita.is_expired()
@@ -47,18 +49,7 @@ function! s:get_gita(...) abort " {{{
   if !empty(gita) && !gita.is_expired()
     return gita
   endif
-  return s:new_gita()
-endfunction " }}}
-
-
-" Public functions
-function! gita#core#new(...) abort " {{{
-  " return a new gita instance
-  return call('s:new_gita', a:000)
-endfunction " }}}
-function! gita#core#get(...) abort " {{{
-  " return a cached or new gita instance
-  return call('s:get_gita', a:000)
+  return gita#core#new(expr)
 endfunction " }}}
 
 
@@ -76,6 +67,17 @@ function! s:gita.is_expired() abort " {{{
     return 0
   endif
 endfunction " }}}
+function! s:gita.fail_on_disabled() abort " {{{
+  if !self.enabled
+    call gita#utils#warn(
+          \ 'Gita is not available on the current buffer.',
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+
+" obsolute
 function! s:gita.get_parsed_status(...) abort " {{{
   let options = extend({
         \ 'porcelain': 1,
@@ -99,15 +101,6 @@ function! s:gita.get_parsed_commit(...) abort " {{{
     return s:S.parse(result.stdout)
   endif
   return result
-endfunction " }}}
-function! s:gita.fail_on_disabled() abort " {{{
-  if !self.enabled
-    call gita#utils#warn(
-          \ 'Gita is not available on the current buffer.',
-          \)
-    return 1
-  endif
-  return 0
 endfunction " }}}
 
 

@@ -5,11 +5,15 @@ set cpo&vim
 function! s:ac_quitpre() abort " {{{
   let b:_gita_quitpre = 1
 endfunction " }}}
-function! s:ac_bufwinleave() abort " {{{
-  if get(b:, '_gita_quitpre')
-    let b:_gita_quitpre = 0
+function! s:ac_bufwinleave(expr) abort " {{{
+  if getbufvar(a:expr, '_gita_quitpre')
+    call setbufvar(a:expr, '_gita_quitpre', 0)
+    let hooks = getbufvar(a:expr, '_gita_hooks')
+    echomsg "hooks: " . string(hooks)
+    call hooks.call('ac_bufwinleave_pre', a:expr)
     call gita#utils#invoker#focus()
     call gita#utils#invoker#clear()
+    call hooks.call('ac_bufwinleave_post', a:expr)
   endif
 endfunction " }}}
 
@@ -68,7 +72,8 @@ function! gita#display#open(bufname, ...) abort  " {{{
   let w:_gita = gita
   let w:_gita_invoker = deepcopy(invoker)
   let w:_gita_options = deepcopy(options)
-  let w:_gita_actions = get(w:, '_gita_actions', deepcopy(s:actions))
+  let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
+  let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
 
   if get(b:, '_gita_constructed') && !get(g:, 'gita#debug')
     return 1
@@ -81,7 +86,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
   augroup vim-gita-display
     autocmd! * <buffer>
     autocmd QuitPre     <buffer> call s:ac_quitpre()
-    autocmd BufWinLeave <buffer> call s:ac_bufwinleave()
+    autocmd BufWinLeave <buffer> call s:ac_bufwinleave(expand('<afile>'))
   augroup END
 
   return 0
@@ -118,11 +123,11 @@ function! gita#display#action(name, ...) abort range " {{{
         \ a:firstline, a:lastline
         \)
   let args = [statuses, options]
-  call call(w:_gita_actions[a:name], args, w:_gita_actions)
+  call call(b:_gita_actions[a:name], args, b:_gita_actions)
 endfunction " }}}
 function! gita#display#extend_actions(actions) abort " {{{
   let w:_gita_actions = extend(
-        \ get(w:, '_gita_actions', deepcopy(s:actions)),
+        \ get(b:, '_gita_actions', deepcopy(s:actions)),
         \ a:actions,
         \)
 endfunction " }}}
