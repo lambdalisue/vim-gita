@@ -47,22 +47,12 @@ function! s:actions.diff(statuses, options) abort " {{{
           \}, a:options))
   endfor
 endfunction " }}}
-function! s:action(name, ...) abort range " {{{
-  let args = extend(
-        \ [a:name, a:firstline, a:lastline],
-        \ a:000,
-        \)
-  call call('gita#display#action', args)
-endfunction " }}}
-function! s:smart_map(lhs, rhs) abort " {{{
-
-endfunction " }}}
 
 
 function! gita#display#open(bufname, ...) abort  " {{{
   let gita = gita#core#get()
   if gita.fail_on_disabled()
-    return 1
+    return -1
   endif
   let invoker = gita#utils#invoker#get()
   let options = extend(
@@ -81,7 +71,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
   let w:_gita_actions = get(w:, '_gita_actions', deepcopy(s:actions))
 
   if get(b:, '_gita_constructed') && !get(g:, 'gita#debug')
-    return 0
+    return 1
   endif
   let b:_gita_constructed = 1
   " construction
@@ -94,18 +84,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
     autocmd BufWinLeave <buffer> call s:ac_bufwinleave()
   augroup END
 
-  call gita#display#define_map('help-m', 'help', { 'name': 'short_format' })
-endfunction " }}}
-function! gita#display#action(name, firstline, lastline, ...) abort " {{{
-  let options = extend(
-        \ get(w:, '_gita_options', {}),
-        \ get(a:000, 0, {}),
-        \)
-  let statuses = gita#display#get_statuses_within(
-        \ a:firstline, a:lastline
-        \)
-  let args = [statuses, options]
-  call call(w:_gita_actions[a:name], args, w:_gita_actions)
+  return 0
 endfunction " }}}
 function! gita#display#smart_map(lhs, rhs) abort " {{{
   return empty(gita#display#get_status_at(a:firstline))
@@ -130,16 +109,16 @@ function! gita#display#get_statuses_within(start, end) abort " {{{
   return statuses
 endfunction " }}}
 
-function! gita#display#define_action_noremap(name, action, options, ...) abort " {{{
-  silent execute printf(join([
-        \   "noremap <silent><buffer> <Plug>(gita-action-%s)",
-        \   ":%scall <SID>action('%s', %s)<CR>",
-        \ ]),
-        \ a:name,
-        \ get(a:000, 0, 1) ? '<C-u>' : '',
-        \ a:action,
-        \ a:options,
+function! gita#display#action(name, ...) abort range " {{{
+  let options = extend(
+        \ get(w:, '_gita_options', {}),
+        \ get(a:000, 0, {}),
         \)
+  let statuses = gita#display#get_statuses_within(
+        \ a:firstline, a:lastline
+        \)
+  let args = [statuses, options]
+  call call(w:_gita_actions[a:name], args, w:_gita_actions)
 endfunction " }}}
 function! gita#display#extend_actions(actions) abort " {{{
   let w:_gita_actions = extend(

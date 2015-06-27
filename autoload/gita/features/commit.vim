@@ -1,13 +1,45 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
+let s:const = {}
+let s:const.bufname = has('unix') ? 'gita:commit' : 'gita-commit'
+let s:const.filetype = 'gita-commit'
+
+let s:parser = s:A.new({
+      \ 'name': 'Gita commit',
+      \ 'description': 'Record changes to the repository',
+      \})
+call s:parser.add_argument(
+      \ '--window', '-w',
+      \ 'Open a gita:commit window to manipulate the commit message (Default behavior)', {
+      \   'deniable': 1,
+      \   'default': 1,
+      \ })
+call s:parser.add_argument(
+      \ '--untracked-files', '-u',
+      \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+      \   'choices': ['all', 'normal', 'no'],
+      \   'on_default': 'all',
+      \ })
+call s:parser.add_argument(
+      \ '--all', '-a',
+      \ 'commit all changed files',
+      \)
+call s:parser.add_argument(
+      \ '--reset-author',
+      \ 'the commit is authored by me now (used with -C/-c/--amend)',
+      \)
+call s:parser.add_argument(
+      \ '--amend',
+      \ 'amend previous commit',
+      \)
+" TODO: Add more arguments
 
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
@@ -50,7 +82,7 @@ function! s:get_status_header(gita) abort " {{{
   return lines
 endfunction " }}}
 function! s:smart_map(...) abort " {{{
-  return call('gita#window#smart_map', a:000)
+  return call('gita#display#smart_map', a:000)
 endfunction " }}}
 function! s:get_current_commitmsg() abort " {{{
   return filter(getline(1, '$'), 'v:val !~# "^#"')
@@ -62,37 +94,18 @@ function! s:ac_write(filename) abort " {{{
     return
   endif
   " cache commitmsg if it is called without quitting
-  let options = get(w:, '_gita_options', {})
-  if !get(options, 'quitting', 0)
-    let options.commitmsg_saved = s:get_current_commitmsg()
-  endif
+  let gita = gita#core#get()
+  let gita.commitmsg_saved = s:get_current_commitmsg()
   setlocal nomodified
+  call gita#utils#title(
+        \ "the commit message is saved in a local cache.",
+        \)
 endfunction " }}}
-
-
-let s:parser = s:A.new({
-      \ 'name': 'Gita commit',
-      \ 'description': 'Record changes to the repository',
-      \})
-call s:parser.add_argument(
-      \ '--untracked-files', '-u',
-      \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
-      \   'choices': ['all', 'normal', 'no'],
-      \   'on_default': 'all',
-      \ })
-call s:parser.add_argument(
-      \ '--all', '-a',
-      \ 'commit all changed files',
-      \)
-call s:parser.add_argument(
-      \ '--reset-author',
-      \ 'the commit is authored by me now (used with -C/-c/--amend)',
-      \)
-call s:parser.add_argument(
-      \ '--amend',
-      \ 'amend previous commit',
-      \)
-
+function! s:ac_quitpre() abort " {{{
+  if !&modified
+    call gita#display#action('commit', { 'quitting': 1 })
+  endif
+endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
@@ -146,15 +159,13 @@ function! s:actions.commit(statuses, options) abort " {{{
         \ 'echo': 'both',
         \})
   if result.status == 0
-    " force to refresh option in next launch
-    let w:_gita_options = extend(w:_gita_options, {
-          \ 'new': 1,
-          \ 'amend': 0,
-          \ 'commitmsg_cached': '',
-          \ 'commitmsg_saved': '',
-          \})
+    " remove cached commitmsg
+    silent! unlet! gita.commitmsg_saved
+    silent! unlet! w:_gita_options.commitmsg_cached
+    " reset options
+    silent! unlet! w:_gita_options.amend
   endif
-  if !get(w:_gita_options, 'quitting')
+  if !get(options, 'quitting')
     call self.update(a:statuses, a:options)
   endif
 endfunction " }}}
@@ -164,12 +175,11 @@ function! gita#features#commit#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  if gita.fail_on_disabled()
     return { 'status': -1 }
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -184,40 +194,30 @@ function! gita#features#commit#exec(...) abort " {{{
   return gita.operations.commit(options, config)
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
-  let gita = gita#core#get()
-  if gita.fail_on_disabled()
+  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
+  if result == -1 || result == 1
+    " gita is not available or the buffer is already constructed
     return
   endif
-
-  let options = gita#window#extend_options(get(a:000, 0, {}))
-  let config = get(a:000, 1, {})
-  " Open the window and extend actions
-  call gita#window#open('commit', options, config)
-  call gita#window#extend_actions(s:actions)
+  call gita#display#extend_actions(s:actions)
 
   " Define options and extra AutoCmd
-  setlocal buftype=acwrite bufhidden=hide
+  setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
+    autocmd QuitPre     <buffer> call s:ac_quitpre()
   augroup END
-
-  " Define hook functions
-  function! b:_gita_hooks.pre_ac_quit(...) abort
-    if expand('%') =~# '^gita\[:_\]commit$'
-      call s:actions.commit({}, w:_gita_options)
-    endif
-  endfunction
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#window#action('help', { 'name': 'commit_mapping' })<CR>
+        \ :<C-u>call gita#display#action('help', { 'name': 'commit_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#window#action('update')<CR>
+        \ :<C-u>call gita#display#action('update')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#window#action('open_status')<CR>
+        \ :<C-u>call gita#display#action('open_status')<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit)
-        \ :call gita#window#action('commit')<CR>
+        \ :<C-u>call gita#display#action('commit')<CR>
 
   " Define extra actual key mappings
   if get(g:, 'gita#features#commit#enable_default_mappings', 1)
@@ -226,15 +226,17 @@ function! gita#features#commit#open(...) abort " {{{
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
   endif
-  call gita#features#commit#update(options)
+  call gita#features#commit#update()
+  silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#commit#update(...) abort " {{{
-  let gita = gita#core#get()
-  let options = extend(gita#window#extend_options(get(a:000, 0, {})), {
-        \ 'porcelain': 1,
-        \ 'dry_run': 1,
-        \ 'no_status': 1,
-        \})
+  let options = extend(
+        \ deepcopy(w:_gita_options),
+        \ get(a:000, 0, {}),
+        \)
+  let options.porcelain = 1
+  let options.dry_run = 1
+  let options.no_status = 1
   let result = gita#features#commit#exec(options, {
         \ 'echo': '',
         \ 'doautocmd': 0,
@@ -245,6 +247,7 @@ function! gita#features#commit#update(...) abort " {{{
     return
   endif
   let statuses = s:S.parse(result.stdout)
+  let gita = gita#core#get()
 
   " create statuses lines & map
   let statuses_map = {}
@@ -259,13 +262,13 @@ function! gita#features#commit#update(...) abort " {{{
   " create a default commit message
   let commit_mode = ''
   let modified_reserved = 0
-  if has_key(options, 'commitmsg_cached')
-    let commitmsg = options.commitmsg_cached
+  if has_key(gita, 'commitmsg_cached')
+    let commitmsg = gita.commitmsg_cached
     let modified_reserved = 1
     " clear temporary commitmsg
-    unlet! options.commitmsg_cached
-  elseif has_key(options, 'commitmsg_saved')
-    let commitmsg = options.commitmsg_saved
+    unlet! gita.commitmsg_cached
+  elseif has_key(gita, 'commitmsg_saved')
+    let commitmsg = gita.commitmsg_saved
   elseif !empty(gita.git.get_merge_head())
     let commit_mode = 'merge'
     let commitmsg = gita.git.get_merge_msg()
@@ -296,7 +299,11 @@ endfunction " }}}
 function! gita#features#commit#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    call gita#features#commit#open(options)
+    if get(options, 'window')
+      call gita#features#commit#open(options)
+    else
+      call gita#features#commit#exec(options)
+    endif
   endif
 endfunction " }}}
 function! gita#features#commit#complete(arglead, cmdline, cursorpos) abort " {{{

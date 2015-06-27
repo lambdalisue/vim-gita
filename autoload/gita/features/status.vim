@@ -8,6 +8,37 @@ let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
+let s:const = {}
+let s:const.bufname = has('unix') ? 'gita:status' : 'gita-status'
+let s:const.filetype = 'gita-status'
+
+let s:parser = s:A.new({
+      \ 'name': 'Gita status',
+      \ 'description': 'Show the working tree status',
+      \})
+call s:parser.add_argument(
+      \ '--window', '-w',
+      \ 'Open a gita:status window to manipulate the working tree status (Default behavior)', {
+      \   'deniable': 1,
+      \   'default': 1,
+      \ })
+call s:parser.add_argument(
+      \ '--untracked-files', '-u',
+      \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
+      \   'choices': ['all', 'normal', 'no'],
+      \   'on_default': 'all',
+      \ })
+call s:parser.add_argument(
+      \ '--ignored',
+      \ 'show ignored files', {
+      \ })
+call s:parser.add_argument(
+      \ '--ignore-submodules',
+      \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
+      \   'choices': ['all', 'dirty', 'untracked'],
+      \   'on_default': 'all',
+      \ })
+" TODO: Add more arguments
 
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
@@ -50,31 +81,8 @@ function! s:get_status_header(gita) abort " {{{
   return lines
 endfunction " }}}
 function! s:smart_map(...) abort " {{{
-  return call('gita#window#smart_map', a:000)
+  return call('gita#display#smart_map', a:000)
 endfunction " }}}
-
-
-let s:parser = s:A.new({
-      \ 'name': 'Gita status',
-      \ 'description': 'Show the working tree status',
-      \})
-call s:parser.add_argument(
-      \ '--untracked-files', '-u',
-      \ 'show untracked files, optional modes: all, normal, no. (Default: all)', {
-      \   'choices': ['all', 'normal', 'no'],
-      \   'on_default': 'all',
-      \ })
-call s:parser.add_argument(
-      \ '--ignored',
-      \ 'show ignored files', {
-      \ })
-call s:parser.add_argument(
-      \ '--ignore-submodules',
-      \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
-      \   'choices': ['all', 'dirty', 'untracked'],
-      \   'on_default': 'all',
-      \ })
-
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
@@ -218,12 +226,11 @@ function! gita#features#status#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  if !gita.enabled
-    redraw
-    call gita#utils#warn(
-          \ 'Gita is not available in the current buffer.',
-          \)
+  if gita.fail_on_disabled()
     return { 'status': -1 }
+  endif
+  if !empty(get(options, '--', []))
+    call map(options['--'], 'expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -235,57 +242,53 @@ function! gita#features#status#exec(...) abort " {{{
   return gita.operations.status(options, config)
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
-  let gita = gita#core#get()
-  if gita.fail_on_disabled()
+  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
+  if result == -1 || result == 1
+    " gita is not available or the buffer is already constructed
     return
   endif
-
-  let options = gita#window#extend_options(get(a:000, 0, {}))
-  let config = get(a:000, 1, {})
-  " Open the window and extend actions
-  call gita#window#open('status', options, config)
-  call gita#window#extend_actions(s:actions)
+  call gita#display#extend_actions(s:actions)
 
   " Define loccal options
   setlocal nomodifiable
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#window#action('help', { 'name': 'status_mapping' })<CR>
+        \ :<C-u>call gita#display#action('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#window#action('update')<CR>
+        \ :<C-u>call gita#display#action('update')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#window#action('open_commit')<CR>
+        \ :<C-u>call gita#display#action('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-new)
-        \ :<C-u>call gita#window#action('open_commit', { 'new': 1 })<CR>
+        \ :<C-u>call gita#display#action('open_commit', { 'new': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
-        \ :<C-u>call gita#window#action('open_commit', { 'amend': 1 })<CR>
+        \ :<C-u>call gita#display#action('open_commit', { 'amend': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-add)
-        \ :call gita#window#action('add')<CR>
+        \ :call gita#display#action('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
-        \ :call gita#window#action('add', { 'force': 1 })<CR>
+        \ :call gita#display#action('add', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-rm)
-        \ :call gita#window#action('rm')<CR>
+        \ :call gita#display#action('rm')<CR>
   noremap <silent><buffer> <Plug>(gita-action-RM)
-        \ :call gita#window#action('rm', { 'force': 1 })<CR>
+        \ :call gita#display#action('rm', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-reset)
-        \ :call gita#window#action('reset')<CR>
+        \ :call gita#display#action('reset')<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout)
-        \ :call gita#window#action('checkout')<CR>
+        \ :call gita#display#action('checkout')<CR>
   noremap <silent><buffer> <Plug>(gita-action-CHECKOUT)
-        \ :call gita#window#action('checkout', { 'force': 1 })<CR>
+        \ :call gita#display#action('checkout', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-ours)
-        \ :call gita#window#action('checkout', { 'ours': 1 })<CR>
+        \ :call gita#display#action('checkout', { 'ours': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-theirs)
-        \ :call gita#window#action('checkout', { 'theirs': 1 })<CR>
+        \ :call gita#display#action('checkout', { 'theirs': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-stage)
-        \ :call gita#window#action('stage')<CR>
+        \ :call gita#display#action('stage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-unstage)
-        \ :call gita#window#action('unstage')<CR>
+        \ :call gita#display#action('unstage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-toggle)
-        \ :call gita#window#action('toggle')<CR>
+        \ :call gita#display#action('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
-        \ :call gita#window#action('discard')<CR>
+        \ :call gita#display#action('discard')<CR>
 
   " Define extra actual key mappings
   if get(g:, 'gita#features#status#enable_default_mappings', 1)
@@ -327,13 +330,15 @@ function! gita#features#status#open(...) abort " {{{
     vmap <buffer> -o <Plug>(gita-action-checkout-ours)
     vmap <buffer> -t <Plug>(gita-action-checkout-theirs)
   endif
-  call gita#features#status#update(options)
+  call gita#features#status#update()
+  silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#status#update(...) abort " {{{
-  let gita = gita#core#get()
-  let options = extend(gita#window#extend_options(get(a:000, 0, {})), {
-        \ 'porcelain': 1,
-        \})
+  let options = extend(
+        \ deepcopy(w:_gita_options),
+        \ get(a:000, 0, {}),
+        \)
+  let options.porcelain = 1
   let result = gita#features#status#exec(options, {
         \ 'echo': 'fail',
         \})
@@ -342,6 +347,7 @@ function! gita#features#status#update(...) abort " {{{
     return
   endif
   let statuses = s:S.parse(result.stdout)
+  let gita = gita#core#get()
 
   " create statuses lines & map
   let statuses_map = {}
@@ -366,7 +372,11 @@ endfunction " }}}
 function! gita#features#status#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    call gita#features#status#open(options)
+    if get(options, 'window')
+      call gita#features#status#open(options)
+    else
+      call gita#features#status#exec(options)
+    endif
   endif
 endfunction " }}}
 function! gita#features#status#complete(arglead, cmdline, cursorpos) abort " {{{
@@ -392,7 +402,5 @@ function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaComment    /\v^.*$/ contains=ALL
   syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
 endfunction " }}}
-
-
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
