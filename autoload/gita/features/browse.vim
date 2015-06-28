@@ -14,11 +14,11 @@ function! s:yank_string(content) abort " {{{
   endif
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
-  let path = expand(a:expr)
+  let path = gita#utils#expand(a:expr)
   let relpath = a:gita.git.get_relative_path(path)
 
   " get selected region
-  if path != expand('%')
+  if path != gita#utils#expand('%')
     let line_start = ''
     let line_end = ''
   elseif has_key(a:options, '__range__')
@@ -143,7 +143,7 @@ function! gita#features#browse#exec(...) abort " {{{
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if !empty(get(options, '--', []))
-    call map(options['--'], 'expand(v:val)')
+    call map(options['--'], 'gita#utils#expand(v:val)')
   endif
   let urls = map(
         \ deepcopy(get(options, '--', [])),

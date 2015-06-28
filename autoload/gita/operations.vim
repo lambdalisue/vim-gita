@@ -45,7 +45,7 @@ function! s:translate_options(options, schemes) abort " {{{
   if has_key(a:options, '--')
     call add(args, '--')
     for str in a:options['--']
-      call add(args, fnameescape(expand(str)))
+      call add(args, fnameescape(gita#utils#expand(str)))
     endfor
   endif
   return args
@@ -194,6 +194,28 @@ function! s:operations.checkout(...) abort " {{{
         \}
   return self.exec('checkout', options, schemes, config)
 endfunction " }}}
+function! s:operations.merge_base(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let schemes = {
+        \ 'commit1': '%v',
+        \ 'commit2': '%v',
+        \ 'ref': '%v',
+        \}
+  return self.exec('merge-base', options, schemes, config)
+endfunction " }}}
+function! s:operations.rev_parse(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let schemes = {
+        \ 'default': '--%K %V',
+        \ 'prefix': '--%K %V',
+        \ 'resolve_git_dir': '--%K %V',
+        \ 'args': '%v',
+        \}
+  return self.exec('rev-parse', options, schemes, config)
+endfunction " }}}
+
 
 
 " Internal

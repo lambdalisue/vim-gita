@@ -187,8 +187,8 @@ function! s:open3(status, ...) abort " {{{
   diffupdate
 endfunction " }}}
 function! s:ac_write_cmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  let new_filename = fnamemodify(gita#utils#expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(gita#utils#expand('<afile>'), ':p')
   if new_filename !=# old_filename
     execute printf('w%s %s %s',
           \ v:cmdbang ? '!' : '',
@@ -197,7 +197,7 @@ function! s:ac_write_cmd() abort " {{{
           \)
   endif
   if bufnr('%') == b:_EDITABLE_bufnum
-    let filename = fnamemodify(expand(b:_ORIG_path), ':p')
+    let filename = fnamemodify(gita#utils#expand(b:_ORIG_path), ':p')
     if writefile(getline(1, '$'), filename) == 0
       setlocal nomodified
     endif

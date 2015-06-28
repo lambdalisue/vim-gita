@@ -91,7 +91,7 @@ function! s:get_current_commitmsg(...) abort " {{{
   return filter(content, 'v:val !~# "^#"')
 endfunction " }}}
 function! s:ac_write(filename) abort " {{{
-  if a:filename != expand('%:p')
+  if a:filename != gita#utils#expand('%:p')
     " a new filename is given. save the content to the new file
     execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
     return
@@ -184,7 +184,7 @@ function! gita#features#commit#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    call map(options['--'], 'expand(v:val)')
+    call map(options['--'], 'gita#utils#expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -222,7 +222,7 @@ function! gita#features#commit#open(...) abort " {{{
   setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>
-    autocmd BufWriteCmd <buffer> call s:ac_write(expand('<amatch>'))
+    autocmd BufWriteCmd <buffer> call s:ac_write(gita#utils#expand('<amatch>'))
   augroup END
 
   " Define extra Plug key mappings

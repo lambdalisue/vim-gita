@@ -2,7 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " Modules
-let s:scriptfile = expand('<sfile>')
+let s:scriptfile = gita#utils#expand('<sfile>')
 let s:P = gita#utils#import('System.Filepath')
 
 

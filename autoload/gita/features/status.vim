@@ -233,7 +233,7 @@ function! gita#features#status#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    call map(options['--'], 'expand(v:val)')
+    call map(options['--'], 'gita#utils#expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
