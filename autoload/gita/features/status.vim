@@ -240,6 +240,16 @@ function! s:actions.discard(statuses, options) abort " {{{
     call self.update(a:statuses, a:options)
   endif
 endfunction " }}}
+function! s:actions.solve(statuses, options) abort " {{{
+  let gita = gita#core#get()
+  let invoker = gita#utils#invoker#get()
+  for status in a:statuses
+    call invoker.focus()
+    call gita#features#conflict#show(extend({
+          \ 'status': status,
+          \}, a:options))
+  endfor
+endfunction " }}}
 
 
 function! gita#features#status#exec(...) abort " {{{
@@ -314,6 +324,12 @@ function! gita#features#status#open(...) abort " {{{
         \ :call gita#display#action('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
         \ :call gita#display#action('discard')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve1)
+        \ :call gita#display#action('solve', { 'way': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve2)
+        \ :call gita#display#action('solve', { 'way': 2 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve3)
+        \ :call gita#display#action('solve', { 'way': 3 })<CR>
 
   " Define extra actual key mappings
   if get(g:, 'gita#features#status#enable_default_mappings', 1)
@@ -328,6 +344,9 @@ function! gita#features#status#open(...) abort " {{{
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
     nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
+    nmap <buffer><expr> s1 <SID>smart_map('s1', '<Plug>(gita-action-solve1)')
+    nmap <buffer><expr> s2 <SID>smart_map('s2', '<Plug>(gita-action-solve2)')
+    nmap <buffer><expr> s3 <SID>smart_map('s3', '<Plug>(gita-action-solve3)')
 
     " raw operations
     nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
