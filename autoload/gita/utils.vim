@@ -14,6 +14,7 @@ function! gita#utils#import(name) abort " {{{
 endfunction " }}}
 
 let s:P = gita#utils#import('Prelude')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
 " echo
@@ -186,6 +187,22 @@ function! gita#utils#open_gita_issue(url) abort " {{{
   endif
 endfunction " }}}
 
+function! gita#utils#get_status(path) abort " {{{
+  let gita = gita#core#get()
+  let options = {
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \ '--': [a:path],
+        \}
+  let result = gita.operation.status(options, {
+        \ 'echo': 'fail',
+        \})
+  if result.status != 0
+    return {}
+  endif
+  let statuses = s:S.parse(result.stdout)
+  return get(statuses, 0, {})
+endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   " prefer 'b:_gita_original_filename'
   return getbufvar(a:expr, '_gita_original_filename', expand(a:expr))

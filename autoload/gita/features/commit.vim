@@ -90,19 +90,24 @@ function! s:get_current_commitmsg(...) abort " {{{
   let content = getbufline(expr, 1, '$')
   return filter(content, 'v:val !~# "^#"')
 endfunction " }}}
-function! s:ac_write(filename) abort " {{{
-  if a:filename != gita#utils#expand('%:p')
-    " a new filename is given. save the content to the new file
-    execute 'w' . (v:cmdbang ? '!' : '') fnameescape(v:cmdarg) fnameescape(a:filename)
-    return
+function! s:ac_BufWriteCmd() abort " {{{
+  let new_filename = fnamemodify(expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  if new_filename !=# old_filename
+    execute printf('w%s %s %s',
+          \ v:cmdbang ? '!' : '',
+          \ fnameescape(v:cmdarg),
+          \ fnameescape(new_filename),
+          \)
+  else
+    " cache commitmsg if it is called without quitting
+    let gita = gita#core#get()
+    let gita.commitmsg_saved = s:get_current_commitmsg()
+    setlocal nomodified
+    call gita#utils#title(
+          \ "the commit message is saved in a local cache.",
+          \)
   endif
-  " cache commitmsg if it is called without quitting
-  let gita = gita#core#get()
-  let gita.commitmsg_saved = s:get_current_commitmsg()
-  setlocal nomodified
-  call gita#utils#title(
-        \ "the commit message is saved in a local cache.",
-        \)
 endfunction " }}}
 function! s:commit(expr, options) abort " {{{
   let gita = gita#core#get(a:expr)
@@ -212,7 +217,7 @@ function! gita#features#commit#open(...) abort " {{{
   call gita#display#extend_actions(s:actions)
 
   " Define hooks
-  function! b:_gita_hooks.ac_bufwinleave_pre(expr) abort
+  function! b:_gita_hooks.ac_BufWinLeave_pre(expr) abort
     if !getbufvar(a:expr, '&modified') && gita#utils#asktf('Do you want to commit changes?', 'yes')
       call s:commit(a:expr, {})
     endif
@@ -222,7 +227,7 @@ function! gita#features#commit#open(...) abort " {{{
   setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>
-    autocmd BufWriteCmd <buffer> call s:ac_write(gita#utils#expand('<amatch>'))
+    autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
   augroup END
 
   " Define extra Plug key mappings
