@@ -86,7 +86,7 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   let opts = s:parser.parse(bang, [0, 0], cmdline)
   let name = get(opts, 'action', 'help')
 
-  if opts.__bang__ || !s:is_registered(name)
+  if opts.__bang__ || !gita#features#is_registered(name)
     let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos, opts)
   else
     " execute Gita command

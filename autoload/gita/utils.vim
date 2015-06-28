@@ -103,7 +103,7 @@ function! gita#utils#ask(message, ...) abort " {{{
 endfunction " }}}
 function! gita#utils#asktf(message, ...) abort " {{{
   let result = gita#utils#ask(
-        \ printf('%s [yes/no]: ', a:message),
+        \ printf('%s (y[es]/n[o]): ', a:message),
         \ get(a:000, 0, ''))
   while result !~? '^\%(y\%[es]\|n\%[o]\)$'
     redraw
@@ -112,7 +112,7 @@ function! gita#utils#asktf(message, ...) abort " {{{
       break
     endif
     call gita#utils#error('Invalid input.')
-    let result = gita#utils#ask(printf('%s [yes/no]: ', a:message))
+    let result = gita#utils#ask(printf('%s (y[es]/n[o]): ', a:message))
   endwhile
   redraw
   return result =~? 'y\%[es]'
