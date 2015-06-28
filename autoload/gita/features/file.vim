@@ -11,7 +11,7 @@ function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   return extend(['WORKTREE', 'INDEX', 'FORK:master'], candidates)
 endfunction " }}}
 let s:parser = s:A.new({
-      \ 'name': 'Gita file',
+      \ 'name': 'Gita[!] file',
       \ 'description': 'Show a file content of a working tree, index, or specified commit.',
       \})
 call s:parser.add_argument(

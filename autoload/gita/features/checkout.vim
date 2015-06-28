@@ -12,7 +12,7 @@ function! s:complete_branch(...) abort " {{{
   return filter(branches, 'v:val !=# "HEAD"')
 endfunction " }}}
 let s:parser = s:A.new({
-      \ 'name': 'Gita checkout',
+      \ 'name': 'Gita[!] checkout',
       \ 'description': 'Checkout a branch or paths to the working tree',
       \})
 call s:parser.add_argument(

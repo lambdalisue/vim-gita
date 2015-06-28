@@ -7,7 +7,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita reset',
+      \ 'name': 'Gita[!] reset',
       \ 'description': 'Reset current HEAD to the specified state',
       \})
 call s:parser.add_argument(

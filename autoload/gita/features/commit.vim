@@ -13,7 +13,7 @@ let s:const.bufname = join(['gita', 'commit'], s:const.bufname_sep)
 let s:const.filetype = 'gita-commit'
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita commit',
+      \ 'name': 'Gita[!] commit',
       \ 'description': 'Record changes to the repository',
       \})
 call s:parser.add_argument(

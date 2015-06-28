@@ -9,7 +9,7 @@ function! s:complete_conflicted_file(arglead, cmdline, cursorpos, ...) abort " {
   return []
 endfunction " }}}
 let s:parser = s:A.new({
-      \ 'name': 'Gita conflict',
+      \ 'name': 'Gita[!] conflict',
       \ 'description': 'Solve a conflicted file in merge mode.',
       \})
 call s:parser.add_argument(

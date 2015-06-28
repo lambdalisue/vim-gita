@@ -23,7 +23,7 @@ function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   return candidates
 endfunction " }}}
 let s:parser = s:A.new({
-      \ 'name': 'Gita diff-ls',
+      \ 'name': 'Gita[!] diff-ls',
       \ 'description': 'Show filename and status difference',
       \})
 call s:parser.add_argument(
