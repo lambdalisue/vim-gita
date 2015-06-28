@@ -7,6 +7,49 @@ let s:F = gita#utils#import('System.File')
 let s:A = gita#utils#import('ArgumentParser')
 
 
+function! s:complete_branch(...) abort " {{{
+  let branches = call('gita#completes#complete_local_branch', a:000)
+  " remove HEAD
+  return filter(branches, 'v:val !=# "HEAD"')
+endfunction " }}}
+let s:parser = s:A.new({
+      \ 'name': 'Gita browse',
+      \ 'description': 'Browse a selected region of the remote in a system default browser',
+      \})
+call s:parser.add_argument(
+      \ '--open', '-o',
+      \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
+      \   'conflicts': ['yank', 'echo'],
+      \ })
+call s:parser.add_argument(
+      \ '--yank', '-y',
+      \ 'Yank a URL of a selected region of the remote.', {
+      \   'conflicts': ['open', 'echo'],
+      \ })
+call s:parser.add_argument(
+      \ '--echo', '-e',
+      \ 'Echo a URL of a selected region of the remote.', {
+      \   'conflicts': ['open', 'yank'],
+      \ })
+call s:parser.add_argument(
+      \ '--exact',
+      \ 'Use a git hash reference instead of a branch name to build a URL.', {
+      \ })
+call s:parser.add_argument(
+      \ 'branch', [
+      \   'A branch or commit which you want to see.',
+      \   'If it is omitted, a remote branch of the current branch is used.'
+      \ ], {
+      \   'complete': function('s:complete_branch'),
+      \ })
+function! s:parser.hooks.pre_validate(opts) abort " {{{
+  " Automatically use '--open' if no conflicted argument is specified
+  if empty(self.get_conflicted_arguments('open', a:opts))
+    let a:opts.open = 1
+  endif
+endfunction " }}}
+
+
 function! s:yank_string(content) abort " {{{
   let @" = a:content
   if has('clipboard')
@@ -88,50 +131,6 @@ function! s:find_url(gita, expr, options) abort " {{{
         \))
   call gita#utils#debugmsg('data:', data)
   return ''
-endfunction " }}}
-function! s:complete_branch(...) abort " {{{
-  let branches = call('gita#completes#complete_local_branch', a:000)
-  " remove HEAD
-  return filter(branches, 'v:val !=# "HEAD"')
-endfunction " }}}
-
-
-let s:parser = s:A.new({
-      \ 'name': 'Gita browse',
-      \ 'description': 'Browse a selected region of the remote in a system default browser',
-      \})
-call s:parser.add_argument(
-      \ '--open', '-o',
-      \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
-      \   'conflicts': ['yank', 'echo'],
-      \ })
-call s:parser.add_argument(
-      \ '--yank', '-y',
-      \ 'Yank a URL of a selected region of the remote.', {
-      \   'conflicts': ['open', 'echo'],
-      \ })
-call s:parser.add_argument(
-      \ '--echo', '-e',
-      \ 'Echo a URL of a selected region of the remote.', {
-      \   'conflicts': ['open', 'yank'],
-      \ })
-call s:parser.add_argument(
-      \ '--exact',
-      \ 'Use a git hash reference instead of a branch name to build a URL.', {
-      \ })
-call s:parser.add_argument(
-      \ 'branch', [
-      \   'A branch or commit which you want to see. If it is omitted, a branch.',
-      \   'If it is omitted, a remote branch of the current branch is used.'
-      \ ], {
-      \   'required': 0,
-      \   'complete': function('s:complete_branch'),
-      \ })
-function! s:parser.hooks.pre_validate(opts) abort " {{{
-  " Automatically use '--open' if no conflicted argument is specified
-  if empty(self.get_conflicted_arguments('open', a:opts))
-    let a:opts.open = 1
-  endif
 endfunction " }}}
 
 
