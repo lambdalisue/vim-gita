@@ -3,6 +3,7 @@ set cpo&vim
 
 
 let s:P = gita#utils#import('Prelude')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:translate_option(key, val, scheme) abort " {{{
@@ -38,7 +39,7 @@ function! s:translate_options(options, schemes) abort " {{{
   for [key, val]  in items(a:options)
     if key !~# '^__.\+__$' && key !~# '\v%(--|fail_silently)'
       let scheme = get(a:schemes, key, '')
-      call add(args, s:translate_option(key, val, scheme))
+      call extend(args, s:A.splitargs(s:translate_option(key, val, scheme)))
     endif
     unlet! val
   endfor
@@ -198,9 +199,7 @@ function! s:operations.merge_base(...) abort " {{{
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   let schemes = {
-        \ 'commit1': '%v',
-        \ 'commit2': '%v',
-        \ 'ref': '%v',
+        \ 'fork_point': "--%K %v",
         \}
   return self.exec('merge-base', options, schemes, config)
 endfunction " }}}

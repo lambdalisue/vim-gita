@@ -5,27 +5,21 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  let candidates = gita#completes#complete_local_branch()
-  return extend(['WORKTREE', 'INDEX'], candidates)
+  let candidates = call('gita#completes#complete_local_branch', extend(
+        \ [a:arglead, a:cmdline, a:cursorpos], a:000,
+        \))
+  return extend(['WORKTREE', 'INDEX', 'FORK:master'], candidates)
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita file',
-      \ 'description': [
-      \   'Show a file content of a working tree, index, or specified commit.',
-      \ ],
+      \ 'description': 'Show a file content of a working tree, index, or specified commit.',
       \})
 call s:parser.add_argument(
-      \ '--opener', '-o', [
-      \   'A way to open a new buffer such as "edit", "split", or etc.',
-      \ ], {
-      \ 'type': s:A.types.value,
-      \ },
-      \)
-call s:parser.add_argument(
       \ 'commit', [
-      \   'A commit-ish which you want to show.',
-      \   'If you specify WORKTREE, it show the content of the current working tree.',
-      \   'If you specify INDEX, it show the content of the current index (staging area for next commit).',
+      \   'A Gita specialized commit-ish which you want to show. The followings are Gita special terms:',
+      \   'WORKTREE      it show the content of the current working tree.',
+      \   'INDEX         it show the content of the current index (staging area for next commit).',
+      \   'FORK:<commit> it show the content of the fork point from <commit>.',
       \ ], {
       \   'complete': function('s:complete_commit'),
       \})
@@ -36,17 +30,83 @@ call s:parser.add_argument(
       \   'buffer, the current buffer will be used.',
       \ ],
       \)
+call s:parser.add_argument(
+      \ '--opener', '-o', [
+      \   'A way to open a new buffer such as "edit", "split", or etc.',
+      \ ], {
+      \ 'type': s:A.types.value,
+      \ },
+      \)
+call s:parser.add_argument(
+      \ '--ancestor', '-1', [
+      \   'During a merge, show a common ancestor of a conflicted file.',
+      \   'It is a synonyum of specifing :1 to <commit> and overwrite a specified <commit>.',
+      \ ], {
+      \   'conflicts': ['ours', 'theirs'],
+      \ }
+      \)
+call s:parser.add_argument(
+      \ '--ours', '-2', [
+      \   'During a merge, show a target branch''s version of a conflicted file.',
+      \   'It is a synonyum of specifing :2 to <commit> and overwrite a specified <commit>.',
+      \ ], {
+      \   'conflicts': ['ancestor', 'theirs'],
+      \ }
+      \)
+call s:parser.add_argument(
+      \ '--theirs', '-3', [
+      \   'During a merge, show a version from the branch which is being merged of a conflicted file.',
+      \   'It is a synonyum of specifing :3 to <commit> and overwrite a specified <commit>.',
+      \ ], {
+      \   'conflicts': ['ours', 'ancestor'],
+      \ }
+      \)
+function! s:parser.hooks.post_validate(opts) abort " {{{
+  if get(a:opts, 'ancestor')
+    unlet! a:opts.ancestor
+    let a:opts.commit = ':1'
+  elseif get(a:opts, 'ours')
+    unlet! a:opts.ours
+    let a:opts.commit = ':2'
+  elseif get(a:opts, 'theirs')
+    unlet! a:opts.theirs
+    let a:opts.commit = ':3'
+  endif
+endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
+  let config = extend({
+        \ 'echo': 'both',
+        \}, get(a:000, 1, {}))
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
 
   let file = expand(options.file)
   let commit = options.commit
+
+  if commit =~# '^FORK:'
+    " find a fork point and use that
+    let ref = matchstr(commit, '^FORK:\zs.*$')
+    let result = gita.operations.merge_base({ 'fork_point': ref }, {
+          \ 'echo': '',
+          \})
+    if result.status != 0
+      if config.echo =~# '\%(both\|fail\)'
+        call gita#utils#error(printf(
+              \ 'Fail: %s', join(result.args),
+              \))
+        call gita#utils#info(printf(
+              \ 'A fork point from %s could not be found.', ref
+              \))
+        call gita#utils#info(result.stdout)
+      endif
+      return result
+    endif
+    let commit = result.stdout
+  endif
 
   if commit ==# 'WORKTREE'
     if filereadable(file)
@@ -56,7 +116,9 @@ function! gita#features#file#exec(...) abort " {{{
             \}
     else
       let errormsg = printf('%s is not in working tree.', file)
-      call gita#utils#warn(errormsg)
+      if config.echo =~# '\%(both\|fail\)'
+        call gita#utils#error(errormsg)
+      endif
       return {
             \ 'status': -1,
             \ 'stdout': errormsg,
@@ -90,7 +152,7 @@ function! gita#features#file#show(...) abort " {{{
   " ensure commit
   if empty(get(options, 'commit', ''))
     let commit = gita#utils#ask(
-          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master) ',
+          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, FORK:master, master, etc.) ',
           \ 'INDEX',
           \)
     if empty(commit)
@@ -115,7 +177,7 @@ function! gita#features#file#show(...) abort " {{{
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.file,
-          \ options.commit,
+          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   endif
   let opener = get(options, 'opener', 'edit')
