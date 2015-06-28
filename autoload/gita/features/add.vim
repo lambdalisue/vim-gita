@@ -7,7 +7,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita add',
+      \ 'name': 'Gita[!] add',
       \ 'description': 'Add file contents to the index',
       \})
 call s:parser.add_argument(

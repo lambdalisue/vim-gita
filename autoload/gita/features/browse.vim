@@ -13,7 +13,7 @@ function! s:complete_branch(...) abort " {{{
   return filter(branches, 'v:val !=# "HEAD"')
 endfunction " }}}
 let s:parser = s:A.new({
-      \ 'name': 'Gita browse',
+      \ 'name': 'Gita[!] browse',
       \ 'description': 'Browse a selected region of the remote in a system default browser',
       \})
 call s:parser.add_argument(

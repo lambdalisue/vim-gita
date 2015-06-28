@@ -7,7 +7,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita rm',
+      \ 'name': 'Gita[!] rm',
       \ 'description': 'Remove files from the working tree and from the index',
       \})
 call s:parser.add_argument(

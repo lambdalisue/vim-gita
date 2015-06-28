@@ -14,7 +14,7 @@ let s:const.bufname = join(['gita', 'status'], s:const.bufname_sep)
 let s:const.filetype = 'gita-status'
 
 let s:parser = s:A.new({
-      \ 'name': 'Gita status',
+      \ 'name': 'Gita[!] status',
       \ 'description': 'Show the working tree status',
       \})
 call s:parser.add_argument(
