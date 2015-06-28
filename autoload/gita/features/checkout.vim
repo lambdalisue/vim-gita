@@ -6,6 +6,11 @@ let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
+function! s:complete_branch(...) abort " {{{
+  let branches = call('gita#completes#complete_local_branch', a:000)
+  " remove HEAD
+  return filter(branches, 'v:val !=# "HEAD"')
+endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita checkout',
       \ 'description': 'Checkout a branch or paths to the working tree',
@@ -80,7 +85,9 @@ call s:parser.add_argument(
 call s:parser.add_argument(
       \ 'commit', [
       \   '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.',
-      \])
+      \ ], {
+      \   'complete': function('s:complete_branch'),
+      \ })
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let gita = s:get_gita()
   let statuses = gita.get_parsed_status()

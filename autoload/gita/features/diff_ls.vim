@@ -13,12 +13,14 @@ let s:const.bufname = join(['gita', 'diff-ls'], s:const.bufname_sep)
 let s:const.filetype = 'gita-diff-ls'
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  echomsg a:arglead
+  let leading = matchstr(a:arglead, '^.*\.\.\.\?')
   let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
-  return call('gita#completes#complete_local_branch', extend(
+  let candidates = call('gita#completes#complete_local_branch', extend(
         \ [arglead, a:cmdline, a:cursorpos],
         \ a:000,
         \))
+  let candidates = map(candidates, 'leading . v:val')
+  return candidates
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita diff-ls',

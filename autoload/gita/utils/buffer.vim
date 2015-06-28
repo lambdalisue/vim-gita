@@ -3,13 +3,6 @@ set cpo&vim
 
 
 " Private functions
-function! s:smart_redraw() abort " {{{
-  if &diff
-    diffupdate | redraw!
-  else
-    redraw!
-  endif
-endfunction " }}}
 function! s:open(name, group, ...) abort " {{{
   let config = get(a:000, 0, {})
   if empty(a:group)
@@ -107,6 +100,46 @@ function! s:open3(name1, name2, name3, group, ...) abort " {{{
         \ 'bufnum3': bufnum3,
         \}
 endfunction " }}}
+function! s:update(buflines) abort " {{{
+  let saved_cursor = getpos('.')
+  let saved_modifiable = &l:modifiable
+  let saved_undolevels = &l:undolevels
+  let &l:modifiable=1
+  let &l:undolevels=-1
+  silent %delete _
+  call setline(1, a:buflines)
+  call setpos('.', saved_cursor)
+  let &l:modifiable = saved_modifiable
+  let &l:undolevels = saved_undolevels
+  setlocal nomodified
+endfunction " }}}
+function! s:clear_undo_history() abort " {{{
+  let saved_undolevels = &undolevels
+  let &undolevels = -1
+  silent execute "normal a \<BS>\<ESC>"
+  let &undolevels = saved_undolevels
+endfunction " }}}
+function! s:is_listed_in_tabpage(expr) abort " {{{
+  let bufnum = bufnr(a:expr)
+  if bufnum == -1
+    return 0
+  endif
+  let buflist = tabpagebuflist()
+  return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
+endfunction " }}}
+function! s:bufname(name, ...) abort " {{{
+  let sep = has('unix') ? ':' : '#'
+  return join(['gita'] + a:000 + [a:name], sep)
+endfunction " }}}
+
+" obsolute
+function! s:smart_redraw() abort " {{{
+  if &diff
+    diffupdate | redraw!
+  else
+    redraw!
+  endif
+endfunction " }}}
 function! s:diff2(...) abort " {{{
   function! s:diff2_ac_buf_win_leave()
     diffoff
@@ -177,38 +210,6 @@ function! s:diff3(...) abort " {{{
   diffthis
   return bufnums
 endfunction " }}}
-function! s:update(buflines) abort " {{{
-  let saved_cursor = getpos('.')
-  let saved_modifiable = &l:modifiable
-  let saved_undolevels = &l:undolevels
-  let &l:modifiable=1
-  let &l:undolevels=-1
-  silent %delete _
-  call setline(1, a:buflines)
-  call setpos('.', saved_cursor)
-  let &l:modifiable = saved_modifiable
-  let &l:undolevels = saved_undolevels
-  setlocal nomodified
-endfunction " }}}
-function! s:clear_undo_history() abort " {{{
-  let saved_undolevels = &undolevels
-  let &undolevels = -1
-  silent execute "normal a \<BS>\<ESC>"
-  let &undolevels = saved_undolevels
-endfunction " }}}
-function! s:is_listed_in_tabpage(expr) abort " {{{
-  let bufnum = bufnr(a:expr)
-  if bufnum == -1
-    return 0
-  endif
-  let buflist = tabpagebuflist()
-  return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
-endfunction " }}}
-function! s:bufname(name, ...) abort " {{{
-  let sep = has('unix') ? ':' : '#'
-  return join(['gita'] + a:000 + [a:name], sep)
-endfunction " }}}
-
 
 " Public functions
 function! gita#utils#buffer#open(...) abort " {{{
