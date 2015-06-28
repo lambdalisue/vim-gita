@@ -298,7 +298,7 @@ function! gita#features#commit#update(...) abort " {{{
     unlet! gita.commitmsg_cached
   elseif has_key(gita, 'commitmsg_saved')
     let commitmsg = gita.commitmsg_saved
-  elseif !empty(gita.git.get_merge_head())
+  elseif !empty(gita.git.get_merge_msg())
     let commit_mode = 'merge'
     let commitmsg = gita.git.get_merge_msg()
   elseif get(options, 'amend')

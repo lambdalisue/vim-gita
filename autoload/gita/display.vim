@@ -144,10 +144,10 @@ function! gita#display#open(bufname, ...) abort  " {{{
   endif
 
   if !hasmapto('<Plug>(gita-action-compare-h')
-    nmap <buffer><expr> R <SID>smart_map('R', '<Plug>(gita-action-compare-h)')
+    nmap <buffer><expr> F <SID>smart_map('F', '<Plug>(gita-action-compare-h)')
   endif
   if !hasmapto('<Plug>(gita-action-compare-v')
-    nmap <buffer><expr> r <SID>smart_map('r', '<Plug>(gita-action-compare-v)')
+    nmap <buffer><expr> f <SID>smart_map('f', '<Plug>(gita-action-compare-v)')
   endif
 
   return 0

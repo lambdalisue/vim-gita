@@ -3,6 +3,7 @@ set cpo&vim
 
 let s:P = gita#utils#import('Prelude')
 let s:C = gita#utils#import('VCS.Git.Conflict')
+let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:complete_conflicted_file(arglead, cmdline, cursorpos, ...) abort " {{{
@@ -19,39 +20,25 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_conflicted_file'),
       \})
 call s:parser.add_argument(
-      \ '--1way', '-1', [
-      \   'Open a single buffer to directly solve the conflict.',
-      \ ], {
-      \   'conflicts': ['2way', '3way'],
-      \})
-call s:parser.add_argument(
       \ '--2way', '-2', [
       \   'Open MERGE buffer and REMOTE buffer to solve the conflict.',
       \ ], {
-      \   'conflicts': ['2way', '3way'],
+      \   'conflicts': ['3way'],
       \})
 call s:parser.add_argument(
       \ '--3way', '-3', [
       \   'Open MERGE buffer, LOCAL buffer and REMOTE buffer to solve the conflict.',
       \ ], {
-      \   'conflicts': ['1way', '2way'],
+      \   'conflicts': ['2way'],
       \})
 function! s:parser.hooks.post_validate(opts) abort " {{{
-  if get(a:opts, '1way')
-    unlet a:opts['1way']
-    let a:opts.way = 1
-  elseif get(a:opts, '1way')
+  if get(a:opts, '2way')
     unlet a:opts['2way']
     let a:opts.way = 2
   else
     silent! unlet a:opts['3way']
     let a:opts.way = 3
   endif
-endfunction " }}}
-function! s:solve1(...) abort " {{{
-  call gita#utils#error(
-        \ 'This feature is not implemented yet.',
-        \)
 endfunction " }}}
 function! s:solve2(...) abort " {{{
   let gita = gita#core#get()
@@ -74,29 +61,39 @@ function! s:solve2(...) abort " {{{
     let REMOTE = stdout
   endif
 
-  let MERGE_bufname = abspath
+  let MERGE_bufname = gita#utils#buffer#bufname(
+        \ relpath,
+        \ 'MERGE',
+        \)
   let REMOTE_bufname = gita#utils#buffer#bufname(
-        \ abspath,
+        \ relpath,
         \ 'REMOTE',
         \)
   let bufnums = gita#utils#buffer#open2(
-        \ LOCAL_bufname, REMOTE_bufname, 'conflict_diff2', {
+        \ MERGE_bufname, REMOTE_bufname, 'conflict_diff2', {
         \   'opener': get(options, 'opener', 'edit'),
         \   'vertical': get(options, 'vertical', 0),
         \})
-  let LOCAL_bufnum = bufnums.bufnum1
+  let MERGE_bufnum = bufnums.bufnum1
   let REMOTE_bufnum = bufnums.bufnum2
 
   " REMOTE
   execute printf('%swincmd w', bufwinnr(REMOTE_bufnum))
   call gita#utils#buffer#update(REMOTE)
+  let b:_gita_original_filename = abspath
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable readonly
-  let b:_gita_original_filename = abspath
   diffthis
 
   " MERGE
   execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
+  call gita#utils#buffer#update(MERGE)
+  let b:_gita_original_filename = abspath
+  setlocal buftype=acwrite bufhidden=wipe noswapfile
+  augroup vim-gita-conflict-solve2
+    autocmd! * <buffer>
+    autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
+  augroup END
   diffthis
   diffupdate
 endfunction " }}}
@@ -129,15 +126,15 @@ function! s:solve3(...) abort " {{{
 
   " Create a buffer names of LOCAL, REMOTE
   let MERGE_bufname = gita#utils#buffer#bufname(
-        \ abspath,
+        \ relpath,
         \ 'MERGE',
         \)
   let LOCAL_bufname = gita#utils#buffer#bufname(
-        \ abspath,
+        \ relpath,
         \ 'LOCAL',
         \)
   let REMOTE_bufname = gita#utils#buffer#bufname(
-        \ abspath,
+        \ relpath,
         \ 'REMOTE',
         \)
 
@@ -154,11 +151,12 @@ function! s:solve3(...) abort " {{{
   " LOCAL
   execute printf('%swincmd w', bufwinnr(LOCAL_bufnum))
   call gita#utils#buffer#update(LOCAL)
+  let b:_gita_original_filename = abspath
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable readonly
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
-        \   ':<C-u>diffput %s<CR>',
+        \   ':<C-u>diffput %s<BAR>diffupdate<CR>',
         \ ]),
         \ MERGE_bufnum,
         \)
@@ -168,11 +166,12 @@ function! s:solve3(...) abort " {{{
   " REMOTE
   execute printf('%swincmd w', bufwinnr(REMOTE_bufnum))
   call gita#utils#buffer#update(REMOTE)
+  let b:_gita_original_filename = abspath
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable readonly
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
-        \   ':<C-u>diffput %s<CR>',
+        \   ':<C-u>diffput %s<BAR>diffupdate<CR>',
         \ ]),
         \ MERGE_bufnum,
         \)
@@ -182,29 +181,27 @@ function! s:solve3(...) abort " {{{
   " MERGE
   execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#update(MERGE)
-  call setbufvar(MERGE_bufnum, '_gita_original_filename', path)
-  call setbufvar(MERGE_bufnum, '_gita_LOCAL_bufnum', LOCAL_bufnum)
-  call setbufvar(MERGE_bufnum, '_gita_REMOTE_bufnum', REMOTE_bufnum)
+  let b:_gita_original_filename = abspath
+  let b:_gita_LOCAL_bufnum = LOCAL_bufnum
+  let b:_gita_REMOTE_bufnum = REMOTE_bufnum
   setlocal buftype=acwrite bufhidden=wipe noswapfile
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffget-LOCAL)',
-        \   ':<C-u>diffget %s<CR>',
+        \   ':<C-u>diffget %s<BAR>diffupdate<CR>',
         \ ]),
         \ LOCAL_bufnum,
         \)
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffget-REMOTE)',
-        \   ':<C-u>diffget %s<CR>',
+        \   ':<C-u>diffget %s<BAR>diffupdate<CR>',
         \ ]),
         \ REMOTE_bufnum,
         \)
   nmap <buffer> dol <Plug>(gita-action-diffget-LOCAL)
   nmap <buffer> dor <Plug>(gita-action-diffget-REMOTE)
-  augroup vim-gita-conflict
+  augroup vim-gita-conflict-solve3
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
-    autocmd QuitPre     <buffer> call s:ac_QuitPre()
-    autocmd BufWinLeave <buffer> call s:ac_BufWinLeave()
   augroup END
   diffthis
 
@@ -227,24 +224,6 @@ function! s:ac_BufWriteCmd() abort " {{{
     endif
   endif
 endfunction " }}}
-function! s:ac_QuitPre() abort " {{{
-  let b:_gita_QuitPre = 1
-endfunction " }}}
-function! s:ac_BufWinLeave() abort " {{{
-  let expr = expand('<afile>')
-  if getbufvar(expr, '_gita_QuitPre')
-    call setbufvar(expr, '_gita_QuitPre', 0)
-    let LOCAL_bufnum = getbufvar(expr, '_gita_LOCAL_bufnum')
-    let REMOTE_bufnum = getbufvar(expr, '_gita_REMOTE_bufnum')
-    for bufnum in [LOCAL_bufnum, REMOTE_bufnum]
-      if bufexists(bufnum)
-        execute printf('noautocmd %dwincmd w', bufwinnr(bufnum))
-        diffoff
-        silent noautocmd bwipe!
-      endif
-    endfor
-  endif
-endfunction " }}}
 
 function! gita#features#conflict#show(...) abort " {{{
   let gita = gita#core#get()
@@ -263,19 +242,21 @@ function! gita#features#conflict#show(...) abort " {{{
   else
     let options.status = gita#utils#get_status(options.file)
   endif
+  let options.file = gita#utils#expand(options.file)
 
   let way = get(options, 'way', 3)
   if way == 3
     call s:solve3(options)
   elseif way == 2
     call s:solve2(options)
-  elseif way == 1
-    call s:solve1(options)
   endif
 endfunction " }}}
 function! gita#features#conflict#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    if empty(get(options, 'file', ''))
+      let options.file = '%'
+    endif
     call gita#features#conflict#show(options)
   endif
 endfunction " }}}
