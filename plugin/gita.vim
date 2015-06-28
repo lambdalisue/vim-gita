@@ -16,7 +16,6 @@ command! -nargs=? -range -bang
 " Assign configure variables " {{{
 let s:default = {
       \ 'debug': 0,
-      \ 'interface#status#define_default_mappings': 1,
       \}
 function! s:assign_config()
   for [key, default] in items(s:default)

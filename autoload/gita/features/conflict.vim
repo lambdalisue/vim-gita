@@ -31,7 +31,7 @@ call s:parser.add_argument(
       \   'conflicts': ['2way', '3way'],
       \})
 call s:parser.add_argument(
-      \ '--2way', '-2', [
+      \ '--3way', '-3', [
       \   'Open MERGE buffer, LOCAL buffer and REMOTE buffer to solve the conflict.',
       \ ], {
       \   'conflicts': ['1way', '2way'],
@@ -156,6 +156,13 @@ function! s:solve3(...) abort " {{{
   call gita#utils#buffer#update(LOCAL)
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable readonly
+  execute printf(join([
+        \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
+        \   ':<C-u>diffput %s<CR>',
+        \ ]),
+        \ MERGE_bufnum,
+        \)
+  nmap <buffer> dp <Plug>(gita-action-diffput)
   diffthis
 
   " REMOTE
@@ -163,6 +170,13 @@ function! s:solve3(...) abort " {{{
   call gita#utils#buffer#update(REMOTE)
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodifiable readonly
+  execute printf(join([
+        \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
+        \   ':<C-u>diffput %s<CR>',
+        \ ]),
+        \ MERGE_bufnum,
+        \)
+  nmap <buffer> dp <Plug>(gita-action-diffput)
   diffthis
 
   " MERGE
@@ -172,6 +186,20 @@ function! s:solve3(...) abort " {{{
   call setbufvar(MERGE_bufnum, '_gita_LOCAL_bufnum', LOCAL_bufnum)
   call setbufvar(MERGE_bufnum, '_gita_REMOTE_bufnum', REMOTE_bufnum)
   setlocal buftype=acwrite bufhidden=wipe noswapfile
+  execute printf(join([
+        \   'noremap <buffer><silent> <Plug>(gita-action-diffget-LOCAL)',
+        \   ':<C-u>diffget %s<CR>',
+        \ ]),
+        \ LOCAL_bufnum,
+        \)
+  execute printf(join([
+        \   'noremap <buffer><silent> <Plug>(gita-action-diffget-REMOTE)',
+        \   ':<C-u>diffget %s<CR>',
+        \ ]),
+        \ REMOTE_bufnum,
+        \)
+  nmap <buffer> dol <Plug>(gita-action-diffget-LOCAL)
+  nmap <buffer> dor <Plug>(gita-action-diffget-REMOTE)
   augroup vim-gita-conflict
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()

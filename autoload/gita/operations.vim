@@ -51,12 +51,6 @@ function! s:translate_options(options, schemes) abort " {{{
   endif
   return args
 endfunction " }}}
-function! s:new(gita) abort " {{{
-  let operations = extend(deepcopy(s:operations), {
-        \ 'gita': a:gita,
-        \})
-  return operations
-endfunction " }}}
 
 
 let s:operations = {}
@@ -216,19 +210,17 @@ function! s:operations.rev_parse(...) abort " {{{
 endfunction " }}}
 
 
-
-" Internal
 function! gita#operations#_translate_option(...) abort " {{{
   return call('s:translate_option', a:000)
 endfunction " }}}
 function! gita#operations#_translate_options(...) abort " {{{
   return call('s:translate_options', a:000)
 endfunction " }}}
-
-
-" Public
-function! gita#operations#new(...) abort " {{{
-  return call('s:new', a:000)
+function! gita#operations#new(gita) abort " {{{
+  let operations = extend(deepcopy(s:operations), {
+        \ 'gita': a:gita,
+        \})
+  return operations
 endfunction " }}}
 
 

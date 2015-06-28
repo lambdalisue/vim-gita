@@ -7,7 +7,30 @@ let s:G = gita#utils#import('VCS.Git')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
-" Public functions
+let s:gita = {}
+function! s:gita.is_expired() abort " {{{
+  let bufnum = get(self, 'bufnum', -1)
+  let bufname = bufname(bufnum)
+  let buftype = getbufvar(bufnum, '&buftype')
+  if empty(buftype) && bufname !=# get(self, 'bufname', '')
+    return 1
+  elseif !empty(buftype) && getcwd() !=# self.cwd
+    return 1
+  else
+    return 0
+  endif
+endfunction " }}}
+function! s:gita.fail_on_disabled() abort " {{{
+  if !self.enabled
+    call gita#utils#warn(
+          \ 'Gita is not available on the current buffer.',
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+
+
 function! gita#core#new(...) abort " {{{
   " return a new gita instance
   let expr = get(a:000, 0, '%')
@@ -52,31 +75,6 @@ function! gita#core#get(...) abort " {{{
     return gita
   endif
   return gita#core#new(expr)
-endfunction " }}}
-
-
-" Gita instance
-let s:gita = {}
-function! s:gita.is_expired() abort " {{{
-  let bufnum = get(self, 'bufnum', -1)
-  let bufname = bufname(bufnum)
-  let buftype = getbufvar(bufnum, '&buftype')
-  if empty(buftype) && bufname !=# get(self, 'bufname', '')
-    return 1
-  elseif !empty(buftype) && getcwd() !=# self.cwd
-    return 1
-  else
-    return 0
-  endif
-endfunction " }}}
-function! s:gita.fail_on_disabled() abort " {{{
-  if !self.enabled
-    call gita#utils#warn(
-          \ 'Gita is not available on the current buffer.',
-          \)
-    return 1
-  endif
-  return 0
 endfunction " }}}
 
 

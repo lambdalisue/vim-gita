@@ -103,7 +103,9 @@ function! s:actions.add(statuses, options) abort " {{{
   call gita#features#add#exec(options, {
         \ 'echo': 'fail',
         \})
-  call self.update(a:statuses, a:options)
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.rm(statuses, options) abort " {{{
   if empty(a:statuses)
@@ -116,7 +118,9 @@ function! s:actions.rm(statuses, options) abort " {{{
   call gita#features#rm#exec(options, {
         \ 'echo': 'fail',
         \})
-  call self.update(a:statuses, a:options)
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.reset(statuses, options) abort " {{{
   if empty(a:statuses)
@@ -129,7 +133,9 @@ function! s:actions.reset(statuses, options) abort " {{{
   call gita#features#reset#exec(options, {
         \ 'echo': 'fail',
         \})
-  call self.update(a:statuses, a:options)
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.checkout(statuses, options) abort " {{{
   if empty(a:statuses)
@@ -141,7 +147,9 @@ function! s:actions.checkout(statuses, options) abort " {{{
   call gita#features#checkout#exec(options, {
         \ 'echo': 'fail',
         \})
-  call self.update(a:statuses, a:options)
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.stage(statuses, options) abort " {{{
   let add_statuses = []
@@ -153,8 +161,11 @@ function! s:actions.stage(statuses, options) abort " {{{
       call add(add_statuses, status)
     endif
   endfor
-  call self.add(add_statuses, a:options)
-  call self.rm(rm_statuses, a:options)
+  call self.add(add_statuses, extend({ 'no_update': 1 }, a:options))
+  call self.rm(rm_statuses, extend({ 'no_update': 1 }, a:options))
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.unstage(statuses, options) abort " {{{
   call self.reset(a:statuses, a:options)
@@ -175,8 +186,11 @@ function! s:actions.toggle(statuses, options) abort " {{{
       call add(stage_statuses, status)
     endif
   endfor
-  call self.stage(stage_statuses, a:options)
-  call self.unstage(reset_statuses, a:options)
+  call self.stage(stage_statuses, extend({ 'no_update': 1 }, a:options))
+  call self.unstage(reset_statuses, extend({ 'no_update': 1 }, a:options))
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 function! s:actions.discard(statuses, options) abort " {{{
   let delete_statuses = []
@@ -221,7 +235,10 @@ function! s:actions.discard(statuses, options) abort " {{{
   " checkout tracked files from HEAD
   let options.commit = 'HEAD'
   let options.force = 1
-  call self.checkout(checkout_statuses, a:options)
+  call self.checkout(checkout_statuses, extend({ 'no_update': 1 }, a:options))
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:statuses, a:options)
+  endif
 endfunction " }}}
 
 

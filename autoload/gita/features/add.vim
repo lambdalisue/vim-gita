@@ -97,6 +97,9 @@ function! gita#features#add#command(bang, range, ...) abort " {{{
     let options = extend(options, {
           \ '--': options.__unknown__,
           \})
+    if empty(options['--'])
+      let options['--'] = ['%']
+    endif
     call gita#features#add#exec(options)
   endif
 endfunction " }}}
