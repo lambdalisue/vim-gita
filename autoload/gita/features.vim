@@ -77,13 +77,7 @@ function! gita#features#command(bang, range, ...) abort " {{{
   if opts.__bang__ || !s:is_registered(name)
     " execute git command
     let gita = gita#core#get()
-    let result = gita.operations.exec_raw(opts.__args__)
-    if result.status == 0
-      call gita#utils#info(
-            \ printf('Ok: "%s"', join(result.args)),
-            \)
-      call gita#utils#info(result.stdout)
-    endif
+    call gita.operations.exec_raw(opts.__args__)
   else
     " execute Gita command
     let feature = s:feature_registry[name]
