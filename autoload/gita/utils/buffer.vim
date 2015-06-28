@@ -35,7 +35,7 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
         \}, get(a:000, 0, {}))
   " 1st buffer
   let opener = get(options, 'opener', 'edit')
-  call s:open(a:name1, printf('%s_1', a:group), {
+  call gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
@@ -47,7 +47,7 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
   else
     let opener = vertical ? 'vert split' : 'split'
   endif
-  call s:open(a:name2, printf('%s_2', a:group), {
+  call gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
@@ -65,7 +65,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \}, get(a:000, 0, {}))
   " 1st buffer
   let opener = get(options, 'opener', 'tabedit')
-  call s:open(a:name1, printf('%s_1', a:group), {
+  call gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
@@ -77,7 +77,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
   else
     let opener = vertical ? 'vert leftabove split' : 'leftabove split'
   endif
-  call s:open(a:name2, printf('%s_2', a:group), {
+  call gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
@@ -89,7 +89,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
   else
     let opener = vertical ? 'vert rightbelow split' : 'rightbelow split'
   endif
-  call s:open(a:name3, printf('%s_3', a:group), {
+  call gita#utils#buffer#open(a:name3, printf('%s_3', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})

@@ -174,14 +174,14 @@ function! gita#utils#get_status(path) abort " {{{
         \ 'ignore_submodules': 1,
         \ '--': [a:path],
         \}
-  let result = gita.operation.status(options, {
+  let result = gita.operations.status(options, {
         \ 'echo': 'fail',
         \})
   if result.status != 0
     return {}
   endif
   let statuses = s:S.parse(result.stdout)
-  return get(statuses, 0, {})
+  return get(statuses.all, 0, {})
 endfunction " }}}
 function! gita#utils#doautocmd(name) abort " {{{
   let name = printf('vim-gita-%s', a:name)
