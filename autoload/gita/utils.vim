@@ -186,5 +186,10 @@ function! gita#utils#open_gita_issue(url) abort " {{{
   endif
 endfunction " }}}
 
+function! gita#utils#expand(expr) abort " {{{
+  " prefer 'b:_gita_original_filename'
+  return getbufvar(a:expr, '_gita_original_filename', expand(a:expr))
+endfunction " }}}
+
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

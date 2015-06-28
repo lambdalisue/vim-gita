@@ -129,9 +129,9 @@ call s:register('checkout',
       \ function('gita#features#checkout#complete'),
       \)
 
-call s:register('open',
-      \ function('gita#features#open#command'),
-      \ function('gita#features#open#complete'),
+call s:register('file',
+      \ function('gita#features#file#command'),
+      \ function('gita#features#file#complete'),
       \)
 call s:register('diff',
       \ function('gita#features#diff#command'),

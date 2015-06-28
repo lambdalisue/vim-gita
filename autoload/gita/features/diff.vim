@@ -62,6 +62,7 @@ function! s:diff(...) abort " {{{
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
+  let options.commit = substitute(options.commit, 'INDEX', '', '')
 
   let result = gita#features#diff#exec(options, {
         \ 'echo': 'fail',
@@ -94,10 +95,7 @@ endfunction " }}}
 function! s:compare(...) abort " {{{
   let gita = gita#core#get()
   let options = get(a:000, 0, {})
-  if gita.fail_on_disabled()
-    return
-  endif
-
+  " validate 'file'
   if len(get(options, '--', [])) == 0
     " Use a current buffer
     let options['--'] = ['%']
@@ -106,54 +104,101 @@ function! s:compare(...) abort " {{{
           \ 'A single file required to be specified to compare the difference.',
           \)
     return
-  elseif match(get(options, 'commit', ''), '^.*\.\.\.\?.*$') != -1
-    call gita#utils#warn(
-          \ '<commit>..<commit> or <commit>...<commit> style is not supported and',
-          \ 'a single <commit> is required to be specified to compare the difference.',
-          \)
-    return
   endif
-  let options.file = expand(options['--'][0])
-  let options.object = printf('%s:%s',
-        \ options.commit,
-        \ options.file,
-        \)
-  let result = gita#features#show#exec(options, {
+  let options.file = gita#utils#expand(options['--'][0])
+
+  " find commit1 and commit2
+  let commit1_display = ''
+  let commit2_display = ''
+  if options.commit =~# '\v^.*\.\.\..*$'
+    " find a common ancestor
+    let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.\.(.*)$')[1 : 2]
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let result = gita.operations.merge_base({ 'commit1': lhs, 'commit2': rhs }, {
+          \ 'echo': 'fail',
+          \})
+    if result.status != 0
+      return
+    endif
+    let commit1 = result.stdout
+    let commit2 = empty(rhs) ? 'HEAD' : rhs
+    let result = gita.operations.rev_parse({ 'short': 1, 'args': result.stdout }, {
+          \ 'echo': 'fail',
+          \})
+    if result.status == 0
+      let commit1_display = printf('ANCESTOR(%s)', result.stdout)
+    endif
+  elseif options.commit =~# '\v^.*\.\..*$'
+    let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.(.*)$')[1 : 2]
+    let commit1 = empty(lhs) ? 'HEAD' : lhs
+    let commit2 = empty(rhs) ? 'HEAD' : rhs
+  else
+    let commit1 = 'WORKTREE'
+    let commit2 = options.commit
+  endif
+
+  " commit1
+  let result = gita#features#file#exec({ 'commit': commit1, 'file': options.file }, {
         \ 'echo': '',
         \})
   if result.status == 0
-    let REF = split(result.stdout, '\v\r?\n')
+    let COMMIT1 = split(result.stdout, '\v\r?\n')
   else
-    " probably the file does not exists in the version
-    " so just show a empty buffer
-    let REF = []
+    let COMMIT1 = []
   endif
-  let abspath = gita.git.get_absolute_path(options.file)
-  let relpath = gita.git.get_relative_path(options.file)
+  if commit1 ==# 'WORKTREE'
+    let COMMIT1_bufname = options.file
+  else
+    let COMMIT1_bufname = gita#utils#buffer#bufname(
+          \ options.file,
+          \ empty(commit1_display) ? commit1 : commit1_display,
+          \)
+  endif
+  " commit2
+  let result = gita#features#file#exec({ 'commit': commit2, 'file': options.file }, {
+        \ 'echo': '',
+        \})
+  if result.status == 0
+    let COMMIT2 = split(result.stdout, '\v\r?\n')
+  else
+    let COMMIT2 = []
+  endif
+  if commit2 ==# 'WORKTREE'
+    let COMMIT2_bufname = options.file
+  else
+    let COMMIT2_bufname = gita#utils#buffer#bufname(
+          \ options.file,
+          \ empty(commit2_display) ? commit2 : commit2_display,
+          \)
+  endif
 
-  let LOCAL_bufname = abspath
-  let REF_bufname = gita#utils#buffer#bufname(
-        \ relpath,
-        \ empty(options.commit) ? 'INDEX' : options.commit,
-        \)
-  " Open two buffers
   let bufnums = gita#utils#buffer#open2(
-        \ LOCAL_bufname, REF_bufname, 'diff', {
+        \ COMMIT1_bufname, COMMIT2_bufname, 'diff', {
         \   'opener': get(options, 'opener', 'edit'),
         \   'vertical': get(options, 'vertical', 0),
         \})
-  let LOCAL_bufnum = bufnums.bufnum1
-  let REF_bufnum   = bufnums.bufnum2
+  let COMMIT1_bufnum = bufnums.bufnum1
+  let COMMIT2_bufnum = bufnums.bufnum2
 
-  " REFERENCE
-  execute printf('%swincmd w', bufwinnr(REF_bufnum))
-  call gita#utils#buffer#update(REF)
-  setlocal buftype=nofile bufhidden=wipe noswapfile
-  setlocal nomodifiable
+  " COMMIT1
+  execute printf('%swincmd w', bufwinnr(COMMIT1_bufnum))
+  if commit1 !=# 'WORKTREE'
+    call gita#utils#buffer#update(COMMIT1)
+    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal nomodifiable
+    let b:_gita_original_filename = options.file
+  endif
   diffthis
 
-  " LOCAL
-  execute printf('%swincmd w', bufwinnr(LOCAL_bufnum))
+  " COMMIT2
+  execute printf('%swincmd w', bufwinnr(COMMIT2_bufnum))
+  if commit2 !=# 'WORKTREE'
+    call gita#utils#buffer#update(COMMIT2)
+    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal nomodifiable
+    let b:_gita_original_filename = options.file
+  endif
   diffthis
   diffupdate
 endfunction " }}}
@@ -166,7 +211,7 @@ function! gita#features#diff#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    call map(options['--'], 'expand(v:val)')
+    call map(options['--'], 'gita#utils#expand(v:val)')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -197,7 +242,6 @@ function! gita#features#diff#show(...) abort " {{{
     endif
     let options.commit = commit
   endif
-  let options.commit = substitute(options.commit, '^INDEX$', '', '')
   let config = get(a:000, 1, {})
   if get(options, 'compare')
     call s:compare(options, config)

@@ -85,7 +85,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
   augroup vim-gita-display
     autocmd! * <buffer>
     autocmd QuitPre     <buffer> call s:ac_quitpre()
-    autocmd BufWinLeave <buffer> call s:ac_bufwinleave(expand('<afile>'))
+    autocmd BufWinLeave <buffer> call s:ac_bufwinleave(gita#utils#expand('<afile>'))
   augroup END
 
   return 0
