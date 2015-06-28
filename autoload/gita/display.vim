@@ -5,17 +5,18 @@ set cpo&vim
 function! s:smart_map(...) abort " {{{
   return call('gita#display#smart_map', a:000)
 endfunction " }}}
-function! s:ac_quitpre() abort " {{{
-  let b:_gita_quitpre = 1
+function! s:ac_QuitPre() abort " {{{
+  let b:_gita_QuitPre = 1
 endfunction " }}}
-function! s:ac_bufwinleave(expr) abort " {{{
-  if getbufvar(a:expr, '_gita_quitpre')
-    call setbufvar(a:expr, '_gita_quitpre', 0)
-    let hooks = getbufvar(a:expr, '_gita_hooks')
-    call hooks.call('ac_bufwinleave_pre', a:expr)
+function! s:ac_BufWinLeave() abort " {{{
+  let expr = expand('<afile>')
+  if getbufvar(expr, '_gita_QuitPre')
+    call setbufvar(expr, '_gita_QuitPre', 0)
+    let hooks = getbufvar(expr, '_gita_hooks')
+    call hooks.call('ac_BufWinLeave_pre', expr)
     call gita#utils#invoker#focus()
     call gita#utils#invoker#clear()
-    call hooks.call('ac_bufwinleave_post', a:expr)
+    call hooks.call('ac_BufWinLeave_post', expr)
   endif
 endfunction " }}}
 
@@ -87,8 +88,8 @@ function! gita#display#open(bufname, ...) abort  " {{{
 
   augroup vim-gita-display
     autocmd! * <buffer>
-    autocmd QuitPre     <buffer> call s:ac_quitpre()
-    autocmd BufWinLeave <buffer> call s:ac_bufwinleave(gita#utils#expand('<afile>'))
+    autocmd QuitPre     <buffer> call s:ac_QuitPre()
+    autocmd BufWinLeave <buffer> call s:ac_BufWinLeave()
   augroup END
 
   " Define Plug key mappings
