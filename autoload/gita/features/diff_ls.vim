@@ -9,10 +9,11 @@ let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'diff', 'ls'], s:const.bufname_sep)
+let s:const.bufname = join(['gita', 'diff-ls'], s:const.bufname_sep)
 let s:const.filetype = 'gita-diff-ls'
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
+  echomsg a:arglead
   let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
   return call('gita#completes#complete_local_branch', extend(
         \ [arglead, a:cmdline, a:cursorpos],
@@ -21,14 +22,8 @@ function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita diff-ls',
-      \ 'description': 'Show filenames and statuses different',
+      \ 'description': 'Show filename and status difference',
       \})
-call s:parser.add_argument(
-      \ '--window', '-w',
-      \ 'Open a gita:diff:ls window to show changed files (Default behavior)', {
-      \   'deniable': 1,
-      \   'default': 1,
-      \ })
 call s:parser.add_argument(
       \ 'commit', [
       \   'A commit which you want to compare with.',
@@ -38,6 +33,12 @@ call s:parser.add_argument(
       \   'If <commit>...<commit> is specified, it show thechanges on the branch containing and up to the second <commit>, starting at a common ancestor of both <commit>.',
       \ ], {
       \   'complete': function('s:complete_commit'),
+      \ })
+call s:parser.add_argument(
+      \ '--window', '-w',
+      \ 'Open a gita:diff:ls window to show changed files (Default behavior)', {
+      \   'deniable': 1,
+      \   'default': 1,
       \ })
 
 let s:actions = {}
@@ -62,7 +63,6 @@ function! gita#features#diff_ls#open(...) abort " {{{
     endif
     let options.commit = commit
   endif
-  let options.commit = substitute(options.commit, '^INDEX$', '', '')
 
   let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
   let result = gita#display#open(bufname, options)

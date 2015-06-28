@@ -2,6 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+function! s:smart_map(...) abort " {{{
+  return call('gita#display#smart_map', a:000)
+endfunction " }}}
 function! s:ac_quitpre() abort " {{{
   let b:_gita_quitpre = 1
 endfunction " }}}
@@ -27,14 +30,14 @@ endfunction " }}}
 function! s:actions.open(statuses, options) abort " {{{
   let gita = gita#core#get()
   let invoker = gita#utils#invoker#get()
-  let opener = get(a:options, 'opener', 'edit')
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
     call invoker.focus()
-    call gita#utils#buffer#open(abspath, '', {
-          \ 'opener': opener,
-          \})
+    call gita#features#file#show(extend({
+          \ 'file': abspath,
+          \ 'commit': get(a:options, 'commit', 'WORKTREE'),
+          \}, a:options))
   endfor
 endfunction " }}}
 function! s:actions.diff(statuses, options) abort " {{{
@@ -42,11 +45,11 @@ function! s:actions.diff(statuses, options) abort " {{{
   let invoker = gita#utils#invoker#get()
   for status in a:statuses
     let path = get(status, 'path2', status.path)
+    let abspath = gita.git.get_absolute_path(path)
     call invoker.focus()
     call gita#features#diff#show(extend({
-          \ 'file': path,
-          \ 'revision': get(a:options, 'revision', 'INDEX'),
-          \ 'new': 1,
+          \ '--': [abspath],
+          \ 'commit': get(a:options, 'commit', 'INDEX'),
           \}, a:options))
   endfor
 endfunction " }}}
@@ -64,7 +67,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \)
 
   " open a buffer in a 'gita:display' window group
-  call gita#utils#buffer#open(a:bufname, 'gita_display', {
+  call gita#utils#buffer#open(a:bufname, 'vim_gita_display', {
         \ 'opener': 'topleft 15 split',
         \ 'range': 'tabpage',
         \})
@@ -87,6 +90,64 @@ function! gita#display#open(bufname, ...) abort  " {{{
     autocmd QuitPre     <buffer> call s:ac_quitpre()
     autocmd BufWinLeave <buffer> call s:ac_bufwinleave(gita#utils#expand('<afile>'))
   augroup END
+
+  " Define Plug key mappings
+  noremap <silent><buffer> <Plug>(gita-action-quit)
+        \ :<C-u>q<CR>
+  noremap <silent><buffer> <Plug>(gita-action-help-s)
+        \ :<C-u>call gita#display#action('help', { 'name': 'short_format' })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-open)
+        \ :<C-u>call gita#display#action('open')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-h)
+        \ :<C-u>call gita#display#action('open', { 'opener': 'split' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-open-v)
+        \ :<C-u>call gita#display#action('open', { 'opener': 'vsplit' })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-diff)
+        \ :<C-u>call gita#display#action('diff')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-h)
+        \ :<C-u>call gita#display#action('diff', { 'opener': 'split' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-diff-v)
+        \ :<C-u>call gita#display#action('diff', { 'opener': 'vsplit' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-compare-h)
+        \ :<C-u>call gita#display#action('diff', { 'compare': 1, 'vertical': 0 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-compare-v)
+        \ :<C-u>call gita#display#action('diff', { 'compare': 1, 'vertical': 1 })<CR>
+
+  if !hasmapto('<Plug>(gita-action-quit)')
+    nmap <buffer> q     <Plug>(gita-action-quit)
+  endif
+  if !hasmapto('<Plug>(gita-action-help-s')
+    nmap <buffer> ?s    <Plug>(gita-action-help-s)
+  endif
+
+  if !hasmapto('<Plug>(gita-action-open')
+    nmap <buffer><expr> e <SID>smart_map('e', '<Plug>(gita-action-open)')
+  endif
+  if !hasmapto('<Plug>(gita-action-open-h')
+    nmap <buffer><expr> <C-e> <SID>smart_map('<C-e>', '<Plug>(gita-action-open-h)')
+  endif
+  if !hasmapto('<Plug>(gita-action-open-v')
+    nmap <buffer><expr> E <SID>smart_map('E', '<Plug>(gita-action-open-v)')
+  endif
+
+  if !hasmapto('<Plug>(gita-action-diff')
+    nmap <buffer><expr> d <SID>smart_map('d', '<Plug>(gita-action-diff)')
+  endif
+  if !hasmapto('<Plug>(gita-action-diff-h')
+    nmap <buffer><expr> <C-d> <SID>smart_map('<C-d>', '<Plug>(gita-action-diff-h)')
+  endif
+  if !hasmapto('<Plug>(gita-action-diff-v')
+    nmap <buffer><expr> D <SID>smart_map('D', '<Plug>(gita-action-diff-v)')
+  endif
+
+  if !hasmapto('<Plug>(gita-action-compare-h')
+    nmap <buffer><expr> R <SID>smart_map('R', '<Plug>(gita-action-compare-h)')
+  endif
+  if !hasmapto('<Plug>(gita-action-compare-v')
+    nmap <buffer><expr> r <SID>smart_map('r', '<Plug>(gita-action-compare-v)')
+  endif
 
   return 0
 endfunction " }}}

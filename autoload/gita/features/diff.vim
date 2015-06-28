@@ -62,7 +62,6 @@ function! s:diff(...) abort " {{{
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
-  let options.commit = substitute(options.commit, 'INDEX', '', '')
 
   let result = gita#features#diff#exec(options, {
         \ 'echo': 'fail',
@@ -74,12 +73,12 @@ function! s:diff(...) abort " {{{
   if len(get(options, '--', [])) == 1
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ printf('%s.diff', options['--'][0]),
-          \ empty(options.commit) ? 'INDEX' : options.commit,
+          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   else
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ 'diff',
-          \ empty(options.commit) ? 'INDEX' : options.commit,
+          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   endif
   let DIFF = split(result.stdout, '\v\r?\n')
@@ -115,7 +114,7 @@ function! s:compare(...) abort " {{{
     let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.\.(.*)$')[1 : 2]
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
-    let result = gita.operations.merge_base({ 'commit1': lhs, 'commit2': rhs }, {
+    let result = gita.operations.merge_base({ '--': [lhs, rhs] }, {
           \ 'echo': 'fail',
           \})
     if result.status != 0
@@ -127,7 +126,8 @@ function! s:compare(...) abort " {{{
           \ 'echo': 'fail',
           \})
     if result.status == 0
-      let commit1_display = printf('ANCESTOR(%s)', result.stdout)
+      " use user-friendly name
+      let commit1_display = printf('ANCESTOR:%s', result.stdout)
     endif
   elseif options.commit =~# '\v^.*\.\..*$'
     let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.(.*)$')[1 : 2]
@@ -137,6 +137,8 @@ function! s:compare(...) abort " {{{
     let commit1 = 'WORKTREE'
     let commit2 = options.commit
   endif
+  let commit1_display = empty(commit1_display) ? commit1 : commit1_display
+  let commit2_display = empty(commit2_display) ? commit2 : commit2_display
 
   " commit1
   let result = gita#features#file#exec({ 'commit': commit1, 'file': options.file }, {
@@ -152,7 +154,7 @@ function! s:compare(...) abort " {{{
   else
     let COMMIT1_bufname = gita#utils#buffer#bufname(
           \ options.file,
-          \ empty(commit1_display) ? commit1 : commit1_display,
+          \ has('unix') ? commit1_display : substitute(commit1_display, ':', '-', 'g'),
           \)
   endif
   " commit2
@@ -169,12 +171,12 @@ function! s:compare(...) abort " {{{
   else
     let COMMIT2_bufname = gita#utils#buffer#bufname(
           \ options.file,
-          \ empty(commit2_display) ? commit2 : commit2_display,
+          \ has('unix') ? commit2_display : substitute(commit2_display, ':', '-', 'g'),
           \)
   endif
 
   let bufnums = gita#utils#buffer#open2(
-        \ COMMIT1_bufname, COMMIT2_bufname, 'diff', {
+        \ COMMIT1_bufname, COMMIT2_bufname, 'vim_gita_diff', {
         \   'opener': get(options, 'opener', 'edit'),
         \   'vertical': get(options, 'vertical', 0),
         \})
@@ -205,13 +207,16 @@ endfunction " }}}
 
 function! gita#features#diff#exec(...) abort " {{{
   let gita = gita#core#get()
-  let options = get(a:000, 0, {})
+  let options = deepcopy(get(a:000, 0, {}))
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
     call map(options['--'], 'gita#utils#expand(v:val)')
+  endif
+  if has_key(options, 'commit')
+    let options.commit = substitute(options.commit, 'INDEX', '', 'g')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -231,7 +236,7 @@ function! gita#features#diff#show(...) abort " {{{
   let options = get(a:000, 0, {})
   if !has_key(options, 'commit')
     let commit = gita#utils#ask(
-          \ 'Which commit do you want to compare with? ',
+          \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.)',
           \ 'INDEX',
           \)
     if empty(commit)
