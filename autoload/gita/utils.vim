@@ -167,26 +167,6 @@ function! gita#utils#ensure_list(x) abort " {{{
 endfunction " }}}
 
 " misc
-function! gita#utils#doautocmd(name) abort " {{{
-  let name = printf('vim-gita-%s', a:name)
-  if 703 < v:version || (v:version == 703 && has('patch438'))
-    silent execute 'doautocmd <nomodeline> User ' . name
-  else
-    silent execute 'doautocmd User ' . name
-  endif
-endfunction " }}}
-function! gita#utils#open_gita_issue(url) abort " {{{
-  let url = 'https://github.com/lambdalisue/vim-gita/issues'
-  let F = gita#utils#import('System.File')
-  if gita#utils#asktf('Do you want to open a gita issue page?')
-    call gita#utils#info(printf(
-          \ 'Open "%s" ...',
-          \ url,
-          \))
-    call F.open(url)
-  endif
-endfunction " }}}
-
 function! gita#utils#get_status(path) abort " {{{
   let gita = gita#core#get()
   let options = {
@@ -202,6 +182,14 @@ function! gita#utils#get_status(path) abort " {{{
   endif
   let statuses = s:S.parse(result.stdout)
   return get(statuses, 0, {})
+endfunction " }}}
+function! gita#utils#doautocmd(name) abort " {{{
+  let name = printf('vim-gita-%s', a:name)
+  if 703 < v:version || (v:version == 703 && has('patch438'))
+    silent execute 'doautocmd <nomodeline> User ' . name
+  else
+    silent execute 'doautocmd User ' . name
+  endif
 endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   " prefer 'b:_gita_original_filename'

@@ -42,6 +42,9 @@ call s:parser.add_argument(
       \)
 " TODO: Add more arguments
 
+function! s:smart_map(...) abort " {{{
+  return call('gita#display#smart_map', a:000)
+endfunction " }}}
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
   let name = fnamemodify(a:gita.git.worktree, ':t')
@@ -82,32 +85,10 @@ function! s:get_status_header(gita) abort " {{{
   endif
   return lines
 endfunction " }}}
-function! s:smart_map(...) abort " {{{
-  return call('gita#display#smart_map', a:000)
-endfunction " }}}
 function! s:get_current_commitmsg(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let content = getbufline(expr, 1, '$')
   return filter(content, 'v:val !~# "^#"')
-endfunction " }}}
-function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
-  if new_filename !=# old_filename
-    execute printf('w%s %s %s',
-          \ v:cmdbang ? '!' : '',
-          \ fnameescape(v:cmdarg),
-          \ fnameescape(new_filename),
-          \)
-  else
-    " cache commitmsg if it is called without quitting
-    let gita = gita#core#get()
-    let gita.commitmsg_saved = s:get_current_commitmsg()
-    setlocal nomodified
-    call gita#utils#title(
-          \ "the commit message is saved in a local cache.",
-          \)
-  endif
 endfunction " }}}
 function! s:commit(expr, options) abort " {{{
   let gita = gita#core#get(a:expr)
@@ -160,6 +141,25 @@ function! s:commit(expr, options) abort " {{{
     silent! unlet! w._gita_options.commitmsg_cached
     " reset options
     silent! unlet! w._gita_options.amend
+  endif
+endfunction " }}}
+function! s:ac_BufWriteCmd() abort " {{{
+  let new_filename = fnamemodify(expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  if new_filename !=# old_filename
+    execute printf('w%s %s %s',
+          \ v:cmdbang ? '!' : '',
+          \ fnameescape(v:cmdarg),
+          \ fnameescape(new_filename),
+          \)
+  else
+    " cache commitmsg if it is called without quitting
+    let gita = gita#core#get()
+    let gita.commitmsg_saved = s:get_current_commitmsg()
+    setlocal nomodified
+    call gita#utils#title(
+          \ "the commit message is saved in a local cache.",
+          \)
   endif
 endfunction " }}}
 
