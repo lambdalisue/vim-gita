@@ -1,5 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
 
 
 function! s:smart_map(...) abort " {{{
