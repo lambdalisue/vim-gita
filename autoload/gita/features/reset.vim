@@ -63,20 +63,8 @@ function! s:parser.hooks.post_validate(options) abort " {{{
   endif
 endfunction " }}}
 function! s:parser.hooks.post_complete_optionional_argument(candidates, options) abort " {{{
-  let gita = s:get_gita()
-  let statuses = gita.get_parsed_status()
-  let candidates = deepcopy(
-        \ get(statuses, 'staged', []),
-        \)
-  let candidates = filter(
-        \ map(candidates, 'get(v:val, ''path'', '''')'),
-        \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
-        \)
-  let candidates = extend(
-        \ a:candidates,
-        \ candidates,
-        \)
-  return candidates
+  " TODO: Add staged file candidates
+  return []
 endfunction " }}}
 
 

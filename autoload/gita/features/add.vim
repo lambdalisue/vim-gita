@@ -53,21 +53,8 @@ call s:parser.add_argument(
       \ 'but continue adding the others. The command shall still exit with non-zero status.',
       \])
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  let gita = gita#core#get()
-  let statuses = gita.get_parsed_status()
-  let candidates = deepcopy(extend(
-        \ get(statuses, 'unstaged', []),
-        \ get(statuses, 'untracked', []),
-        \))
-  let candidates = filter(
-        \ map(candidates, 'get(v:val, ''path'', '''')'),
-        \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
-        \)
-  let candidates = extend(
-        \ a:candidates,
-        \ candidates,
-        \)
-  return candidates
+  " TODO: Add unstaged/untracked file candidates
+  return a:candidates
 endfunction " }}}
 
 

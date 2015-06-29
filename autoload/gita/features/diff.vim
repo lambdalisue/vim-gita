@@ -3,6 +3,7 @@ set cpo&vim
 
 
 let s:D = gita#utils#import('Data.Dict')
+let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -34,6 +35,12 @@ call s:parser.add_argument(
       \ '--cached',
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
       \   'conflicts': ['no_index'],
+      \ })
+call s:parser.add_argument(
+      \ '--ignore-submodules',
+      \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
+      \   'choices': ['all', 'dirty', 'untracked'],
+      \   'on_default': 'all',
       \ })
 call s:parser.add_argument(
       \ '--compare', '-c',
@@ -228,12 +235,37 @@ function! gita#features#diff#exec(...) abort " {{{
         \ 'no_color',
         \ 'unified',
         \ 'histogram',
-        \ 'no_index',
         \ 'cached',
         \ 'commit',
         \ 'name_status',
         \])
   return gita.operations.diff(options, config)
+endfunction " }}}
+function! gita#features#diff#exec_cached(...) abort " {{{
+  let gita = gita#core#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let cache_name = s:P.join('diff', string(s:D.pick(options, [
+        \ '--',
+        \ 'ignore_submodules',
+        \ 'cached', 'commit',
+        \ 'name_status',
+        \])))
+  let cached_status = gita.git.is_updated('index', 'diff') || get(config, 'force_update', 0)
+        \ ? {}
+        \ : gita.git.cache.repository.get(cache_name, {})
+  if !empty(cached_status)
+    return cached_status
+  endif
+  let result = gita#features#diff#exec(options, config)
+  if result.status
+    return result
+  endif
+  call gita.git.cache.repository.set(cache_name, result)
+  return result
 endfunction " }}}
 function! gita#features#diff#show(...) abort " {{{
   let options = get(a:000, 0, {})

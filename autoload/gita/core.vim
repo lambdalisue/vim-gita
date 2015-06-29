@@ -30,7 +30,6 @@ function! s:gita.fail_on_disabled() abort " {{{
   return 0
 endfunction " }}}
 
-
 function! gita#core#new(...) abort " {{{
   " return a new gita instance
   let expr = get(a:000, 0, '%')
@@ -66,11 +65,10 @@ endfunction " }}}
 function! gita#core#get(...) abort " {{{
   " return a cached or new gita instance
   let expr = get(a:000, 0, '%')
-  let gita = getwinvar(bufnr(expr), '_gita', {})
-  if !empty(gita) && !gita.is_expired()
-    return gita
+  let gita = getwinvar(bufwinnr(expr), '_gita', {})
+  if empty(gita)
+    let gita = getbufvar(expr, '_gita', {})
   endif
-  let gita = getbufvar(expr, '_gita', {})
   if !empty(gita) && !gita.is_expired()
     return gita
   endif
