@@ -1,9 +1,7 @@
 #
-# DEFAULT COMMIT MAPPING
+# DIFFLIST MAPPING
 #
 # <C-l> : Update status
-# cc    : Switch the buffer to a status buffer
-# CC    : Perform an actual commit
 # 
 # ee    : Edit a working tree version of a selected file
 # eh    : Edit a working tree version of a selected file horizontally
@@ -27,3 +25,4 @@
 # DH    : Compare a difference of a selected file horizontally
 # DV    : Compare a difference of a selected file vertically
 #
+

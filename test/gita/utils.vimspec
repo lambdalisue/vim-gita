@@ -1,0 +1,167 @@
+Describe gita#utils
+  Context #import({name})
+    It should return an instance of a specified vital module
+      let ret = gita#utils#import('Prelude')
+      let exp = g:V.import('Prelude')
+      Assert Equals(ret, exp)
+    End
+
+    It should return a same instance of a specified vital module
+      let ret1 = gita#utils#import('Prelude')
+      let ret2 = gita#utils#import('Prelude')
+      let ret3 = gita#utils#import('System.Filepath')
+      Assert Equals(ret1, ret2)
+      Assert Same(ret1, ret2)
+      Assert NotEquals(ret1, ret3)
+      Assert NotSame(ret1, ret3)
+    End
+  End
+
+  Context #echo({hl}, {})
+    It should able to be called without errors
+      call gita#utils#echo('Comment', 'Test')
+    End
+  End
+  Context #debug([{args}...])
+    It should able to be called without errors
+      call gita#utils#debug('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #info([{args}...])
+    It should able to be called without errors
+      call gita#utils#info('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #warn([{args}...])
+    It should able to be called without errors
+      call gita#utils#warn('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #error([{args}...])
+    It should able to be called without errors
+      call gita#utils#error('Hi', ['A', 'B', 'C'])
+    End
+  End
+
+  Context #echomsg({hl}, {msg})
+    It should able to be called without errors
+      call gita#utils#echomsg('Comment', 'Test')
+    End
+  End
+  Context #debugmsg([{args}...])
+    It should able to be called without errors
+      call gita#utils#debugmsg('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #infomsg([{args}...])
+    It should able to be called without errors
+      call gita#utils#infomsg('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #warnmsg([{args}...])
+    It should able to be called without errors
+      call gita#utils#warnmsg('Hi', ['A', 'B', 'C'])
+    End
+  End
+  Context #errormsg([{args}...])
+    It should able to be called without errors
+      call gita#utils#errormsg('Hi', ['A', 'B', 'C'])
+    End
+  End
+
+  Context #format_string({format}, {format_map}, {data})
+    It should return an empty string if an empty {format} is given
+      let ret = gita#utils#format_string('', {}, {})
+      Assert Equals(ret, '')
+    End
+
+    It should return a formatted string
+      let format = '%foo %bar %hoge'
+      let format_map = {
+            \ 'foo': 'foo_value',
+            \ 'bar': 'bar_value',
+            \ 'hoge': 'hoge_value',
+            \}
+      let data = {
+            \ 'foo_value': 'Hello',
+            \ 'bar_value': 'Good',
+            \ 'hoge_value': 'Bye',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Hello Good Bye')
+    End
+
+    It should add <left> value of %{<left>}<key> format if <key> is not empty
+      let format = '%{Very }bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': 'Good',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Very Good')
+    End
+
+    It should NOT add <left> value of %{<left>}<key> format if <key> is empty
+      let format = '%{Very }bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': '',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, '')
+    End
+
+    It should add <right> value of %{|<right>}<key> format if <key> is not empty
+      let format = '%{| Bye}bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': 'Good',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Good Bye')
+    End
+
+    It should NOT add <right> value of %{|<right>}<key> format if <key> is empty
+      let format = '%{| Bye}bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': '',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, '')
+    End
+
+    It should add <left> and <right> value of %{<left>|<right>}<key> format if <key> is not empty
+      let format = '%{Hello | Bye}bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': 'Good',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Hello Good Bye')
+    End
+
+    It should NOT add <left> and <right> value of %{<left>|<right>}<key> format if <key> is empty
+      let format = '%{Hello | Bye}bar'
+      let format_map = {
+            \ 'bar': 'bar_value',
+            \}
+      let data = {
+            \ 'bar_value': '',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, '')
+    End
+  End
+End
+

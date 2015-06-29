@@ -1,149 +1,116 @@
-"******************************************************************************
-" Another Git manipulation plugin
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-"
-" (C) 2015, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:Dict = gita#util#import('Data.Dict')
-let s:Git  = gita#util#import('VCS.Git')
-let s:GitC = gita#util#import('VCS.Git.Core')
+let s:P = gita#utils#import('Prelude')
+let s:G = gita#utils#import('VCS.Git')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 
-function! s:GitaStatus(opts) abort " {{{
-  call gita#interface#status#open(a:opts)
-endfunction " }}}
-function! s:GitaCommit(opts) abort " {{{
-  call gita#interface#commit#open(a:opts)
-endfunction " }}}
-function! s:GitaDiff(opts) abort " {{{
-  let commit = empty(get(a:opts, '__unknown__', [])) ? '' : join(a:opts.__unknown__)
-  if empty(commit)
-    let commit = gita#util#ask('Diff to: ', 'INDEX')
-    if strlen(commit) == 0
-      redraw || call gita#util#warn('No valid commit was selected. The operation is canceled.')
-      return
-    endif
-  endif
-  let commit = commit ==# 'INDEX' ? '' : commit
-  if get(a:opts, 'compare', 1)
-    call gita#interface#diff#compare(expand('%'), commit, a:opts)
-  else
-    call gita#interface#diff#open(expand('%'), commit, a:opts)
-  endif
-endfunction " }}}
-function! s:GitaBrowse(opts) abort " {{{
-  if get(a:opts, 'open', 0)
-    for filename in a:opts.filenames
-      call gita#interface#browse#open(filename, a:opts)
-    endfor
-  elseif get(a:opts, 'echo', 0)
-    for filename in a:opts.filenames
-      echo gita#interface#browse#url(filename, a:opts)
-    endfor
-  elseif get(a:opts, 'yank', 0)
-    let contents = []
-    for filename in a:opts.filenames
-      call add(contents, gita#interface#browse#url(filename, a:opts))
-    endfor
-    call gita#util#yank(join(contents, "\n"))
-    call gita#util#info(
-          \ len(contents) > 1
-          \   ? printf('%d urls are yanked', len(contents))
-          \   : 'A url is yanked',
-          \)
-  endif
-endfunction " }}}
-function! s:GitaDefault(opts) abort " {{{
-  let git    = s:Git.find(expand('%'))
-  let result = git.exec(a:opts.__args__)
-  if result.status == 0
-    call gita#util#info(
-          \ result.stdout,
-          \ printf('Ok: "%s"', join(result.args))
-          \)
-    call gita#util#doautocmd(a:opts.__name__ . '-post')
-  else
-    call gita#util#info(
-          \ result.stdout,
-          \ printf('No: "%s"', join(result.args))
-          \)
-  endif
-endfunction " }}}
-function! gita#Gita(opts) abort " {{{
-  if empty(a:opts)
-    " validation failed
-    return
-  elseif !gita#get().enabled
-    call gita#util#warn(
-          \ 'No git working directory is found on a current buffer',
-          \)
-    return
-  endif
-  let name = get(a:opts, '__name__', '')
-  if !a:opts.__bang__
-    if name ==# 'status'
-      return s:GitaStatus(a:opts)
-    elseif name ==# 'commit'
-      return s:GitaCommit(a:opts)
-    elseif name ==# 'diff'
-      return s:GitaDiff(a:opts)
-    elseif name ==# 'browse'
-      return s:GitaBrowse(a:opts)
-    endif
-  endif
-  return s:GitaDefault(a:opts)
-endfunction " }}}
-
-function! gita#get(...) abort " {{{
-  let bufname = get(a:000, 0, bufname('%'))
-  if bufexists(bufname)
-    let bufnum  = bufnr(bufname)
-    let buftype = getbufvar(bufnum, '&buftype')
-    let gita    = getbufvar(bufnum, '_gita', deepcopy(s:gita))
-    if empty(get(gita, 'bufname', '')) || (empty(buftype) && bufname !=# gita.bufname)
-      if empty(buftype)
-        let git = s:Git.find(fnamemodify(bufname, ':p'))
-        let gita = extend(gita, {
-              \ 'enabled': !empty(git),
-              \ 'bufname': bufname,
-              \ 'git': git,
-              \})
-      else
-        " Not a file, use a current directory
-        let git = s:Git.find(getcwd())
-        let gita = extend(gita, {
-              \ 'enabled': !empty(git),
-              \ 'bufname': '',
-              \ 'git': git,
-              \})
-      endif
-      call gita#set(gita, bufname)
-    endif
-  else
-    let git = s:Git.find(fnamemodify(bufname, ':p'))
-    let gita = extend(deepcopy(s:gita), {
-          \ 'enabled': !empty(git),
-          \ 'bufname': bufname,
-          \ 'git': git,
-          \})
-  endif
-  return gita
-endfunction " }}}
-function! gita#set(gita, ...) abort " {{{
-  let bufname = get(a:000, 0, bufname('%'))
-  if bufexists(bufname)
-    let bufnum  = bufnr(bufname)
-    call setbufvar(bufnum, '_gita', a:gita)
-  endif
-endfunction " }}}
 
 let s:gita = {}
+function! s:gita.is_expired() abort " {{{
+  let bufnum = get(self, 'bufnum', -1)
+  let bufname = bufname(bufnum)
+  let buftype = getbufvar(bufnum, '&buftype')
+  if get(self, 'force_expired')
+    return 1
+  elseif empty(buftype) && bufname !=# get(self, 'bufname', '')
+    return 1
+  elseif !empty(buftype) && getcwd() !=# self.cwd
+    return 1
+  else
+    return 0
+  endif
+endfunction " }}}
+function! s:gita.fail_on_disabled() abort " {{{
+  if !self.enabled
+    call gita#utils#warn(
+          \ 'Gita is not available on the current buffer.',
+          \)
+    return 1
+  endif
+  return 0
+endfunction " }}}
+
+function! gita#new(...) abort " {{{
+  " return a new gita instance
+  let expr = get(a:000, 0, '%')
+  let bufname = bufname(expr)
+  let buftype = getbufvar(expr, '&l:buftype')
+  if buftype =~# '^%\(quickfix\|help\)$'
+    " disable Gita in vim's special window
+    return { 'enabled': 0 }
+  elseif empty(buftype) && !empty(bufname)
+    let git = s:G.find(fnamemodify(bufname, ':p'))
+    if empty(git)
+      let git = s:G.find(resolve(gita#utils#expand(expr)))
+    endif
+  elseif !buflisted(bufname) && filereadable(gita#utils#expand(expr))
+    let git = s:G.find(fnamemodify(gita#utils#expand(expr), ':p'))
+    if empty(git)
+      let git = s:G.find(resolve(gita#utils#expand(expr)))
+    endif
+  elseif getbufvar(expr, '_gita_original_filename')
+    let git = s:G.find(fnamemodify(getbufvar(expr, '_gita_original_filename'), ':p'))
+  else
+    " Non file buffer. Use a current working directory instead.
+    let git = s:G.find(fnamemodify(getcwd(), ':p'))
+  endif
+  let gita = extend(deepcopy(s:gita), {
+        \ 'enabled': !empty(git),
+        \ 'bufname': bufname,
+        \ 'bufnum':  bufnr('%'),
+        \ 'cwd':     getcwd(),
+        \ 'git':     git,
+        \})
+  let gita.operations = gita#operations#new(gita)
+  call setbufvar(expr, '_gita', gita)
+  return gita
+endfunction " }}}
+function! gita#get(...) abort " {{{
+  " return a cached or new gita instance
+  let expr = get(a:000, 0, '%')
+  if getbufvar(expr, '&l:buftype') =~# '^\%(quickfix\|help\)$'
+    " disable Gita in vim's special window AS SOON AS POSSIBLE
+    return { 'enabled': 0 }
+  endif
+  let gita = getwinvar(bufwinnr(expr), '_gita', {})
+  if empty(gita)
+    let gita = getbufvar(expr, '_gita', {})
+  endif
+  if !empty(gita) && !gita.is_expired()
+    return gita
+  endif
+  return gita#new(expr)
+endfunction " }}}
+function! gita#is_enabled(...) abort " {{{
+  return call('gita#get', a:000).enabled
+endfunction " }}}
+function! gita#force_refresh(...) abort " {{{
+  let gita = call('gita#get', a:000)
+  let gita.force_expired = 1
+endfunction " }}}
+function! gita#clear_cache(...) abort " {{{
+  let gita = call('gita#get', a:000)
+  if gita.enabled
+    call gita.git.cache.repository.clear()
+  endif
+endfunction " }}}
+
+augroup vim-gita-clear-cache
+  autocmd! *
+  autocmd BufWritePost * call gita#clear_cache()
+  autocmd User vim-gita-fetch-post call gita#clear_cache()
+  autocmd User vim-gita-push-post call gita#clear_cache()
+  autocmd User vim-gita-pull-post call gita#clear_cache()
+  autocmd User vim-gita-commit-post call gita#clear_cache()
+  autocmd User vim-gita-add-post call gita#clear_cache()
+  autocmd User vim-gita-rm-post call gita#clear_cache()
+  autocmd User vim-gita-reset-post call gita#clear_cache()
+  autocmd User vim-gita-merge-post call gita#clear_cache()
+  autocmd User vim-gita-rebase-post call gita#clear_cache()
+  autocmd User vim-gita-checkout-post call gita#clear_cache()
+augroup END
+
 
 let &cpo = s:save_cpo
-unlet s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

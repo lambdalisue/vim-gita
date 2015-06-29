@@ -1,94 +1,16 @@
-"******************************************************************************
-" vim-gita statusline
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-" (C) 2015, Alisue, hashnote.net
-"******************************************************************************
-scriptencoding utf8
-
 let s:save_cpo = &cpo
 set cpo&vim
+scriptencoding utf8
 
-function! s:get_info(...) abort " {{{
-  let gita = call('gita#get', a:000)
-  if gita.enabled
-    let meta = gita.git.get_meta()
-    let info = {
-          \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
-          \ 'local_branch': meta.current_branch,
-          \ 'remote_name': meta.current_branch_remote,
-          \ 'remote_branch': meta.current_remote_branch,
-          \ 'outgoing': meta.commits_ahead_of_remote,
-          \ 'incoming': meta.commits_behind_remote,
-          \}
-    let info = extend(info, s:get_statuses())
-  else
-    let info = {}
-  endif
-  return info
-endfunction " }}}
-function! s:get_statuses() abort " {{{
-  let gita = gita#get()
-  let options = extend(
-        \ get(b:, '_options', {}),
-        \ extend(
-        \  get(g:, 'gita#interface#status#default_options', {}),
-        \  get(a:000, 0, {})
-        \ )
-        \)
-  if gita.enabled
-    let statuses = gita.git.get_parsed_status(options)
-    if get(statuses, 'status', 0) != 0
-      call gita#util#debug(statuses.stdout)
-      return {
-            \ 'conflicted': 0,
-            \ 'unstaged': 0,
-            \ 'added': 0,
-            \ 'deleted': 0,
-            \ 'renamed': 0,
-            \ 'modified': 0,
-            \}
-    endif
-    " Note:
-    "   the 'statuses' is cached, mean that 'untracked' doesn't reflect the
-    "   real. That's why 'untracked' is missing in the following dictionary.
-    let status_counts = {
-          \ 'conflicted': len(statuses.conflicted),
-          \ 'unstaged': len(statuses.unstaged),
-          \ 'staged': len(statuses.staged),
-          \ 'added': 0,
-          \ 'deleted': 0,
-          \ 'renamed': 0,
-          \ 'modified': 0,
-          \}
-    for status in statuses.staged
-      if status.index ==# 'A'
-        let status_counts.added += 1
-      elseif status.index ==# 'D'
-        let status_counts.deleted += 1
-      elseif status.index ==# 'R'
-        let status_counts.renamed += 1
-      else
-        let status_counts.modified += 1
-      endif
-    endfor
-    return status_counts
-  else
-    return {}
-  endif
-endfunction " }}}
-function! s:format(format, info) abort " {{{
-  return gita#util#format(a:format, s:format_map, a:info)
-endfunction
+let s:P = gita#utils#import('Prelude')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:format_map = {
       \ 'ln': 'local_name',
       \ 'lb': 'local_branch',
       \ 'rn': 'remote_name',
       \ 'rb': 'remote_branch',
-      \ 'ic': 'incoming',
       \ 'og': 'outgoing',
+      \ 'ic': 'incoming',
       \ 'nc': 'conflicted',
       \ 'nu': 'unstaged',
       \ 'ns': 'staged',
@@ -97,29 +19,6 @@ let s:format_map = {
       \ 'nr': 'renamed',
       \ 'nm': 'modified',
       \}
-" }}}
-function! s:clear() abort " {{{
-  let gita = gita#get()
-  if gita.enabled
-    call gita.git.cache.repository.clear()
-  endif
-endfunction " }}}
-
-function! gita#statusline#info(...) " {{{
-  return call('s:get_info', a:000)
-endfunction " }}}
-function! gita#statusline#format(format, ...) " {{{
-  let info = get(a:000, 0, s:get_info())
-  return s:format(a:format, info)
-endfunction " }}}
-function! gita#statusline#preset(name, ...) " {{{
-  let info = get(a:000, 0, s:get_info())
-  let format = get(s:preset, a:name, '')
-  if strlen(format) == 0
-    return ''
-  endif
-  return s:format(format, info)
-endfunction
 let s:preset = {
       \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb',
       \ 'branch_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb',
@@ -127,22 +26,73 @@ let s:preset = {
       \ 'traffic': '%{<| }ic%{>|}og',
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
-" }}}
-function! gita#statusline#clear(...) " {{{
-  call s:clear()
+
+
+function! gita#statusline#get(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  if !gita.enabled
+    return {}
+  endif
+  let meta = gita.git.get_meta()
+  let info = {
+        \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
+        \ 'local_branch': meta.current_branch,
+        \ 'remote_name': meta.current_branch_remote,
+        \ 'remote_branch': meta.current_remote_branch,
+        \ 'outgoing': meta.commits_ahead_of_remote,
+        \ 'incoming': meta.commits_behind_remote,
+        \}
+  let status_count = {
+        \ 'conflicted': 0,
+        \ 'unstaged': 0,
+        \ 'staged': 0,
+        \ 'added': 0,
+       \ 'deleted': 0,
+        \ 'renamed': 0,
+        \ 'modified': 0,
+        \}
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+  if get(status, 'status', 0) == 0
+    let status_count.conflicted = len(status.conflicted)
+    let status_count.unstaged = len(status.unstaged)
+    let status_count.staged = len(status.staged)
+    for ss in status.staged
+      if ss.index ==# 'A'
+        let status_count.added += 1
+      elseif ss.index ==# 'D'
+        let status_count.deleted += 1
+      elseif ss.index ==# 'R'
+        let status_count.renamed += 1
+      else
+        let status_count.modified += 1
+      endif
+    endfor
+  endif
+  let info = extend(info, status_count)
+  return info
+endfunction " }}}
+function! gita#statusline#format(format, ...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  if s:P.is_string(expr)
+    let info = gita#statusline#get(expr)
+  elseif s:P.is_dict(expr)
+    let info = expr
+  else
+    throw 'vim-gita: a second argument of gita#statusline#format must be a string or dictionary.'
+  endif
+  return gita#utils#format_string(a:format, s:format_map, info)
+endfunction " }}}
+function! gita#statusline#preset(preset_name, ...) abort " {{{
+  let format = get(s:preset, a:preset_name, 'Wrong preset name is specified')
+  return call('gita#statusline#format', extend([format], a:000))
 endfunction " }}}
 
-augroup vim-gita-statusline
-  autocmd! *
-  " several git command does not update .git/index thus use hooks to clear
-  " statusline cache
-  autocmd User vim-gita-commit-post call gita#statusline#clear()
-  autocmd User vim-gita-fetch-post  call gita#statusline#clear()
-  autocmd User vim-gita-push-post   call gita#statusline#clear()
-  autocmd User vim-gita-pull-post   call gita#statusline#clear()
-  autocmd User vim-gita-submodule-post call gita#statusline#clear()
-augroup END
-
 let &cpo = s:save_cpo
-unlet s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

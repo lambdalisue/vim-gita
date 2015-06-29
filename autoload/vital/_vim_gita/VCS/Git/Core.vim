@@ -1,12 +1,3 @@
-"******************************************************************************
-" Core functions of Git manipulation.
-"
-" Author:   Alisue <lambdalisue@hashnote.net>
-" URL:      http://hashnote.net/
-" License:  MIT license
-"
-" (C) 2014, Alisue, hashnote.net
-"******************************************************************************
 let s:save_cpo = &cpo
 set cpo&vim
 
@@ -140,18 +131,15 @@ function! s:get_local_hash(repository, branch) abort " {{{
   return s:_readline(filename)
 endfunction " }}}
 function! s:get_remote_hash(repository, remote, branch) abort " {{{
-  let filename = s:Path.join(a:repository, 'refs', 'remotes', a:remote, a:branch)
+  let target = s:Path.join('refs', 'remotes', a:remote, a:branch)
+  let filename = s:Path.join(a:repository, target)
   let hash = s:_readline(filename)
   if empty(hash)
     " sometime the file is missing
     let filename = s:Path.join(a:repository, 'packed-refs')
-    let packed_refs = join(s:_readfile(filename), "\n")
-    " Note:
-    "   Vim document said '.' does not hit a new line but it is a LIE.
-    "   And the behavior of regexpengine=1 is quite annoying thus the
-    "   following discusting regex is required...
-    let pattern = printf('\v(\w|\s)*\ze\srefs/remotes/%s/%s', a:remote, a:branch)
-    let hash = matchstr(packed_refs, pattern)
+    let packed_refs = filter(s:_readfile(filename),
+                      \      'v:val[0] != "#" && v:val[-'.len(target).':] == target')
+    return get(split(get(packed_refs, 0, '')), 0, '')
   endif
   return hash
 endfunction " }}}
@@ -209,25 +197,18 @@ endfunction " }}}
 
 " Execution
 function! s:system(args, ...) abort " {{{
-  let saved_cwd = getcwd()
   let args = s:List.flatten(a:args)
   let opts = extend({
         \ 'stdin': '',
         \ 'timeout': 0,
-        \ 'cwd': saved_cwd,
         \}, get(a:000, 0, {}))
   let original_opts = deepcopy(opts)
   " prevent E677
   if strlen(opts.stdin)
     let opts.input = opts.stdin
+    unlet opts.stdin
   endif
-  try
-    let cwd = s:Prelude.path2directory(opts.cwd)
-    silent execute 'lcd' fnameescape(cwd)
-    let stdout = s:Process.system(args, opts)
-  finally
-    silent execute 'lcd' fnameescape(saved_cwd)
-  endtry
+  let stdout = s:Process.system(args, opts)
   " remove trailing newline
   let stdout = substitute(stdout, '\v%(\r?\n)$', '', '')
   let status = s:Process.get_last_status()
@@ -240,6 +221,4 @@ function! s:exec(args, ...) abort " {{{
 endfunction " }}}
 
 let &cpo = s:save_cpo
-unlet s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
-
