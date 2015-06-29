@@ -234,9 +234,10 @@ function! s:actions.discard(statuses, options) abort " {{{
     endif
   endfor
   " checkout tracked files from HEAD
+  let options = deepcopy(a:options)
   let options.commit = 'HEAD'
   let options.force = 1
-  call self.checkout(checkout_statuses, extend({ 'no_update': 1 }, a:options))
+  call self.checkout(checkout_statuses, extend({ 'no_update': 1 }, options))
   if !get(a:options, 'no_update', 0)
     call self.update(a:statuses, a:options)
   endif
