@@ -37,7 +37,8 @@ ToDo
   - [ ] Add behaviour tests? How?
   - [ ] Add more options to feature commands
   - [ ] Add hints mechanisms to tell features
-  - [ ] Add git init interface or disable it
+  - [ ] Add git init feature or disable it
+  - [ ] Add git checkout interface (to change, merge, rebase, etc.)
   - [ ] Add git add -p interface
   - [ ] Add git reset -p interface
   - [ ] Add git blame interface or create an external harmonic plugin
