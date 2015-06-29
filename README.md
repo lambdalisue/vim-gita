@@ -1,13 +1,10 @@
+<p align="center"><strong align="center">WARNING</strong></p>
+<p align="center">vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.<br>
+Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
+
 vim-gita
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
-
-<div style="text-align: center">
-**WARNING**
-
-vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.
-Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.
-</div>
 
 *vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thnca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 
@@ -27,6 +24,32 @@ the statusline.
 [lambdalisue/vital-ArgumentParser]: https://github.com/lambdalisue/vital-ArgumentParser
 [lambdalisue/vital-VCS-Git]:        https://github.com/lambdalisue/vital-VCS-Git
 
+
+ToDo
+-------------------------------------------------------------------------------
+
+- [x] Release a prototype version (1st alpha) to get the image
+- [x] Release a 2nd alpha version to settle the fundamental mechanisms
+  - [x] Do aggressive refactoring to simplify
+  - [x] Improve the user interface
+  - [x] Fix several known issues
+- [ ] Release a 3rd alpha version to add useful features
+  - [ ] Add behaviour tests? How?
+  - [ ] Add more options to feature commands
+  - [ ] Add hints mechanisms to tell features
+  - [ ] Add git init interface or disable it
+  - [ ] Add git add -p interface
+  - [ ] Add git reset -p interface
+  - [ ] Add git blame interface or create an external harmonic plugin
+- [ ] Release a beta version to find/fix bugs
+  - [ ] Write a better document
+  - [ ] Write a CONTRIBUTE.md
+  - [ ] Add Unite.vim integrations or create an external harmonic plugin
+- [ ] Release a product version to help the world!
+  - [ ] Write a complete document for user
+  - [ ] Write a API document for developer
+   
+  
 Install
 -------------------------------------------------------------------------------
 The repository follow a standard directory structure thus you can use [gmarik/Vundle.vim], [Shougo/neobundle.vim], or other vim plugin manager to install vim-gita like:
@@ -178,29 +201,6 @@ Documents
 See more documents on [vim-gita.txt](./doc/vim-gita.txt) or execute `:help vim-gita`
 
 
-ToDo
--------------------------------------------------------------------------------
-
-- [x] Release a prototype version (1st alpha) to get the image
-- [x] Release a 2nd alpha version to settle the fundamental mechanisms
-  - [x] Do aggressive refactoring to simplify
-  - [x] Improve the user interface
-  - [x] Fix several known issues
-- [ ] Release a 3rd alpha version to add useful features
-  - [ ] Add behaviour tests? How?
-  - [ ] Add more options to feature commands
-  - [ ] Add hints mechanisms to tell features
-  - [ ] Add git init interface or disable it
-  - [ ] Add git add -p interface
-  - [ ] Add git reset -p interface
-  - [ ] Add git blame interface or create an external harmonic plugin
-- [ ] Release a beta version to find/fix bugs
-  - [ ] Write a better document
-  - [ ] Write a CONTRIBUTE.md
-  - [ ] Add Unite.vim integrations or create an external harmonic plugin
-- [ ] Release a product version to help the world!
-  - [ ] Write a complete document for user
-  - [ ] Write a API document for developer
 
 
 License
