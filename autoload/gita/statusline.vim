@@ -55,6 +55,8 @@ function! gita#statusline#get(...) abort " {{{
   let result = gita#features#status#exec_cached({
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
         \})
   let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
   if get(status, 'status', 0) == 0
