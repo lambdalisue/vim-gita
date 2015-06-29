@@ -134,7 +134,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
         \ :<C-u>call gita#display#action('diff', { 'compare': 1, 'vertical': 1 })<CR>
 
-  if get(config, 'define_default_mappings')
+  if get(config, 'enable_default_mappings')
     nmap <buffer> q     <Plug>(gita-action-quit)
     nmap <buffer> ?s    <Plug>(gita-action-help-s)
 

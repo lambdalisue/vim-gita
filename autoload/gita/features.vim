@@ -20,13 +20,13 @@ function! s:complete_action(arglead, cmdline, cursorpos, ...) abort " {{{
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!]',
-      \ 'description': 'An altimate git interface of Vim',
+      \ 'description': 'An awesome git handling plugin for Vim',
       \})
 call s:parser.add_argument(
       \ 'action', [
       \   'An action of the Gita or git command.',
-      \   'If non Gita command is specified or a command is called with a bang (!)',
-      \   'it call raw git command instead of Gita command.',
+      \   'If a non Gita command is specified or a command is called with a bang (!)',
+      \   'it call a raw git command instead of a Gita command.',
       \ ], {
       \   'terminal': 1,
       \   'complete': function('s:complete_action'),
