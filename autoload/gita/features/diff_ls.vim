@@ -37,6 +37,12 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_commit'),
       \ })
 call s:parser.add_argument(
+      \ '--ignore-submodules',
+      \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
+      \   'choices': ['all', 'dirty', 'untracked'],
+      \   'on_default': 'all',
+      \ })
+call s:parser.add_argument(
       \ '--window', '-w',
       \ 'Open a gita:diff:ls window to show changed files (Default behavior)', {
       \   'deniable': 1,
@@ -45,7 +51,7 @@ call s:parser.add_argument(
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
-  call gita#features#diff_ls#update(a:options)
+  call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
 endfunction " }}}
 
 function! gita#features#diff_ls#open(...) abort " {{{
@@ -68,24 +74,24 @@ function! gita#features#diff_ls#open(...) abort " {{{
 
   let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
   let result = gita#display#open(bufname, options)
-  if result == -1
+  if result.status == -1
     " gita is not available
     return
-  elseif result == 1
+  elseif result.status == 1
     " the buffer is already constructed
-    call gita#features#diff_ls#update()
+    call gita#features#diff_ls#update({}, { 'force_update': 1 })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
   call gita#display#extend_actions(s:actions)
 
   " Define loccal options
-  setlocal nomodifiable
+  setlocal nomodifiable readonly
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
         \ :<C-u>call gita#display#action('help', { 'name': 'diff_ls_mapping' })<CR>
 
-  call gita#features#diff_ls#update()
+  call gita#features#diff_ls#update({}, { 'force_update': 1 })
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#diff_ls#update(...) abort " {{{
@@ -96,9 +102,10 @@ function! gita#features#diff_ls#update(...) abort " {{{
   let options.no_prefix = 1
   let options.no_color = 1
   let options.name_status = 1
-  let result = gita#features#diff#exec(options, {
+  let config = get(a:000, 1, {})
+  let result = gita#features#diff#exec_cached(options, extend({
         \ 'echo': 'fail',
-        \})
+        \}, config))
   if result.status != 0
     bwipe
     return

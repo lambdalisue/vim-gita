@@ -3,6 +3,7 @@ set cpo&vim
 
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
+let s:P = gita#utils#import('System.Filepath')
 let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
@@ -165,7 +166,7 @@ endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
-  call gita#features#commit#update(a:options)
+  call gita#features#commit#update(a:options, { 'force_update': 1 })
 endfunction " }}}
 function! s:actions.open_status(statuses, options) abort " {{{
   if &modified
@@ -203,14 +204,41 @@ function! gita#features#commit#exec(...) abort " {{{
         \])
   return gita.operations.commit(options, config)
 endfunction " }}}
+function! gita#features#commit#exec_cached(...) abort " {{{
+  let gita = gita#core#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let cache_name = s:P.join('commit', string(s:D.pick(options, [
+        \ '--',
+        \ 'porcelain',
+        \ 'u', 'untracked_files',
+        \ 'a', 'all',
+        \ 'amend',
+        \])))
+  let cached_status = gita.git.is_updated('index', 'commit') || get(config, 'force_update', 0)
+        \ ? {}
+        \ : gita.git.cache.repository.get(cache_name, {})
+  if !empty(cached_status)
+    return cached_status
+  endif
+  let result = gita#features#commit#exec(options, config)
+  if result.status
+    return result
+  endif
+  call gita.git.cache.repository.set(cache_name, result)
+  return result
+endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
   let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
-  if result == -1
+  if result.status == -1
     " gita is not available
     return
-  elseif result == 1
+  elseif result.status == 1
     " the buffer is already constructed
-    call gita#features#commit#update()
+    call gita#features#commit#update({}, { 'force_update': result.loaded })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
@@ -247,7 +275,7 @@ function! gita#features#commit#open(...) abort " {{{
     nmap <buffer> cc <Plug>(gita-action-switch)
     nmap <buffer> CC <Plug>(gita-action-commit)
   endif
-  call gita#features#commit#update()
+  call gita#features#commit#update({}, { 'force_update': 1 })
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#commit#update(...) abort " {{{
@@ -258,11 +286,12 @@ function! gita#features#commit#update(...) abort " {{{
   let options.porcelain = 1
   let options.dry_run = 1
   let options.no_status = 1
-  let result = gita#features#commit#exec(options, {
+  let config = get(a:000, 1, {})
+  let result = gita#features#commit#exec_cached(options, extend({
         \ 'echo': '',
         \ 'doautocmd': 0,
         \ 'success_status': 1,
-        \})
+        \}, config))
   if result.status != 1
     bwipe
     return

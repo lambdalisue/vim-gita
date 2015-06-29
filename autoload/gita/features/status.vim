@@ -291,19 +291,19 @@ function! gita#features#status#exec_cached(...) abort " {{{
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
   let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
-  if result == -1
+  if result.status == -1
     " gita is not available
     return
-  elseif result == 1
+  elseif result.status == 1
     " the buffer is already constructed
-    call gita#features#status#update()
+    call gita#features#status#update({}, { 'force_update': result.loaded })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
   call gita#display#extend_actions(s:actions)
 
   " Define loccal options
-  setlocal nomodifiable
+  setlocal nomodifiable readonly
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
@@ -385,7 +385,7 @@ function! gita#features#status#open(...) abort " {{{
     vmap <buffer> -o <Plug>(gita-action-checkout-ours)
     vmap <buffer> -t <Plug>(gita-action-checkout-theirs)
   endif
-  call gita#features#status#update()
+  call gita#features#status#update({}, { 'force_update': 1 })
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#status#update(...) abort " {{{
@@ -393,8 +393,8 @@ function! gita#features#status#update(...) abort " {{{
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
         \)
-  let config = get(a:000, 1, {})
   let options.porcelain = 1
+  let config = get(a:000, 1, {})
   let result = gita#features#status#exec_cached(options, extend({
         \ 'echo': 'fail',
         \}, config))
