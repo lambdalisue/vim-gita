@@ -35,14 +35,15 @@ function! s:actions.open(statuses, options) abort " {{{
   " characters after ..[.]
   let commit = get(a:options, 'commit', 'WORKTREE')
   let commit = substitute(commit, '\v\.\.\.?.*$', '', '')
+  let commit = substitute(commit, '\v^\.\.\.?', '', '')
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
     call invoker.focus()
-    call gita#features#file#show(extend({
+    call gita#features#file#show(extend(a:options, {
           \ 'file': abspath,
           \ 'commit': commit,
-          \}, a:options))
+          \}))
   endfor
 endfunction " }}}
 function! s:actions.diff(statuses, options) abort " {{{
@@ -52,10 +53,10 @@ function! s:actions.diff(statuses, options) abort " {{{
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
     call invoker.focus()
-    call gita#features#diff#show(extend({
+    call gita#features#diff#show(extend(a:options, {
           \ '--': [abspath],
           \ 'commit': get(a:options, 'commit', 'INDEX'),
-          \}, a:options))
+          \}))
   endfor
 endfunction " }}}
 
@@ -137,23 +138,23 @@ function! gita#display#open(bufname, ...) abort  " {{{
     nmap <buffer> ?s    <Plug>(gita-action-help-s)
   endif
 
-  if !hasmapto('<Plug>(gita-action-open')
-    nmap <buffer><expr> ee <SID>smart_map('ee', '<Plug>(gita-action-open)')
-  endif
-  if !hasmapto('<Plug>(gita-action-open-h')
-    nmap <buffer><expr> es <SID>smart_map('es', '<Plug>(gita-action-open-h)')
-  endif
-  if !hasmapto('<Plug>(gita-action-open-v')
-    nmap <buffer><expr> ev <SID>smart_map('ev', '<Plug>(gita-action-open-v)')
-  endif
   if !hasmapto('<Plug>(gita-action-OPEN')
-    nmap <buffer><expr> eE <SID>smart_map('ee', '<Plug>(gita-action-OPEN)')
+    nmap <buffer><expr> ee <SID>smart_map('ee', '<Plug>(gita-action-OPEN)')
   endif
   if !hasmapto('<Plug>(gita-action-OPEN-h')
-    nmap <buffer><expr> eS <SID>smart_map('es', '<Plug>(gita-action-OPEN-h)')
+    nmap <buffer><expr> es <SID>smart_map('es', '<Plug>(gita-action-OPEN-h)')
   endif
   if !hasmapto('<Plug>(gita-action-OPEN-v')
-    nmap <buffer><expr> eV <SID>smart_map('ev', '<Plug>(gita-action-OPEN-V)')
+    nmap <buffer><expr> ev <SID>smart_map('ev', '<Plug>(gita-action-OPEN-v)')
+  endif
+  if !hasmapto('<Plug>(gita-action-open')
+    nmap <buffer><expr> EE <SID>smart_map('EE', '<Plug>(gita-action-open)')
+  endif
+  if !hasmapto('<Plug>(gita-action-open-h')
+    nmap <buffer><expr> ES <SID>smart_map('ES', '<Plug>(gita-action-open-h)')
+  endif
+  if !hasmapto('<Plug>(gita-action-open-v')
+    nmap <buffer><expr> EV <SID>smart_map('EV', '<Plug>(gita-action-open-V)')
   endif
 
   if !hasmapto('<Plug>(gita-action-diff')
@@ -167,11 +168,11 @@ function! gita#display#open(bufname, ...) abort  " {{{
   endif
 
   if !hasmapto('<Plug>(gita-action-compare-h')
-    nmap <buffer><expr> dS <SID>smart_map('dS', '<Plug>(gita-action-compare-h)')
+    nmap <buffer><expr> DS <SID>smart_map('DS', '<Plug>(gita-action-compare-h)')
   endif
   if !hasmapto('<Plug>(gita-action-compare-v')
-    nmap <buffer><expr> dV <SID>smart_map('dV', '<Plug>(gita-action-compare-v)')
-    nmap <buffer><expr> dD <SID>smart_map('dD', '<Plug>(gita-action-compare-v)')
+    nmap <buffer><expr> DV <SID>smart_map('DV', '<Plug>(gita-action-compare-v)')
+    nmap <buffer><expr> DD <SID>smart_map('DD', '<Plug>(gita-action-compare-v)')
   endif
 
   return {
