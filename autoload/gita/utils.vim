@@ -29,7 +29,7 @@ function! gita#utils#echo(hl, msg) abort " {{{
   endtry
 endfunction " }}}
 function! gita#utils#debug(...) abort " {{{
-  if !get(g:, 'gita#debug', 0)
+  if !g:gita#debug
     return
   endif
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')
@@ -64,7 +64,7 @@ function! gita#utils#echomsg(hl, msg) abort " {{{
   endtry
 endfunction " }}}
 function! gita#utils#debugmsg(...) abort " {{{
-  if !get(g:, 'gita#debug', 0)
+  if !g:gita#debug
     return
   endif
   let args = map(deepcopy(a:000), 'gita#utils#ensure_string(v:val)')

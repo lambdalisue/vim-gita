@@ -73,7 +73,10 @@ function! gita#features#diff_ls#open(...) abort " {{{
   endif
 
   let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
-  let result = gita#display#open(bufname, options)
+  let enable_default_mappings = g:gita#features#diff_ls#enable_default_mappings
+  let result = gita#display#open(bufname, options, {
+        \ 'enable_default_mappings': enable_default_mappings,
+        \})
   if result.status == -1
     " gita is not available
     return
@@ -90,6 +93,14 @@ function! gita#features#diff_ls#open(...) abort " {{{
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
         \ :<C-u>call gita#display#action('help', { 'name': 'diff_ls_mapping' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-update)
+        \ :<C-u>call gita#display#action('update')<CR>
+
+  " Define extra actual key mappings
+  if enable_default_mappings
+    nmap <buffer> <C-l> <Plug>(gita-action-update)
+    nmap <buffer> ?m    <Plug>(gita-action-help-m)
+  endif
 
   call gita#features#diff_ls#update({}, { 'force_update': 1 })
   silent execute printf("setlocal filetype=%s", s:const.filetype)
