@@ -59,7 +59,7 @@ endfunction " }}}
 function! gita#display#open(bufname, ...) abort  " {{{
   let gita = gita#core#get()
   if gita.fail_on_disabled()
-    return -1
+    return { 'status': -1 }
   endif
   let invoker = gita#utils#invoker#get()
   let options = extend(
@@ -68,7 +68,7 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \)
 
   " open a buffer in a 'gita:display' window group
-  call gita#utils#buffer#open(a:bufname, 'vim_gita_display', {
+  let open_result = gita#utils#buffer#open(a:bufname, 'vim_gita_display', {
         \ 'opener': 'topleft 15 split',
         \ 'range': 'tabpage',
         \})
@@ -79,7 +79,11 @@ function! gita#display#open(bufname, ...) abort  " {{{
   let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
 
   if get(b:, '_gita_constructed') && !get(g:, 'gita#debug')
-    return 1
+    return {
+          \ 'status': 1,
+          \ 'loaded': open_result.loaded,
+          \ 'bufnum': open_result.bufnum,
+          \}
   endif
   let b:_gita_constructed = 1
   " construction
@@ -150,7 +154,11 @@ function! gita#display#open(bufname, ...) abort  " {{{
     nmap <buffer><expr> f <SID>smart_map('f', '<Plug>(gita-action-compare-v)')
   endif
 
-  return 0
+  return {
+        \ 'status': 0,
+        \ 'loaded': open_result.loaded,
+        \ 'bufnum': open_result.bufnum,
+        \}
 endfunction " }}}
 function! gita#display#smart_map(lhs, rhs) abort " {{{
   return empty(gita#display#get_status_at(a:firstline))

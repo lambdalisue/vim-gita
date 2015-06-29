@@ -10,10 +10,10 @@ function! gita#utils#buffer#open(name, group, ...) abort " {{{
   if empty(a:group)
     let opener = get(config, 'opener', 'edit')
     let loaded = s:B.open(a:name, opener)
-    let bufnr = bufnr('%')
+    let bufnum = bufnr('%')
     return {
           \ 'loaded': loaded,
-          \ 'bufnr': bufnr,
+          \ 'bufnum': bufnum,
           \}
   else
     let vname = printf('_buffer_manager_%s', a:group)
@@ -23,7 +23,7 @@ function! gita#utils#buffer#open(name, group, ...) abort " {{{
     let ret = s:{vname}.open(a:name, config)
     return {
           \ 'loaded': ret.loaded,
-          \ 'bufnr': ret.bufnr,
+          \ 'bufnum': ret.bufnr,
           \}
   endif
 endfunction " }}}
@@ -35,11 +35,10 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
         \}, get(a:000, 0, {}))
   " 1st buffer
   let opener = get(options, 'opener', 'edit')
-  call gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
+  let result1 = gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
-  let bufnum1 = bufnr('%')
   " 2nd buffer
   let vertical = get(options, 'vertical', 0)
   if gita#utils#buffer#is_listed_in_tabpage(a:name2)
@@ -47,14 +46,15 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
   else
     let opener = vertical ? 'vert split' : 'split'
   endif
-  call gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
+  let result2 = gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
-  let bufnum2 = bufnr('%')
   return {
-        \ 'bufnum1': bufnum1,
-        \ 'bufnum2': bufnum2,
+        \ 'bufnum1': result1.bufnum,
+        \ 'bufnum2': result2.bufnum,
+        \ 'loaded1': result1.loaded,
+        \ 'loaded2': result2.loaded,
         \}
 endfunction " }}}
 function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
@@ -65,11 +65,10 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \}, get(a:000, 0, {}))
   " 1st buffer
   let opener = get(options, 'opener', 'tabedit')
-  call gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
+  let result1 = gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
-  let bufnum1 = bufnr('%')
   " 2nd buffer (from 1st)
   let vertical = get(options, 'vertical', 0)
   if gita#utils#buffer#is_listed_in_tabpage(a:name2)
@@ -77,39 +76,43 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
   else
     let opener = vertical ? 'vert leftabove split' : 'leftabove split'
   endif
-  call gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
+  let result2 = gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
-  let bufnum2 = bufnr('%')
   " 3rd buffer (from 1st)
-  silent execute printf('%swincmd w', bufwinnr(bufnum1))
+  silent execute printf('%swincmd w', bufwinnr(result1.bufnr))
   if gita#utils#buffer#is_listed_in_tabpage(a:name3)
     let opener = 'edit'
   else
     let opener = vertical ? 'vert rightbelow split' : 'rightbelow split'
   endif
-  call gita#utils#buffer#open(a:name3, printf('%s_3', a:group), {
+  let result3 = gita#utils#buffer#open(a:name3, printf('%s_3', a:group), {
         \ 'opener': opener,
         \ 'range': options.range,
         \})
-  let bufnum3 = bufnr('%')
   return {
-        \ 'bufnum1': bufnum1,
-        \ 'bufnum2': bufnum2,
-        \ 'bufnum3': bufnum3,
+        \ 'bufnum1': result1.bufnum,
+        \ 'bufnum2': result2.bufnum,
+        \ 'bufnum3': result3.bufnum,
+        \ 'loaded1': result1.loaded,
+        \ 'loaded2': result2.loaded,
+        \ 'loaded3': result3.loaded,
         \}
 endfunction " }}}
 function! gita#utils#buffer#update(buflines) abort " {{{
   let saved_cursor = getpos('.')
   let saved_modifiable = &l:modifiable
+  let saved_readonly = &l:readonly
   let saved_undolevels = &l:undolevels
   let &l:modifiable=1
   let &l:undolevels=-1
+  let &l:readonly=0
   silent %delete _
   call setline(1, a:buflines)
   call setpos('.', saved_cursor)
   let &l:modifiable = saved_modifiable
+  let &l:readonly = saved_readonly
   let &l:undolevels = saved_undolevels
   setlocal nomodified
 endfunction " }}}

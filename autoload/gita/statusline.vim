@@ -3,6 +3,7 @@ set cpo&vim
 scriptencoding utf8
 
 let s:P = gita#utils#import('Prelude')
+let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:format_map = {
       \ 'ln': 'local_name',
       \ 'lb': 'local_branch',
@@ -42,10 +43,6 @@ function! gita#statusline#get(...) abort " {{{
         \ 'outgoing': meta.commits_ahead_of_remote,
         \ 'incoming': meta.commits_behind_remote,
         \}
-  let status = gita.git.get_parsed_status(extend({
-        \ 'ignore_submodules': 1,
-        \}, get(g:, 'gita#statusline#status_options', {}),
-        \))
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
@@ -55,6 +52,13 @@ function! gita#statusline#get(...) abort " {{{
         \ 'renamed': 0,
         \ 'modified': 0,
         \}
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
   if get(status, 'status', 0) == 0
     let status_count.conflicted = len(status.conflicted)
     let status_count.unstaged = len(status.unstaged)

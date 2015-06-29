@@ -6,11 +6,6 @@ let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-function! s:complete_branch(...) abort " {{{
-  let branches = call('gita#completes#complete_local_branch', a:000)
-  " remove HEAD
-  return filter(branches, 'v:val !=# "HEAD"')
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] checkout',
       \ 'description': 'Checkout a branch or paths to the working tree',
@@ -89,21 +84,8 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_branch'),
       \ })
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  let gita = s:get_gita()
-  let statuses = gita.get_parsed_status()
-  let candidates = deepcopy(extend(
-        \ get(statuses, 'unstaged', []),
-        \ get(statuses, 'untracked', []),
-        \))
-  let candidates = filter(
-        \ map(candidates, 'get(v:val, ''path'', '''')'),
-        \ 'len(v:val) && index(a:options.__unknown__, v:val) == -1',
-        \)
-  let candidates = extend(
-        \ a:candidates,
-        \ candidates,
-        \)
-  return candidates
+  " TODO: add tracked file candidates
+  return a:candidates
 endfunction " }}}
 
 
