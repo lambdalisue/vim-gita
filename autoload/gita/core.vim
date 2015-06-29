@@ -35,8 +35,11 @@ function! gita#core#new(...) abort " {{{
   " return a new gita instance
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
-  let buftype = getbufvar(expr, '&buftype')
-  if empty(buftype) && !empty(bufname)
+  let buftype = getbufvar(expr, '&l:buftype')
+  if buftype =~# '^%\(quickfix\|help\)$'
+    " disable Gita in vim's special window
+    return { 'enabled': 0 }
+  elseif empty(buftype) && !empty(bufname)
     let git = s:G.find(fnamemodify(bufname, ':p'))
     if empty(git)
       let git = s:G.find(resolve(gita#utils#expand(expr)))
@@ -66,6 +69,10 @@ endfunction " }}}
 function! gita#core#get(...) abort " {{{
   " return a cached or new gita instance
   let expr = get(a:000, 0, '%')
+  if getbufvar(expr, '&l:buftype') =~# '^\%(quickfix\|help\)$'
+    " disable Gita in vim's special window AS SOON AS POSSIBLE
+    return { 'enabled': 0 }
+  endif
   let gita = getwinvar(bufwinnr(expr), '_gita', {})
   if empty(gita)
     let gita = getbufvar(expr, '_gita', {})
@@ -74,6 +81,9 @@ function! gita#core#get(...) abort " {{{
     return gita
   endif
   return gita#core#new(expr)
+endfunction " }}}
+function! gita#core#is_enabled(...) abort " {{{
+  return call('gita#core#get', a:000).enabled
 endfunction " }}}
 function! gita#core#force_refresh(...) abort " {{{
   let gita = call('gita#core#get', a:000)
