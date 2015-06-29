@@ -223,7 +223,7 @@ function! s:actions.discard(statuses, options) abort " {{{
     endif
   endif
   " delete untracked files
-  let gita = gita#core#get()
+  let gita = gita#get()
   for status in delete_statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
@@ -243,7 +243,7 @@ function! s:actions.discard(statuses, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.solve(statuses, options) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   for status in a:statuses
     call gita#anchor#focus()
     call gita#features#conflict#show(extend({
@@ -254,7 +254,7 @@ endfunction " }}}
 
 
 function! gita#features#status#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
@@ -273,7 +273,7 @@ function! gita#features#status#exec(...) abort " {{{
   return gita.operations.status(options, config)
 endfunction " }}}
 function! gita#features#status#exec_cached(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
@@ -440,7 +440,7 @@ function! gita#features#status#update(...) abort " {{{
     return
   endif
   let statuses = s:S.parse(result.stdout)
-  let gita = gita#core#get()
+  let gita = gita#get()
 
   " create statuses lines & map
   let statuses_map = {}

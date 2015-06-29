@@ -6,7 +6,7 @@ let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
 function! gita#completes#complete_local_branch(arglead, cmdline, cursorpos, ...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   if !gita.enabled
     return []
   endif
@@ -25,7 +25,7 @@ function! gita#completes#complete_local_branch(arglead, cmdline, cursorpos, ...)
   return candidates
 endfunction " }}}
 function! gita#completes#complete_remote_branch(arglead, cmdline, cursorpos, ...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   if !gita.enabled
     return []
   endif

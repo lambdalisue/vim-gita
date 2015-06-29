@@ -168,7 +168,7 @@ endfunction " }}}
 
 " misc
 function! gita#utils#get_status(path) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = {
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,

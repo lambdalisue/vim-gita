@@ -73,7 +73,7 @@ endfunction " }}}
 
 
 function! gita#features#reset#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()

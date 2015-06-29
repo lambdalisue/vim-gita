@@ -75,7 +75,7 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
 endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = extend({
         \ 'echo': 'both',

@@ -27,7 +27,7 @@ function! s:actions.help(statuses, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.edit(statuses, options) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
@@ -36,7 +36,7 @@ function! s:actions.edit(statuses, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:actions.open(statuses, options) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   " gita#features#file#show cannot treat master... thus remove the trailing
   " characters after ..[.]
   let commit = get(a:options, 'commit', 'HEAD')
@@ -51,7 +51,7 @@ function! s:actions.open(statuses, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:actions.diff(statuses, options) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
@@ -65,7 +65,7 @@ endfunction " }}}
 
 
 function! gita#display#open(bufname, ...) abort  " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif

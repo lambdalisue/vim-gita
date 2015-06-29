@@ -142,7 +142,7 @@ endfunction " }}}
 
 
 function! gita#features#browse#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif

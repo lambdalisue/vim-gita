@@ -92,7 +92,7 @@ function! s:get_current_commitmsg(...) abort " {{{
   return filter(content, 'v:val !~# "^#"')
 endfunction " }}}
 function! s:commit(expr, options) abort " {{{
-  let gita = gita#core#get(a:expr)
+  let gita = gita#get(a:expr)
   let meta = gita.git.get_meta()
   " validate situation
   let statuses_map = getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
@@ -155,7 +155,7 @@ function! s:ac_BufWriteCmd() abort " {{{
           \)
   else
     " cache commitmsg if it is called without quitting
-    let gita = gita#core#get()
+    let gita = gita#get()
     let gita.commitmsg_saved = s:get_current_commitmsg()
     setlocal nomodified
     call gita#utils#title(
@@ -170,7 +170,7 @@ function! s:actions.update(statuses, options) abort " {{{
 endfunction " }}}
 function! s:actions.open_status(statuses, options) abort " {{{
   if &modified
-    let gita = gita#core#get()
+    let gita = gita#get()
     let gita.commitmsg_cached = s:get_current_commitmsg()
     setlocal nomodified
   endif
@@ -183,7 +183,7 @@ endfunction " }}}
 
 
 function! gita#features#commit#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
@@ -205,7 +205,7 @@ function! gita#features#commit#exec(...) abort " {{{
   return gita.operations.commit(options, config)
 endfunction " }}}
 function! gita#features#commit#exec_cached(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
@@ -302,7 +302,7 @@ function! gita#features#commit#update(...) abort " {{{
     return
   endif
   let statuses = s:S.parse(result.stdout)
-  let gita = gita#core#get()
+  let gita = gita#get()
 
   " create statuses lines & map
   let statuses_map = {}

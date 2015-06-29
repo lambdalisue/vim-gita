@@ -30,7 +30,7 @@ let s:preset = {
 
 function! gita#statusline#get(...) abort " {{{
   let expr = get(a:000, 0, '%')
-  let gita = gita#core#get(expr)
+  let gita = gita#get(expr)
   if !gita.enabled
     return {}
   endif
