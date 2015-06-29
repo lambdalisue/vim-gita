@@ -8,7 +8,7 @@ function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let candidates = call('gita#completes#complete_local_branch', extend(
         \ [a:arglead, a:cmdline, a:cursorpos], a:000,
         \))
-  return extend(['WORKTREE', 'INDEX', 'FORK:master'], candidates)
+  return extend(['WORKTREE', 'INDEX', 'HEAD', 'FORK:master'], candidates)
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] file',

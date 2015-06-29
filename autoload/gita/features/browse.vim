@@ -7,11 +7,6 @@ let s:F = gita#utils#import('System.File')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-function! s:complete_branch(...) abort " {{{
-  let branches = call('gita#completes#complete_local_branch', a:000)
-  " remove HEAD
-  return filter(branches, 'v:val !=# "HEAD"')
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] browse',
       \ 'description': 'Browse a selected region of the remote in a system default browser',
@@ -40,13 +35,17 @@ call s:parser.add_argument(
       \   'A branch or commit which you want to see.',
       \   'If it is omitted, a remote branch of the current branch is used.'
       \ ], {
-      \   'complete': function('s:complete_branch'),
+      \   'complete': function('gita#completes#complete_local_branch'),
       \ })
 function! s:parser.hooks.pre_validate(opts) abort " {{{
   " Automatically use '--open' if no conflicted argument is specified
   if empty(self.get_conflicted_arguments('open', a:opts))
     let a:opts.open = 1
   endif
+endfunction " }}}
+function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
+  " TODO: Add tracked file candidates
+  return a:candidates
 endfunction " }}}
 
 
