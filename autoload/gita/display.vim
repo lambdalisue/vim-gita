@@ -1,4 +1,5 @@
-
+let s:save_cpo = &cpo
+set cpo&vim
 
 function! s:smart_map(...) abort " {{{
   return call('gita#display#smart_map', a:000)

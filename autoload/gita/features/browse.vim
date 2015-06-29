@@ -44,8 +44,13 @@ function! s:parser.hooks.pre_validate(opts) abort " {{{
   endif
 endfunction " }}}
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  " TODO: Add tracked file candidates
-  return a:candidates
+  let candidates = extend(
+        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_conflicted_files('', '', [0, 0], a:options),
+        \ a:candidates,
+        \)
+  return candidates
 endfunction " }}}
 
 

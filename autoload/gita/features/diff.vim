@@ -61,6 +61,15 @@ call s:parser.add_argument(
       \ 'superordinates': ['compare'],
       \ },
       \)
+function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
+  let candidates = extend(
+        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_conflicted_files('', '', [0, 0], a:options),
+        \ a:candidates,
+        \)
+  return candidates
+endfunction " }}}
 
 function! s:diff(...) abort " {{{
   let gita = gita#core#get()
