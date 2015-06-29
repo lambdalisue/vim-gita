@@ -92,7 +92,6 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
     " execute Gita command
     let feature = s:feature_registry[name]
     let cmdline = printf('%s %s', name, join(opts.__unknown__))
-    let cmdline = join(opts.__unknown__)
     let args = [a:arglead, cmdline, a:cursorpos]
     let candidates = call(feature.complete, args)
   endif

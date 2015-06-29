@@ -48,7 +48,7 @@ function! gita#statusline#get(...) abort " {{{
         \ 'unstaged': 0,
         \ 'staged': 0,
         \ 'added': 0,
-        \ 'deleted': 0,
+       \ 'deleted': 0,
         \ 'renamed': 0,
         \ 'modified': 0,
         \}
@@ -78,13 +78,6 @@ function! gita#statusline#get(...) abort " {{{
   let info = extend(info, status_count)
   return info
 endfunction " }}}
-function! gita#statusline#clear(...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let gita = gita#core#get(expr)
-  if gita.enabled
-    call gita.git.cache.repository.clear()
-  endif
-endfunction " }}}
 function! gita#statusline#format(format, ...) abort " {{{
   let expr = get(a:000, 0, '%')
   if s:P.is_string(expr)
@@ -100,18 +93,6 @@ function! gita#statusline#preset(preset_name, ...) abort " {{{
   let format = get(s:preset, a:preset_name, 'Wrong preset name is specified')
   return call('gita#statusline#format', extend([format], a:000))
 endfunction " }}}
-
-augroup vim-gita-statusline
-  autocmd! *
-  " vital-VCS-Git could not detect status change on several git command thus
-  " clear cache manually
-  autocmd User vim-gita-init-post call gita#statusline#clear()
-  autocmd User vim-gita-submodule-post call gita#statusline#clear()
-  autocmd User vim-gita-fetch-post call gita#statusline#clear()
-  autocmd User vim-gita-push-post call gita#statusline#clear()
-  autocmd User vim-gita-pull-post call gita#statusline#clear()
-  autocmd User vim-gita-commit-post call gita#statusline#clear()
-augroup END
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
