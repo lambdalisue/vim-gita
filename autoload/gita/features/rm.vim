@@ -36,8 +36,12 @@ function! s:parser.hooks.post_validate(options) abort " {{{
   endif
 endfunction " }}}
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  " TODO: Add staged/unstaged candidates
-  return []
+  let candidates = extend(
+        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ a:candidates,
+        \)
+  return candidates
 endfunction " }}}
 
 

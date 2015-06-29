@@ -53,8 +53,12 @@ call s:parser.add_argument(
       \ 'but continue adding the others. The command shall still exit with non-zero status.',
       \])
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  " TODO: Add unstaged/untracked file candidates
-  return a:candidates
+  let candidates = extend(
+        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#completes#complete_untracked_files('', '', [0, 0], a:options),
+        \ a:candidates,
+        \)
+  return candidates
 endfunction " }}}
 
 

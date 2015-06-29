@@ -6,10 +6,6 @@ let s:C = gita#utils#import('VCS.Git.Conflict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
-function! s:complete_conflicted_file(arglead, cmdline, cursorpos, ...) abort " {{{
-  " TODO: Add conflicted file candidates
-  return []
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] conflict',
       \ 'description': 'Solve a conflicted file in merge mode.',
@@ -18,7 +14,7 @@ call s:parser.add_argument(
       \ 'file', [
       \   'A file to solve conflict.',
       \ ], {
-      \   'complete': function('s:complete_conflicted_file'),
+      \   'complete': function('gita#completes#complete_conflicted_files'),
       \})
 call s:parser.add_argument(
       \ '--2way', '-2', [

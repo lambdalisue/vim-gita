@@ -22,6 +22,83 @@ function! gita#completes#complete_local_branch(arglead, cmdline, cursorpos, ...)
   call filter(candidates, 'v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}
+function! gita#completes#complete_remote_branch(arglead, cmdline, cursorpos, ...) abort " {{{
+  let gita = gita#core#get()
+  if !gita.enabled
+    return []
+  endif
+  let options = {
+        \ 'list': 1,
+        \ 'all': 1,
+        \}
+  let result = gita.operations.branch(options, {
+        \ 'echo': '',
+        \})
+  if result.status
+    return []
+  endif
+  let candidates = split(result.stdout, '\v\r?\n')
+  call filter(candidates, 'len(v:val) && v:val =~# "\v^..remotes/"')
+  call map(candidates, 'substitute(v:val, "\v%(^..remotes/|\s->\s.*$)", "", "g")')
+  call filter(candidates, 'v:val =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
+function! gita#completes#complete_staged_files(arglead, cmdline, cursorpos, ...) abort " {{{
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+  if get(status, 'status', 0)
+    return []
+  endif
+  let candidates = filter(status.staged, 'v:val.path =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
+function! gita#completes#complete_unstaged_files(arglead, cmdline, cursorpos, ...) abort " {{{
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+  if get(status, 'status', 0)
+    return []
+  endif
+  let candidates = filter(status.unstaged, 'v:val.path =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
+function! gita#completes#complete_conflicted_files(arglead, cmdline, cursorpos, ...) abort " {{{
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+  if get(status, 'status', 0)
+    return []
+  endif
+  let candidates = filter(status.conflicted, 'v:val.path =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
+function! gita#completes#complete_untracked_files(arglead, cmdline, cursorpos, ...) abort " {{{
+  let result = gita#features#status#exec_cached({
+        \ 'porcelain': 1,
+        \ 'ignore_submodules': 1,
+        \}, {
+        \ 'echo': '',
+        \})
+  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+  if get(status, 'status', 0)
+    return []
+  endif
+  let candidates = filter(status.untracked, 'v:val.path =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
 
 
 let &cpo = s:save_cpo
