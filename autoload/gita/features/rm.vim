@@ -2,6 +2,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
+let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
@@ -36,11 +37,11 @@ function! s:parser.hooks.post_validate(options) abort " {{{
   endif
 endfunction " }}}
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
-  let candidates = extend(
+  let candidates = s:L.flatten([
         \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
         \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
         \ a:candidates,
-        \)
+        \])
   return candidates
 endfunction " }}}
 

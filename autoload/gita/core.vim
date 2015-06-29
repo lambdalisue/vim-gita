@@ -1,7 +1,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-" Modules
 let s:P = gita#utils#import('Prelude')
 let s:G = gita#utils#import('VCS.Git')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
@@ -12,7 +11,9 @@ function! s:gita.is_expired() abort " {{{
   let bufnum = get(self, 'bufnum', -1)
   let bufname = bufname(bufnum)
   let buftype = getbufvar(bufnum, '&buftype')
-  if empty(buftype) && bufname !=# get(self, 'bufname', '')
+  if get(self, 'force_expired')
+    return 1
+  elseif empty(buftype) && bufname !=# get(self, 'bufname', '')
     return 1
   elseif !empty(buftype) && getcwd() !=# self.cwd
     return 1
@@ -74,6 +75,31 @@ function! gita#core#get(...) abort " {{{
   endif
   return gita#core#new(expr)
 endfunction " }}}
+function! gita#core#force_refresh(...) abort " {{{
+  let gita = call('gita#core#get', a:000)
+  let gita.force_expired = 1
+endfunction " }}}
+function! gita#core#clear_cache(...) abort " {{{
+  let gita = call('gita#core#get', a:000)
+  if gita.enabled
+    call gita.git.cache.repository.clear()
+  endif
+endfunction " }}}
+
+augroup vim-gita-core
+  autocmd! *
+  autocmd BufWritePost * call gita#core#clear_cache()
+  autocmd User vim-gita-fetch-post call gita#core#clear_cache()
+  autocmd User vim-gita-push-post call gita#core#clear_cache()
+  autocmd User vim-gita-pull-post call gita#core#clear_cache()
+  autocmd User vim-gita-commit-post call gita#core#clear_cache()
+  autocmd User vim-gita-add-post call gita#core#clear_cache()
+  autocmd User vim-gita-rm-post call gita#core#clear_cache()
+  autocmd User vim-gita-reset-post call gita#core#clear_cache()
+  autocmd User vim-gita-merge-post call gita#core#clear_cache()
+  autocmd User vim-gita-rebase-post call gita#core#clear_cache()
+  autocmd User vim-gita-checkout-post call gita#core#clear_cache()
+augroup END
 
 
 let &cpo = s:save_cpo
