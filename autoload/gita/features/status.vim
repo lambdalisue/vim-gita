@@ -353,10 +353,14 @@ function! gita#features#status#open(...) abort " {{{
         \ :call gita#display#action('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
         \ :call gita#display#action('discard')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve2)
+  noremap <silent><buffer> <Plug>(gita-action-solve2-h)
         \ :call gita#display#action('solve', { 'way': 2 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve3)
+  noremap <silent><buffer> <Plug>(gita-action-solve2-v)
+        \ :call gita#display#action('solve', { 'way': 2, 'vertical': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve3-h)
         \ :call gita#display#action('solve', { 'way': 3 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve3-v)
+        \ :call gita#display#action('solve', { 'way': 3, 'vertical': 1 })<CR>
 
   " Define extra actual key mappings
   if get(g:, 'gita#features#status#enable_default_mappings', 1)
@@ -371,8 +375,10 @@ function! gita#features#status#open(...) abort " {{{
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
     nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
-    nmap <buffer><expr> s <SID>smart_map('s', '<Plug>(gita-action-solve2)')
-    nmap <buffer><expr> S <SID>smart_map('S', '<Plug>(gita-action-solve3)')
+    nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-h)')
+    nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
+    nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-h)')
+    nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
 
     " raw operations
     nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
