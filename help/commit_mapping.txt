@@ -1,12 +1,29 @@
 #
-# COMMIT MAPPING
+# DEFAULT COMMIT MAPPING
 #
 # <C-l> : Update status
 # cc    : Switch the buffer to a status buffer
 # CC    : Perform an actual commit
 # 
-# e     : Open a selected file
-# E     : Open a selected file via vsplit
-# d     : Open a diff between a current and a specified version of a selected file
-# D     : Open a current and a specified version of a selected file in diff mode
+# ee    : Edit a working tree version of a selected file
+# eh    : Edit a working tree version of a selected file horizontally
+# ev    : Edit a working tree version of a selected file vertically
+# eE    : Edit a working tree version of a selected file vertically
+# EE    : Edit a working tree version of a selected file vertically
+#
+# oo    : Open a exact version of a selected file
+# oh    : Open a exact version of a selected file horizontally
+# ov    : Open a exact version of a selected file vertically
+# oO    : Open a exact version of a selected file vertically
+# OO    : Open a exact version of a selected file vertically
+#
+# dd    : Open a diff file of a selected file
+# dh    : Open a diff file of a selected file horizontally
+# dv    : Open a diff file of a selected file vertically
+# dD    : Compare a difference of a selected file
+# dH    : Compare a difference of a selected file horizontally
+# dV    : Compare a difference of a selected file vertically
+# DD    : Compare a difference of a selected file
+# DH    : Compare a difference of a selected file horizontally
+# DV    : Compare a difference of a selected file vertically
 #

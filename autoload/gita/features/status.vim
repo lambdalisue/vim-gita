@@ -378,7 +378,7 @@ function! gita#features#status#open(...) abort " {{{
 
     " conflict solve
     nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-v)')
-    nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-v)')
+    nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-h)')
     nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
 
     nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-solve3-v)')
