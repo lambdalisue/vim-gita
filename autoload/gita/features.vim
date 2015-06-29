@@ -69,7 +69,7 @@ function! gita#features#command(bang, range, ...) abort " {{{
     let name = get(opts, 'action', 'help')
     if opts.__bang__ || !gita#features#is_registered(name)
       " execute git command
-      let gita = gita#core#get()
+      let gita = gita#get()
       let args = map(opts.__args__, 'gita#utils#expand(v:val)')
       call gita.operations.exec_raw(args)
     else

@@ -1,4 +1,4 @@
-Describe gita#core
+Describe gita
   Context #new([{expr}])
     Context A file buffer in a git repository
       Before
@@ -6,15 +6,15 @@ Describe gita#core
         silent execute printf('new %s', bufname)
       End
       It should return a gita instance
-        let gita = gita#core#new(bufname)
+        let gita = gita#new(bufname)
         Assert Equals(gita.enabled, 1)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
       It should return a different gita instance
-        let gita1 = gita#core#new(bufname)
-        let gita2 = gita#core#new(bufname)
+        let gita1 = gita#new(bufname)
+        let gita2 = gita#new(bufname)
         Assert NotSame(gita1, gita2)
       End
     End
@@ -25,15 +25,15 @@ Describe gita#core
         silent execute printf('new %s', bufname)
       End
       It should return a gita instance
-        let gita = gita#core#new(bufname)
+        let gita = gita#new(bufname)
         Assert Equals(gita.enabled, 0)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
       It should return a different gita instance
-        let gita1 = gita#core#new(bufname)
-        let gita2 = gita#core#new(bufname)
+        let gita1 = gita#new(bufname)
+        let gita2 = gita#new(bufname)
         Assert NotSame(gita1, gita2)
       End
     End
@@ -48,14 +48,14 @@ Describe gita#core
         let original_cwd = getcwd()
         try
           silent execute printf('cd %s', g:repository_root)
-          let gita = gita#core#new(bufname)
+          let gita = gita#new(bufname)
           Assert Equals(gita.enabled, 1)
           Assert Equals(gita.bufname, bufname(bufname))
           Assert Equals(gita.bufnum, bufnr(bufname))
           Assert Equals(gita.cwd, getcwd())
 
           silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#core#new(bufname)
+          let gita = gita#new(bufname)
           Assert Equals(gita.enabled, 0)
           Assert Equals(gita.bufname, bufname(bufname))
           Assert Equals(gita.bufnum, bufnr(bufname))
@@ -74,21 +74,21 @@ Describe gita#core
         silent execute printf('new %s', bufname)
       End
       It should return a gita instance
-        let gita = gita#core#get(bufname)
+        let gita = gita#get(bufname)
         Assert Equals(gita.enabled, 1)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
       It should return a same gita instance
-        let gita1 = gita#core#get(bufname)
-        let gita2 = gita#core#get(bufname)
+        let gita1 = gita#get(bufname)
+        let gita2 = gita#get(bufname)
         Assert Same(gita1, gita2)
       End
       It should not return a same gita instance if bufname has changed
-        let gita1 = gita#core#get(bufname)
+        let gita1 = gita#get(bufname)
         silent execute printf('file %s', bufname . '.mod')
-        let gita2 = gita#core#get(bufname . '.mod')
+        let gita2 = gita#get(bufname . '.mod')
         Assert NotSame(gita1, gita2)
         Assert Equals(gita1.bufnum, gita2.bufnum)
       End
@@ -100,21 +100,21 @@ Describe gita#core
         silent execute printf('new %s', bufname)
       End
       It should return a gita instance
-        let gita = gita#core#get(bufname)
+        let gita = gita#get(bufname)
         Assert Equals(gita.enabled, 0)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
       It should return a same gita instance
-        let gita1 = gita#core#get(bufname)
-        let gita2 = gita#core#get(bufname)
+        let gita1 = gita#get(bufname)
+        let gita2 = gita#get(bufname)
         Assert Same(gita1, gita2)
       End
       It should not return a same gita instance if bufname has changed
-        let gita1 = gita#core#get(bufname)
+        let gita1 = gita#get(bufname)
         silent execute printf('file %s', bufname . '.mod')
-        let gita2 = gita#core#get(bufname . '.mod')
+        let gita2 = gita#get(bufname . '.mod')
         Assert NotSame(gita1, gita2)
         Assert Equals(gita1.bufnum, gita2.bufnum)
       End
@@ -130,14 +130,14 @@ Describe gita#core
         let original_cwd = getcwd()
         try
           silent execute printf('cd %s', g:repository_root)
-          let gita = gita#core#get(bufname)
+          let gita = gita#get(bufname)
           Assert Equals(gita.enabled, 1)
           Assert Equals(gita.bufname, bufname(bufname))
           Assert Equals(gita.bufnum, bufnr(bufname))
           Assert Equals(gita.cwd, getcwd())
 
           silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#core#get(bufname)
+          let gita = gita#get(bufname)
           Assert Equals(gita.enabled, 0)
           Assert Equals(gita.bufname, bufname(bufname))
           Assert Equals(gita.bufnum, bufnr(bufname))
@@ -150,8 +150,8 @@ Describe gita#core
         let original_cwd = getcwd()
         try
           silent execute printf('cd %s', g:repository_root)
-          let gita1 = gita#core#get(bufname)
-          let gita2 = gita#core#get(bufname)
+          let gita1 = gita#get(bufname)
+          let gita2 = gita#get(bufname)
           Assert Same(gita1, gita2)
         finally
           silent execute printf('cd %s', original_cwd)
@@ -161,9 +161,9 @@ Describe gita#core
         let original_cwd = getcwd()
         try
           silent execute printf('cd %s', g:repository_root)
-          let gita1 = gita#core#get(bufname)
+          let gita1 = gita#get(bufname)
           silent execute printf('cd %s', g:P.join(g:repository_root, 'foo'))
-          let gita2 = gita#core#get(bufname)
+          let gita2 = gita#get(bufname)
           Assert NotSame(gita1, gita2)
         finally
           silent execute printf('cd %s', original_cwd)

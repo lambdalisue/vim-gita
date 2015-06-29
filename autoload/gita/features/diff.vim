@@ -73,7 +73,7 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
 endfunction " }}}
 
 function! s:diff(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   if gita.fail_on_disabled()
     return
@@ -112,7 +112,7 @@ function! s:diff(...) abort " {{{
   setlocal filetype=diff
 endfunction " }}}
 function! s:compare(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   " validate 'file'
   if len(get(options, '--', [])) == 0
@@ -226,7 +226,7 @@ function! s:compare(...) abort " {{{
 endfunction " }}}
 
 function! gita#features#diff#exec(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = deepcopy(get(a:000, 0, {}))
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
@@ -252,7 +252,7 @@ function! gita#features#diff#exec(...) abort " {{{
   return gita.operations.diff(options, config)
 endfunction " }}}
 function! gita#features#diff#exec_cached(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
   if gita.fail_on_disabled()

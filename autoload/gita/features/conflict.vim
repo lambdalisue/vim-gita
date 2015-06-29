@@ -38,7 +38,7 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
   endif
 endfunction " }}}
 function! s:solve2(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let abspath = gita.git.get_absolute_path(options.file)
   let relpath = gita.git.get_relative_path(abspath)
@@ -95,7 +95,7 @@ function! s:solve2(...) abort " {{{
   diffupdate
 endfunction " }}}
 function! s:solve3(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   let abspath = gita.git.get_absolute_path(options.file)
   let relpath = gita.git.get_relative_path(abspath)
@@ -223,7 +223,7 @@ function! s:ac_BufWriteCmd() abort " {{{
 endfunction " }}}
 
 function! gita#features#conflict#show(...) abort " {{{
-  let gita = gita#core#get()
+  let gita = gita#get()
   if gita.fail_on_disabled()
     return
   endif
