@@ -81,7 +81,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \ 'range': options.range,
         \})
   " 3rd buffer (from 1st)
-  silent execute printf('%swincmd w', bufwinnr(result1.bufnr))
+  silent execute printf('%swincmd w', bufwinnr(result1.bufnum))
   if gita#utils#buffer#is_listed_in_tabpage(a:name3)
     let opener = 'edit'
   else
