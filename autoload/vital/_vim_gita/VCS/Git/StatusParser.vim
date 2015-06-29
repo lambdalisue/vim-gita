@@ -90,6 +90,7 @@ endfunction " }}}
 function! s:parse(status, ...) abort " {{{
   let opts = extend({
         \ 'fail_silently': 0,
+        \ 'flatten': 0,
         \}, get(a:000, 0, {}))
   let obj = {
         \ 'all': [],
@@ -106,8 +107,12 @@ function! s:parse(status, ...) abort " {{{
     elseif has_key(result, 'current_branch')
       let obj.current_branch = result.current_branch
       let obj.remote_branch = result.remote_branch
+      continue
     else
       call add(obj.all, result)
+      if opts.flatten
+        continue
+      endif
       if result.is_conflicted
         call add(obj.conflicted, result)
       elseif result.is_staged && result.is_unstaged
@@ -124,7 +129,11 @@ function! s:parse(status, ...) abort " {{{
       endif
     endif
   endfor
-  return obj
+  if opts.flatten
+    return obj.all
+  else
+    return obj
+  endif
 endfunction " }}}
 
 function! s:is_conflicted(sign) " {{{

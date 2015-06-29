@@ -16,19 +16,25 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:List = a:V.import('Data.List')
   let s:Prelude = a:V.import('Prelude')
   let s:Path = a:V.import('System.Filepath')
-  let s:Cache = a:V.import('System.Cache.Simple')
+  let s:Cache = a:V.import('System.Cache.Memory')
   let s:Core = a:V.import('VCS.Git.Core')
-  let s:Misc = a:V.import('VCS.Git.Misc')
   let s:Finder = a:V.import('VCS.Git.Finder')
+  let s:StatusParser = a:V.import('VCS.Git.StatusParser')
+  let s:ConfigParser = a:V.import('VCS.Git.ConfigParser')
 
   let s:SEPARATOR = s:Path.separator()
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
   return [
-        \ 'System.Cache.Simple',
+        \ 'Prelude',
+        \ 'Data.Dict',
+        \ 'Data.List',
+        \ 'System.Filepath',
+        \ 'System.Cache.Memory',
         \ 'VCS.Git.Core',
-        \ 'VCS.Git.Misc',
         \ 'VCS.Git.Finder',
+        \ 'VCS.Git.StatusParser',
+        \ 'VCS.Git.ConfigParser',
         \]
 endfunction " }}}
 function! s:_listalize(val) abort " {{{
@@ -136,11 +142,6 @@ function! s:git.is_updated(pathspec, ...) abort " {{{
   let actual = getftime(s:Path.join(self.repository, path))
   call self.cache.uptime.set(name, actual)
   return actual == -1 || actual > cached
-endfunction " }}}
-function! s:git._get_call_opts(...) abort " {{{
-  return extend({
-        \ 'cwd': self.worktree,
-        \}, get(a:000, 0, {}))
 endfunction " }}}
 
 " VCS.Git.Core
@@ -279,107 +280,94 @@ function! s:git.get_comment_char(...) abort " {{{
   return s:Core.get_comment_char(config)
 endfunction " }}}
 function! s:git.exec(args, ...) abort " {{{
-  let opts = extend(self._get_call_opts(), get(a:000, 0, {}))
-  return s:Core.exec(a:args, opts)
+  " Note:
+  "   -C might not work in old git but I'm not sure which version...
+  "   In that case, I should use --git-dir/--work-tree instead.
+  " Ref: https://github.com/cohama/agit.vim/issues/15
+  let args = extend([
+        \ '-C', self.worktree,
+        \ ], a:args)
+  return s:Core.exec(args, get(a:000, 0, {}))
 endfunction " }}}
 
-" VCS.Git.Misc
-function! s:git.get_parsed_status(...) abort " {{{
-  let options = self._get_call_opts(extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_status', string(opts))
-  let cache = self.cache.repository
-  let result = (self.is_updated('index', 'status') || options.no_cache)
-        \ ? {}
-        \ : cache.get(name, {})
-  if empty(result)
-    let result = s:Misc.get_parsed_status(opts)
-    call cache.set(name, result)
-  endif
-  return result
-endfunction " }}}
-function! s:git.get_parsed_commit(...) abort " {{{
-  let options = self._get_call_opts(extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_commit', string(opts))
-  let cache = self.cache.repository
-  let result = (self.is_updated('index', 'commit') || options.no_cache)
-        \ ? {}
-        \ : cache.get(name, {})
-  if empty(result)
-    let result = s:Misc.get_parsed_commit(opts)
-    call cache.set(name, result)
-  endif
-  return result
-endfunction " }}}
-function! s:git.get_parsed_config(...) abort " {{{
-  let options = self._get_call_opts(extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'parsed_config', string(opts))
-  let cache = self.cache.repository
-  let result = (self.is_updated('index', 'config') || options.no_cache)
-        \ ? {}
-        \ : cache.get(name, {})
-  if empty(result)
-    let result = s:Misc.get_parsed_config(opts)
-    call cache.set(name, result)
-  endif
-  return result
-endfunction " }}}
+" Misc
 function! s:git.get_last_commitmsg(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'last_commitmsg', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'last_commitmsg',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'last_commitmsg') || options.no_cache)
+  let commitmsg = (self.is_updated('index', 'last_commitmsg') || options.no_cache)
         \ ? []
-        \ : cache.get(name, [])
-  if empty(result)
-    unlet! result
-    let result = s:Misc.get_last_commitmsg(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, [])
+  if empty(commitmsg)
+    let args = extend(
+          \ ['log', '-1', '--pretty=%B'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return result
+    endif
+    let commitmsg = split(result.stdout, '\v\r?\n')
+    call cache.set(cname, commitmsg)
   endif
-  return result
+  return commitmsg
 endfunction " }}}
 function! s:git.count_commits_ahead_of_remote(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'commits_ahead_of_remote', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'commits_ahead_of_remote',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'commits_ahead_of_remote') || options.no_cache)
+  let ncommits = (self.is_updated('index', 'commits_ahead_of_remote') || options.no_cache)
         \ ? -1
-        \ : cache.get(name, -1)
-  if result == -1
-    let result = s:Misc.count_commits_ahead_of_remote(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, -1)
+  if ncommits == -1
+    let args = extend(
+          \ ['log', '--oneline', '@{upstream}..'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return 0
+    endif
+    let ncommits = len(split(result.stdout, '\v\r?\n'))
+    call cache.set(cname, ncommits)
   endif
-  return result
+  return ncommits
 endfunction " }}}
 function! s:git.count_commits_behind_remote(...) abort " {{{
-  let options = self._get_call_opts(extend({
+  let options = extend({
         \ 'no_cache': 0,
-        \}, get(a:000, 0, {})))
-  let opts = s:Dict.omit(options, ['no_cache'])
-  let name = s:Path.join('index', 'commits_behind_remote', string(opts))
+        \}, get(a:000, 0, {}))
+  let cname = s:Path.join(
+        \ 'index', 'commits_behind_remote',
+        \ string(s:Dict.omit(options, ['no_cache'])),
+        \)
   let cache = self.cache.repository
-  let result = (self.is_updated('index', 'commits_behind_remote') || options.no_cache)
+  let ncommits = (self.is_updated('index', 'commits_behind_remote') || options.no_cache)
         \ ? -1
-        \ : cache.get(name, -1)
-  if result == -1
-    let result = s:Misc.count_commits_behind_remote(opts)
-    call cache.set(name, result)
+        \ : cache.get(cname, -1)
+  if ncommits == -1
+    let args = extend(
+          \ ['log', '--oneline', '..@{upstream}'],
+          \ get(options, 'args', []),
+          \)
+    let result = self.exec(args, options)
+    if result.status != 0
+      return 0
+    endif
+    let ncommits = len(split(result.stdout, '\v\r?\n'))
+    call cache.set(cname, ncommits)
   endif
-  return result
+  return ncommits
 endfunction " }}}
 
 " Helper
@@ -413,230 +401,6 @@ function! s:git.get_meta() abort " {{{
   let meta.commits_ahead_of_remote = self.count_commits_ahead_of_remote()
   let meta.commits_behind_remote = self.count_commits_behind_remote()
   return meta
-endfunction " }}}
-
-" Git commands
-function! s:git.add(options, ...) abort " {{{
-  let defaults = {
-        \ 'dry_run': 0,
-        \ 'verbose': 0,
-        \ 'force': 0,
-        \ 'interactive': 0,
-        \ 'patch': 0,
-        \ 'edit': 0,
-        \ 'update': 0,
-        \ 'all': 0,
-        \ 'intent_to_add': 0,
-        \ 'refresh': 0,
-        \ 'ignore_errors': 0,
-        \ 'ignore_missing': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['add'], s:Misc.opts2args(a:options, defaults))
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.rm(options, ...) abort " {{{
-  let defaults = {
-        \ 'force': 0,
-        \ 'dry_run': 0,
-        \ 'r': 0,
-        \ 'cached': 0,
-        \ 'ignore_unmatch': 0,
-        \ 'quiet': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['rm'], s:Misc.opts2args(a:options, defaults))
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.reset(options, commit, ...) abort " {{{
-  let defaults = {
-        \ 'quiet': 0,
-        \ 'patch': 0,
-        \ 'intent_to_add': 0,
-        \ 'mixed': 0,
-        \ 'soft': 0,
-        \ 'merge': 0,
-        \ 'keep': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['reset'], s:Misc.opts2args(a:options, defaults))
-  if strlen(a:commit)
-    call add(args, a:commit)
-  endif
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.checkout(options, commit, ...) abort " {{{
-  let defaults = {
-        \ 'quiet': 0,
-        \ 'force': 0,
-        \ 'ours': 0,
-        \ 'theirs': 0,
-        \ 'b': '',
-        \ 'B': '',
-        \ 'track': 0,
-        \ 'no_track': 0,
-        \ 'l': 0,
-        \ 'detach': 0,
-        \ 'orphan': '',
-        \ 'merge': 0,
-        \ 'conflict': '=merge',
-        \ 'patch': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['checkout'], s:Misc.opts2args(a:options, defaults))
-  if strlen(a:commit)
-    call add(args, a:commit)
-  endif
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.status(options, ...) abort " {{{
-  let defaults = {
-        \ 'short': 0,
-        \ 'branch': 0,
-        \ 'porcelain': 0,
-        \ 'untracked_files': '=all',
-        \ 'ignore_submodules': '=all',
-        \ 'ignored': 0,
-        \ 'z': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['status'], s:Misc.opts2args(a:options, defaults))
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.commit(options, ...) abort " {{{
-  let defaults = {
-        \ 'all': 0,
-        \ 'patch': 0,
-        \ 'reuse_message': '=',
-        \ 'reedit_message': '=',
-        \ 'fixup': '=',
-        \ 'squash': '=',
-        \ 'reset_author': 0,
-        \ 'short': 0,
-        \ 'porcelain': 0,
-        \ 'z': 0,
-        \ 'file': '=',
-        \ 'author': '=',
-        \ 'date': '=',
-        \ 'message': '=',
-        \ 'template': '=',
-        \ 'signoff': 0,
-        \ 'no_verify': 0,
-        \ 'allow_empty': 0,
-        \ 'allow_empty_message': 0,
-        \ 'cleanup': '=default',
-        \ 'edit': 0,
-        \ 'amend': 0,
-        \ 'include': 0,
-        \ 'only': 0,
-        \ 'untracked_files': '=all',
-        \ 'verbose': 0,
-        \ 'quiet': 0,
-        \ 'dry_run': 0,
-        \ 'status': 0,
-        \ 'no_status': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['commit'], s:Misc.opts2args(a:options, defaults))
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
-endfunction " }}}
-function! s:git.diff(options, commit, ...) abort " {{{
-  let defaults = {
-        \ 'patch': 0,
-        \ 'unified': '=',
-        \ 'raw': 0,
-        \ 'patch_with_raw': 0,
-        \ 'minimal': 0,
-        \ 'patience': 0,
-        \ 'histogram': 0,
-        \ 'stat': '=',
-        \ 'numstat': 0,
-        \ 'shortstat': 0,
-        \ 'dirstat': '=',
-        \ 'summary': 0,
-        \ 'patch_with_stat': 0,
-        \ 'z': 0,
-        \ 'name_only': 0,
-        \ 'name_status': 0,
-        \ 'submodule': '=log',
-        \ 'color': '=never',
-        \ 'no_color': 0,
-        \ 'word_diff': '=plain',
-        \ 'word_diff_regex': '=',
-        \ 'color_words': '=',
-        \ 'no_renames': 0,
-        \ 'check': 0,
-        \ 'full_index': 0,
-        \ 'binary': 0,
-        \ 'abbrev': '=',
-        \ 'break_rewrites': '=',
-        \ 'find_renames': '=',
-        \ 'find_copies': '=',
-        \ 'find_copies_harder': 0,
-        \ 'irreversible_delete': 0,
-        \ 'l': '=',
-        \ 'diff_filter': '=',
-        \ 'S': '=',
-        \ 'G': '=',
-        \ 'pickaxe_all': 0,
-        \ 'pickaxe_regex': 0,
-        \ 'O': '=',
-        \ 'R': 0,
-        \ 'relative': '=',
-        \ 'text': 0,
-        \ 'ignore_space_at_eol': 0,
-        \ 'ignore_space_change': 0,
-        \ 'ignore_all_space': 0,
-        \ 'inter_hunk_context': '=',
-        \ 'function_context': 0,
-        \ 'exit_code': 0,
-        \ 'quiet': 0,
-        \ 'ext_diff': 0,
-        \ 'no_ext_diff': 0,
-        \ 'textconv': 0,
-        \ 'no_textconv': 0,
-        \ 'ignore_submodules': '=all',
-        \ 'src_prefix': '=',
-        \ 'dst_prefix': '=',
-        \ 'no_prefix': 0,
-        \} 
-  let opts = s:Dict.omit(a:options, keys(defaults))
-  let args = extend(['diff'], s:Misc.opts2args(a:options, defaults))
-  if get(a:options, 'cached', 0)
-    call add(args, '--cached')
-  endif
-  if strlen(a:commit) > 0
-    call add(args, a:commit)
-  endif
-  let filenames = s:_listalize(get(a:000, 0, []))
-  if len(filenames) > 0
-    call add(args, ['--', filenames])
-  endif
-  return self.exec(args, opts)
 endfunction " }}}
 
 let &cpo = s:save_cpo

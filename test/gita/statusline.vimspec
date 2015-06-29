@@ -1,0 +1,66 @@
+Describe gita#statusline
+  Before
+    let bufname = g:P.join(g:repository_root, 'foo.txt')
+  End
+
+  Context #get([{expr}])
+    It should return a dictionary which indicate the current status of a git repository of a buffer belongs
+      let ret = gita#statusline#get(bufname)
+      Assert IsDict(ret)
+      Assert KeyExists(ret, 'local_name')
+      Assert KeyExists(ret, 'local_branch')
+      Assert KeyExists(ret, 'remote_name')
+      Assert KeyExists(ret, 'remote_branch')
+      Assert KeyExists(ret, 'outgoing')
+      Assert KeyExists(ret, 'incoming')
+      Assert KeyExists(ret, 'conflicted')
+      Assert KeyExists(ret, 'unstaged')
+      Assert KeyExists(ret, 'added')
+      Assert KeyExists(ret, 'deleted')
+      Assert KeyExists(ret, 'renamed')
+      Assert KeyExists(ret, 'modified')
+    End
+  End
+
+  Context #format({format}[, {expr}])
+    It should return a formatted string
+      let format = join([
+            \ '%ln',
+            \ '%lb',
+            \ '%rn',
+            \ '%rb',
+            \ '%og',
+            \ '%ic',
+            \ '%nc',
+            \ '%nu',
+            \ '%ns',
+            \ '%na',
+            \ '%nd',
+            \ '%nr',
+            \ '%nm',
+            \])
+      let keys = [
+            \ 'local_name',
+            \ 'local_branch',
+            \ 'remote_name',
+            \ 'remote_branch',
+            \ 'outgoing',
+            \ 'incoming',
+            \ 'conflicted',
+            \ 'unstaged',
+            \ 'staged',
+            \ 'added',
+            \ 'deleted',
+            \ 'renamed',
+            \ 'modified',
+            \]
+      let info = {}
+      for key in keys
+        let info[key] = key
+      endfor
+      let ret = gita#statusline#format(format, info)
+      let exp = join(keys)
+      Assert Equals(ret, exp)
+    End
+  End
+End

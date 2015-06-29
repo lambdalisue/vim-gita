@@ -1,30 +1,56 @@
-vim-gita &alpha; version
+<p align="center"><strong align="center">WARNING</strong></p>
+<p align="center">vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.<br>
+Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
+
+vim-gita
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
-*vim-gita* is an alternative git manipulation plugin.
-It provide the following features:
+*vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thnca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 
-1. Show and manipulate the current status of index and working tree of a git
-   working space
-2. Edit and post a commit message of a git working space
-3. Show a difference of a file between working tree and a particular commits
-4. Help to solve a conflict via 2-way or 3-way diff window
-5. Show a current status of a git working space in statusline (or tabline)
-6. Help to execute a git command
+Core functions and features are powerd by [vim-jp/vital.vim][] and its external modules ([lambdalisue/vital-ArgumentParser][], [lambdalisue/vital-VCS-Git][]), mean that the fundemental functions are well tested in unittest level and vim-gita can focus to provide a user-friendly interface.
 
-This plugin was strongly inspired by [tpope/vim-fugitive][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
-The most of the features are powered by [vim-jp/vital.vim][], [lambdalisue/vital-System-Cache-Unified][], [lambdalisue/vital-ArgumentParser][], and [lambdalisue/vital-VCS-Git][].
-[tpope/vim-fugitive]:                       https://github.com/tpope/vim-fugitive
-[Shougo/vim-vcs]:                           https://github.com/Shougo/vim-vcs
-[Shougo/neobundle.vim]:                     https://github.com/Shougo/neobundle.vim
-[gmarik/Vundle.vim]:                        https://github.com/gmarik/Vundle.vim
-[vim-jp/vital.vim]:                         https://github.com/vim-jp/vital.vim
-[lambdalisue/vim-gista]:                    https://github.com/lambdalisue/vim-gista
-[lambdalisue/vital-VCS-Git]:                https://github.com/lambdalisue/vital-VCS-Git
-[lambdalisue/vital-ArgumentParser]:         https://github.com/lambdalisue/vital-ArgumentParser
-[lambdalisue/vital-System-Cache-Unified]:   https://github.com/lambdalisue/vital-System-Cache-Unified
+vim-gita use a git repository which a current buffer belongs (not like vim-fugitive which use a current working directory and that leads a wrong git repository recognition). You may notice it is quite useful when you temporary open a file which belongs to a different git repository.
 
+Additionally, vim-gita aggressively use cache mechanisms, mean that the response speed of your Vim might be improved, especially if you are using vim-fugitive or a raw git command (`system()`) to show a current status in
+the statusline.
+
+[tpope/vim-fugitive]:    https://github.com/tpope/vim-fugitive
+[thinca/vim-vcs]:        https://github.com/thinca/vim-vcs
+[Shougo/vim-vcs]:        https://github.com/Shougo/vim-vcs
+[lambdalisue/vim-gista]: https://github.com/lambdalisue/vim-gista
+
+[vim-jp/vital.vim]:                 https://github.com/vim-jp/vital.vim
+[lambdalisue/vital-ArgumentParser]: https://github.com/lambdalisue/vital-ArgumentParser
+[lambdalisue/vital-VCS-Git]:        https://github.com/lambdalisue/vital-VCS-Git
+
+
+ToDo
+-------------------------------------------------------------------------------
+
+- [x] Release a prototype version (1st alpha) to get the image
+- [x] Release a 2nd alpha version to settle the fundamental mechanisms
+  - [x] Do aggressive refactoring to simplify
+  - [x] Improve the user interface
+  - [x] Fix several known issues
+- [ ] Release a 3rd alpha version to add useful features
+  - [ ] Add behaviour tests? How?
+  - [ ] Add more options to feature commands
+  - [ ] Add hints mechanisms to tell features
+  - [ ] Add git init feature or disable it
+  - [ ] Add git checkout interface (to change, merge, rebase, etc.)
+  - [ ] Add git add -p interface
+  - [ ] Add git reset -p interface
+  - [ ] Add git blame interface or create an external harmonic plugin
+- [ ] Release a beta version to find/fix bugs
+  - [ ] Write a better document
+  - [ ] Write a CONTRIBUTE.md
+  - [ ] Add Unite.vim integrations or create an external harmonic plugin
+- [ ] Release a product version to help the world!
+  - [ ] Write a complete document for user
+  - [ ] Write a API document for developer
+   
+  
 Install
 -------------------------------------------------------------------------------
 The repository follow a standard directory structure thus you can use [gmarik/Vundle.vim], [Shougo/neobundle.vim], or other vim plugin manager to install vim-gita like:
@@ -45,155 +71,61 @@ NeoBundleLazy 'lambdalisue/vim-gita', {
 
 If you are not using any vim plugin manager, you can copy the repository to your $VIM directory to enable the plugin.
 
+[Shougo/neobundle.vim]: https://github.com/Shougo/neobundle.vim
+[gmarik/Vundle.vim]:    https://github.com/gmarik/Vundle.vim
+
+
 Usage
 -------------------------------------------------------------------------------
 
-Basically you will follow the following steps to commit your changes
+First of all, all commands which vim-gita provides start from `:Gita` and all commands (including `:Gita`) provide `--help/-h` option to show a help message of the command. Like below
 
-1. Add/Delete/Modify several files
-2. Open a status window
-3. Stage/Unstage several files which required to be committed
-4. Open a commit window
-5. Open a file in diff mode to write your commit message
-5. Close the window (or hit `CC`) to commit
+```
+:Gita -h
+:Gita[!] [action] [--help]
 
-And following steps to solve conflicts in merge/rebase
+An awesome git handling plugin for Vim
 
-1. Execute a git command via `:Gita` command
-2. Open a status window
-3. Open a 2-way or 3-way diff for conflicted files
-4. Press `-a` to mark conflicted files as solved
-5. Open a commit window and commit the changes
+Positional arguments:
+action      An action of the Gita or git command.
+	If a non Gita command is specified or a command is called...
+	it call a raw git command instead of a Gita command.
 
-See the details of each interface below.
+Optional arguments:
+-h, --help  show this help
+```
 
-### Status
+To stage/commit changes, follow the steps below:
 
-To display a current status of a git working tree, execute the following command on a file buffer
-
-    :Gita status
-
-It will open a status window which indicate the current status of the git working tree (of the current buffer belongs).
-If the current buffer is not under a git working tree, it won't open the window.
-
-The status window exists mainly for stage/unstage changes, hit `?m` to see the default mappings for manipulating statuses.
-
-In the status window, you will see the current status of the git working tree in 'Short Format' (`git status --short`). Hit `?s` to see a help of 'Short Format'.
-
-The following mappings are available in the window
-
-| Key          | Description                                                           |
-|--------------|-----------------------------------------------------------------------|
-| `q`          | Close the window                                                      |
-| `?m`         | Toggle a help for mapping                                             |
-| `?s`         | Toggle a help abount 'Short Format'                                   |
-| `<C-l>`      | Update the status                                                     |
-| `cc`         | Switch to a commit window                                             |
-| `cC`         | Switch to a new commit window                                         |
-| `cA`         | Switch to a new amend commit window                                   |
-| `e`          | Open a file via `edit`                                                |
-| `E`          | Open a file via `vsplit`                                              |
-| `d`          | Open a diff file via `edit`                                           |
-| `D`          | Open a file in diff mode via `vsplit`                                 |
-| `s`          | Open a conflicted file in 2-way diff mode to solve conflicts          |
-| `S`          | Open a conflicted file in 3-way diff mode to solve conflicts          |
-| `<<`         | Stage changes of a file                                               |
-| `>>`         | Unstage changes of a file                                             |
-| `--`         | Toggle stage/unstage changes of a file                                |
-| `==`         | Discard changes of a file on worktree (the operation is irreversible) |
-| `-a` or `-A` | Add a file to index                                                   |
-| `-d` or `-D` | Delete a file from index                                              |
-| `-r`         | Reset a file of index                                                 |
-| `-c` or `-C` | Checkout a file from a specified commit                               |
+	1. Hit `:Gita stage` to open a `gita:status` window
+	2. Hit `--` to stage/unstage file(s) under the cursor
+	3. Hit `cc` to swithc to a `gita:commit` window
+	4. Write a commit message and hit `:wq`
+	5. Answer `y` to commit changes
 
 
-### Commit
+To list files changed from a master (like 'Files changed' in GitHub PR), follow the steps below:
 
-To prepare a commit, execute the following command to open a commit window to edit a commit message (or hit `cc`, `cC`, or `cA` in a status window).
-
-    :Gita commit
-
-It will open a commit window which indicate the current status of next commit.
-If the current buffer is not under a git working tree, it won't open the window.
-
-The commit window exists mainly for editing a commit message, thus most of status manipulation keys are not available in the window.
-To manipulate the status again, hit `cc` to return the status window.
-Hit `?m` to see a help of default mappings available in the commit window.
-
-In the commit window, you also see the current status of the git working tree in 'Short Format' (`git status --short`). Hit `?s` to see a help of 'Short Format'.
-
-An actual commit will performed when user hit `CC` or the commit window is closed.
-
-The following mappings are available in the window
-
-| Key          | Description                                                           |
-|--------------|-----------------------------------------------------------------------|
-| `q`          | Close the window                                                      |
-| `?m`         | Toggle a help for mapping                                             |
-| `?s`         | Toggle a help abount 'Short Format'                                   |
-| `<C-l>`      | Update the status                                                     |
-| `cc`         | Switch to a status window                                             |
-| `CC`         | Perform an actual commit command                                      |
-| `e`          | Open a file via `edit`                                                |
-| `E`          | Open a file via `vsplit`                                              |
-| `d`          | Open a diff file via `edit`                                           |
-| `D`          | Open a file in diff mode via `vsplit`                                 |
+	1. Hit `:Gita diff-ls` to open a `gita:diff-ls` window
+	2. Answer `master...` to list files changed from a common ancestor
+	3. Hit `ee`, `oo` or whatever to open the file
 
 
-### Diff
+To solve conflicts in merge mode, follow the steps below:
 
-![Screencast (diff)](./doc/diff.gif)
+	1. Hit `:Gita stage` to open a `gita:status` window
+	2. Hit `ss`, `sS`, or 'SS' to open `vimdiff`
+	3. Compare difference and write a correct version
+	4. Hit `:Gita add` on a MERGE buffer
+	5. Hit `:Gita commit` to open a `gita:commit` window
+	6. Write a commit message and hit `:wq` to commit the changes
 
-To visualize the difference of the current buffer between working tree and index, branch, or commit, execute the following command or hit `d` or `D` in a status/commit window:
-
-    :Gita diff
-
-It will prompt a input window to ask which commit you want to compare with.
-
-### Conflict
-
-![Screencast (conflict)](./doc/conflict-3way.gif)
-
-To solve a conflicted file, move the cursor on a conflicted file and hit `s` or `S` in a status/commit window.
-It will open a 2-way or 3-way diff to solve a conflicted file (a conflicted file of both added, added by us, added by them, or both modified).
-
-In a 2-way diff, the left or top window is a LOCAL version and right or bottom window is a REMOTE version.
-Any modification on a REMOTE version is prohibited and if you call `:w` on the LOCAL version, the changes will be written into the
-local file.
-
-In a 3-way diff, the left or top window is a LOCAL version, the middle window is a MERGE version, and the right or bottom window is a REMOTE version.
-Any modification on a LOCAL or REMOTE version is prohibited.
-You can get a changes of LOCAL version with hitting `dol` (diff obtain from local) and of REMOTE version with hitting `dor` (diff obtain from remote) in the MERGE window.
-If you hit `dp` on the LOCAL or REMOTE window, the changes will be put on the MERGE window.
-If you call `:w` on the MERGE version, the changes will be written into the local file.
-
-After you solve all conflicts, open a status window and mark the file as solved by hitting `-a`.
-
-### Browse
-
-![Screencast (browse)](./doc/browse.gif)
-
-To open a current line or a selected region of a git managed file, execute the
-following command
-
-    :Gita browse
-
-It will open a corresponding url in your default browser. Currently GitHub.com and BitBucket.org is supported (user can add extra patterns with `g:gita#interface#browse#extra_translate_patterns`).
-
-You can just echo or yank the url if you specify `--echo` or `--yank` option like below
-
-    :Gita browse --yank
-
-If you want to open, echo, or yank url of other files, just list filenames before options like
-
-    :Gita browse README.md LICENSE.md --echo
-
-If you want to specify a exact version of the file, add `--exact` option.
+WIP
 
 ### Statusline
 
-vim-gita provide several components to show a current status on vim's statusline (or tabline).
-All status used in the components are well cached thus you don't have to worry about the performance (the caches will be cleared when a particular `vim-gita-{command}-post` autocmd is called).
+vim-gita provides a statusline component (`gita#statusline#format()`) which cache a current status aggressively to enhance the performance. It would improve the performance a lot if you are using `system()` to call a raw git command currently.
+
 Use `gita#statusline#preset()` to get a preset or `gita#statusline#format()` to create your own component.
 
 ```vim
@@ -264,45 +196,13 @@ endfunction " }}}
 ```
 
 
-### Commands
-
-All Git commands can be executed via Gita command like
-
-    :Gita push
-
-It will execute a push command and display the result. With this way, vim-gita's autocmd will be executed and cached values will be automatically cleared.
-
-If you want to execute status, commit, or diff command in a way which other commands do.
-Add `!` to tell a Gita to NOT use specialized interface. 
-The following example will call a status command in a way which other commands do and no status window will be appeared.
-
-    :Gita! status
-
-
 Documents
 -------------------------------------------------------------------------------
 
 See more documents on [vim-gita.txt](./doc/vim-gita.txt) or execute `:help vim-gita`
 
 
-ToDo
--------------------------------------------------------------------------------
 
-- [x] Add base structure of the plugin
-- [x] Add status manipulation window
-- [x] Add commit message editing window
-- [x] Add actual commit execution on the window
-- [x] Add 2-way diff window
-- [x] Add 2-way diff (LOCAL, REMOTE) to help solving conflict
-- [x] Add 3-way diff (LOCAL, MERGE, REMOTE) to help solving conflict
-- [x] Add a way to display a current git status in statusline/tabline
-- [x] Allow to execute a git raw command with :Gita
-- [x] Browse a selected file region on GitHub/GitHub enterprise
-- [ ] Add options to status/commit/diff command
-- [ ] Add conflict command like status/commit/diff command
-- [ ] Add git blame interface
-- [ ] Improve command execution (e.g. `:Gita add` to add a current buffer)
-- [ ] Allow to execute commands in async mode via vimproc
 
 License
 -------------------------------------------------------------------------------
