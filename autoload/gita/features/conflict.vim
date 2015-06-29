@@ -6,6 +6,7 @@ let s:C = gita#utils#import('VCS.Git.Conflict')
 
 
 function! s:complete_conflicted_file(arglead, cmdline, cursorpos, ...) abort " {{{
+  " TODO: Add conflicted file candidates
   return []
 endfunction " }}}
 let s:parser = s:A.new({

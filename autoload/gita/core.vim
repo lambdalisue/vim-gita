@@ -30,7 +30,6 @@ function! s:gita.fail_on_disabled() abort " {{{
   return 0
 endfunction " }}}
 
-
 function! gita#core#new(...) abort " {{{
   " return a new gita instance
   let expr = get(a:000, 0, '%')
