@@ -232,7 +232,10 @@ function! gita#features#commit#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
-  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
+  let enable_default_mappings = g:gita#features#commit#enable_default_mappings
+  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}), {
+        \ 'enable_default_mappings': enable_default_mappings,
+        \})
   if result.status == -1
     " gita is not available
     return
@@ -261,15 +264,17 @@ function! gita#features#commit#open(...) abort " {{{
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
         \ :<C-u>call gita#display#action('help', { 'name': 'commit_mapping' })<CR>
+
   noremap <silent><buffer> <Plug>(gita-action-update)
         \ :<C-u>call gita#display#action('update')<CR>
+
   noremap <silent><buffer> <Plug>(gita-action-switch)
         \ :<C-u>call gita#display#action('open_status')<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit)
         \ :<C-u>call gita#display#action('commit')<CR>
 
   " Define extra actual key mappings
-  if get(g:, 'gita#features#commit#enable_default_mappings', 1)
+  if enable_default_mappings
     nmap <buffer> <C-l> <Plug>(gita-action-update)
 
     nmap <buffer> cc <Plug>(gita-action-switch)

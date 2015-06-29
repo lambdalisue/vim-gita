@@ -176,7 +176,7 @@ function! s:actions.toggle(statuses, options) abort " {{{
   let reset_statuses = []
   for status in a:statuses
     if status.is_staged && status.is_unstaged
-      if get(g:, 'gita#features#status#prefer_unstage_in_toggle', 0)
+      if g:gita#features#status#prefer_unstage_in_toggle
         call add(reset_statuses, status)
       else
         call add(stage_statuses, status)
@@ -300,7 +300,11 @@ function! gita#features#status#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
-  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
+  let enable_default_mappings = g:gita#features#status#enable_default_mappings
+  let result = gita#display#open(
+        \ s:const.bufname, get(a:000, 0, {}), {
+        \ 'enable_default_mappings': enable_default_mappings,
+        \})
   if result.status == -1
     " gita is not available
     return
@@ -320,12 +324,14 @@ function! gita#features#status#open(...) abort " {{{
         \ :<C-u>call gita#display#action('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
         \ :<C-u>call gita#display#action('update')<CR>
+
   noremap <silent><buffer> <Plug>(gita-action-switch)
         \ :<C-u>call gita#display#action('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-new)
         \ :<C-u>call gita#display#action('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
         \ :<C-u>call gita#display#action('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
+
   noremap <silent><buffer> <Plug>(gita-action-add)
         \ :call gita#display#action('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
@@ -352,6 +358,7 @@ function! gita#features#status#open(...) abort " {{{
         \ :call gita#display#action('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
         \ :call gita#display#action('discard')<CR>
+
   noremap <silent><buffer> <Plug>(gita-action-solve2-h)
         \ :call gita#display#action('solve', { 'way': 2 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve2-v)
@@ -362,22 +369,30 @@ function! gita#features#status#open(...) abort " {{{
         \ :call gita#display#action('solve', { 'way': 3, 'vertical': 1 })<CR>
 
   " Define extra actual key mappings
-  if get(g:, 'gita#features#status#enable_default_mappings', 1)
+  if enable_default_mappings
     nmap <buffer> <C-l> <Plug>(gita-action-update)
     nmap <buffer> ?m    <Plug>(gita-action-help-m)
     nmap <buffer> cc    <Plug>(gita-action-switch)
     nmap <buffer> cC    <Plug>(gita-action-switch-new)
     nmap <buffer> cA    <Plug>(gita-action-switch-amend)
 
+    " conflict solve
+    nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-v)')
+    nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-v)')
+    nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
+
+    nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-solve3-v)')
+    nmap <buffer><expr> sH <SID>smart_map('sH', '<Plug>(gita-action-solve3-h)')
+    nmap <buffer><expr> sV <SID>smart_map('sV', '<Plug>(gita-action-solve3-v)')
+    nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-v)')
+    nmap <buffer><expr> SH <SID>smart_map('SH', '<Plug>(gita-action-solve3-h)')
+    nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
+
     " operations
     nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
     nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
     nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
     nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
-    nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-h)')
-    nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
-    nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-h)')
-    nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
 
     " raw operations
     nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')

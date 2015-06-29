@@ -37,18 +37,5 @@ function! gita#anchor#focus() abort " {{{
 endfunction " }}}
 
 
-let g:gita#anchor#unsuitable_bufname_pattern = ''
-let g:gita#anchor#unsuitable_filetype_pattern = printf('^\%%(%s\)', join([
-      \ 'gita-status',
-      \ 'gita-commit',
-      \ 'gita-diff-ls',
-      \ 'unite',
-      \ 'vimfiler',
-      \ 'nerdtree',
-      \ 'gundo',
-      \ 'tagbar',
-      \], '\|'))
-
-
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -118,7 +118,7 @@ function! s:find_url(gita, expr, options) abort " {{{
         \}
   let translation_patterns = extend(
         \ deepcopy(g:gita#features#browse#translation_patterns),
-        \ get(g:, 'gita#features#browse#extra_translation_patterns', []),
+        \ g:gita#features#browse#extra_translation_patterns,
         \)
   for pattern in translation_patterns
     if data.remote_url =~# pattern[0]
