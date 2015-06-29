@@ -37,7 +37,7 @@ call s:parser.add_argument(
       \ '-b', [
       \   'Create a new branch with a specified name and start it at <start_point>.',
       \ ], {
-      \   'kind': s:A.kinds.value,
+      \   'type': s:A.types.value,
       \   'conflicts': ['B', 'orphan'],
       \})
 call s:parser.add_argument(
@@ -45,7 +45,7 @@ call s:parser.add_argument(
       \   'Create a new branch with a specified name and start it at <start_point>.',
       \   'If it already exists, then reset it to <start_point>.',
       \ ], {
-      \   'kind': s:A.kinds.value,
+      \   'type': s:A.types.value,
       \   'conflicts': ['b', 'orphan'],
       \})
 call s:parser.add_argument(
@@ -74,7 +74,7 @@ call s:parser.add_argument(
       \   'Create a new orphan branch, started from <start_point> and switch to it. The first commit made on this new branch will have no parents',
       \   'and it will be the root of a new history totally disconnected from all the other branches and commits.',
       \ ], {
-      \   'kind': s:A.kinds.value,
+      \   'type': s:A.types.value,
       \   'conflicts': ['b', 'B'],
       \})
 call s:parser.add_argument(
