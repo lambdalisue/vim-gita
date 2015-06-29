@@ -244,9 +244,8 @@ function! s:actions.discard(statuses, options) abort " {{{
 endfunction " }}}
 function! s:actions.solve(statuses, options) abort " {{{
   let gita = gita#core#get()
-  let invoker = gita#utils#invoker#get()
   for status in a:statuses
-    call invoker.focus()
+    call gita#anchor#focus()
     call gita#features#conflict#show(extend({
           \ 'status': status,
           \}, a:options))

@@ -13,8 +13,7 @@ function! s:ac_BufWinLeave() abort " {{{
     call setbufvar(expr, '_gita_QuitPre', 0)
     let hooks = getbufvar(expr, '_gita_hooks')
     call hooks.call('ac_BufWinLeave_pre', expr)
-    call gita#utils#invoker#focus()
-    call gita#utils#invoker#clear()
+    call gita#anchor#focus()
     call hooks.call('ac_BufWinLeave_post', expr)
   endif
 endfunction " }}}
@@ -29,7 +28,6 @@ function! s:actions.help(statuses, options) abort " {{{
 endfunction " }}}
 function! s:actions.open(statuses, options) abort " {{{
   let gita = gita#core#get()
-  let invoker = gita#utils#invoker#get()
   " gita#features#file#show cannot treat master... thus remove the trailing
   " characters after ..[.]
   let commit = get(a:options, 'commit', 'WORKTREE')
@@ -38,7 +36,7 @@ function! s:actions.open(statuses, options) abort " {{{
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
-    call invoker.focus()
+    call gita#anchor#focus()
     call gita#features#file#show(extend(a:options, {
           \ 'file': abspath,
           \ 'commit': commit,
@@ -47,11 +45,10 @@ function! s:actions.open(statuses, options) abort " {{{
 endfunction " }}}
 function! s:actions.diff(statuses, options) abort " {{{
   let gita = gita#core#get()
-  let invoker = gita#utils#invoker#get()
   for status in a:statuses
     let path = get(status, 'path2', status.path)
     let abspath = gita.git.get_absolute_path(path)
-    call invoker.focus()
+    call gita#anchor#focus()
     call gita#features#diff#show(extend(a:options, {
           \ '--': [abspath],
           \ 'commit': get(a:options, 'commit', 'INDEX'),
@@ -65,7 +62,6 @@ function! gita#display#open(bufname, ...) abort  " {{{
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
-  let invoker = gita#utils#invoker#get()
   let options = extend(
         \ get(w:, '_gita_options', {}),
         \ get(a:000, 0, {}),
@@ -77,7 +73,6 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \ 'range': 'tabpage',
         \})
   let w:_gita = gita
-  let w:_gita_invoker = deepcopy(invoker)
   let w:_gita_options = deepcopy(options)
   let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
   let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
