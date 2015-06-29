@@ -6,6 +6,7 @@ let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
@@ -87,7 +88,7 @@ endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
-  call gita#features#status#update(a:options)
+  call gita#features#status#update(a:options, { 'force_update': 1 })
 endfunction " }}}
 function! s:actions.open_commit(statuses, options) abort " {{{
   call gita#features#commit#open(a:options)
@@ -261,6 +262,33 @@ function! gita#features#status#exec(...) abort " {{{
         \])
   return gita.operations.status(options, config)
 endfunction " }}}
+function! gita#features#status#exec_cached(...) abort " {{{
+  let gita = gita#core#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let cache_name = s:P.join('status', string(s:D.pick(options, [
+        \ '--',
+        \ 'porcelain',
+        \ 'u', 'untracked_files',
+        \ 'ignored',
+        \ 'ignore_submodules',
+        \])))
+  let cached_status = gita.git.is_updated('index', 'status') || get(config, 'force_update', 0)
+        \ ? {}
+        \ : gita.git.cache.repository.get(cache_name, {})
+  if !empty(cached_status)
+    return cached_status
+  endif
+  let result = gita#features#status#exec(options, config)
+  if result.status
+    return result
+  endif
+  call gita.git.cache.repository.set(cache_name, result)
+  return result
+endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
   let result = gita#display#open(s:const.bufname, get(a:000, 0, {}))
   if result == -1
@@ -365,10 +393,11 @@ function! gita#features#status#update(...) abort " {{{
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
         \)
+  let config = get(a:000, 1, {})
   let options.porcelain = 1
-  let result = gita#features#status#exec(options, {
+  let result = gita#features#status#exec_cached(options, extend({
         \ 'echo': 'fail',
-        \})
+        \}, config))
   if result.status != 0
     bwipe
     return
@@ -429,5 +458,7 @@ function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaComment    /\v^.*$/ contains=ALL
   syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
 endfunction " }}}
+
+
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
