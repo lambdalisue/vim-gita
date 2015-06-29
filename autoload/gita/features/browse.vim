@@ -129,11 +129,14 @@ function! s:find_url(gita, expr, options) abort " {{{
       return gita#utils#format_string(repl, format_map, data)
     endif
   endfor
+  redraw
   call gita#utils#warn(printf(
-        \ 'No URL of "%s" in "%s" is found on "%s".',
-        \ path, branch, remote,
+        \ 'No url translation pattern for "%s" is found.',
+        \ data.remote_url,
         \))
-  call gita#utils#debugmsg('data:', data)
+  if gita#utils#asktf('Do you want to open a help for adding extra translation patterns?')
+    help g:gita#features#browse#extra_translation_patterns
+  endif
   return ''
 endfunction " }}}
 
