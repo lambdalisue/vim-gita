@@ -6,7 +6,7 @@ vim-gita
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
-*vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thnca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
+*vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thinca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 
 Core functions and features are powerd by [vim-jp/vital.vim][] and its external modules ([lambdalisue/vital-ArgumentParser][], [lambdalisue/vital-VCS-Git][]), mean that the fundemental functions are well tested in unittest level and vim-gita can focus to provide a user-friendly interface.
 
