@@ -1,6 +1,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:logger = gita#logging#of(expand('<sfile>'))
+
 function! s:smart_map(...) abort " {{{
   return call('gita#display#smart_map', a:000)
 endfunction " }}}
@@ -8,7 +10,19 @@ function! s:ac_QuitPre() abort " {{{
   let b:_gita_QuitPre = 1
 endfunction " }}}
 function! s:ac_BufWinLeave() abort " {{{
-  let expr = expand('<afile>')
+  "
+  " Note:
+  "   help BufWinLeave mention that the % and the buffer going to be close
+  "   might be different. However, the buffer can exists among tabpage thus
+  "   <afile> could not be used. That's why I use % instead
+  "
+  if expand('%:p') != expand('<afile>:p')
+    call s:logger.warning('%% (%s) and <afile> (%s) was different (%s)',
+          \ expand('%'), expand('<afile>'), expand('<sfile>'),
+          \)
+    return
+  endif
+  let expr = '%'
   if getbufvar(expr, '_gita_QuitPre')
     call setbufvar(expr, '_gita_QuitPre', 0)
     let hooks = getbufvar(expr, '_gita_hooks')
