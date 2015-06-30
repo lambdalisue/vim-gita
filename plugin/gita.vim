@@ -25,6 +25,7 @@ command! -nargs=? -range -bang
 
 let s:default_config = {
       \ 'debug': 0,
+      \ 'hint#enable': 1,
       \ 'logging#logfile': expand('~/.gita/logfile.log'),
       \ 'logging#loglevel': s:LOGLEVEL.WARNING,
       \ 'anchor#unsuitable_bufname_pattern': '',

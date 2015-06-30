@@ -456,10 +456,12 @@ function! gita#features#status#update(...) abort " {{{
 
   " update content
   let buflines = s:L.flatten([
-        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ '# Press ?m and/or ?s to toggle a help of mapping and/or short format.',
         \ gita#utils#help#get('status_mapping'),
         \ gita#utils#help#get('short_format'),
         \ s:get_status_header(gita),
+        \ gita#hint#show('status_staged'),
+        \ gita#hint#show('status_unstaged'),
         \ statuses_lines,
         \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
         \])
