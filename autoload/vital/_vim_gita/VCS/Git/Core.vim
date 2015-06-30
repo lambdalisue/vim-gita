@@ -4,7 +4,7 @@ set cpo&vim
 " Vital ======================================================================
 let s:_config = {}
 let s:_config.executable = 'git'
-let s:_config.arguments = ['-c', 'color.ui=false']
+let s:_config.arguments = ['-c', 'color.ui=false', '--no-pager']
 
 function! s:_vital_loaded(V) dict abort " {{{
   let s:V = a:V
