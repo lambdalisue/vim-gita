@@ -1,5 +1,5 @@
 vim_gita
-423c2c0
+730eb16
 
 Prelude
 Data.List
@@ -11,3 +11,4 @@ VCS.Git.Conflict
 Vim.Buffer
 Vim.BufferManager
 System.File
+System.Logging

@@ -27,6 +27,7 @@ let s:preset = {
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
 
+let s:logger = gita#logging#of(expand('<sfile>'))
 
 function! gita#statusline#get(...) abort " {{{
   let expr = get(a:000, 0, '%')
@@ -80,14 +81,18 @@ function! gita#statusline#get(...) abort " {{{
 endfunction " }}}
 function! gita#statusline#format(format, ...) abort " {{{
   let expr = get(a:000, 0, '%')
-  if s:P.is_string(expr)
-    let info = gita#statusline#get(expr)
-  elseif s:P.is_dict(expr)
-    let info = expr
-  else
-    throw 'vim-gita: a second argument of gita#statusline#format must be a string or dictionary.'
+  let gita = gita#get(expr)
+  if !gita.enabled
+    return ''
   endif
-  return gita#utils#format_string(a:format, s:format_map, info)
+  if gita.git.cache.repository.has(a:format)
+    return gita.git.cache.repository.get(a:format)
+  endif
+  call s:logger.debug('No statusline cache is found (%s)', expand('<sfile>'))
+  let info = gita#statusline#get(expr)
+  let formatted = gita#utils#format_string(a:format, s:format_map, info)
+  call gita.git.cache.repository.set(a:format, formatted)
+  return formatted
 endfunction " }}}
 function! gita#statusline#preset(preset_name, ...) abort " {{{
   let format = get(s:preset, a:preset_name, 'Wrong preset name is specified')

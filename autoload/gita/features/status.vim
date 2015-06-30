@@ -9,6 +9,8 @@ let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
+let s:logger = gita#logging#of(expand('<sfile>'))
+
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
 let s:const.bufname = join(['gita', 'status'], s:const.bufname_sep)
@@ -292,8 +294,9 @@ function! gita#features#status#exec_cached(...) abort " {{{
   if !empty(cached_status)
     return cached_status
   endif
+  call s:logger.debug('No cached status is found (%s)', expand('<sfile>'))
   let result = gita#features#status#exec(options, config)
-  if result.status
+  if result.status != get(config, 'success_status', 0)
     return result
   endif
   call gita.git.cache.repository.set(cache_name, result)

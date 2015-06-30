@@ -1,6 +1,15 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+" LOGLEVEL
+let s:LOGLEVEL = {
+      \ 'DEBUG':    0,
+      \ 'INFO':     1,
+      \ 'WARNING':  2,
+      \ 'ERROR':    3,
+      \ 'CRITICAL': 4,
+      \}
+
 function! s:Gita(...) abort " {{{
   call call('gita#features#command', a:000)
 endfunction " }}}
@@ -16,6 +25,8 @@ command! -nargs=? -range -bang
 
 let s:default_config = {
       \ 'debug': 0,
+      \ 'logging#logfile': expand('~/.gita/logfile.log'),
+      \ 'logging#loglevel': s:LOGLEVEL.WARNING,
       \ 'anchor#unsuitable_bufname_pattern': '',
       \ 'anchor#unsuitable_filetype_pattern': printf(
       \   '^\%%(%s\)', join([
