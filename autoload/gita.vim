@@ -69,13 +69,14 @@ endfunction " }}}
 function! gita#get(...) abort " {{{
   " return a cached or new gita instance
   let expr = get(a:000, 0, '%')
-  if getbufvar(expr, '&l:buftype') =~# '^\%(quickfix\|help\)$'
+  let bufnum = bufnr(expr)
+  if getbufvar(bufnum, '&l:buftype') =~# '^\%(quickfix\|help\)$'
     " disable Gita in vim's special window AS SOON AS POSSIBLE
     return { 'enabled': 0 }
   endif
-  let gita = getwinvar(bufwinnr(expr), '_gita', {})
+  let gita = getwinvar(bufwinnr(bufnum), '_gita', {})
   if empty(gita)
-    let gita = getbufvar(expr, '_gita', {})
+    let gita = getbufvar(bufnum, '_gita', {})
   endif
   if !empty(gita) && !gita.is_expired()
     return gita
@@ -96,9 +97,20 @@ function! gita#clear_cache(...) abort " {{{
   endif
 endfunction " }}}
 
+function! s:ac_BufWritePre() abort
+  let b:_gita_clear_cache = &modified
+endfunction
+function! s:ac_BufWritePost() abort
+  if get(b:, '_gita_clear_cache')
+    call gita#clear_cache()
+  endif
+  silent! unlet! b:_gita_clear_cache
+endfunction
+
 augroup vim-gita-clear-cache
   autocmd! *
-  autocmd BufWritePost * call gita#clear_cache()
+  autocmd BufWritePre * call s:ac_BufWritePre()
+  autocmd BufWritePost * call s:ac_BufWritePost()
   autocmd User vim-gita-fetch-post call gita#clear_cache()
   autocmd User vim-gita-push-post call gita#clear_cache()
   autocmd User vim-gita-pull-post call gita#clear_cache()
