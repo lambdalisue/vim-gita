@@ -251,9 +251,9 @@ function! gita#features#commit#open(...) abort " {{{
   call gita#display#extend_actions(s:actions)
 
   " Define hooks
-  function! b:_gita_hooks.ac_BufWinLeave_pre(expr) abort
-    if !getbufvar(a:expr, '&modified') && gita#utils#asktf('Do you want to commit changes?', 'y')
-      call s:commit(a:expr, {})
+  function! b:_gita_hooks.ac_BufWinLeave_pre(bufnum) abort
+    if !getbufvar(a:bufnum, '&modified') && gita#utils#asktf('Do you want to commit changes?', 'y')
+      call s:commit(a:bufnum, {})
     endif
   endfunction
 

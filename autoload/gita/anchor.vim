@@ -16,9 +16,7 @@ function! gita#anchor#is_suitable(winnum) abort " {{{
   endif
 endfunction " }}}
 function! gita#anchor#focus() abort " {{{
-  " focus a previous window
-  silent wincmd p
-  let previous_winnum = winnr()
+  let previous_winnum = winnr('#')
   " find a suitable window in rightbelow from a previous window
   for winnum in range(previous_winnum, winnr('$'))
     if gita#anchor#is_suitable(winnum)
@@ -34,6 +32,7 @@ function! gita#anchor#focus() abort " {{{
     endif
   endfor
   " no suitable window is found. just use previous window
+  silent execute printf('%dwincmd w', previous_winnum)
 endfunction " }}}
 
 
