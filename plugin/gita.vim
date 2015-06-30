@@ -16,6 +16,7 @@ command! -nargs=? -range -bang
 
 let s:default_config = {
       \ 'debug': 0,
+      \ 'hint#enable': 1,
       \ 'anchor#unsuitable_bufname_pattern': '',
       \ 'anchor#unsuitable_filetype_pattern': printf(
       \   '^\%%(%s\)', join([
