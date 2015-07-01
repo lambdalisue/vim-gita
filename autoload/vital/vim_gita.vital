@@ -13,3 +13,5 @@ Vim.BufferManager
 System.File
 System.Logging
 VCS.Git.BlameParser
+DateTime
+Data.String

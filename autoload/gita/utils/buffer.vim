@@ -30,6 +30,7 @@ endfunction " }}}
 function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
   let options = extend({
         \ 'opener': 'edit',
+        \ 'opener2': '',
         \ 'vertical': 0,
         \ 'range': 'tabpage',
         \}, get(a:000, 0, {}))
@@ -43,6 +44,8 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
   let vertical = get(options, 'vertical', 0)
   if gita#utils#buffer#is_listed_in_tabpage(a:name2)
     let opener = 'edit'
+  elseif !empty(get(options, 'opener2'))
+    let opener = options.opener2
   else
     let opener = vertical ? 'vert split' : 'split'
   endif
