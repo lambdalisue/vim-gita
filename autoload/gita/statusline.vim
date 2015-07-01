@@ -85,7 +85,8 @@ function! gita#statusline#format(format, ...) abort " {{{
   if !gita.enabled
     return ''
   endif
-  if gita.git.cache.repository.has(a:format)
+  let cache = gita.git.cache.repository
+  if gita.git.cache.repository.has(a:format) && !gita.git.is_updated('index', 'statusline')
     return gita.git.cache.repository.get(a:format)
   endif
   call s:logger.debug('No statusline cache is found (%s)', expand('<sfile>'))
