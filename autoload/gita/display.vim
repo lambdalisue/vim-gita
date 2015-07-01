@@ -7,14 +7,13 @@ endfunction " }}}
 function! s:ac_QuitPre() abort " {{{
   let b:_gita_QuitPre = 1
 endfunction " }}}
-function! s:ac_BufWinLeave() abort " {{{
-  let expr = expand('<afile>')
-  if getbufvar(expr, '_gita_QuitPre')
-    call setbufvar(expr, '_gita_QuitPre', 0)
-    let hooks = getbufvar(expr, '_gita_hooks')
-    call hooks.call('ac_BufWinLeave_pre', expr)
+function! s:ac_WinLeave() abort " {{{
+  if get(b:, '_gita_QuitPre')
+    unlet! b:_gita_QuitPre
+    let hooks = b:_gita_hooks
+    call hooks.call('ac_WinLeave_pre')
     call gita#anchor#focus()
-    call hooks.call('ac_BufWinLeave_post', expr)
+    call hooks.call('ac_WinLeave_post')
   endif
 endfunction " }}}
 
@@ -99,8 +98,8 @@ function! gita#display#open(bufname, ...) abort  " {{{
 
   augroup vim-gita-display
     autocmd! * <buffer>
-    autocmd QuitPre     <buffer> call s:ac_QuitPre()
-    autocmd BufWinLeave <buffer> call s:ac_BufWinLeave()
+    autocmd QuitPre  <buffer> call s:ac_QuitPre()
+    autocmd WinLeave <buffer> call s:ac_WinLeave()
   augroup END
 
   " Define Plug key mappings
