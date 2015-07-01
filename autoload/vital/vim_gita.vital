@@ -12,3 +12,4 @@ Vim.Buffer
 Vim.BufferManager
 System.File
 System.Logging
+VCS.Git.BlameParser
