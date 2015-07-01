@@ -272,6 +272,10 @@ function! gita#features#status#exec(...) abort " {{{
         \ 'ignored',
         \ 'ignore_submodules',
         \])
+  " remove -u/--untracked_files which require Git >= 1.4
+  if gita.git.get_version() =~# '^-\|^1\.[1-3]\.'
+    let options = s:D.omit(options, ['u', 'untracked_files'])
+  endif
   return gita.operations.status(options, config)
 endfunction " }}}
 function! gita#features#status#exec_cached(...) abort " {{{

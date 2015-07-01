@@ -220,5 +220,14 @@ function! s:exec(args, ...) abort " {{{
   return s:system(args, opts)
 endfunction " }}}
 
+" Version
+function! s:get_version() abort " {{{
+  let result = s:exec(['--version'])
+  if result.status
+    return '0.0.0'
+  endif
+  return matchstr(result.stdout, '^git version \zs.*$')
+endfunction " }}}
+
 let &cpo = s:save_cpo
 "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

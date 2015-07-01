@@ -289,6 +289,9 @@ function! s:git.exec(args, ...) abort " {{{
         \ ], a:args)
   return s:Core.exec(args, get(a:000, 0, {}))
 endfunction " }}}
+function! s:git.get_version() abort " {{{
+  return s:Core.get_version()
+endfunction " }}}
 
 " Misc
 function! s:git.get_last_commitmsg(...) abort " {{{
