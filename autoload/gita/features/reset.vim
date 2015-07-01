@@ -7,6 +7,12 @@ let s:D = gita#utils#import('Data.Dict')
 let s:A = gita#utils#import('ArgumentParser')
 
 
+function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
+  let candidates = call('gita#completes#complete_local_branch', extend(
+        \ [a:arglead, a:cmdline, a:cursorpos], a:000,
+        \))
+  return extend(['HEAD'], candidates)
+endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] reset',
       \ 'description': 'Reset current HEAD to the specified state',
@@ -55,6 +61,12 @@ call s:parser.add_argument(
       \   'If a file that is different between <commit> and HEAD has local changes, reset is aborted.',
       \], {
       \   'configlicts': ['soft', 'mixed', 'hard', 'merge'],
+      \})
+call s:parser.add_argument(
+      \ 'commit', [
+      \   'A commit-ish which you want to show. The followings are Gita special terms:',
+      \ ], {
+      \   'complete': function('s:complete_commit'),
       \})
 function! s:parser.hooks.post_validate(options) abort " {{{
   if !get(a:options, 'verbose', 0)
