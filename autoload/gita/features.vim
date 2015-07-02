@@ -125,6 +125,10 @@ call gita#features#register('diff',
       \ function('gita#features#diff#command'),
       \ function('gita#features#diff#complete'),
       \)
+call gita#features#register('blame',
+      \ function('gita#features#blame#command'),
+      \ function('gita#features#blame#complete'),
+      \)
 call gita#features#register('conflict',
       \ function('gita#features#conflict#command'),
       \ function('gita#features#conflict#complete'),
