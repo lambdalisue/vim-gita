@@ -157,19 +157,22 @@ function! gita#features#blame#show(...) abort " {{{
   endif
   let blameobj = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
   let chunks = s:create_chunks(blameobj)
+  let linechunks = []
   let NAVI = []
   let VIEW = []
   let HORI = []
   for chunk in chunks
-    let formatted_chunk = s:format_chunk(chunk, 49, len(chunk.contents) > 2)
+    let formatted_chunk = s:format_chunk(chunk, 47, len(chunk.contents) > 2)
     for i in range(max([2, len(chunk.contents)]))
       call add(NAVI, get(formatted_chunk, i, ''))
       call add(VIEW, get(chunk.contents, i, ''))
+      call add(linechunks, chunk)
     endfor
     " Add an empty line for sign
     call add(NAVI, '')
     call add(VIEW, '')
     call add(HORI, len(NAVI))
+    call add(linechunks, {})
   endfor
   let NAVI = NAVI[:-2]
   let VIEW = VIEW[:-2]
@@ -209,6 +212,8 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal textwidth=0
   setlocal colorcolumn=0
   let b:_gita_original_filename = options.file
+  let b:_gita_blame_blameobj = blameobj
+  let b:_gita_blame_linechunks = linechunks
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
   for linenum in HORI
     "execute printf('syntax match GitaHorizontal /\%%%sl.*/', linenum)
@@ -232,6 +237,8 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal nonumber
   setlocal foldcolumn=0
   let b:_gita_original_filename = options.file
+  let b:_gita_blame_blameobj = blameobj
+  let b:_gita_blame_linechunks = linechunks
   execute printf('sign unplace * buffer=%d', NAVI_bufnum)
   for linenum in HORI
     execute printf(
