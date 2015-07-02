@@ -14,6 +14,7 @@ function! gita#utils#import(name) abort " {{{
 endfunction " }}}
 
 let s:P = gita#utils#import('Prelude')
+let s:T = gita#utils#import('DateTime')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
@@ -194,6 +195,18 @@ endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   " prefer 'b:_gita_original_filename'
   return getbufvar(a:expr, '_gita_original_filename', expand(a:expr))
+endfunction " }}}
+function! gita#utils#format_timestamp(timestamp, ...) abort " {{{
+  let timezone = get(a:000, 0, '')
+  let prefix1 = get(a:000, 1, '')
+  let prefix2 = get(a:000, 2, '')
+  let time = s:T.from_unix_time(a:timestamp, timezone)
+  let delta = time.delta(s:T.now())
+  if delta.years() < 1
+    return prefix1 . delta.about()
+  else
+    return prefix2 . time.format('%d %b, %Y')
+  endif
 endfunction " }}}
 
 let &cpo = s:save_cpo

@@ -1,5 +1,5 @@
 vim_gita
-09de2f5
+93748fb
 
 Prelude
 Data.List
@@ -12,3 +12,6 @@ Vim.Buffer
 Vim.BufferManager
 System.File
 System.Logging
+VCS.Git.BlameParser
+DateTime
+Data.String
