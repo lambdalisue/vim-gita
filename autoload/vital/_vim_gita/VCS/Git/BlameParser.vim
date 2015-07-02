@@ -50,33 +50,28 @@ endfunction " }}}
 
 function! s:parse(blame, ...) abort " {{{
   let o = get(a:000, 0, {})
-  let previous_chunk = {}
-  let current_chunk = { 'revision': '' }
-  let chunks = []
+  let revisions = {}
+  let lineinfos = []
+  let current_revision = {}
+  let current_lineinfo = {}
   for line in split(a:blame, '\v\r?\n')
     if line =~# s:HEADLINE_PATTERN
-      let chunk = s:parse_headline(line)
-      let chunk.contents = []
-      if chunk.revision !=# current_chunk.revision
-        call add(chunks, chunk)
-        let previous_chunk = current_chunk
-        let current_chunk = chunk
+      let headline = s:parse_headline(line)
+      if !has_key(revisions, headline.revision)
+        let revisions[headline.revision] = {}
       endif
+      let current_revision = revisions[headline.revision]
+      let current_lineinfo = headline
+      call add(lineinfos, headline)
       continue
     elseif line =~# s:INFOLINE_PATTERN
-      call extend(current_chunk, s:parse_infoline(line))
+      call extend(current_revision, s:parse_infoline(line))
       continue
     elseif line =~# s:CONTENTS_PATTERN
-      if !has_key(current_chunk, 'filename')
-        " hit CONTENTS line without parsing INFO line, mean that the INFO of
-        " current chunk is equal to the previous one
-        call extend(current_chunk, s:D.omit(previous_chunk, keys(current_chunk)))
-      endif
-      call add(current_chunk.contents, s:parse_contents(line))
+      call extend(current_lineinfo, { 'contents': s:parse_contents(line) })
       continue
     elseif line ==# 'boundary'
-      " http://git.kaarsemaker.net/git/commit/b11121d9e330c40f5d089636f176d089e5bb1885/
-      let current_chunk.boundary = 1
+      call extend(current_revision, { 'boundary': 1 })
       continue
     elseif get(o, 'fail_silently')
       continue
@@ -87,7 +82,10 @@ function! s:parse(blame, ...) abort " {{{
             \)
     endif
   endfor
-  return chunks
+  return {
+        \ 'revisions': revisions,
+        \ 'lineinfos': lineinfos,
+        \}
 endfunction " }}}
 
 

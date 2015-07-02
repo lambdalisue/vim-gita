@@ -11,6 +11,10 @@ let s:A = gita#utils#import('ArgumentParser')
 let s:const = {}
 let s:const.filetype = 'gita-blame'
 
+sign define GitaHorizontalSign
+      \ texthl=SignColumn
+      \ linehl=GitaHorizontal
+
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')
@@ -44,6 +48,26 @@ call s:parser.add_argument(
       \ ],
       \)
 
+function! s:create_chunks(blameobj) abort " {{{
+  let previous_revision = ''
+  let chunks = []
+  for lineinfo in a:blameobj.lineinfos
+    if previous_revision !=# lineinfo.revision
+      let previous_revision = lineinfo.revision
+      let chunk = extend(
+            \ deepcopy(lineinfo),
+            \ deepcopy(a:blameobj.revisions[previous_revision]),
+            \)
+      unlet chunk.contents
+      let chunk.contents = [lineinfo.contents]
+      call add(chunks, chunk)
+    else
+      let chunk = chunks[-1]
+      call add(chunk.contents, lineinfo.contents)
+    endif
+  endfor
+  return chunks
+endfunction " }}}
 function! s:format_chunk(chunk, ...) abort " {{{
   let width = get(a:000, 0, winwidth(0))
   let wrap = get(a:000, 1, 0)
@@ -131,7 +155,8 @@ function! gita#features#blame#show(...) abort " {{{
   if result.status != 0
     return
   endif
-  let chunks = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
+  let blameobj = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
+  let chunks = s:create_chunks(blameobj)
   let NAVI = []
   let VIEW = []
   let HORI = []
@@ -170,9 +195,6 @@ function! gita#features#blame#show(...) abort " {{{
   let VIEW_bufnum = bufnums.bufnum1
   let NAVI_bufnum = bufnums.bufnum2
 
-  highlight GitaBlameHorizontal gui=underline guifg=#363636
-  sign define GitaBlameHorizontalSign texthl=SignColumn linehl=GitaBlameHorizontal
-
   " VIEW
   execute printf('%swincmd w', bufwinnr(VIEW_bufnum))
   call gita#utils#buffer#update(VIEW)
@@ -187,10 +209,11 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal textwidth=0
   setlocal colorcolumn=0
   let b:_gita_original_filename = options.file
+  execute printf('sign unplace * buffer=%d', VIEW_bufnum)
   for linenum in HORI
     "execute printf('syntax match GitaHorizontal /\%%%sl.*/', linenum)
     execute printf(
-          \ 'sign place %d line=%d name=GitaBlameHorizontalSign buffer=%s',
+          \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%d',
           \ linenum, linenum, VIEW_bufnum,
           \)
   endfor
@@ -209,10 +232,10 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal nonumber
   setlocal foldcolumn=0
   let b:_gita_original_filename = options.file
+  execute printf('sign unplace * buffer=%d', NAVI_bufnum)
   for linenum in HORI
-    "execute printf('syntax region GitaHorizontal start="\%%%sl" end="\%%%sl" display', linenum, linenum+1)
     execute printf(
-          \ 'sign place %d line=%d name=GitaBlameHorizontalSign buffer=%s',
+          \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%s',
           \ linenum, linenum, NAVI_bufnum,
           \)
   endfor
@@ -233,6 +256,7 @@ function! gita#features#blame#define_highlights() abort " {{{
   highlight link GitaAuthor     Identifier
   highlight link GitaTimeDelta  Comment
   highlight link GitaRevision   String
+  highlight      GitaHorizontal gui=underline guifg=#363636
 endfunction " }}}
 function! gita#features#blame#define_syntax() abort " {{{
   syntax match GitaSummary   /.*/
