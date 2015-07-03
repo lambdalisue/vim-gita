@@ -86,15 +86,15 @@ function! gita#features#diff_ls#open(...) abort " {{{
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#display#extend_actions(s:actions)
+  call gita#action#extend_actions(s:actions)
 
   " Define loccal options
   setlocal nomodifiable readonly
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#display#action('help', { 'name': 'diff_ls_mapping' })<CR>
+        \ :<C-u>call gita#action#exec('help', { 'name': 'diff_ls_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#display#action('update')<CR>
+        \ :<C-u>call gita#action#exec('update')<CR>
 
   " Define extra actual key mappings
   if enable_default_mappings

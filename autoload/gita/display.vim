@@ -2,7 +2,18 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 function! s:smart_map(...) abort " {{{
-  return call('gita#display#smart_map', a:000)
+  return call('gita#action#smart_map', a:000)
+endfunction " }}}
+function! s:get_statuses_within(start, end) abort " {{{
+  let statuses_map = get(w:, '_gita_statuses_map', {})
+  let statuses = []
+  for n in range(a:start, a:end)
+    let status = get(statuses_map, getline(n), {})
+    if !empty(status)
+      call add(statuses, status)
+    endif
+  endfor
+  return statuses
 endfunction " }}}
 function! s:ac_QuitPre() abort " {{{
   let b:_gita_QuitPre = 1
@@ -16,52 +27,6 @@ function! s:ac_WinLeave() abort " {{{
     call hooks.call('ac_WinLeave_post')
   endif
 endfunction " }}}
-
-
-let s:actions = {}
-function! s:actions.help(statuses, options) abort " {{{
-  call gita#utils#help#toggle(get(a:options, 'name', ''))
-  if has_key(self, 'update')
-    call self.update(a:statuses, a:options)
-  endif
-endfunction " }}}
-function! s:actions.edit(statuses, options) abort " {{{
-  let gita = gita#get()
-  for status in a:statuses
-    let path = get(status, 'path2', status.path)
-    let abspath = gita.git.get_absolute_path(path)
-    call gita#anchor#focus()
-    call gita#utils#buffer#open(abspath, '', a:options)
-  endfor
-endfunction " }}}
-function! s:actions.open(statuses, options) abort " {{{
-  let gita = gita#get()
-  " gita#features#file#show cannot treat master... thus remove the trailing
-  " characters after ..[.]
-  let commit = get(a:options, 'commit', 'HEAD')
-  let commit = substitute(commit, '\v\.\.\.?.*$', '', '')
-  let commit = substitute(commit, '\v^\.\.\.?', '', '')
-  for status in a:statuses
-    call gita#anchor#focus()
-    call gita#features#file#show(extend(a:options, {
-          \ 'file': status.path,
-          \ 'commit': commit,
-          \}))
-  endfor
-endfunction " }}}
-function! s:actions.diff(statuses, options) abort " {{{
-  let gita = gita#get()
-  for status in a:statuses
-    let path = get(status, 'path2', status.path)
-    let abspath = gita.git.get_absolute_path(path)
-    call gita#anchor#focus()
-    call gita#features#diff#show(extend(a:options, {
-          \ '--': [abspath],
-          \ 'commit': get(a:options, 'commit', 'INDEX'),
-          \}))
-  endfor
-endfunction " }}}
-
 
 function! gita#display#open(bufname, ...) abort  " {{{
   let gita = gita#get()
@@ -81,8 +46,10 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \})
   let w:_gita = gita
   let w:_gita_options = deepcopy(options)
-  let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
   let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
+  call gita#action#set_candidates(
+        \ function('s:get_statuses_within'),
+        \)
 
   if get(b:, '_gita_constructed') && !g:gita#debug
     return {
@@ -106,32 +73,32 @@ function! gita#display#open(bufname, ...) abort  " {{{
   noremap <silent><buffer> <Plug>(gita-action-quit)
         \ :<C-u>q<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-s)
-        \ :<C-u>call gita#display#action('help', { 'name': 'short_format' })<CR>
+        \ :<C-u>call gita#action#exec('help', { 'name': 'short_format' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-edit)
-        \ :<C-u>call gita#display#action('edit')<CR>
+        \ :<C-u>call gita#action#exec('edit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-edit-h)
-        \ :<C-u>call gita#display#action('edit', { 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#exec('edit', { 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-edit-v)
-        \ :<C-u>call gita#display#action('edit', { 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#exec('edit', { 'opener': 'vsplit' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-open)
-        \ :<C-u>call gita#display#action('open')<CR>
+        \ :<C-u>call gita#action#exec('open')<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-h)
-        \ :<C-u>call gita#display#action('open', { 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#exec('open', { 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-v)
-        \ :<C-u>call gita#display#action('open', { 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#exec('open', { 'opener': 'vsplit' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-diff)
-        \ :<C-u>call gita#display#action('diff')<CR>
+        \ :<C-u>call gita#action#exec('diff')<CR>
   noremap <silent><buffer> <Plug>(gita-action-diff-h)
-        \ :<C-u>call gita#display#action('diff', { 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-diff-v)
-        \ :<C-u>call gita#display#action('diff', { 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'opener': 'vsplit' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-h)
-        \ :<C-u>call gita#display#action('diff', { 'compare': 1, 'vertical': 0 })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
-        \ :<C-u>call gita#display#action('diff', { 'compare': 1, 'vertical': 1 })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 1 })<CR>
 
   if get(config, 'enable_default_mappings')
     nmap <buffer> q     <Plug>(gita-action-quit)
@@ -166,46 +133,6 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \ 'loaded': open_result.loaded,
         \ 'bufnum': open_result.bufnum,
         \}
-endfunction " }}}
-function! gita#display#smart_map(lhs, rhs) abort " {{{
-  return empty(gita#display#get_status_at(a:firstline))
-        \ ? a:lhs
-        \ : a:rhs
-endfunction " }}}
-function! gita#display#get_status_at(lineno) abort " {{{
-  let statuses = gita#display#get_statuses_within(
-        \ a:lineno, a:lineno
-        \)
-  return get(statuses, 0, '')
-endfunction " }}}
-function! gita#display#get_statuses_within(start, end) abort " {{{
-  let statuses_map = get(w:, '_gita_statuses_map', {})
-  let statuses = []
-  for n in range(a:start, a:end)
-    let status = get(statuses_map, getline(n), {})
-    if !empty(status)
-      call add(statuses, status)
-    endif
-  endfor
-  return statuses
-endfunction " }}}
-
-function! gita#display#action(name, ...) abort range " {{{
-  let options = extend(
-        \ get(w:, '_gita_options', {}),
-        \ get(a:000, 0, {}),
-        \)
-  let statuses = gita#display#get_statuses_within(
-        \ a:firstline, a:lastline
-        \)
-  let args = [statuses, options]
-  call call(b:_gita_actions[a:name], args, b:_gita_actions)
-endfunction " }}}
-function! gita#display#extend_actions(actions) abort " {{{
-  let w:_gita_actions = extend(
-        \ get(b:, '_gita_actions', deepcopy(s:actions)),
-        \ a:actions,
-        \)
 endfunction " }}}
 
 
