@@ -3,15 +3,15 @@ set cpo&vim
 
 let s:L = gita#utils#import('System.Logging')
 
-function! gita#logging#of(...) abort " {{{
+function! gita#utils#logging#of(...) abort " {{{
   return call(s:L.of, a:000, s:L)
 endfunction " }}}
 
 " Configure
 function! s:init() abort
-  let logger = gita#logging#of()
-  call logger.set_logfile(g:gita#logging#logfile)
-  call logger.set_loglevel(g:gita#logging#loglevel)
+  let logger = gita#utils#logging#of()
+  call logger.set_logfile(g:gita#utils#logging#logfile)
+  call logger.set_loglevel(g:gita#utils#logging#loglevel)
 endfunction
 call s:init()
 
