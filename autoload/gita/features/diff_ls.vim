@@ -77,19 +77,18 @@ function! gita#features#diff_ls#open(...) abort " {{{
         \ 'opener': g:gita#features#diff_ls#monitor_opener,
         \ 'range': g:gita#features#diff_ls#monitor_range,
         \})
-  if result.status == -1
+  if result.status
     " gita is not available
     return
-  elseif result.status == 1
-    " the buffer is already constructed
-    call gita#features#diff_ls#update({}, { 'force_update': 1 })
+  elseif result.constructed
+    " the buffer has been constructed, mean that the further construction
+    " is not required.
+    call gita#features#diff_ls#update({}, { 'force_update': result.loaded })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#action#extend_actions(s:actions)
 
   setlocal nomodifiable readonly
-
   call gita#features#diff_ls#define_mappings()
   if g:gita#features#diff_ls#enable_default_mappings
     call gita#features#diff_ls#define_default_mappings()

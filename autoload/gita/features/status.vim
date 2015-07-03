@@ -312,19 +312,19 @@ function! gita#features#status#open(...) abort " {{{
         \ 'opener': g:gita#features#status#monitor_opener,
         \ 'range': g:gita#features#status#monitor_range,
         \})
-  if result.status == -1
+  if result.status
     " gita is not available
     return
-  elseif result.status == 1
-    " the buffer is already constructed
+  elseif result.constructed
+    " the buffer has been constructed, mean that the further construction
+    " is not required.
     call gita#features#status#update({}, { 'force_update': result.loaded })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#action#extend_actions(s:actions)
 
   setlocal nomodifiable readonly
-
+  call gita#action#extend_actions(s:actions)
   call gita#features#status#define_mappings()
   if g:gita#features#status#enable_default_mappings
     call gita#features#status#define_default_mappings()
