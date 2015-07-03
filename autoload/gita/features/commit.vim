@@ -165,11 +165,11 @@ function! s:ac_BufWriteCmd() abort " {{{
           \)
   endif
 endfunction " }}}
-function! s:ac_WinLeave() abort
+function! s:ac_WinLeave() abort " {{{
   if !&modified && gita#utils#asktf('Do you want to commit changes?', 'y')
     call s:commit('%', {})
   endif
-endfunction
+endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
