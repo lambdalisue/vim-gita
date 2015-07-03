@@ -35,7 +35,6 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
         \ get(a:000, 0, {}),
         \)
   let config = extend({
-        \ 'enable_default_mappings': 1,
         \ 'opener': '',
         \ 'range': '',
         \}, get(a:000, 1, {}))
@@ -71,11 +70,6 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
     autocmd QuitPre  <buffer> call s:ac_QuitPre()
     autocmd WinLeave <buffer> call s:ac_WinLeave()
   augroup END
-
-  call gita#monitor#define_mappings()
-  if config.enable_default_mappings
-    call gita#monitor#define_default_mappings()
-  endif
 
   return {
         \ 'status': 0,
