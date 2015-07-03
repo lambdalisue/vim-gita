@@ -100,7 +100,7 @@ function! s:actions.add(statuses, options) abort " {{{
     return
   endif
   let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
+        \ '--': map(deepcopy(a:statuses), 'get(v:val, "path2", v:val.path)'),
         \ 'ignore_errors': 1,
         \}, a:options)
   call gita#features#add#exec(options, {
