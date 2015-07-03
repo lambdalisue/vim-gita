@@ -5,7 +5,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  let candidates = call('gita#completes#complete_local_branch', extend(
+  let candidates = call('gita#utils#completes#complete_local_branch', extend(
         \ [a:arglead, a:cmdline, a:cursorpos], a:000,
         \))
   return extend(['WORKTREE', 'INDEX', 'HEAD', 'FORK:master'], candidates)

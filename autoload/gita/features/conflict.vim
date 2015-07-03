@@ -14,7 +14,7 @@ call s:parser.add_argument(
       \ 'file', [
       \   'A file to solve conflict.',
       \ ], {
-      \   'complete': function('gita#completes#complete_conflicted_files'),
+      \   'complete': function('gita#utils#completes#complete_conflicted_files'),
       \})
 call s:parser.add_argument(
       \ '--2way', '-2', [

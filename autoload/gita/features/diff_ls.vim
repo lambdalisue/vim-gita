@@ -15,7 +15,7 @@ let s:const.filetype = 'gita-diff-ls'
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')
   let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
-  let candidates = call('gita#completes#complete_local_branch', extend(
+  let candidates = call('gita#utils#completes#complete_local_branch', extend(
         \ [arglead, a:cmdline, a:cursorpos],
         \ a:000,
         \))

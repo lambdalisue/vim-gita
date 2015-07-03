@@ -5,7 +5,7 @@ set cpo&vim
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
-function! gita#completes#complete_local_branch(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_local_branch(arglead, cmdline, cursorpos, ...) abort " {{{
   let gita = gita#get()
   if !gita.enabled
     return []
@@ -24,7 +24,7 @@ function! gita#completes#complete_local_branch(arglead, cmdline, cursorpos, ...)
   call filter(candidates, 'len(v:val) && v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}
-function! gita#completes#complete_remote_branch(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_remote_branch(arglead, cmdline, cursorpos, ...) abort " {{{
   let gita = gita#get()
   if !gita.enabled
     return []
@@ -45,7 +45,7 @@ function! gita#completes#complete_remote_branch(arglead, cmdline, cursorpos, ...
   call filter(candidates, 'v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}
-function! gita#completes#complete_staged_files(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_staged_files(arglead, cmdline, cursorpos, ...) abort " {{{
   let result = gita#features#status#exec_cached({
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,
@@ -62,7 +62,7 @@ function! gita#completes#complete_staged_files(arglead, cmdline, cursorpos, ...)
         \)
   return candidates
 endfunction " }}}
-function! gita#completes#complete_unstaged_files(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_unstaged_files(arglead, cmdline, cursorpos, ...) abort " {{{
   let result = gita#features#status#exec_cached({
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,
@@ -79,7 +79,7 @@ function! gita#completes#complete_unstaged_files(arglead, cmdline, cursorpos, ..
         \)
   return candidates
 endfunction " }}}
-function! gita#completes#complete_conflicted_files(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_conflicted_files(arglead, cmdline, cursorpos, ...) abort " {{{
   let result = gita#features#status#exec_cached({
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,
@@ -96,7 +96,7 @@ function! gita#completes#complete_conflicted_files(arglead, cmdline, cursorpos, 
         \)
   return candidates
 endfunction " }}}
-function! gita#completes#complete_untracked_files(arglead, cmdline, cursorpos, ...) abort " {{{
+function! gita#utils#completes#complete_untracked_files(arglead, cmdline, cursorpos, ...) abort " {{{
   let result = gita#features#status#exec_cached({
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,

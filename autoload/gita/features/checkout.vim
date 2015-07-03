@@ -82,13 +82,13 @@ call s:parser.add_argument(
       \ 'commit', [
       \   '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.',
       \ ], {
-      \   'complete': function('gita#completes#complete_remote_branch'),
+      \   'complete': function('gita#utils#completes#complete_remote_branch'),
       \ })
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
-        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_conflicted_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_conflicted_files('', '', [0, 0], a:options),
         \ a:candidates,
         \])
   return candidates

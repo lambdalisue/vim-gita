@@ -12,7 +12,7 @@ let s:logger = gita#logging#of(expand('<sfile>'))
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')
   let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
-  let candidates = call('gita#completes#complete_local_branch', extend(
+  let candidates = call('gita#utils#completes#complete_local_branch', extend(
         \ [arglead, a:cmdline, a:cursorpos],
         \ a:000,
         \))
@@ -65,9 +65,9 @@ call s:parser.add_argument(
       \)
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
-        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_conflicted_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_conflicted_files('', '', [0, 0], a:options),
         \ a:candidates,
         \])
   return candidates
