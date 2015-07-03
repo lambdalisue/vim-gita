@@ -35,7 +35,7 @@ call s:parser.add_argument(
       \   'A branch or commit which you want to see.',
       \   'If it is omitted, a remote branch of the current branch is used.'
       \ ], {
-      \   'complete': function('gita#completes#complete_local_branch'),
+      \   'complete': function('gita#utils#completes#complete_local_branch'),
       \ })
 function! s:parser.hooks.pre_validate(opts) abort " {{{
   " Automatically use '--open' if no conflicted argument is specified
@@ -45,9 +45,9 @@ function! s:parser.hooks.pre_validate(opts) abort " {{{
 endfunction " }}}
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
-        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_unstaged_files('', '', [0, 0], a:options),
-        \ gita#completes#complete_conflicted_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_unstaged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_conflicted_files('', '', [0, 0], a:options),
         \ a:candidates,
         \])
   return candidates

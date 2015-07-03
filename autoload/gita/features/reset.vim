@@ -8,7 +8,7 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  let candidates = call('gita#completes#complete_local_branch', extend(
+  let candidates = call('gita#utils#completes#complete_local_branch', extend(
         \ [a:arglead, a:cmdline, a:cursorpos], a:000,
         \))
   return extend(['HEAD'], candidates)
@@ -77,7 +77,7 @@ function! s:parser.hooks.post_validate(options) abort " {{{
 endfunction " }}}
 function! s:parser.hooks.post_complete_optionional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
-        \ gita#completes#complete_staged_files('', '', [0, 0], a:options),
+        \ gita#utils#completes#complete_staged_files('', '', [0, 0], a:options),
         \ a:candidates,
         \])
   return candidates
