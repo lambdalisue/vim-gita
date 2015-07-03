@@ -36,12 +36,19 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
         \)
   let config = extend({
         \ 'enable_default_mappings': 1,
+        \ 'opener': '',
+        \ 'range': '',
         \}, get(a:000, 1, {}))
 
   " open a buffer in a 'gita:monitor' window group
-  let result = gita#utils#buffer#open(a:bufname, 'vim_gita_monitor', {
-        \ 'opener': 'topleft 15 split',
-        \ 'range': 'tabpage',
+  let result = gita#utils#buffer#open(
+        \ a:bufname, 'vim_gita_monitor', {
+        \ 'opener': empty(config.opener)
+        \   ? g:gita#monitor#opener
+        \   : config.opener,
+        \ 'range': empty(config.range)
+        \   ? g:gita#monitor#range
+        \   : config.range,
         \})
   let w:_gita = gita
   let w:_gita_options = deepcopy(options)

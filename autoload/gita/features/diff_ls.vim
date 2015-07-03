@@ -76,6 +76,8 @@ function! gita#features#diff_ls#open(...) abort " {{{
   let enable_default_mappings = g:gita#features#diff_ls#enable_default_mappings
   let result = gita#monitor#open(bufname, options, {
         \ 'enable_default_mappings': enable_default_mappings,
+        \ 'opener': g:gita#features#diff_ls#monitor_opener,
+        \ 'range': g:gita#features#diff_ls#monitor_range,
         \})
   if result.status == -1
     " gita is not available
