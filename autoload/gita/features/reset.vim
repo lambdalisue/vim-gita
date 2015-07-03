@@ -103,6 +103,7 @@ function! gita#features#reset#exec(...) abort " {{{
         \ 'hard',
         \ 'merge',
         \ 'keep',
+        \ 'commit',
         \])
   return gita.operations.reset(options, config)
 endfunction " }}}
