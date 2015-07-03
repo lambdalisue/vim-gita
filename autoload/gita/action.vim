@@ -14,7 +14,7 @@ function! s:actions.edit(candidates, options) abort " {{{
   let gita = gita#get()
   for candidate in a:candidates
     let abspath = gita.git.get_absolute_path(candidate.path)
-    call gita#anchor#focus()
+    call gita#utils#anchor#focus()
     call gita#utils#buffer#open(abspath, '', a:options)
   endfor
 endfunction " }}}
@@ -25,7 +25,7 @@ function! s:actions.open(candidates, options) abort " {{{
   let commit = substitute(commit, '\v\.\.\.?.*$', '', '')
   let commit = substitute(commit, '\v^\.\.\.?', '', '')
   for candidate in a:candidates
-    call gita#anchor#focus()
+    call gita#utils#anchor#focus()
     call gita#features#file#show(extend(a:options, {
           \ 'file': candidate.path,
           \ 'commit': commit,
@@ -34,7 +34,7 @@ function! s:actions.open(candidates, options) abort " {{{
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
   for candidate in a:candidates
-    call gita#anchor#focus()
+    call gita#utils#anchor#focus()
     call gita#features#diff#show(extend(a:options, {
           \ '--': [candidate.path],
           \ 'commit': get(a:options, 'commit', 'INDEX'),

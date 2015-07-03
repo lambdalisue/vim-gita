@@ -20,7 +20,7 @@ endfunction " }}}
 function! s:ac_WinLeave() abort " {{{
   if get(b:, '_gita_monitor_QuitPre')
     call gita#utils#hooks#call('ac_WinLeave')
-    call gita#anchor#focus()
+    call gita#utils#anchor#focus()
   endif
   silent! unlet b:_gita_monitor_QuitPre
 endfunction " }}}
