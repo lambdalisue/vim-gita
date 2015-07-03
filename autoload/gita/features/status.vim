@@ -311,6 +311,8 @@ function! gita#features#status#open(...) abort " {{{
   let result = gita#monitor#open(
         \ s:const.bufname, get(a:000, 0, {}), {
         \ 'enable_default_mappings': enable_default_mappings,
+        \ 'opener': g:gita#features#status#monitor_opener,
+        \ 'range': g:gita#features#status#monitor_range,
         \})
   if result.status == -1
     " gita is not available

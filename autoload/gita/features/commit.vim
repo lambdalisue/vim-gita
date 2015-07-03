@@ -243,6 +243,8 @@ function! gita#features#commit#open(...) abort " {{{
   let enable_default_mappings = g:gita#features#commit#enable_default_mappings
   let result = gita#monitor#open(s:const.bufname, get(a:000, 0, {}), {
         \ 'enable_default_mappings': enable_default_mappings,
+        \ 'opener': g:gita#features#commit#monitor_opener,
+        \ 'range': g:gita#features#commit#monitor_range,
         \})
   if result.status == -1
     " gita is not available
