@@ -27,10 +27,10 @@ let s:default_config = {
       \ 'debug': 0,
       \ 'invalid_buftype_pattern': '^\%(quickfix\|help\)$',
       \ 'invalid_filetype_pattern': '',
-      \ 'logging#logfile': expand('~/.gita/logfile.log'),
-      \ 'logging#loglevel': s:LOGLEVEL.WARNING,
-      \ 'anchor#unsuitable_bufname_pattern': '',
-      \ 'anchor#unsuitable_filetype_pattern': printf(
+      \ 'utils#logging#logfile': expand('~/.gita/logfile.log'),
+      \ 'utils#logging#loglevel': s:LOGLEVEL.WARNING,
+      \ 'utils#anchor#unsuitable_bufname_pattern': '',
+      \ 'utils#anchor#unsuitable_filetype_pattern': printf(
       \   '^\%%(%s\)', join([
       \     'gita-status',
       \     'gita-commit',
