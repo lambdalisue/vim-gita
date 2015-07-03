@@ -28,7 +28,7 @@ endfunction " }}}
 function! gita#monitor#open(bufname, ...) abort  " {{{
   let gita = gita#get()
   if gita.fail_on_disabled()
-    return { 'status': -1 }
+    return { 'status': -1, 'constructed': 0 }
   endif
   let options = extend(
         \ get(w:, '_gita_options', {}),
@@ -56,7 +56,8 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
 
   if get(b:, '_gita_constructed') && !g:gita#debug
     return {
-          \ 'status': 1,
+          \ 'status': 0,
+          \ 'constructed': 1,
           \ 'loaded': result.loaded,
           \ 'bufnum': result.bufnum,
           \}
@@ -73,6 +74,7 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
 
   return {
         \ 'status': 0,
+        \ 'constructed': 0,
         \ 'loaded': result.loaded,
         \ 'bufnum': result.bufnum,
         \}

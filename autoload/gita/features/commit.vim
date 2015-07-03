@@ -244,24 +244,24 @@ function! gita#features#commit#open(...) abort " {{{
         \ 'opener': g:gita#features#commit#monitor_opener,
         \ 'range': g:gita#features#commit#monitor_range,
         \})
-  if result.status == -1
+  if result.status
     " gita is not available
     return
-  elseif result.status == 1
-    " the buffer is already constructed
+  elseif result.constructed
+    " the buffer has been constructed, mean that the further construction
+    " is not required.
     call gita#features#commit#update({}, { 'force_update': result.loaded })
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#action#extend_actions(s:actions)
-  call gita#utils#hooks#register('ac_WinLeave', function('s:ac_WinLeave'))
 
   setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
   augroup END
-
+  call gita#utils#hooks#register('ac_WinLeave', function('s:ac_WinLeave'))
+  call gita#action#extend_actions(s:actions)
   call gita#features#commit#define_mappings()
   if g:gita#features#commit#enable_default_mappings
     call gita#features#commit#define_default_mappings()
