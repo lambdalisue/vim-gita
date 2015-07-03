@@ -307,10 +307,8 @@ function! gita#features#status#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
-  let enable_default_mappings = g:gita#features#status#enable_default_mappings
   let result = gita#monitor#open(
         \ s:const.bufname, get(a:000, 0, {}), {
-        \ 'enable_default_mappings': enable_default_mappings,
         \ 'opener': g:gita#features#status#monitor_opener,
         \ 'range': g:gita#features#status#monitor_range,
         \})
@@ -325,10 +323,56 @@ function! gita#features#status#open(...) abort " {{{
   endif
   call gita#action#extend_actions(s:actions)
 
-  " Define loccal options
   setlocal nomodifiable readonly
 
-  " Define extra Plug key mappings
+  call gita#features#status#define_mappings()
+  if g:gita#features#status#enable_default_mappings
+    call gita#features#status#define_default_mappings()
+  endif
+
+  call gita#features#status#update({}, { 'force_update': 1 })
+  silent execute printf("setlocal filetype=%s", s:const.filetype)
+endfunction " }}}
+function! gita#features#status#update(...) abort " {{{
+  let options = extend(
+        \ deepcopy(w:_gita_options),
+        \ get(a:000, 0, {}),
+        \)
+  let options.porcelain = 1
+  let config = get(a:000, 1, {})
+  let result = gita#features#status#exec_cached(options, extend({
+        \ 'echo': 'fail',
+        \}, config))
+  if result.status != 0
+    bwipe
+    return
+  endif
+  let statuses = s:S.parse(result.stdout)
+  let gita = gita#get()
+
+  " create statuses lines & map
+  let statuses_map = {}
+  let statuses_lines = []
+  for status in statuses.all
+    call add(statuses_lines, status.record)
+    let statuses_map[status.record] = status
+  endfor
+  let w:_gita_statuses_map = statuses_map
+
+  " update content
+  let buflines = s:L.flatten([
+        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ gita#utils#help#get('status_mapping'),
+        \ gita#utils#help#get('short_format'),
+        \ s:get_status_header(gita),
+        \ statuses_lines,
+        \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
+        \])
+  call gita#utils#buffer#update(buflines)
+endfunction " }}}
+function! gita#features#status#define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+
   noremap <silent><buffer> <Plug>(gita-action-help-m)
         \ :<C-u>call gita#action#exec('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
@@ -376,100 +420,61 @@ function! gita#features#status#open(...) abort " {{{
         \ :call gita#action#exec('solve', { 'way': 3 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-v)
         \ :call gita#action#exec('solve', { 'way': 3, 'vertical': 1 })<CR>
-
-  " Define extra actual key mappings
-  if enable_default_mappings
-    nmap <buffer> <C-l> <Plug>(gita-action-update)
-    nmap <buffer> ?m    <Plug>(gita-action-help-m)
-    nmap <buffer> cc    <Plug>(gita-action-switch)
-    nmap <buffer> cC    <Plug>(gita-action-switch-new)
-    nmap <buffer> cA    <Plug>(gita-action-switch-amend)
-
-    " conflict solve
-    nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-v)')
-    nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-h)')
-    nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
-
-    nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-solve3-v)')
-    nmap <buffer><expr> sH <SID>smart_map('sH', '<Plug>(gita-action-solve3-h)')
-    nmap <buffer><expr> sV <SID>smart_map('sV', '<Plug>(gita-action-solve3-v)')
-    nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-v)')
-    nmap <buffer><expr> SH <SID>smart_map('SH', '<Plug>(gita-action-solve3-h)')
-    nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
-
-    " operations
-    nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
-    nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
-    nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
-    nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
-
-    " raw operations
-    nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
-    nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
-    nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
-    nmap <buffer><expr> -d <SID>smart_map('-d', '<Plug>(gita-action-rm)')
-    nmap <buffer><expr> -D <SID>smart_map('-D', '<Plug>(gita-action-RM)')
-    nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
-    nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
-    nmap <buffer><expr> -o <SID>smart_map('-o', '<Plug>(gita-action-checkout-ours)')
-    nmap <buffer><expr> -t <SID>smart_map('-t', '<Plug>(gita-action-checkout-theirs)')
-
-    " operations (range)
-    vmap <buffer> << <Plug>(gita-action-stage)
-    vmap <buffer> >> <Plug>(gita-action-unstage)
-    vmap <buffer> -- <Plug>(gita-action-toggle)
-    vmap <buffer> == <Plug>(gita-action-discard)
-
-    " raw operations (range)
-    vmap <buffer> -a <Plug>(gita-action-add)
-    vmap <buffer> -A <Plug>(gita-action-ADD)
-    vmap <buffer> -r <Plug>(gita-action-reset)
-    vmap <buffer> -d <Plug>(gita-action-rm)
-    vmap <buffer> -D <Plug>(gita-action-RM)
-    vmap <buffer> -c <Plug>(gita-action-checkout)
-    vmap <buffer> -C <Plug>(gita-action-CHECKOUT)
-    vmap <buffer> -o <Plug>(gita-action-checkout-ours)
-    vmap <buffer> -t <Plug>(gita-action-checkout-theirs)
-  endif
-  call gita#features#status#update({}, { 'force_update': 1 })
-  silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
-function! gita#features#status#update(...) abort " {{{
-  let options = extend(
-        \ deepcopy(w:_gita_options),
-        \ get(a:000, 0, {}),
-        \)
-  let options.porcelain = 1
-  let config = get(a:000, 1, {})
-  let result = gita#features#status#exec_cached(options, extend({
-        \ 'echo': 'fail',
-        \}, config))
-  if result.status != 0
-    bwipe
-    return
-  endif
-  let statuses = s:S.parse(result.stdout)
-  let gita = gita#get()
+function! gita#features#status#define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
 
-  " create statuses lines & map
-  let statuses_map = {}
-  let statuses_lines = []
-  for status in statuses.all
-    call add(statuses_lines, status.record)
-    let statuses_map[status.record] = status
-  endfor
-  let w:_gita_statuses_map = statuses_map
+  nmap <buffer> <C-l> <Plug>(gita-action-update)
+  nmap <buffer> ?m    <Plug>(gita-action-help-m)
+  nmap <buffer> cc    <Plug>(gita-action-switch)
+  nmap <buffer> cC    <Plug>(gita-action-switch-new)
+  nmap <buffer> cA    <Plug>(gita-action-switch-amend)
 
-  " update content
-  let buflines = s:L.flatten([
-        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
-        \ gita#utils#help#get('status_mapping'),
-        \ gita#utils#help#get('short_format'),
-        \ s:get_status_header(gita),
-        \ statuses_lines,
-        \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
-        \])
-  call gita#utils#buffer#update(buflines)
+  " conflict solve
+  nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-v)')
+  nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-h)')
+  nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
+
+  nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-solve3-v)')
+  nmap <buffer><expr> sH <SID>smart_map('sH', '<Plug>(gita-action-solve3-h)')
+  nmap <buffer><expr> sV <SID>smart_map('sV', '<Plug>(gita-action-solve3-v)')
+  nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-v)')
+  nmap <buffer><expr> SH <SID>smart_map('SH', '<Plug>(gita-action-solve3-h)')
+  nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
+
+  " operations
+  nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
+  nmap <buffer><expr> >> <SID>smart_map('>>', '<Plug>(gita-action-unstage)')
+  nmap <buffer><expr> -- <SID>smart_map('--', '<Plug>(gita-action-toggle)')
+  nmap <buffer><expr> == <SID>smart_map('==', '<Plug>(gita-action-discard)')
+
+  " raw operations
+  nmap <buffer><expr> -a <SID>smart_map('-a', '<Plug>(gita-action-add)')
+  nmap <buffer><expr> -A <SID>smart_map('-A', '<Plug>(gita-action-ADD)')
+  nmap <buffer><expr> -r <SID>smart_map('-r', '<Plug>(gita-action-reset)')
+  nmap <buffer><expr> -d <SID>smart_map('-d', '<Plug>(gita-action-rm)')
+  nmap <buffer><expr> -D <SID>smart_map('-D', '<Plug>(gita-action-RM)')
+  nmap <buffer><expr> -c <SID>smart_map('-c', '<Plug>(gita-action-checkout)')
+  nmap <buffer><expr> -C <SID>smart_map('-C', '<Plug>(gita-action-CHECKOUT)')
+  nmap <buffer><expr> -o <SID>smart_map('-o', '<Plug>(gita-action-checkout-ours)')
+  nmap <buffer><expr> -t <SID>smart_map('-t', '<Plug>(gita-action-checkout-theirs)')
+
+  " operations (range)
+  vmap <buffer> << <Plug>(gita-action-stage)
+  vmap <buffer> >> <Plug>(gita-action-unstage)
+  vmap <buffer> -- <Plug>(gita-action-toggle)
+  vmap <buffer> == <Plug>(gita-action-discard)
+
+  " raw operations (range)
+  vmap <buffer> -a <Plug>(gita-action-add)
+  vmap <buffer> -A <Plug>(gita-action-ADD)
+  vmap <buffer> -r <Plug>(gita-action-reset)
+  vmap <buffer> -d <Plug>(gita-action-rm)
+  vmap <buffer> -D <Plug>(gita-action-RM)
+  vmap <buffer> -c <Plug>(gita-action-checkout)
+  vmap <buffer> -C <Plug>(gita-action-CHECKOUT)
+  vmap <buffer> -o <Plug>(gita-action-checkout-ours)
+  vmap <buffer> -t <Plug>(gita-action-checkout-theirs)
 endfunction " }}}
 function! gita#features#status#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))

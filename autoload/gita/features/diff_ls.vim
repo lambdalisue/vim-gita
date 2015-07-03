@@ -73,9 +73,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
   endif
 
   let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
-  let enable_default_mappings = g:gita#features#diff_ls#enable_default_mappings
   let result = gita#monitor#open(bufname, options, {
-        \ 'enable_default_mappings': enable_default_mappings,
         \ 'opener': g:gita#features#diff_ls#monitor_opener,
         \ 'range': g:gita#features#diff_ls#monitor_range,
         \})
@@ -90,18 +88,11 @@ function! gita#features#diff_ls#open(...) abort " {{{
   endif
   call gita#action#extend_actions(s:actions)
 
-  " Define loccal options
   setlocal nomodifiable readonly
 
-  noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'diff_ls_mapping' })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#action#exec('update')<CR>
-
-  " Define extra actual key mappings
-  if enable_default_mappings
-    nmap <buffer> <C-l> <Plug>(gita-action-update)
-    nmap <buffer> ?m    <Plug>(gita-action-help-m)
+  call gita#features#diff_ls#define_mappings()
+  if g:gita#features#diff_ls#enable_default_mappings
+    call gita#features#diff_ls#define_default_mappings()
   endif
 
   call gita#features#diff_ls#update({}, { 'force_update': 1 })
@@ -144,6 +135,20 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \ statuses_lines,
         \])
   call gita#utils#buffer#update(buflines)
+endfunction " }}}
+function! gita#features#diff_ls#define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+
+  noremap <silent><buffer> <Plug>(gita-action-help-m)
+        \ :<C-u>call gita#action#exec('help', { 'name': 'diff_ls_mapping' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-update)
+        \ :<C-u>call gita#action#exec('update')<CR>
+endfunction " }}}
+function! gita#features#diff_ls#define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
+
+  nmap <buffer> <C-l> <Plug>(gita-action-update)
+  nmap <buffer> ?m    <Plug>(gita-action-help-m)
 endfunction " }}}
 function! gita#features#diff_ls#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))

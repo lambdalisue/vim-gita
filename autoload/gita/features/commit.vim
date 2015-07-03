@@ -240,9 +240,7 @@ function! gita#features#commit#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
-  let enable_default_mappings = g:gita#features#commit#enable_default_mappings
   let result = gita#monitor#open(s:const.bufname, get(a:000, 0, {}), {
-        \ 'enable_default_mappings': enable_default_mappings,
         \ 'opener': g:gita#features#commit#monitor_opener,
         \ 'range': g:gita#features#commit#monitor_range,
         \})
@@ -264,25 +262,11 @@ function! gita#features#commit#open(...) abort " {{{
     autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
   augroup END
 
-  " Define extra Plug key mappings
-  noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'commit_mapping' })<CR>
-
-  noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#action#exec('update')<CR>
-
-  noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#action#exec('open_status')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-commit)
-        \ :<C-u>call gita#action#exec('commit')<CR>
-
-  " Define extra actual key mappings
-  if enable_default_mappings
-    nmap <buffer> <C-l> <Plug>(gita-action-update)
-
-    nmap <buffer> cc <Plug>(gita-action-switch)
-    nmap <buffer> CC <Plug>(gita-action-commit)
+  call gita#features#commit#define_mappings()
+  if g:gita#features#commit#enable_default_mappings
+    call gita#features#commit#define_default_mappings()
   endif
+
   call gita#features#commit#update({}, { 'force_update': 1 })
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
@@ -361,6 +345,28 @@ function! gita#features#commit#update(...) abort " {{{
   if modified_reserved
     setlocal modified
   endif
+endfunction " }}}
+function! gita#features#commit#define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+
+  noremap <silent><buffer> <Plug>(gita-action-help-m)
+        \ :<C-u>call gita#action#exec('help', { 'name': 'commit_mapping' })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-update)
+        \ :<C-u>call gita#action#exec('update')<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-switch)
+        \ :<C-u>call gita#action#exec('open_status')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-commit)
+        \ :<C-u>call gita#action#exec('commit')<CR>
+endfunction " }}}
+function! gita#features#commit#define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
+
+  nmap <buffer> <C-l> <Plug>(gita-action-update)
+
+  nmap <buffer> cc <Plug>(gita-action-switch)
+  nmap <buffer> CC <Plug>(gita-action-commit)
 endfunction " }}}
 function! gita#features#commit#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
