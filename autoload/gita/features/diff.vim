@@ -7,7 +7,7 @@ let s:D = gita#utils#import('Data.Dict')
 let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
-let s:logger = gita#logging#of(expand('<sfile>'))
+let s:logger = gita#utils#logging#of(expand('<sfile>'))
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')
