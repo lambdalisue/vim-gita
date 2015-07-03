@@ -25,6 +25,8 @@ command! -nargs=? -range -bang
 
 let s:default_config = {
       \ 'debug': 0,
+      \ 'invalid_buftype_pattern': '^\%(quickfix\|help\)$',
+      \ 'invalid_filetype_pattern': '',
       \ 'logging#logfile': expand('~/.gita/logfile.log'),
       \ 'logging#loglevel': s:LOGLEVEL.WARNING,
       \ 'anchor#unsuitable_bufname_pattern': '',

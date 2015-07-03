@@ -192,7 +192,8 @@ function! gita#utils#doautocmd(name) abort " {{{
   endif
 endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
-  " prefer 'b:_gita_original_filename'
+  " Note:
+  " this function is also used in gita#get thus it should not call that.
   return getbufvar(a:expr, '_gita_original_filename', expand(a:expr))
 endfunction " }}}
 
