@@ -27,7 +27,7 @@ let s:preset = {
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
 
-let s:logger = gita#utils#logging#of(expand('<sfile>'))
+let s:logger = gita#utils#logging#get_logger(expand('<sfile>'))
 
 function! gita#statusline#get(...) abort " {{{
   let expr = get(a:000, 0, '%')

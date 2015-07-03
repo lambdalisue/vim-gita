@@ -76,7 +76,7 @@ function! s:logger.emit(record) abort
   if !isdirectory(dirname)
     call mkdir(dirname, 'p')
   endif
-  call s:F.writefile(
+  call s:M.writefile(
         \ split(a:record, '\v\r?\n'),
         \ fname,
         \ 'a',
@@ -119,7 +119,7 @@ endfunction
 function! s:_vital_loaded(V) dict abort
   let s:V = a:V
   let s:D = a:V.import('Data.Dict')
-  let s:F = a:V.import('System.File')
+  let s:M = a:V.import('Vim.Compat')
   let s:P = a:V.import('System.Filepath')
   let s:C = a:V.import('System.Cache.Memory').new()
   " Export several variables
@@ -137,7 +137,7 @@ function! s:_vital_loaded(V) dict abort
         \}
   let s:config = deepcopy(s:default_config)
   " Create a root logger
-  let logger = s:_new('.', s:logger)
+  let logger = s:_new_logger('.', s:logger)
   let logger.NOTSET   = s:NOTSET
   let logger.DEBUG    = s:DEBUG
   let logger.INFO     = s:INFO
@@ -152,7 +152,7 @@ endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Data.Dict',
-        \ 'System.File',
+        \ 'Vim.Compat',
         \ 'System.Filepath',
         \ 'System.Cache.Memory',
         \]
@@ -160,7 +160,7 @@ endfunction
 
 function! s:get_default_logfile() abort
   let name = substitute(
-        \ fnamemodify(s:sfile, ':h:h:t'),
+        \ s:V.version(),
         \ '^_', '', '',
         \)
   " TODO Consider about Windows
@@ -201,7 +201,7 @@ function! s:get_name(name) abort
   return empty(name) ? '.' : name
 endfunction
 
-function! s:_new(name, parent) abort
+function! s:_new_logger(name, parent) abort
   let base = s:D.omit(a:parent, [
         \ '__logfile__',
         \ '__loglevel__',
@@ -216,13 +216,13 @@ function! s:_new(name, parent) abort
   return logger
 endfunction
 
-function! s:of(...) abort
+function! s:get_logger(...) abort
   let name = s:get_name(get(a:000, 0, '.'))
   if s:C.has(name)
     return s:C.get(name)
   endif
-  let parent = s:of(fnamemodify(name, ':h'))
-  return s:_new(name, parent)
+  let parent = s:get_logger(fnamemodify(name, ':h'))
+  return s:_new_logger(name, parent)
 endfunction
 
 

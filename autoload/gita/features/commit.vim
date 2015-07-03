@@ -8,7 +8,7 @@ let s:F = gita#utils#import('System.File')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
-let s:logger = gita#utils#logging#of(expand('<sfile>'))
+let s:logger = gita#utils#logging#get_logger(expand('<sfile>'))
 
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
