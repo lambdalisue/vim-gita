@@ -4,11 +4,10 @@ set cpo&vim
 function! s:smart_map(...) abort " {{{
   return call('gita#action#smart_map', a:000)
 endfunction " }}}
-function! s:get_statuses_within(start, end) abort " {{{
-  let statuses_map = get(w:, '_gita_statuses_map', {})
+function! s:get_statuses(start, end) abort " {{{
   let statuses = []
   for n in range(a:start, a:end)
-    let status = get(statuses_map, getline(n), {})
+    let status = get(w:_gita_statuses_map, getline(n), {})
     if !empty(status)
       call add(statuses, status)
     endif
@@ -16,19 +15,17 @@ function! s:get_statuses_within(start, end) abort " {{{
   return statuses
 endfunction " }}}
 function! s:ac_QuitPre() abort " {{{
-  let b:_gita_QuitPre = 1
+  let b:_gita_monitor_QuitPre = 1
 endfunction " }}}
 function! s:ac_WinLeave() abort " {{{
-  if get(b:, '_gita_QuitPre')
-    unlet! b:_gita_QuitPre
-    let hooks = b:_gita_hooks
-    call hooks.call('ac_WinLeave_pre')
+  if get(b:, '_gita_monitor_QuitPre')
+    call gita#utils#hooks#call('ac_WinLeave')
     call gita#anchor#focus()
-    call hooks.call('ac_WinLeave_post')
   endif
+  silent! unlet b:_gita_monitor_QuitPre
 endfunction " }}}
 
-function! gita#display#open(bufname, ...) abort  " {{{
+function! gita#monitor#open(bufname, ...) abort  " {{{
   let gita = gita#get()
   if gita.fail_on_disabled()
     return { 'status': -1 }
@@ -37,39 +34,49 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \ get(w:, '_gita_options', {}),
         \ get(a:000, 0, {}),
         \)
-  let config = get(a:000, 1, {})
+  let config = extend({
+        \ 'enable_default_mappings': 1,
+        \}, get(a:000, 1, {}))
 
-  " open a buffer in a 'gita:display' window group
-  let open_result = gita#utils#buffer#open(a:bufname, 'vim_gita_display', {
+  " open a buffer in a 'gita:monitor' window group
+  let result = gita#utils#buffer#open(a:bufname, 'vim_gita_monitor', {
         \ 'opener': 'topleft 15 split',
         \ 'range': 'tabpage',
         \})
   let w:_gita = gita
   let w:_gita_options = deepcopy(options)
-  let b:_gita_hooks = get(b:, '_gita_hooks', gita#utils#hooks#new())
-  call gita#action#set_candidates(
-        \ function('s:get_statuses_within'),
-        \)
+  let w:_gita_statuses_map = {}
+  call gita#action#set_candidates(function('s:get_statuses'))
 
   if get(b:, '_gita_constructed') && !g:gita#debug
     return {
           \ 'status': 1,
-          \ 'loaded': open_result.loaded,
-          \ 'bufnum': open_result.bufnum,
+          \ 'loaded': result.loaded,
+          \ 'bufnum': result.bufnum,
           \}
   endif
   let b:_gita_constructed = 1
-  " construction
-  setlocal buftype=nofile noswapfile nobuflisted
+  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
   setlocal winfixwidth winfixheight
 
-  augroup vim-gita-display
+  augroup vim-gita-monitor
     autocmd! * <buffer>
     autocmd QuitPre  <buffer> call s:ac_QuitPre()
     autocmd WinLeave <buffer> call s:ac_WinLeave()
   augroup END
 
-  " Define Plug key mappings
+  call gita#monitor#define_mappings()
+  if config.enable_default_mappings
+    call gita#monitor#define_default_mappings()
+  endif
+
+  return {
+        \ 'status': 0,
+        \ 'loaded': result.loaded,
+        \ 'bufnum': result.bufnum,
+        \}
+endfunction " }}}
+function! gita#monitor#define_mappings() abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-quit)
         \ :<C-u>q<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-s)
@@ -99,40 +106,33 @@ function! gita#display#open(bufname, ...) abort  " {{{
         \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
         \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 1 })<CR>
+endfunction " }}}
+function! gita#monitor#define_default_mappings() abort " {{{
+  nmap <buffer> q     <Plug>(gita-action-quit)
+  nmap <buffer> ?s    <Plug>(gita-action-help-s)
 
-  if get(config, 'enable_default_mappings')
-    nmap <buffer> q     <Plug>(gita-action-quit)
-    nmap <buffer> ?s    <Plug>(gita-action-help-s)
+  nmap <buffer><expr> ee <SID>smart_map('ee', '<Plug>(gita-action-edit)')
+  nmap <buffer><expr> eh <SID>smart_map('eh', '<Plug>(gita-action-edit-h)')
+  nmap <buffer><expr> ev <SID>smart_map('ev', '<Plug>(gita-action-edit-v)')
+  nmap <buffer><expr> eE <SID>smart_map('eE', '<Plug>(gita-action-edit-v)')
+  nmap <buffer><expr> EE <SID>smart_map('EE', '<Plug>(gita-action-edit-v)')
 
-    nmap <buffer><expr> ee <SID>smart_map('ee', '<Plug>(gita-action-edit)')
-    nmap <buffer><expr> eh <SID>smart_map('eh', '<Plug>(gita-action-edit-h)')
-    nmap <buffer><expr> ev <SID>smart_map('ev', '<Plug>(gita-action-edit-v)')
-    nmap <buffer><expr> eE <SID>smart_map('eE', '<Plug>(gita-action-edit-v)')
-    nmap <buffer><expr> EE <SID>smart_map('EE', '<Plug>(gita-action-edit-v)')
+  nmap <buffer><expr> oo <SID>smart_map('oo', '<Plug>(gita-action-open)')
+  nmap <buffer><expr> oh <SID>smart_map('oh', '<Plug>(gita-action-open-h)')
+  nmap <buffer><expr> ov <SID>smart_map('ov', '<Plug>(gita-action-open-v)')
+  nmap <buffer><expr> oO <SID>smart_map('oO', '<Plug>(gita-action-open-v)')
+  nmap <buffer><expr> OO <SID>smart_map('OO', '<Plug>(gita-action-open-v)')
 
-    nmap <buffer><expr> oo <SID>smart_map('oo', '<Plug>(gita-action-open)')
-    nmap <buffer><expr> oh <SID>smart_map('oh', '<Plug>(gita-action-open-h)')
-    nmap <buffer><expr> ov <SID>smart_map('ov', '<Plug>(gita-action-open-v)')
-    nmap <buffer><expr> oO <SID>smart_map('oO', '<Plug>(gita-action-open-v)')
-    nmap <buffer><expr> OO <SID>smart_map('OO', '<Plug>(gita-action-open-v)')
+  nmap <buffer><expr> dd <SID>smart_map('dd', '<Plug>(gita-action-diff)')
+  nmap <buffer><expr> dh <SID>smart_map('dh', '<Plug>(gita-action-diff-h)')
+  nmap <buffer><expr> dv <SID>smart_map('dv', '<Plug>(gita-action-diff-v)')
 
-    nmap <buffer><expr> dd <SID>smart_map('dd', '<Plug>(gita-action-diff)')
-    nmap <buffer><expr> dh <SID>smart_map('dh', '<Plug>(gita-action-diff-h)')
-    nmap <buffer><expr> dv <SID>smart_map('dv', '<Plug>(gita-action-diff-v)')
-
-    nmap <buffer><expr> dD <SID>smart_map('dD', '<Plug>(gita-action-DIFF-v)')
-    nmap <buffer><expr> dH <SID>smart_map('dH', '<Plug>(gita-action-DIFF-h)')
-    nmap <buffer><expr> dV <SID>smart_map('dV', '<Plug>(gita-action-DIFF-v)')
-    nmap <buffer><expr> DD <SID>smart_map('DD', '<Plug>(gita-action-DIFF-v)')
-    nmap <buffer><expr> DH <SID>smart_map('DH', '<Plug>(gita-action-DIFF-h)')
-    nmap <buffer><expr> DV <SID>smart_map('DV', '<Plug>(gita-action-DIFF-v)')
-  endif
-
-  return {
-        \ 'status': 0,
-        \ 'loaded': open_result.loaded,
-        \ 'bufnum': open_result.bufnum,
-        \}
+  nmap <buffer><expr> dD <SID>smart_map('dD', '<Plug>(gita-action-DIFF-v)')
+  nmap <buffer><expr> dH <SID>smart_map('dH', '<Plug>(gita-action-DIFF-h)')
+  nmap <buffer><expr> dV <SID>smart_map('dV', '<Plug>(gita-action-DIFF-v)')
+  nmap <buffer><expr> DD <SID>smart_map('DD', '<Plug>(gita-action-DIFF-v)')
+  nmap <buffer><expr> DH <SID>smart_map('DH', '<Plug>(gita-action-DIFF-h)')
+  nmap <buffer><expr> DV <SID>smart_map('DV', '<Plug>(gita-action-DIFF-v)')
 endfunction " }}}
 
 
