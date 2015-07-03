@@ -13,7 +13,7 @@ function! s:gita.is_expired() abort " {{{
   let buftype = getbufvar(bufnum, '&buftype')
   if get(self, 'force_expired')
     return 1
-  elseif empty(buftype) && bufname !=# get(self, 'bufname', '')
+  elseif empty(buftype) && bufname !=# self.bufname
     return 1
   elseif !empty(buftype) && getcwd() !=# self.cwd
     return 1
@@ -32,52 +32,47 @@ function! s:gita.fail_on_disabled() abort " {{{
 endfunction " }}}
 
 function! gita#new(...) abort " {{{
-  " return a new gita instance
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
-  let buftype = getbufvar(expr, '&l:buftype')
-  if buftype =~# '^%\(quickfix\|help\)$'
-    " disable Gita in vim's special window
-    return { 'enabled': 0 }
-  elseif empty(buftype) && !empty(bufname)
-    let git = s:G.find(fnamemodify(bufname, ':p'))
-    if empty(git)
-      let git = s:G.find(resolve(gita#utils#expand(expr)))
-    endif
-  elseif !buflisted(bufname) && filereadable(gita#utils#expand(expr))
-    let git = s:G.find(fnamemodify(gita#utils#expand(expr), ':p'))
-    if empty(git)
-      let git = s:G.find(resolve(gita#utils#expand(expr)))
-    endif
-  elseif getbufvar(expr, '_gita_original_filename')
-    let git = s:G.find(fnamemodify(getbufvar(expr, '_gita_original_filename'), ':p'))
+  let btype = getbufvar(expr, '&l:buftype')
+  let ftype = getbufvar(expr, '&l:filetype')
+  let filename = gita#utils#expand(expr)
+  if !empty(g:gita#invalid_buftype_pattern) && btype =~# g:gita#invalid_buftype_pattern
+    let git = {}
+  elseif !empty(g:gita#invalid_filetype_pattern) && ftype =~# g:gita#invalid_filetype_pattern
+    let git = {}
+  elseif filereadable(filename)
+    " to follow '_gita_original_filename', use 'expr' and 'gita#utils#expand'
+    " instead of guess from bufname
+    let git = s:G.find(filename)
+    let git = empty(git)
+          \ ? s:G.find(resolve(filename))
+          \ : git
   else
-    " Non file buffer. Use a current working directory instead.
-    let git = s:G.find(fnamemodify(getcwd(), ':p'))
+    let git = s:G.find(getcwd())
   endif
   let gita = extend(deepcopy(s:gita), {
-        \ 'enabled': !empty(git),
-        \ 'bufname': bufname,
-        \ 'bufnum':  bufnr('%'),
-        \ 'cwd':     getcwd(),
-        \ 'git':     git,
+        \ 'enabled':  !empty(git),
+        \ 'filename': filename,
+        \ 'bufname':  bufname,
+        \ 'bufnum':   bufnr(expr),
+        \ 'cwd':      getcwd(),
+        \ 'git':      git,
         \})
   let gita.operations = gita#operations#new(gita)
-  call setbufvar(expr, '_gita', gita)
+  if getwinvar(bufwinnr(expr), '_gita')
+    call setwinvar(bufwinnr(expr), '_gita', gita)
+  else
+    call setbufvar(expr, '_gita', gita)
+  endif
   return gita
 endfunction " }}}
 function! gita#get(...) abort " {{{
-  " return a cached or new gita instance
   let expr = get(a:000, 0, '%')
-  let bufnum = bufnr(expr)
-  if getbufvar(bufnum, '&l:buftype') =~# '^\%(quickfix\|help\)$'
-    " disable Gita in vim's special window AS SOON AS POSSIBLE
-    return { 'enabled': 0 }
-  endif
-  let gita = getwinvar(bufwinnr(bufnum), '_gita', {})
-  if empty(gita)
-    let gita = getbufvar(bufnum, '_gita', {})
-  endif
+  let gita = getwinvar(bufwinnr(expr), '_gita', {})
+  let gita = empty(gita)
+        \ ? getbufvar(expr, '_gita', {})
+        \ : gita
   if !empty(gita) && !gita.is_expired()
     return gita
   endif
