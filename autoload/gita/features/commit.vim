@@ -165,6 +165,11 @@ function! s:ac_BufWriteCmd() abort " {{{
           \)
   endif
 endfunction " }}}
+function! s:ac_WinLeave() abort
+  if !&modified && gita#utils#asktf('Do you want to commit changes?', 'y')
+    call s:commit('%', {})
+  endif
+endfunction
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
@@ -236,7 +241,7 @@ function! gita#features#commit#exec_cached(...) abort " {{{
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
   let enable_default_mappings = g:gita#features#commit#enable_default_mappings
-  let result = gita#display#open(s:const.bufname, get(a:000, 0, {}), {
+  let result = gita#monitor#open(s:const.bufname, get(a:000, 0, {}), {
         \ 'enable_default_mappings': enable_default_mappings,
         \})
   if result.status == -1
@@ -249,15 +254,8 @@ function! gita#features#commit#open(...) abort " {{{
     return
   endif
   call gita#action#extend_actions(s:actions)
+  call gita#utils#hooks#register('ac_WinLeave', function('s:ac_WinLeave'))
 
-  " Define hooks
-  function! b:_gita_hooks.ac_WinLeave_pre() abort
-    if !&modified && gita#utils#asktf('Do you want to commit changes?', 'y')
-      call s:commit('%', {})
-    endif
-  endfunction
-
-  " Define options and extra AutoCmd
   setlocal buftype=acwrite
   augroup vim-gita-commit-window
     autocmd! * <buffer>

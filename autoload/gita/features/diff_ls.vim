@@ -74,7 +74,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
 
   let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
   let enable_default_mappings = g:gita#features#diff_ls#enable_default_mappings
-  let result = gita#display#open(bufname, options, {
+  let result = gita#monitor#open(bufname, options, {
         \ 'enable_default_mappings': enable_default_mappings,
         \})
   if result.status == -1

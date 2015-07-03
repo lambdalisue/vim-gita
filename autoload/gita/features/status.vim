@@ -308,7 +308,7 @@ function! gita#features#status#exec_cached(...) abort " {{{
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
   let enable_default_mappings = g:gita#features#status#enable_default_mappings
-  let result = gita#display#open(
+  let result = gita#monitor#open(
         \ s:const.bufname, get(a:000, 0, {}), {
         \ 'enable_default_mappings': enable_default_mappings,
         \})
