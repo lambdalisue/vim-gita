@@ -85,7 +85,7 @@ function! s:get_status_header(gita) abort " {{{
   return lines
 endfunction " }}}
 function! s:smart_map(...) abort " {{{
-  return call('gita#display#smart_map', a:000)
+  return call('gita#action#smart_map', a:000)
 endfunction " }}}
 
 let s:actions = {}
@@ -321,59 +321,59 @@ function! gita#features#status#open(...) abort " {{{
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#display#extend_actions(s:actions)
+  call gita#action#extend_actions(s:actions)
 
   " Define loccal options
   setlocal nomodifiable readonly
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#display#action('help', { 'name': 'status_mapping' })<CR>
+        \ :<C-u>call gita#action#exec('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#display#action('update')<CR>
+        \ :<C-u>call gita#action#exec('update')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#display#action('open_commit')<CR>
+        \ :<C-u>call gita#action#exec('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-new)
-        \ :<C-u>call gita#display#action('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
+        \ :<C-u>call gita#action#exec('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
-        \ :<C-u>call gita#display#action('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
+        \ :<C-u>call gita#action#exec('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-add)
-        \ :call gita#display#action('add')<CR>
+        \ :call gita#action#exec('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
-        \ :call gita#display#action('add', { 'force': 1 })<CR>
+        \ :call gita#action#exec('add', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-rm)
-        \ :call gita#display#action('rm')<CR>
+        \ :call gita#action#exec('rm')<CR>
   noremap <silent><buffer> <Plug>(gita-action-RM)
-        \ :call gita#display#action('rm', { 'force': 1 })<CR>
+        \ :call gita#action#exec('rm', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-reset)
-        \ :call gita#display#action('reset')<CR>
+        \ :call gita#action#exec('reset')<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout)
-        \ :call gita#display#action('checkout')<CR>
+        \ :call gita#action#exec('checkout')<CR>
   noremap <silent><buffer> <Plug>(gita-action-CHECKOUT)
-        \ :call gita#display#action('checkout', { 'force': 1 })<CR>
+        \ :call gita#action#exec('checkout', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-ours)
-        \ :call gita#display#action('checkout', { 'ours': 1 })<CR>
+        \ :call gita#action#exec('checkout', { 'ours': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-theirs)
-        \ :call gita#display#action('checkout', { 'theirs': 1 })<CR>
+        \ :call gita#action#exec('checkout', { 'theirs': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-stage)
-        \ :call gita#display#action('stage')<CR>
+        \ :call gita#action#exec('stage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-unstage)
-        \ :call gita#display#action('unstage')<CR>
+        \ :call gita#action#exec('unstage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-toggle)
-        \ :call gita#display#action('toggle')<CR>
+        \ :call gita#action#exec('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
-        \ :call gita#display#action('discard')<CR>
+        \ :call gita#action#exec('discard')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-solve2-h)
-        \ :call gita#display#action('solve', { 'way': 2 })<CR>
+        \ :call gita#action#exec('solve', { 'way': 2 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve2-v)
-        \ :call gita#display#action('solve', { 'way': 2, 'vertical': 1 })<CR>
+        \ :call gita#action#exec('solve', { 'way': 2, 'vertical': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-h)
-        \ :call gita#display#action('solve', { 'way': 3 })<CR>
+        \ :call gita#action#exec('solve', { 'way': 3 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-v)
-        \ :call gita#display#action('solve', { 'way': 3, 'vertical': 1 })<CR>
+        \ :call gita#action#exec('solve', { 'way': 3, 'vertical': 1 })<CR>
 
   " Define extra actual key mappings
   if enable_default_mappings

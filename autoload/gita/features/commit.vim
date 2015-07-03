@@ -46,7 +46,7 @@ call s:parser.add_argument(
 " TODO: Add more arguments
 
 function! s:smart_map(...) abort " {{{
-  return call('gita#display#smart_map', a:000)
+  return call('gita#action#smart_map', a:000)
 endfunction " }}}
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
@@ -248,7 +248,7 @@ function! gita#features#commit#open(...) abort " {{{
     silent execute printf("setlocal filetype=%s", s:const.filetype)
     return
   endif
-  call gita#display#extend_actions(s:actions)
+  call gita#action#extend_actions(s:actions)
 
   " Define hooks
   function! b:_gita_hooks.ac_WinLeave_pre() abort
@@ -266,15 +266,15 @@ function! gita#features#commit#open(...) abort " {{{
 
   " Define extra Plug key mappings
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#display#action('help', { 'name': 'commit_mapping' })<CR>
+        \ :<C-u>call gita#action#exec('help', { 'name': 'commit_mapping' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#display#action('update')<CR>
+        \ :<C-u>call gita#action#exec('update')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#display#action('open_status')<CR>
+        \ :<C-u>call gita#action#exec('open_status')<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit)
-        \ :<C-u>call gita#display#action('commit')<CR>
+        \ :<C-u>call gita#action#exec('commit')<CR>
 
   " Define extra actual key mappings
   if enable_default_mappings
