@@ -93,13 +93,13 @@ function! s:diff(...) abort " {{{
 
   if len(get(options, '--', [])) == 1
     let DIFF_bufname = gita#utils#buffer#bufname(
+          \ options.commit,
           \ printf('%s.diff', options['--'][0]),
-          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   else
     let DIFF_bufname = gita#utils#buffer#bufname(
+          \ options.commit,
           \ 'diff',
-          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   endif
   let DIFF = split(result.stdout, '\v\r?\n')
@@ -174,8 +174,8 @@ function! s:compare(...) abort " {{{
     let COMMIT1_bufname = options.file
   else
     let COMMIT1_bufname = gita#utils#buffer#bufname(
+          \ commit1_display,
           \ options.file,
-          \ has('unix') ? commit1_display : substitute(commit1_display, ':', '-', 'g'),
           \)
   endif
   " commit2
@@ -191,8 +191,8 @@ function! s:compare(...) abort " {{{
     let COMMIT2_bufname = options.file
   else
     let COMMIT2_bufname = gita#utils#buffer#bufname(
+          \ commit2_display,
           \ options.file,
-          \ has('unix') ? commit2_display : substitute(commit2_display, ':', '-', 'g'),
           \)
   endif
 

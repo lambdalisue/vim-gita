@@ -59,12 +59,12 @@ function! s:solve2(...) abort " {{{
   endif
 
   let MERGE_bufname = gita#utils#buffer#bufname(
-        \ relpath,
         \ 'MERGE',
+        \ relpath,
         \)
   let REMOTE_bufname = gita#utils#buffer#bufname(
-        \ relpath,
         \ 'REMOTE',
+        \ relpath,
         \)
   let bufnums = gita#utils#buffer#open2(
         \ MERGE_bufname, REMOTE_bufname, 'conflict_diff2', {
@@ -123,16 +123,16 @@ function! s:solve3(...) abort " {{{
 
   " Create a buffer names of LOCAL, REMOTE
   let MERGE_bufname = gita#utils#buffer#bufname(
-        \ relpath,
         \ 'MERGE',
+        \ relpath,
         \)
   let LOCAL_bufname = gita#utils#buffer#bufname(
-        \ relpath,
         \ 'LOCAL',
+        \ relpath,
         \)
   let REMOTE_bufname = gita#utils#buffer#bufname(
-        \ relpath,
         \ 'REMOTE',
+        \ relpath,
         \)
 
   let bufnums = gita#utils#buffer#open3(

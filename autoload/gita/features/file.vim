@@ -180,8 +180,8 @@ function! gita#features#file#exec(...) abort " {{{
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
   let options = get(a:000, 0, {})
-  call s:ensure_file_options(options)
-  call s:ensure_commit_options(options)
+  call s:ensure_file_option(options)
+  call s:ensure_commit_option(options)
 
   let result = gita#features#file#exec(options, {
         \ 'echo': 'fail',
@@ -195,8 +195,8 @@ function! gita#features#file#show(...) abort " {{{
     let bufname = options.file
   else
     let bufname = gita#utils#buffer#bufname(
+          \ options.commit,
           \ options.file,
-          \ has('unix') ? options.commit : substitute(options.commit, ':', '-', 'g'),
           \)
   endif
   let opener = get(options, 'opener', 'edit')
