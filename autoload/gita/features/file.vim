@@ -5,10 +5,15 @@ let s:A = gita#utils#import('ArgumentParser')
 
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
+  let leading = matchstr(a:arglead, '^.*\.\.\.')
+  let arglead = substitute(a:arglead, '^.*\.\.\.', '', '')
   let candidates = call('gita#utils#completes#complete_local_branch', extend(
-        \ [a:arglead, a:cmdline, a:cursorpos], a:000,
+        \ [arglead, a:cmdline, a:cursorpos],
+        \ a:000,
         \))
-  return extend(['WORKTREE', 'INDEX', 'HEAD', 'FORK:master'], candidates)
+  let candidates = extend(['WORKTREE', 'INDEX', 'HEAD', 'FORK:master'], candidates)
+  let candidates = map(candidates, 'leading . v:val')
+  return candidates
 endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] file',
@@ -17,9 +22,9 @@ let s:parser = s:A.new({
 call s:parser.add_argument(
       \ 'commit', [
       \   'A Gita specialized commit-ish which you want to show. The followings are Gita special terms:',
-      \   'WORKTREE      it show the content of the current working tree.',
-      \   'INDEX         it show the content of the current index (staging area for next commit).',
-      \   'FORK:<commit> it show the content of the fork point from <commit>.',
+      \   'WORKTREE  it show the content of the current working tree.',
+      \   'INDEX  it show the content of the current index (staging area for next commit).',
+      \   '<commit>...<commit>  it show the content of the fork point between <commit>.',
       \ ], {
       \   'complete': function('s:complete_commit'),
       \})
@@ -94,7 +99,7 @@ function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
     let gita = gita#get()
     let commit = gita#utils#ask(
-          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, FORK:master, master, etc.) ',
+          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master..., master, etc.) ',
           \ get(gita.meta, 'revision', 'INDEX'),
           \)
     if empty(commit)
@@ -107,29 +112,33 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:translate_fork_commit(commit, ...) abort " {{{
+function! s:translate_commit(commit, ...) abort " {{{
   let config = extend({
         \ 'echo': 'both',
         \}, get(a:000, 0, {}))
-  let ref = matchstr(a:commit, '^FORK:\zs.*$')
-  let result = gita.operations.merge_base({
-        \ 'fork_point': ref,
-        \}, {
-        \ 'echo': '',
-        \})
-  if result.status
-    if config.echo =~# '^\%(both\|fail\)$'
-      call gita#utils#error(printf(
-            \ 'Fail: %s', join(result.args),
-            \))
-      call gita#utils#info(printf(
-            \ 'A fork point from %s could not be found.', ref
-            \))
-      call gita#utils#info(result.stdout)
+  if a:commit =~# '^[^.]+\.\.\.[^.]+$'
+    let [commit1, commit2] = split(a:commit, '\.\.\.')[ : 2]
+    let result = gita.operations.merge_base({
+          \ 'fork_point': commit1,
+          \ 'commit': commit2,
+          \} {
+          \ 'echo': '',
+          \})
+    if result.status
+      if config.echo =~# '^\%(both\|fail\)$'
+        call gita#utils#error(printf(
+              \ 'Fail: %s', join(result.args),
+              \))
+        call gita#utils#info(printf(
+              \ 'A fork point from %s could not be found.', ref
+              \))
+        call gita#utils#info(result.stdout)
+      endif
+      return ''
     endif
-    return ''
+    return result.stdout
   endif
-  let commit = result.stdout
+  return a:commit
 endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
@@ -143,16 +152,15 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 
   let file = gita#utils#expand(options.file)
-  let commit = options.commit
-
-  if commit =~# '^FORK:'
-    let commit = s:translate_fork_commit(commit, config)
-    if empty(commit)
-      return {
-            \ 'status': -1,
-            \ 'stdout': 'A fork point could not be found.',
-            \}
-    endif
+  let commit = s:translate_commit(options.commit)
+  if empty(commit)
+    return {
+          \ 'status': -1,
+          \ 'stdout': printf(
+          \   'A fork point of "%s" could not be found.',
+          \   options.commit,
+          \ )
+          \}
   endif
 
   if commit ==# 'WORKTREE'
