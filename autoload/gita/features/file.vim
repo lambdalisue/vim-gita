@@ -73,6 +73,62 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
     let a:opts.commit = ':3'
   endif
 endfunction " }}}
+function! s:ensure_file_option(options) abort " {{{
+  if !get(a:options, 'file')
+    let filename = gita#utils#expand('%')
+    if empty(filename)
+      call gita#utils#warn(
+            \ 'No file is specified and could not automatically detect.'
+            \)
+      call gita#utils#info(
+            \ 'Operation has canceled.'
+            \)
+      return -1
+    endif
+    let a:options.file = '%'
+  endif
+  let a:options.file = gita#utils#expand(a:options.file)
+endfunction " }}}
+function! s:ensure_commit_option(options) abort " {{{
+  if empty(get(a:options, 'commit', ''))
+    let gita = gita#get()
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, FORK:master, master, etc.) ',
+          \ get(gita.meta, 'revision', 'INDEX'),
+          \)
+    if empty(commit)
+      call gita#utils#info(
+            \ 'Operation has canceled by user',
+            \)
+      return
+    endif
+    let a:options.commit = commit
+  endif
+endfunction " }}}
+function! s:translate_fork_commit(commit, ...) abort " {{{
+  let config = extend({
+        \ 'echo': 'both',
+        \}, get(a:000, 0, {}))
+  let ref = matchstr(a:commit, '^FORK:\zs.*$')
+  let result = gita.operations.merge_base({
+        \ 'fork_point': ref,
+        \}, {
+        \ 'echo': '',
+        \})
+  if result.status
+    if config.echo =~# '^\%(both\|fail\)$'
+      call gita#utils#error(printf(
+            \ 'Fail: %s', join(result.args),
+            \))
+      call gita#utils#info(printf(
+            \ 'A fork point from %s could not be found.', ref
+            \))
+      call gita#utils#info(result.stdout)
+    endif
+    return ''
+  endif
+  let commit = result.stdout
+endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
   let gita = gita#get()
@@ -84,28 +140,17 @@ function! gita#features#file#exec(...) abort " {{{
     return { 'status': -1 }
   endif
 
-  let file = expand(options.file)
+  let file = gita#utils#expand(options.file)
   let commit = options.commit
 
   if commit =~# '^FORK:'
-    " find a fork point and use that
-    let ref = matchstr(commit, '^FORK:\zs.*$')
-    let result = gita.operations.merge_base({ 'fork_point': ref }, {
-          \ 'echo': '',
-          \})
-    if result.status != 0
-      if config.echo =~# '\%(both\|fail\)'
-        call gita#utils#error(printf(
-              \ 'Fail: %s', join(result.args),
-              \))
-        call gita#utils#info(printf(
-              \ 'A fork point from %s could not be found.', ref
-              \))
-        call gita#utils#info(result.stdout)
-      endif
-      return result
+    let commit = s:translate_fork_commit(commit, config)
+    if empty(commit)
+      return {
+            \ 'status': -1,
+            \ 'stdout': 'A fork point could not be found.',
+            \}
     endif
-    let commit = result.stdout
   endif
 
   if commit ==# 'WORKTREE'
@@ -115,7 +160,7 @@ function! gita#features#file#exec(...) abort " {{{
             \ 'stdout': join(readfile(file), "\n"),
             \}
     else
-      let errormsg = printf('%s is not in working tree.', file)
+      let errormsg = printf('%s is not readable.', file)
       if config.echo =~# '\%(both\|fail\)'
         call gita#utils#error(errormsg)
       endif
@@ -135,34 +180,8 @@ function! gita#features#file#exec(...) abort " {{{
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
   let options = get(a:000, 0, {})
-  " ensure file option
-  if empty(get(options, 'file', ''))
-    if !empty(&buftype) && empty(get(b:, '_gita_original_filename'))
-      call gita#utils#error(
-            \ 'The current buffer is not a file buffer.',
-            \)
-      call gita#utils#info(
-            \ 'Operation has canceled.'
-            \)
-      return
-    endif
-    let options.file = '%'
-  endif
-  let options.file = gita#utils#expand(options.file)
-  " ensure commit
-  if empty(get(options, 'commit', ''))
-    let commit = gita#utils#ask(
-          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, FORK:master, master, etc.) ',
-          \ 'INDEX',
-          \)
-    if empty(commit)
-      call gita#utils#info(
-            \ 'The operation has canceled by user',
-            \)
-      return
-    endif
-    let options.commit = commit
-  endif
+  call s:ensure_file_options(options)
+  call s:ensure_commit_options(options)
 
   let result = gita#features#file#exec(options, {
         \ 'echo': 'fail',
@@ -187,8 +206,8 @@ function! gita#features#file#show(...) abort " {{{
   if options.commit !=# 'WORKTREE'
     setlocal modifiable
     call gita#utils#buffer#update(CONTENTS)
-    setlocal buftype=nofile bufhidden=wipe noswapfile
-    setlocal nomodifiable
+    setlocal buftype=nofile bufhidden=hide noswapfile
+    setlocal nomodifiable readonly
     let b:_gita_original_filename = options.file
   endif
 endfunction " }}}

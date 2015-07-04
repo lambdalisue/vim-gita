@@ -58,6 +58,7 @@ function! gita#new(...) abort " {{{
         \ 'bufnum':   bufnr(expr),
         \ 'cwd':      getcwd(),
         \ 'git':      git,
+        \ 'meta':     {},
         \})
   let gita.operations = gita#operations#new(gita)
   if getwinvar(bufwinnr(expr), '_gita')
