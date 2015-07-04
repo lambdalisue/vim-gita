@@ -45,9 +45,11 @@ call s:parser.add_argument(
       \   'on_default': 'all',
       \ })
 call s:parser.add_argument(
-      \ '--compare', '-c',
-      \ 'Compare the changes in diff mode',
-      \ )
+      \ '--window', '-w',
+      \ 'Open single/double window to show the difference (Default: single)', {
+      \   'choices': ['single', 'double'],
+      \   'default': 'single',
+      \ })
 call s:parser.add_argument(
       \ '--opener', '-o', [
       \   'A way to open a new buffer such as "edit", "split", or etc.',
@@ -59,9 +61,7 @@ call s:parser.add_argument(
       \ '--vertical', '-v', [
       \   'Vertically open a second buffer (vsplit).',
       \   'If it is omitted, the buffer is opened horizontally (split).',
-      \ ], {
-      \ 'superordinates': ['compare'],
-      \ },
+      \ ],
       \)
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
@@ -72,18 +72,92 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
         \])
   return candidates
 endfunction " }}}
+function! s:ensure_commit_option(options) abort " {{{
+  if !has_key(a:options, 'commit')
+    let gita = gita#get()
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.) ',
+          \ get(gita.meta, 'revision', 'INDEX'),
+          \)
+    if empty(commit)
+      call gita#utils#warn(
+            \ 'Operation has canceled by user',
+            \)
+      return -1
+    endif
+    let a:options.commit = commit
+  endif
+  return 0
+endfunction " }}}
+function! s:ensure_file_option(options) abort " {{{
+  if empty(get(a:options, '--', []))
+    let a:options['--'] = ['%']
+  elseif len(get(a:options, '--', [])) > 1
+    call gita#utils#warn(
+          \ 'A single file required to be specified to compare the difference.',
+          \)
+    return -1
+  endif
+  let a:options.file = gita#utils#expand(a:options['--'][0])
+  return 0
+endfunction " }}}
+function! s:construct_commit(options) abort " {{{
+  let commit1_display = ''
+  let commit2_display = ''
+  if a:options.commit =~# '\v^.*\.\.\..*$'
+    " find a common ancestor
+    let [lhs, rhs] = matchlist(a:options.commit, '\v^(.*)\.\.\.(.*)$')[1 : 2]
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let result = gita.operations.merge_base({
+          \ '--': [lhs, rhs],
+          \}, {
+          \ 'echo': 'fail',
+          \})
+    if result.status != 0
+      return
+    endif
+    let commit1 = result.stdout
+    let commit2 = empty(rhs) ? 'HEAD' : rhs
+    let result = gita.operations.rev_parse({
+          \ 'short': 1,
+          \ 'args': result.stdout,
+          \}, {
+          \ 'echo': 'fail',
+          \})
+    if result.status == 0
+      " use user-friendly name
+      let commit1_display = printf('ANCESTOR:%s', result.stdout)
+    endif
+  elseif a:options.commit =~# '\v^.*\.\..*$'
+    let [lhs, rhs] = matchlist(a:options.commit, '\v^(.*)\.\.(.*)$')[1 : 2]
+    let commit1 = empty(lhs) ? 'HEAD' : lhs
+    let commit2 = empty(rhs) ? 'HEAD' : rhs
+  else
+    let commit1 = 'WORKTREE'
+    let commit2 = a:options.commit
+  endif
+  let commit1_display = empty(commit1_display) ? commit1 : commit1_display
+  let commit2_display = empty(commit2_display) ? commit2 : commit2_display
+  return {
+        \ 'commit1': commit1,
+        \ 'commit2': commit2,
+        \ 'commit1_display': commit1_display,
+        \ 'commit2_display': commit2_display,
+        \}
+endfunction " }}}
 
-function! s:diff(...) abort " {{{
+function! s:diff1(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
   if gita.fail_on_disabled()
     return
   endif
+
   let options.no_prefix = 1
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
-
   let result = gita#features#diff#exec(options, {
         \ 'echo': 'fail',
         \})
@@ -92,82 +166,58 @@ function! s:diff(...) abort " {{{
   endif
 
   if len(get(options, '--', [])) == 1
+    let file = options['--'][0]
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ printf('%s.diff', options['--'][0]),
+          \ printf('%s.diff', file),
           \)
   else
+    let file = ''
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
           \ 'diff',
           \)
   endif
-  let DIFF = split(result.stdout, '\v\r?\n')
-  let opener = get(options, 'opener', 'edit')
   call gita#utils#buffer#open(DIFF_bufname, '', {
-        \ 'opener': opener,
+        \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer#update(DIFF)
+  call gita#utils#buffer#update(split(result.stdout, '\v\r?\n'))
   setlocal buftype=nofile bufhidden=hide noswapfile
-  setlocal nomodifiable
+  setlocal nomodifiable readonly
   setlocal filetype=diff
+
+  if !empty(file)
+    let b:_gita_original_filename = file
+  endif
+  let gita.meta.file = file
+  let gita.meta.revision = options.commit
 endfunction " }}}
-function! s:compare(...) abort " {{{
+function! s:diff2(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  " validate 'file'
-  if len(get(options, '--', [])) == 0
-    " Use a current buffer
-    let options['--'] = ['%']
-  elseif len(get(options, '--', [])) > 1
-    call gita#utils#warn(
-          \ 'A single file required to be specified to compare the difference.',
-          \)
+  if s:ensure_file_option(options)
     return
   endif
-  let options.file = gita#utils#expand(options['--'][0])
 
   " find commit1 and commit2
-  let commit1_display = ''
-  let commit2_display = ''
-  if options.commit =~# '\v^.*\.\.\..*$'
-    " find a common ancestor
-    let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.\.(.*)$')[1 : 2]
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let result = gita.operations.merge_base({ '--': [lhs, rhs] }, {
-          \ 'echo': 'fail',
-          \})
-    if result.status != 0
-      return
-    endif
-    let commit1 = result.stdout
-    let commit2 = empty(rhs) ? 'HEAD' : rhs
-    let result = gita.operations.rev_parse({ 'short': 1, 'args': result.stdout }, {
-          \ 'echo': 'fail',
-          \})
-    if result.status == 0
-      " use user-friendly name
-      let commit1_display = printf('ANCESTOR:%s', result.stdout)
-    endif
-  elseif options.commit =~# '\v^.*\.\..*$'
-    let [lhs, rhs] = matchlist(options.commit, '\v^(.*)\.\.(.*)$')[1 : 2]
-    let commit1 = empty(lhs) ? 'HEAD' : lhs
-    let commit2 = empty(rhs) ? 'HEAD' : rhs
-  else
-    let commit1 = 'WORKTREE'
-    let commit2 = options.commit
-  endif
-  let commit1_display = empty(commit1_display) ? commit1 : commit1_display
-  let commit2_display = empty(commit2_display) ? commit2 : commit2_display
+  let result = s:construct_commit(options)
+  let commit1 = result.commit1
+  let commit2 = result.commit2
+  let commit1_display = result.commit1_display
+  let commit2_display = result.commit2_display
 
   " commit1
-  let result = gita#features#file#exec({ 'commit': commit1, 'file': options.file }, {
+  let result = gita#features#file#exec({
+        \ 'commit': commit1,
+        \ 'file': options.file,
+        \}, {
         \ 'echo': '',
         \})
   if result.status == 0
     let COMMIT1 = split(result.stdout, '\v\r?\n')
   else
+    " if the file is removed in commit, the status would be non 0 but
+    " it is better to show an empty buffer thus just specify an empty list
     let COMMIT1 = []
   endif
   if commit1 ==# 'WORKTREE'
@@ -178,6 +228,7 @@ function! s:compare(...) abort " {{{
           \ options.file,
           \)
   endif
+
   " commit2
   let result = gita#features#file#exec({ 'commit': commit2, 'file': options.file }, {
         \ 'echo': '',
@@ -185,6 +236,8 @@ function! s:compare(...) abort " {{{
   if result.status == 0
     let COMMIT2 = split(result.stdout, '\v\r?\n')
   else
+    " if the file is removed in commit, the status would be non 0 but
+    " it is better to show an empty buffer thus just specify an empty list
     let COMMIT2 = []
   endif
   if commit2 ==# 'WORKTREE'
@@ -199,6 +252,7 @@ function! s:compare(...) abort " {{{
   let bufnums = gita#utils#buffer#open2(
         \ COMMIT1_bufname, COMMIT2_bufname, 'vim_gita_diff', {
         \   'opener': get(options, 'opener', 'edit'),
+        \   'opener2': get(options, 'opener2', ''),
         \   'vertical': get(options, 'vertical', 0),
         \})
   let COMMIT1_bufnum = bufnums.bufnum1
@@ -212,6 +266,8 @@ function! s:compare(...) abort " {{{
     setlocal nomodifiable
     let b:_gita_original_filename = options.file
   endif
+  let gita.meta.file = options.file
+  let gita.meta.revison = commit1
   diffthis
 
   " COMMIT2
@@ -222,6 +278,8 @@ function! s:compare(...) abort " {{{
     setlocal nomodifiable
     let b:_gita_original_filename = options.file
   endif
+  let gita.meta.file = options.file
+  let gita.meta.revison = commit2
   diffthis
   diffupdate
 endfunction " }}}
@@ -281,29 +339,26 @@ function! gita#features#diff#exec_cached(...) abort " {{{
 endfunction " }}}
 function! gita#features#diff#show(...) abort " {{{
   let options = get(a:000, 0, {})
-  if !has_key(options, 'commit')
-    let commit = gita#utils#ask(
-          \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.)',
-          \ 'INDEX',
-          \)
-    if empty(commit)
-      call gita#utils#warn(
-            \ 'The operation has canceled by user',
-            \)
-      return
-    endif
-    let options.commit = commit
-  endif
   let config = get(a:000, 1, {})
-  if get(options, 'compare')
-    call s:compare(options, config)
+  if s:ensure_commit_option(options)
+    return
+  endif
+  if type(options.window) ==# type(0) && !options.window
+    call gita#features#diff#exec(options, config)
   else
-    call s:diff(options, config)
+    if options.window == 'single'
+      call s:diff1(options, config)
+    else
+      call s:diff2(options, config)
+    endif
   endif
 endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(
+          \ deepcopy(g:gita#features#diff#default_options),
+          \ options)
     let options = extend(options, {
           \ '--': options.__unknown__,
           \})

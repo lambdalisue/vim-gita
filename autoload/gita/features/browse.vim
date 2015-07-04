@@ -219,6 +219,9 @@ function! gita#features#browse#command(bang, range, ...) abort " {{{
   if empty(get(options, '--', []))
     let options['--'] = ['%']
   endif
+  let options = extend(
+        \ deepcopy(g:gita#features#browse#default_options),
+        \ options)
   if !empty(options)
     if get(options, 'open')
       call gita#features#browse#open(options)
@@ -238,21 +241,6 @@ function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
-
-
-let g:gita#features#browse#translation_patterns =
-      \ [
-      \  ['\vssh://git\@(github\.com)/([^/]+)/(.+)%(\.git|)',
-      \   'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \  ['\vgit\@(github\.com):([^/]+)/(.+)%(\.git|)',
-      \   'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \  ['\vhttps?://(github\.com)/([^/]+)/(.+)',
-      \   'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \  ['\vgit\@(bitbucket\.org):([^/]+)/(.+)%(\.git|)',
-      \   'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \  ['\vhttps?://(bitbucket\.org)/([^/]+)/(.+)',
-      \   'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \ ]
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

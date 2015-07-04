@@ -88,10 +88,11 @@ function! gita#action#exec(name, ...) abort range " {{{
   let candidates = gita#action#get_candidates(
         \ a:firstline, a:lastline,
         \)
+  let actions = gita#action#get_actions()
   call call(
-        \ b:_gita_actions[a:name],
+        \ actions[a:name],
         \ [candidates, options],
-        \ b:_gita_actions,
+        \ actions,
         \)
 endfunction " }}}
 
