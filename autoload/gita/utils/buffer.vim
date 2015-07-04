@@ -3,6 +3,7 @@ set cpo&vim
 
 let s:B = gita#utils#import('Vim.Buffer')
 let s:BM = gita#utils#import('Vim.BufferManager')
+let s:SEP = has('unix') ? ':' : '_'
 
 
 function! gita#utils#buffer#open(name, group, ...) abort " {{{
@@ -124,9 +125,12 @@ function! gita#utils#buffer#is_listed_in_tabpage(expr) abort " {{{
   let buflist = tabpagebuflist()
   return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
 endfunction " }}}
-function! gita#utils#buffer#bufname(name, ...) abort " {{{
-  let sep = has('unix') ? ':' : '-'
-  return join(['gita'] + a:000 + [a:name], sep)
+function! gita#utils#buffer#bufname(...) abort " {{{
+  let bits = filter(deepcopy(a:000), 'v:val')
+  let bits = has('unix')
+        \ ? map(bits, 'substitute(v:val, ":", s:SEP, "g")')
+        \ : bits
+  return join(a:000, s:SEP)
 endfunction " }}}
 function! gita#utils#buffer#clear_undo_history() abort " {{{
   let saved_undolevels = &undolevels
