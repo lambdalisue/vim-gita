@@ -54,25 +54,34 @@ function! s:actions.update(statuses, options) abort " {{{
   call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
 endfunction " }}}
 
+function! s:ensure_commit_option(options) abort " {{{
+  " Ask which commit the user want to compare if no 'commit' is specified
+  if empty(get(a:options, 'commit'))
+    let commit = gita#utils#ask(
+          \ 'Which commit do you want to compare with? ',
+          \ get(a:options, 'commit', 'master'),
+          \)
+    if empty(commit)
+      call gita#utils#info('Operation has canceled by user')
+      return -1
+    endif
+    let a:options.commit = commit
+  endif
+  return 0
+endfunction " }}}
+
 function! gita#features#diff_ls#open(...) abort " {{{
   let options = extend(
         \ deepcopy(get(w:, '_gita_options', {})),
         \ get(a:000, 0, {}),
         \)
-  " Ask which commit the user want to compare if no 'commit' is specified
-  if empty(get(options, 'commit')) || get(options, 'diff_ls_new')
-    let commit = gita#utils#ask(
-          \ 'Which commit do you want to compare with? ',
-          \ get(options, 'commit', 'master'),
-          \)
-    if empty(commit)
-      call gita#utils#info('Operation has canceled by user')
-      return
-    endif
-    let options.commit = commit
+  if s:ensure_commit_option(options)
+    return
   endif
-
-  let bufname = join([s:const.bufname, options.commit], s:const.bufname_sep)
+  let bufname = gita#utils#buffer#bufname(
+        \ s:const.bufname,
+        \ options.commit,
+        \)
   let result = gita#monitor#open(bufname, options, {
         \ 'opener': g:gita#features#diff_ls#monitor_opener,
         \ 'range': g:gita#features#diff_ls#monitor_range,
@@ -152,6 +161,9 @@ endfunction " }}}
 function! gita#features#diff_ls#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(
+          \ g:gita#features#diff_ls#default_options,
+          \ options)
     call gita#features#diff_ls#open(options)
   endif
 endfunction " }}}

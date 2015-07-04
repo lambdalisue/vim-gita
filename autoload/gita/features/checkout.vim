@@ -122,6 +122,9 @@ endfunction " }}}
 function! gita#features#checkout#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(
+          \ deepcopy(g:gita#features#checkout#default_options),
+          \ options)
     let options = extend(options, {
           \ '--': options.__unknown__,
           \})

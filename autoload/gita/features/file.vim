@@ -74,7 +74,7 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
   endif
 endfunction " }}}
 function! s:ensure_file_option(options) abort " {{{
-  if !get(a:options, 'file')
+  if !empty(get(a:options, 'file'))
     let filename = gita#utils#expand('%')
     if empty(filename)
       call gita#utils#warn(
@@ -88,6 +88,7 @@ function! s:ensure_file_option(options) abort " {{{
     let a:options.file = '%'
   endif
   let a:options.file = gita#utils#expand(a:options.file)
+  return 0
 endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
@@ -100,10 +101,11 @@ function! s:ensure_commit_option(options) abort " {{{
       call gita#utils#info(
             \ 'Operation has canceled by user',
             \)
-      return
+      return -1
     endif
     let a:options.commit = commit
   endif
+  return 0
 endfunction " }}}
 function! s:translate_fork_commit(commit, ...) abort " {{{
   let config = extend({
@@ -179,10 +181,14 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
+  let gita = gita#get()
   let options = get(a:000, 0, {})
-  call s:ensure_file_option(options)
-  call s:ensure_commit_option(options)
-
+  if s:ensure_file_option(options)
+    return
+  endif
+  if s:ensure_commit_option(options)
+    return
+  endif
   let result = gita#features#file#exec(options, {
         \ 'echo': 'fail',
         \})
@@ -190,7 +196,6 @@ function! gita#features#file#show(...) abort " {{{
     return
   endif
 
-  let CONTENTS = split(result.stdout, '\v\r?\n')
   if options.commit ==# 'WORKTREE'
     let bufname = options.file
   else
@@ -199,20 +204,25 @@ function! gita#features#file#show(...) abort " {{{
           \ options.file,
           \)
   endif
-  let opener = get(options, 'opener', 'edit')
   call gita#utils#buffer#open(bufname, '', {
-        \ 'opener': opener,
+        \ 'opener': get(options, 'opener', 'edit'),
         \})
   if options.commit !=# 'WORKTREE'
-    call gita#utils#buffer#update(CONTENTS)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable readonly
-    let b:_gita_original_filename = options.file
+    call gita#utils#buffer#update(
+          \ split(result.stdout, '\v\r?\n')
+          \)
   endif
+  let gita.meta.file = options.file
+  let gita.meta.revision = options.commit
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(
+          \ g:gita#features#file#default_options,
+          \ options)
     call gita#features#file#show(options)
   endif
 endfunction " }}}

@@ -17,24 +17,41 @@ call s:parser.add_argument(
       \   'complete': function('gita#utils#completes#complete_conflicted_files'),
       \})
 call s:parser.add_argument(
-      \ '--2way', '-2', [
-      \   'Open MERGE buffer and REMOTE buffer to solve the conflict.',
-      \ ], {
-      \   'conflicts': ['3way'],
-      \})
-call s:parser.add_argument(
-      \ '--3way', '-3', [
-      \   'Open MERGE buffer, LOCAL buffer and REMOTE buffer to solve the conflict.',
-      \ ], {
-      \   'conflicts': ['2way'],
-      \})
-function! s:parser.hooks.post_validate(opts) abort " {{{
-  if get(a:opts, '2way')
-    unlet a:opts['2way']
-    let a:opts.way = 2
+      \ '--window', '-w',
+      \   'Open double/triple window to solve the conflict (Default: triple)',
+      \ ), {
+      \   'choices': ['double', 'triple'],
+      \   'default': 'triple',
+      \ })
+
+function! s:ensure_status_option(option) abort " {{{
+  if !has_key(a:options, 'status') && !has_key(a:options, 'file')
+    call gita#utils#error(
+          \ '"status" nor "file" is specified.',
+          \)
+    return -1
+  elseif has_key(a:options, 'status')
+    let a:options.file = get(a:options.status, 'path2', a:options.status.path)
   else
-    silent! unlet a:opts['3way']
-    let a:opts.way = 3
+    let a:options.status = gita#utils#get_status(a:options.file)
+  endif
+  let a:options.file = gita#utils#expand(a:options.file)
+  return 0
+endfunction " }}}
+function! s:ac_BufWriteCmd() abort " {{{
+  let new_filename = fnamemodify(expand('<amatch>'), ':p')
+  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  if new_filename !=# old_filename
+    execute printf('w%s %s %s',
+          \ v:cmdbang ? '!' : '',
+          \ fnameescape(v:cmdarg),
+          \ fnameescape(new_filename),
+          \)
+  else
+    let filename = fnamemodify(expand(b:_gita_original_filename), ':p')
+    if writefile(getline(1, '$'), filename) == 0
+      setlocal nomodified
+    endif
   endif
 endfunction " }}}
 function! s:solve2(...) abort " {{{
@@ -205,52 +222,29 @@ function! s:solve3(...) abort " {{{
   wincmd =
   diffupdate
 endfunction " }}}
-function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
-  if new_filename !=# old_filename
-    execute printf('w%s %s %s',
-          \ v:cmdbang ? '!' : '',
-          \ fnameescape(v:cmdarg),
-          \ fnameescape(new_filename),
-          \)
-  else
-    let filename = fnamemodify(expand(b:_gita_original_filename), ':p')
-    if writefile(getline(1, '$'), filename) == 0
-      setlocal nomodified
-    endif
-  endif
-endfunction " }}}
 
 function! gita#features#conflict#show(...) abort " {{{
   let gita = gita#get()
   if gita.fail_on_disabled()
     return
   endif
-
   let options = get(a:000, 0, {})
-  if !has_key(options, 'status') && !has_key(options, 'file')
-    call gita#utils#error(
-          \ '"status" nor "file" is specified.',
-          \)
+  if s:ensure_status_option(options)
     return
-  elseif has_key(options, 'status')
-    let options.file = get(options.status, 'path2', options.status.path)
-  else
-    let options.status = gita#utils#get_status(options.file)
   endif
-  let options.file = gita#utils#expand(options.file)
 
-  let way = get(options, 'way', 3)
-  if way == 3
-    call s:solve3(options)
-  elseif way == 2
+  if options.window == 'double'
     call s:solve2(options)
+  else
+    call s:solve3(options)
   endif
 endfunction " }}}
 function! gita#features#conflict#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(
+          \ deepcopy(g:gita#features#conflict#default_options),
+          \ options)
     if empty(get(options, 'file', ''))
       let options.file = '%'
     endif

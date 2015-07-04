@@ -61,7 +61,7 @@ function! gita#new(...) abort " {{{
         \ 'meta':     {},
         \})
   let gita.operations = gita#operations#new(gita)
-  if getwinvar(bufwinnr(expr), '_gita')
+  if !empty(getwinvar(bufwinnr(expr), '_gita'))
     call setwinvar(bufwinnr(expr), '_gita', gita)
   else
     call setbufvar(expr, '_gita', gita)
