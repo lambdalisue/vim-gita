@@ -108,7 +108,7 @@ function! s:diff(...) abort " {{{
         \ 'opener': opener,
         \})
   call gita#utils#buffer#update(DIFF)
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  setlocal buftype=nofile bufhidden=hide noswapfile
   setlocal nomodifiable
   setlocal filetype=diff
 endfunction " }}}
@@ -208,7 +208,7 @@ function! s:compare(...) abort " {{{
   execute printf('%swincmd w', bufwinnr(COMMIT1_bufnum))
   if commit1 !=# 'WORKTREE'
     call gita#utils#buffer#update(COMMIT1)
-    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
     let b:_gita_original_filename = options.file
   endif
@@ -218,7 +218,7 @@ function! s:compare(...) abort " {{{
   execute printf('%swincmd w', bufwinnr(COMMIT2_bufnum))
   if commit2 !=# 'WORKTREE'
     call gita#utils#buffer#update(COMMIT2)
-    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
     let b:_gita_original_filename = options.file
   endif

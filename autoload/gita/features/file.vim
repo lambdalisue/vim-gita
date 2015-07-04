@@ -204,7 +204,6 @@ function! gita#features#file#show(...) abort " {{{
         \ 'opener': opener,
         \})
   if options.commit !=# 'WORKTREE'
-    setlocal modifiable
     call gita#utils#buffer#update(CONTENTS)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable readonly
