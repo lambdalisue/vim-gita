@@ -79,7 +79,7 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
   endif
 endfunction " }}}
 function! s:ensure_file_option(options) abort " {{{
-  if !empty(get(a:options, 'file'))
+  if empty(get(a:options, 'file'))
     let filename = gita#utils#expand('%')
     if empty(filename)
       call gita#utils#warn(
@@ -116,12 +116,13 @@ function! s:translate_commit(commit, ...) abort " {{{
   let config = extend({
         \ 'echo': 'both',
         \}, get(a:000, 0, {}))
-  if a:commit =~# '^[^.]+\.\.\.[^.]+$'
-    let [commit1, commit2] = split(a:commit, '\.\.\.')[ : 2]
+  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    let gita = gita#get()
+    let [commit1, commit2] = matchlist(a:commit, '\v^([^.]*)\.\.\.([^.]*)$')[ 1 : 2]
     let result = gita.operations.merge_base({
           \ 'fork_point': commit1,
           \ 'commit': commit2,
-          \} {
+          \}, {
           \ 'echo': '',
           \})
     if result.status
@@ -130,7 +131,8 @@ function! s:translate_commit(commit, ...) abort " {{{
               \ 'Fail: %s', join(result.args),
               \))
         call gita#utils#info(printf(
-              \ 'A fork point from %s could not be found.', ref
+              \ 'A fork point between %s and %s could not be found.',
+              \ commit1, commit2,
               \))
         call gita#utils#info(result.stdout)
       endif
