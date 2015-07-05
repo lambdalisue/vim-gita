@@ -97,10 +97,10 @@ function! s:ensure_file_option(options) abort " {{{
 endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
-    let gita = gita#get()
+    let meta = gita#get_meta()
     let commit = gita#utils#ask(
           \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master..., master, etc.) ',
-          \ get(gita.meta, 'revision', 'INDEX'),
+          \ get(meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
       call gita#utils#info(
@@ -110,6 +110,14 @@ function! s:ensure_commit_option(options) abort " {{{
     endif
     let a:options.commit = commit
   endif
+
+  if a:options.commit =~# '\v^[^.]*\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(
+          \ a:options.commit,
+          \ '\v^([^.]*)\.\.([^.]*)$',
+          \)[1 : 2]
+    let a:options.commit = lhs
+  endif
   return 0
 endfunction " }}}
 function! s:translate_commit(commit, ...) abort " {{{
@@ -117,11 +125,13 @@ function! s:translate_commit(commit, ...) abort " {{{
         \ 'echo': 'both',
         \}, get(a:000, 0, {}))
   if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(a:commit, '\v^([^.]*)\.\.\.([^.]*)$')[1 : 2]
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
     let gita = gita#get()
-    let [commit1, commit2] = matchlist(a:commit, '\v^([^.]*)\.\.\.([^.]*)$')[ 1 : 2]
     let result = gita.operations.merge_base({
-          \ 'fork_point': commit1,
-          \ 'commit': commit2,
+          \ 'commit1': lhs,
+          \ 'commit2': rhs,
           \}, {
           \ 'echo': '',
           \})
@@ -130,17 +140,18 @@ function! s:translate_commit(commit, ...) abort " {{{
         call gita#utils#error(printf(
               \ 'Fail: %s', join(result.args),
               \))
-        call gita#utils#info(printf(
-              \ 'A fork point between %s and %s could not be found.',
-              \ commit1, commit2,
-              \))
         call gita#utils#info(result.stdout)
+        call gita#utils#info(printf(
+              \ 'A fork point between "%s" and "%s" could not be found.',
+              \ lhs, rhs,
+              \))
       endif
       return ''
     endif
     return result.stdout
+  else
+    return empty(a:commit) ? 'INDEX' : a:commit
   endif
-  return a:commit
 endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
@@ -154,7 +165,7 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 
   let file = gita#utils#expand(options.file)
-  let commit = s:translate_commit(options.commit)
+  let commit = s:translate_commit(options.commit, config)
   if empty(commit)
     return {
           \ 'status': -1,
@@ -166,10 +177,11 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 
   if commit ==# 'WORKTREE'
-    if filereadable(file)
+    let abspath = gita.git.get_absolute_path(file)
+    if filereadable(abspath)
       return {
             \ 'status': 0,
-            \ 'stdout': join(readfile(file), "\n"),
+            \ 'stdout': join(readfile(abspath), "\n"),
             \}
     else
       let errormsg = printf('%s is not readable.', file)
@@ -184,7 +196,7 @@ function! gita#features#file#exec(...) abort " {{{
   else
     return gita.operations.show({
           \ 'object': printf('%s:%s',
-          \   substitute(commit, '^INDEX$', '', ''),
+          \   substitute(commit, '\v\.?\zsINDEX\ze\.?$', '', ''),
           \   gita.git.get_relative_path(file),
           \ ),
           \}, config)
@@ -202,7 +214,7 @@ function! gita#features#file#show(...) abort " {{{
   let result = gita#features#file#exec(options, {
         \ 'echo': 'fail',
         \})
-  if result.status != 0
+  if result.status
     return
   endif
 
@@ -224,8 +236,10 @@ function! gita#features#file#show(...) abort " {{{
           \ split(result.stdout, '\v\r?\n')
           \)
   endif
-  let gita.meta.file = options.file
-  let gita.meta.revision = options.commit
+  call gita#set_meta({
+        \ 'file': options.file,
+        \ 'commit': options.commit,
+        \})
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
