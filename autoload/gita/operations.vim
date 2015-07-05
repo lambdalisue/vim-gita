@@ -195,6 +195,8 @@ function! s:operations.merge_base(...) abort " {{{
   let schemes = {
         \ 'fork_point': "--%K %v",
         \ 'commit': "%v",
+        \ 'commit1': "%v",
+        \ 'commit2': "%v",
         \}
   return self.exec('merge-base', options, schemes, config)
 endfunction " }}}
