@@ -79,6 +79,15 @@ function! gita#get(...) abort " {{{
   endif
   return gita#new(expr)
 endfunction " }}}
+function! gita#get_meta(...) abort " {{{
+  let gita = call('gita#get', a:000)
+  let gita.meta = get(gita, 'meta', {})
+  return gita.meta
+endfunction " }}}
+function! gita#set_meta(meta, ...) abort " {{{
+  let meta = call('gita#get_meta', a:000)
+  return extend(meta, a:meta)
+endfunction " }}}
 function! gita#is_enabled(...) abort " {{{
   return call('gita#get', a:000).enabled
 endfunction " }}}
