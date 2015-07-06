@@ -1,3 +1,4 @@
+"Hello
 let s:save_cpo = &cpo
 set cpo&vim
 
@@ -151,6 +152,25 @@ function! s:translate_commit(commit, ...) abort " {{{
     return result.stdout
   else
     return empty(a:commit) ? 'INDEX' : a:commit
+  endif
+endfunction " }}}
+
+function! s:exec_worktree(gita, options, config) abort " {{{
+  let abspath = a:gita.git.get_absolute_path(a:options.file)
+  if filereadable(abspath)
+    return {
+          \ 'status': 0,
+          \ 'stdout': join(readfile(abspath), "\n"),
+          \}
+  else
+    let errormsg = printf('%s is not readable.', file)
+    if a:config.echo =~# '\%(both\|fail\)'
+      call gita#utils#error(errormsg)
+    endif
+    return {
+          \ 'status': -1,
+          \ 'stdout': errormsg,
+          \}
   endif
 endfunction " }}}
 
