@@ -25,7 +25,7 @@ call s:parser.add_argument(
       \   'A Gita specialized commit-ish which you want to show. The followings are Gita special terms:',
       \   'WORKTREE  it show the content of the current working tree.',
       \   'INDEX  it show the content of the current index (staging area for next commit).',
-      \   '<commit>...<commit>  it show the content of the fork point between <commit>.',
+      \   '<commit>...<commit>  it show the content of an common ancestor between <commit>.',
       \ ], {
       \   'complete': function('s:complete_commit'),
       \})
@@ -155,7 +155,13 @@ function! s:exec_ancestor(gita, options, config) abort " {{{
         \}, {
         \ 'echo': '',
         \})
-  if result.status
+  if !result.status
+    return s:exec_commit(
+          \ a:gita,
+          \ extend(deepcopy(a:options), { 'commit': result.stdout }),
+          \ a:config,
+          \)
+  else
     let errormsg = printf(
           \ 'A fork point between "%s" and "%s" could not be found.',
           \ lhs, rhs,
@@ -172,11 +178,6 @@ function! s:exec_ancestor(gita, options, config) abort " {{{
           \ 'stdout': errormsg,
           \}
   endif
-  return s:exec_commit(
-        \ a:gita,
-        \ extend({ 'commit': result.stdout }, a:options),
-        \ a:config,
-        \)
 endfunction " }}}
 function! s:exec_commit(gita, options, config) abort " {{{
   let commit = substitute(
@@ -250,6 +251,7 @@ function! gita#features#file#show(...) abort " {{{
     call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')
           \)
+    call gita#set_original_filename(options.file)
   endif
   call gita#set_meta({
         \ 'file': options.file,
