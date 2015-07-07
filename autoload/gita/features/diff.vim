@@ -147,6 +147,24 @@ function! s:construct_commit(options) abort " {{{
         \}
 endfunction " }}}
 
+function! s:split_commit(commit, options) abort " {{{
+  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.\.([^.]*)$',
+          \)[ 1 : 2 ]
+    return [ a:commit, rhs ]
+  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.([^.]*)$',
+          \)[ 1 : 2 ]
+    return [ lhs, rhs ]
+  else
+    return [ get(options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
+  endif
+endfunction " }}}
+
 function! s:diff1(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
