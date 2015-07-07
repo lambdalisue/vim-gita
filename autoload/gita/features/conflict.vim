@@ -24,7 +24,7 @@ call s:parser.add_argument(
       \   'default': 'triple',
       \ })
 
-function! s:ensure_status_option(option) abort " {{{
+function! s:ensure_status_option(options) abort " {{{
   if !has_key(a:options, 'status') && !has_key(a:options, 'file')
     call gita#utils#error(
           \ '"status" nor "file" is specified.',
