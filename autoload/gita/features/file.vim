@@ -121,42 +121,11 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:translate_commit(commit, ...) abort " {{{
-  let config = extend({
-        \ 'echo': 'both',
-        \}, get(a:000, 0, {}))
-  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(a:commit, '\v^([^.]*)\.\.\.([^.]*)$')[1 : 2]
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let gita = gita#get()
-    let result = gita.operations.merge_base({
-          \ 'commit1': lhs,
-          \ 'commit2': rhs,
-          \}, {
-          \ 'echo': '',
-          \})
-    if result.status
-      if config.echo =~# '^\%(both\|fail\)$'
-        call gita#utils#error(printf(
-              \ 'Fail: %s', join(result.args),
-              \))
-        call gita#utils#info(result.stdout)
-        call gita#utils#info(printf(
-              \ 'A fork point between "%s" and "%s" could not be found.',
-              \ lhs, rhs,
-              \))
-      endif
-      return ''
-    endif
-    return result.stdout
-  else
-    return empty(a:commit) ? 'INDEX' : a:commit
-  endif
-endfunction " }}}
 
 function! s:exec_worktree(gita, options, config) abort " {{{
-  let abspath = a:gita.git.get_absolute_path(a:options.file)
+  let abspath = a:gita.git.get_absolute_path(
+        \ gita#utils#expand(a:options.file),
+        \)
   if filereadable(abspath)
     return {
           \ 'status': 0,
@@ -164,7 +133,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
           \}
   else
     let errormsg = printf('%s is not readable.', file)
-    if a:config.echo =~# '\%(both\|fail\)'
+    if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
       call gita#utils#error(errormsg)
     endif
     return {
@@ -173,53 +142,79 @@ function! s:exec_worktree(gita, options, config) abort " {{{
           \}
   endif
 endfunction " }}}
+function! s:exec_ancestor(gita, options, config) abort " {{{
+  let [lhs, rhs] = matchlist(
+        \ a:options.commit,
+        \ '\v^([^.]*)\.\.\.([^.]*)$'
+        \)[1 : 2]
+  let lhs = empty(lhs) ? 'HEAD' : lhs
+  let rhs = empty(rhs) ? 'HEAD' : rhs
+  let result = a:gita.operations.merge_base({
+        \ 'commit1': lhs,
+        \ 'commit2': rhs,
+        \}, {
+        \ 'echo': '',
+        \})
+  if result.status
+    let errormsg = printf(
+          \ 'A fork point between "%s" and "%s" could not be found.',
+          \ lhs, rhs,
+          \)
+    if get(a:config, 'echo', 'both') =~# '^\%(both\|fail\)$'
+      call gita#utils#error(printf(
+            \ 'Fail: %s', join(result.args),
+            \))
+      call gita#utils#info(result.stdout)
+      call gita#utils#info(errormsg)
+    endif
+    return {
+          \ 'status': -1,
+          \ 'stdout': errormsg,
+          \}
+  endif
+  return s:exec_commit(
+        \ a:gita,
+        \ extend({ 'commit': result.stdout }, a:options),
+        \ a:config,
+        \)
+endfunction " }}}
+function! s:exec_commit(gita, options, config) abort " {{{
+  let commit = substitute(
+        \ a:options.commit,
+        \ '\v\.?\zsINDEX\ze\.?$',
+        \ '', '',
+        \)
+  let file = a:gita.git.get_relative_path(
+        \ gita#utils#expand(a:options.file),
+        \)
+  return a:gita.operations.show({
+        \ 'object': printf('%s:%s', commit, file),
+        \}, a:config)
+endfunction " }}}
 
 function! gita#features#file#exec(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let config = extend({
-        \ 'echo': 'both',
-        \}, get(a:000, 1, {}))
+  let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
 
-  let file = gita#utils#expand(options.file)
-  let commit = s:translate_commit(options.commit, config)
-  if empty(commit)
-    return {
-          \ 'status': -1,
-          \ 'stdout': printf(
-          \   'A fork point of "%s" could not be found.',
-          \   options.commit,
-          \ )
-          \}
-  endif
-
-  if commit ==# 'WORKTREE'
-    let abspath = gita.git.get_absolute_path(file)
-    if filereadable(abspath)
-      return {
-            \ 'status': 0,
-            \ 'stdout': join(readfile(abspath), "\n"),
-            \}
-    else
-      let errormsg = printf('%s is not readable.', file)
-      if config.echo =~# '\%(both\|fail\)'
-        call gita#utils#error(errormsg)
-      endif
-      return {
-            \ 'status': -1,
-            \ 'stdout': errormsg,
-            \}
+  if options.commit ==# 'WORKTREE'
+    return s:exec_worktree(gita, options, config)
+  elseif options.commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    return s:exec_ancestor(gita, options, config)
+  elseif options.commit =~# '\v^[^.]*\.\.[^.]*$'
+    let errormsg = printf(
+          \ 'A commit range (%s) could not be specified to Gita file',
+          \ options.commit,
+          \)
+    if get(config, 'echo', 'both') =~# '^\%(both\|fail\)$'
+      call gita#utils#error(errormsg)
     endif
+    return { 'status': -1, 'stdout': errormsg }
   else
-    return gita.operations.show({
-          \ 'object': printf('%s:%s',
-          \   substitute(commit, '\v\.?\zsINDEX\ze\.?$', '', ''),
-          \   gita.git.get_relative_path(file),
-          \ ),
-          \}, config)
+    return s:exec_commit(gita, options, config)
   endif
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
@@ -265,7 +260,7 @@ function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#file#default_options,
+          \ deepcopy(g:gita#features#file#default_options),
           \ options)
     call gita#features#file#show(options)
   endif
