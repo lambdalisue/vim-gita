@@ -88,6 +88,12 @@ function! gita#set_meta(meta, ...) abort " {{{
   let meta = call('gita#get_meta', a:000)
   return extend(meta, a:meta)
 endfunction " }}}
+function! gita#get_original_filename(...) abort " {{{
+  return getbufvar(get(a:000, 0, '%'), '_gita_original_filename', '')
+endfunction " }}}
+function! gita#set_original_filename(filename, ...) abort " {{{
+  call setbufvar(get(a:000, 0, '%'), '_gita_original_filename', a:filename)
+endfunction " }}}
 function! gita#is_enabled(...) abort " {{{
   return call('gita#get', a:000).enabled
 endfunction " }}}
