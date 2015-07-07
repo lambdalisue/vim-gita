@@ -194,7 +194,8 @@ endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   " Note:
   " this function is also used in gita#get thus it should not call that.
-  return getbufvar(a:expr, '_gita_original_filename', expand(a:expr))
+  let original_filename = gita#get_original_filename(a:expr)
+  return empty(original_filename) ? expand(a:expr) : expand(original_filename)
 endfunction " }}}
 
 let &cpo = s:save_cpo
