@@ -27,4 +27,6 @@ before_script:
 
 script:
   - vim --cmd version --cmd quit
-  - ./test/run_all.sh
+  - ./test/run_vimlint.sh
+  - ./test/run_doc.sh
+  - ./test/run_themis.sh
