@@ -5,9 +5,11 @@ Describe gita#features#browse
             \ 'https://github.com/%s/%s',
             \ 'git://github.com/%s/%s',
             \ 'git@github.com:%s/%s',
+            \ 'ssh://git@github.com/%s/%s',
             \ 'https://github.com/%s/%s.git',
             \ 'git://github.com/%s/%s.git',
             \ 'git@github.com:%s/%s.git',
+            \ 'ssh://git@github.com/%s/%s.git',
             \]
       let pairs = [
             \ ['lambdalisue', 'vim-gita'],
@@ -33,9 +35,11 @@ Describe gita#features#browse
             \ 'https://bitbucket.org/%s/%s',
             \ 'git://bitbucket.org/%s/%s',
             \ 'git@bitbucket.org:%s/%s',
+            \ 'ssh://git@bitbucket.org/%s/%s',
             \ 'https://bitbucket.org/%s/%s.git',
             \ 'git://bitbucket.org/%s/%s.git',
             \ 'git@bitbucket.org:%s/%s.git',
+            \ 'ssh://git@bitbucket.org/%s/%s.git',
             \]
       let pairs = [
             \ ['lambdalisue', 'vim-gita'],
