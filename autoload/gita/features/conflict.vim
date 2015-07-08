@@ -18,8 +18,7 @@ call s:parser.add_argument(
       \})
 call s:parser.add_argument(
       \ '--window', '-w',
-      \   'Open double/triple window to solve the conflict (Default: triple)',
-      \ ), {
+      \ 'Open double/triple window to solve the conflict (Default: triple)', {
       \   'choices': ['double', 'triple'],
       \   'default': 'triple',
       \ })

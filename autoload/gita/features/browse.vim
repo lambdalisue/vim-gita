@@ -154,7 +154,6 @@ function! gita#features#browse#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
   if !empty(get(options, '--', []))
     call map(options['--'], 'gita#utils#expand(v:val)')
   endif

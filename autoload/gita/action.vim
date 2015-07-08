@@ -42,7 +42,7 @@ function! s:actions.diff(candidates, options) abort " {{{
   endfor
 endfunction " }}}
 
-function! gita#action#smart_map(lhs, rhs) abort " {{{
+function! gita#action#smart_map(lhs, rhs) abort range " {{{
   return empty(gita#action#get_candidates(a:firstline, a:firstline))
         \ ? a:lhs
         \ : a:rhs

@@ -86,13 +86,13 @@ function! gita#statusline#format(format, ...) abort " {{{
     return ''
   endif
   let cache = gita.git.cache.repository
-  if gita.git.cache.repository.has(a:format) && !gita.git.is_updated('index', 'statusline')
-    return gita.git.cache.repository.get(a:format)
+  if cache.has(a:format) && !gita.git.is_updated('index', 'statusline')
+    return cache.get(a:format)
   endif
   call s:logger.debug('No statusline cache is found (%s)', expand('<sfile>'))
   let info = get(a:000, 1, gita#statusline#get(expr))
   let formatted = gita#utils#format_string(a:format, s:format_map, info)
-  call gita.git.cache.repository.set(a:format, formatted)
+  call cache.set(a:format, formatted)
   return formatted
 endfunction " }}}
 function! gita#statusline#preset(preset_name, ...) abort " {{{

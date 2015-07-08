@@ -113,10 +113,10 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
 
   if a:options.commit =~# '\v^[^.]*\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(
+    let lhs = matchlist(
           \ a:options.commit,
           \ '\v^([^.]*)\.\.([^.]*)$',
-          \)[1 : 2]
+          \)[1]
     let a:options.commit = lhs
   endif
   return 0
@@ -132,7 +132,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
           \ 'stdout': join(readfile(abspath), "\n"),
           \}
   else
-    let errormsg = printf('%s is not readable.', file)
+    let errormsg = printf('%s is not readable.', abspath)
     if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
       call gita#utils#error(errormsg)
     endif
@@ -219,7 +219,6 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
-  let gita = gita#get()
   let options = get(a:000, 0, {})
   if s:ensure_file_option(options)
     return

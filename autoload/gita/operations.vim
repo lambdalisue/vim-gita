@@ -102,7 +102,7 @@ endfunction " }}}
 function! s:operations.rm(...) abort " {{{
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  return self.exec('rm', options)
+  return self.exec('rm', options, {}, config)
 endfunction " }}}
 function! s:operations.reset(...) abort " {{{
   let options = get(a:000, 0, {})

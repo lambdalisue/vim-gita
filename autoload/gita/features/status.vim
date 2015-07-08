@@ -245,7 +245,6 @@ function! s:actions.discard(statuses, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.solve(statuses, options) abort " {{{
-  let gita = gita#get()
   for status in a:statuses
     call gita#utils#anchor#focus()
     call gita#features#conflict#show(extend({
@@ -479,7 +478,7 @@ endfunction " }}}
 function! gita#features#status#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    let optioins = extend(
+    let options = extend(
           \ g:gita#features#status#default_options,
           \ options)
     if get(options, 'window')

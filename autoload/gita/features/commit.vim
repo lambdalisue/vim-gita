@@ -120,8 +120,8 @@ function! s:commit(expr, options) abort " {{{
   if join(commitmsg, '') =~# '\v^\s*$'
     redraw
     call gita#utils#info(
-          \ 'No commit message is available.'
-          \ 'Note that all lines start from "#" are truncated.'
+          \ 'No commit message is available.',
+          \ 'Note that all lines start from "#" are truncated.',
           \ 'The operation will be canceled.',
           \)
     return

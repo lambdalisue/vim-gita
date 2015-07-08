@@ -102,6 +102,7 @@ function! s:ensure_file_option(options) abort " {{{
   return 0
 endfunction " }}}
 function! s:construct_commit(options) abort " {{{
+  let gita = gita#get()
   let commit1_display = ''
   let commit2_display = ''
   if a:options.commit =~# '\v^.*\.\.\..*$'
@@ -149,10 +150,10 @@ endfunction " }}}
 
 function! s:split_commit(commit, options) abort " {{{
   if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(
+    let rhs = matchlist(
           \ a:commit,
           \ '\v^([^.]*)\.\.\.([^.]*)$',
-          \)[ 1 : 2 ]
+          \)[2]
     return [ a:commit, rhs ]
   elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
     let [lhs, rhs] = matchlist(
@@ -161,7 +162,7 @@ function! s:split_commit(commit, options) abort " {{{
           \)[ 1 : 2 ]
     return [ lhs, rhs ]
   else
-    return [ get(options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
+    return [ get(a:options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
   endif
 endfunction " }}}
 
