@@ -3,7 +3,9 @@ Describe gita
     Context A file buffer in a git repository
       Before
         let bufname = g:P.join(g:repository_root, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
       End
       It should return a gita instance
         let gita = gita#new(bufname)
@@ -22,7 +24,9 @@ Describe gita
     Context A file buffer in a non git repository
       Before
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
       End
       It should return a gita instance while cwd is in a git repository
         let gita = gita#new(bufname)
@@ -54,7 +58,9 @@ Describe gita
     Context A non file buffer
       Before
         let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
         setlocal buftype=nofile
       End
       It should return a gita instance of a current working directory
@@ -84,7 +90,9 @@ Describe gita
     Context A file buffer in a git repository
       Before
         let bufname = g:P.join(g:repository_root, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
       End
       It should return a gita instance
         let gita = gita#get(bufname)
@@ -110,7 +118,9 @@ Describe gita
     Context A file buffer in a non git repository
       Before
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
       End
       It should return a gita instance while cwd is in a git repository
         let gita = gita#get(bufname)
@@ -149,7 +159,9 @@ Describe gita
     Context A non file buffer
       Before
         let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
+        if empty(bufname(bufname))
+          silent execute printf('new %s', bufname)
+        endif
         setlocal buftype=nofile
       End
       It should return a gita instance of a current working directory
