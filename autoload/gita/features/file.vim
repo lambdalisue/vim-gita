@@ -93,7 +93,10 @@ function! s:ensure_file_option(options) abort " {{{
     endif
     let a:options.file = '%'
   endif
-  let a:options.file = gita#utils#expand(a:options.file)
+  let a:options.file = fnamemodify(
+        \ gita#utils#expand(a:options.file),
+        \ ':p',
+        \)
   return 0
 endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
@@ -123,9 +126,10 @@ function! s:ensure_commit_option(options) abort " {{{
 endfunction " }}}
 
 function! s:exec_worktree(gita, options, config) abort " {{{
-  let abspath = a:gita.git.get_absolute_path(
-        \ gita#utils#expand(a:options.file),
+  let relpath = a:gita.git.get_relative_path(
+        \ fnamemodify(gita#utils#expand(a:options.file), ':p'),
         \)
+  let abspath = a:gita.git.get_absolute_path(relpath)
   if filereadable(abspath)
     return {
           \ 'status': 0,
@@ -186,7 +190,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
         \ '', '',
         \)
   let file = a:gita.git.get_relative_path(
-        \ gita#utils#expand(a:options.file),
+        \ fnamemodify(gita#utils#expand(a:options.file), ':p'),
         \)
   return a:gita.operations.show({
         \ 'object': printf('%s:%s', commit, file),
@@ -219,6 +223,7 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
+  let gita = gita#get()
   let options = get(a:000, 0, {})
   if s:ensure_file_option(options)
     return
@@ -234,11 +239,13 @@ function! gita#features#file#show(...) abort " {{{
   endif
 
   if options.commit ==# 'WORKTREE'
-    let bufname = options.file
+    let bufname = fnamemodify(options.file, ':p')
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ options.file,
+          \ gita.git.get_relative_path(
+          \   fnamemodify(options.file, ':p'),
+          \ ),
           \)
   endif
   call gita#utils#buffer#open(bufname, '', {

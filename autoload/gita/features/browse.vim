@@ -62,7 +62,8 @@ function! s:yank_string(content) abort " {{{
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
   let path = gita#utils#expand(a:expr)
-  let relpath = a:gita.git.get_relative_path(path)
+  let abspath = fnamemodify(path, ':p')
+  let relpath = a:gita.git.get_relative_path(abspath)
 
   " get selected region
   if path != gita#utils#expand('%')
