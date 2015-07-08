@@ -5,8 +5,8 @@ set cpo&vim
 function! gita#utils#anchor#is_suitable(winnum) abort " {{{
   let bufnum = winbufnr(a:winnum)
   let bufname = bufname(bufnum)
-  let buftype = getbufvar(bufnum, '&l:buftype')
-  let filetype = getbufvar(bufnum, '&l:filetype')
+  let buftype = gita#utils#getbufvar(bufnum, '&l:buftype')
+  let filetype = gita#utils#getbufvar(bufnum, '&l:filetype')
   if !empty(buftype) && (
         \ bufname  =~# g:gita#utils#anchor#unsuitable_bufname_pattern ||
         \ filetype =~# g:gita#utils#anchor#unsuitable_filetype_pattern)

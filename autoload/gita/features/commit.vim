@@ -97,7 +97,7 @@ function! s:commit(expr, options) abort " {{{
   let gita = gita#get(a:expr)
   let meta = gita.git.get_meta()
   " validate situation
-  let statuses_map = getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
+  let statuses_map = gita#utils#getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
   let staged_statuses = filter(values(statuses_map), 'v:val.is_staged')
   if empty(meta.merge_head) && empty(staged_statuses)
     " not in merge mode and nothing has been staged
@@ -130,7 +130,7 @@ function! s:commit(expr, options) abort " {{{
   " commit
   let options = extend(
         \ a:options,
-        \ getwinvar(bufwinnr(a:expr), '_gita_options', {}),
+        \ gita#utils#getwinvar(bufwinnr(a:expr), '_gita_options', {}),
         \)
   let options.file = tempname()
   call writefile(commitmsg, options.file)
@@ -138,7 +138,7 @@ function! s:commit(expr, options) abort " {{{
         \ 'echo': 'both',
         \})
   if result.status == 0
-    let w = getwinvar(bufwinnr(a:expr), '')
+    let w = gita#utils#getwinvar(bufwinnr(a:expr), '')
     " remove cached commitmsg
     silent! unlet! gita.commitmsg_saved
     silent! unlet! w._gita_options.commitmsg_cached
