@@ -26,7 +26,7 @@ let s:const.unstaged_pattern   = '\v^%([ MARC][MD]|DM)$'
 let s:const.untracked_pattern  = '\v^\?\?$'
 let s:const.ignored_pattern    = '\v^!!$'
 
-function! s:_vital_loaded(V) dict abort
+function! s:_vital_loaded(...) dict abort
   " define constant variables
   call extend(self, s:const)
 endfunction
@@ -136,19 +136,19 @@ function! s:parse(status, ...) abort " {{{
   endif
 endfunction " }}}
 
-function! s:is_conflicted(sign) " {{{
+function! s:is_conflicted(sign) abort " {{{
   return a:sign =~# s:const.conflicted_pattern
 endfunction " }}}
-function! s:is_staged(sign) " {{{
+function! s:is_staged(sign) abort " {{{
   return a:sign =~# s:const.staged_pattern
 endfunction " }}}
-function! s:is_unstaged(sign) " {{{
+function! s:is_unstaged(sign) abort " {{{
   return a:sign =~# s:const.unstaged_pattern
 endfunction " }}}
-function! s:is_untracked(sign) " {{{
+function! s:is_untracked(sign) abort " {{{
   return a:sign =~# s:const.untracked_pattern
 endfunction " }}}
-function! s:is_ignored(sign) " {{{
+function! s:is_ignored(sign) abort " {{{
   return a:sign =~# s:const.ignored_pattern
 endfunction " }}}
 

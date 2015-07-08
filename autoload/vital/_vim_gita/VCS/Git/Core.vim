@@ -1,5 +1,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
+scriptencoding utf-8
 
 " Vital ======================================================================
 let s:_config = {}

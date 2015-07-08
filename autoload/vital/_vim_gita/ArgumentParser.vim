@@ -202,10 +202,6 @@ function! s:new_argument(name, ...) abort " {{{
 endfunction " }}}
 
 function! s:complete_dummy(arglead, cmdline, cursorpos, ...) abort " {{{
-  let extra = extend({
-        \ 'argument': {},
-        \ 'opts': {},
-        \}, get(a:000, 0, {}))
   return []
 endfunction " }}}
 function! s:complete_files(arglead, cmdline, cursorpos, ...) abort " {{{
@@ -366,6 +362,8 @@ function! s:parser.parse(bang, range, ...) abort " {{{
   call self._call_hook('post_validate', opts)
   return opts
 endfunction " }}}
+" @vimlint(EVL104, 1, l:name)
+" @vimlint(EVL101, 1, l:value)
 function! s:parser._parse_args(args, ...) abort " {{{
   let opts = extend({
         \ '__unknown__': [],
@@ -389,48 +387,37 @@ function! s:parser._parse_args(args, ...) abort " {{{
       let name = get(self.alias, m[1], m[1])
       if name =~# arguments_pattern
         if !empty(m[2])
-          let value = s:strip_quotes(m[2])
+          let opts[name] = s:strip_quotes(m[2])
         elseif get(self, 'enable_positional_assign', 0) && !empty(nword) && nword !~# '^--\?'
-          let value = s:strip_quotes(nword)
+          let opts[name] = s:strip_quotes(nword)
           let cursor += 1
         else
-          let value = get(self.arguments[name], 'on_default', 1)
+          let opts[name] = get(self.arguments[name], 'on_default', 1)
         endif
       elseif substitute(name, '^no-', '', '') =~# arguments_pattern
         let name = substitute(name, '^no-', '', '')
         if self.arguments[name].deniable
-          let value = 0
+          let opts[name] = 0
         else
           call add(opts.__unknown__, cword)
-          silent! unlet name
-          silent! unlet value
         endif
       else
         call add(opts.__unknown__, cword)
-        silent! unlet name
-        silent! unlet value
       endif
     else
       if positional_cursor < positional_length
         let name = self.positional[positional_cursor]
-        let value = s:strip_quotes(cword)
+        let opts[name] = s:strip_quotes(cword)
         let positional_cursor += 1
       else
         call add(opts.__unknown__, cword)
-        silent! unlet name
-        silent! unlet value
       endif
     endif
-    if exists('name') && exists('value')
-      let opts[name] = value
-      " terminal check
-      if self.arguments[name].terminal
-        let cursor += 1
-        break
-      endif
+    " terminal check
+    if get(self.arguments, name, { 'terminal': 0 }).terminal
+      let cursor += 1
+      break
     endif
-    silent! unlet name
-    silent! unlet value
     let cursor += 1
   endwhile
   " assign remaining args as unknown
@@ -439,7 +426,7 @@ function! s:parser._parse_args(args, ...) abort " {{{
         \ opts.__args__[ cursor : ],
         \)
   return opts
-endfunction " }}}
+endfunction " @vimlint(EVL104, 0, l:name) @vimlint(EVL101, 0, l:value) }}}
 function! s:parser._regulate_opts(opts) abort " {{{
   " assign default values
   let exists_pattern = printf('\v^%%(%s)$', join(keys(a:opts), '|'))

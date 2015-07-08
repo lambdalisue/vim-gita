@@ -23,7 +23,7 @@ before_script:
   - git clone https://github.com/ynkdir/vim-vimlparser             --single-branch --depth 1 $VIMLPARSER
   - git clone https://github.com/thinca/vim-themis --branch v1.4.1 --single-branch --depth 1 $VIMTHEMIS
   - git clone https://github.com/Shougo/vimproc.vim                --single-branch --depth 1 $VIMPROC
-  - (cd /tmp/vimproc && make)
+  - (cd $VIMPROC && make)
 
 script:
   - vim --cmd version --cmd quit

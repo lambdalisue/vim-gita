@@ -18,9 +18,9 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:const.markers.separator   = repeat('\=', 7)
   let s:const.markers.theirs = repeat('\>', 7)
   let s:const.patterns = {}
-  let s:const.patterns.ours = printf('%s[^\n]{-}%(\n|$)', s:const.markers.ours)
-  let s:const.patterns.separator = printf('%s[^\n]{-}%(\n|$)', s:const.markers.separator)
-  let s:const.patterns.theirs = printf('%s[^\n]{-}%(\n|$)', s:const.markers.theirs)
+  let s:const.patterns.ours = printf('%s[^\n]{-}%%(\n|$)', s:const.markers.ours)
+  let s:const.patterns.separator = printf('%s[^\n]{-}%%(\n|$)', s:const.markers.separator)
+  let s:const.patterns.theirs = printf('%s[^\n]{-}%%(\n|$)', s:const.markers.theirs)
   lockvar s:const
   let self.const = s:const
 endfunction " }}}
@@ -31,15 +31,15 @@ function! s:_vital_depends() abort " {{{
         \]
 endfunction " }}}
 
-function! s:has_ours_marker(buflines) " {{{
+function! s:has_ours_marker(buflines) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   return !empty(matchstr(buflines, '\v' . s:const.patterns.ours))
 endfunction " }}}
-function! s:has_theirs_marker(buflines) " {{{
+function! s:has_theirs_marker(buflines) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   return !empty(matchstr(buflines, '\v' . s:const.patterns.theirs))
 endfunction " }}}
-function! s:has_conflict_marker(buflines) " {{{
+function! s:has_conflict_marker(buflines) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   let ours_or_theirs = printf('%%(%s|%s)',
         \ s:const.patterns.ours,
@@ -48,7 +48,7 @@ function! s:has_conflict_marker(buflines) " {{{
   return !empty(matchstr(buflines, '\v' . ours_or_theirs))
 endfunction " }}}
 
-function! s:strip_ours(buflines, ...) " {{{
+function! s:strip_ours(buflines, ...) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.ours,
@@ -58,7 +58,7 @@ function! s:strip_ours(buflines, ...) " {{{
   let buflines = substitute(buflines, '\v' . s:const.patterns.theirs . '\n?', '', 'g')
   return get(a:000, 0, s:P.is_list(a:buflines)) ? split(buflines, '\v\r?\n') : buflines
 endfunction " }}}
-function! s:strip_theirs(buflines, ...) " {{{
+function! s:strip_theirs(buflines, ...) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.separator,
@@ -68,7 +68,7 @@ function! s:strip_theirs(buflines, ...) " {{{
   let buflines = substitute(buflines, '\v' . s:const.patterns.ours . '\n?', '', 'g')
   return get(a:000, 0, s:P.is_list(a:buflines)) ? split(buflines, '\v\r?\n') : buflines
 endfunction " }}}
-function! s:strip_conflict(buflines, ...) " {{{
+function! s:strip_conflict(buflines, ...) abort " {{{
   let buflines = s:P.is_list(a:buflines) ? join(a:buflines, "\n") : a:buflines
   let region_pattern = printf('%s.{-}%s',
         \ s:const.patterns.ours,
