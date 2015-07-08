@@ -2,7 +2,7 @@
 <p align="center">vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.<br>
 Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
 
-vim-gita
+vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita.vim)
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
@@ -23,6 +23,17 @@ the statusline.
 [vim-jp/vital.vim]:                 https://github.com/vim-jp/vital.vim
 [lambdalisue/vital-ArgumentParser]: https://github.com/lambdalisue/vital-ArgumentParser
 [lambdalisue/vital-VCS-Git]:        https://github.com/lambdalisue/vital-VCS-Git
+
+
+Build Status
+-------------------------------------------------------------------------------
+
+Name                                 | Status
+-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------
+vim-gita                             | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita.vim)
+[vim-jp/vital.vim][]                 | [![Build Status](https://travis-ci.org/vim-jp/vital.vim.svg?branch=master)](https://travis-ci.org/vim-jp/vital.vim)
+[lambdalisue/vital-ArgumentParser][] | [![Build Status](https://travis-ci.org/lambdalisue/vital-ArgumentParser.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-ArgumentParser)
+[lambdalisue/vital-VCS-Git][]        | [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-VCS-Git)
 
 
 ToDo
