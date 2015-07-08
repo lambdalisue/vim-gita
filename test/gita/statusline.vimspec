@@ -3,6 +3,8 @@ Describe gita#statusline
     let bufname = g:P.join(g:repository_root, 'foo.txt')
     if empty(bufname(bufname))
       silent execute printf('new %s', bufname)
+    else
+      silent execute printf('%dwincmd w', bufwinnr(bufname))
     endif
   End
 

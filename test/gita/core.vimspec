@@ -5,6 +5,8 @@ Describe gita
         let bufname = g:P.join(g:repository_root, 'foo.txt')
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
       End
       It should return a gita instance
@@ -26,6 +28,8 @@ Describe gita
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
       End
       It should return a gita instance while cwd is in a git repository
@@ -60,6 +64,8 @@ Describe gita
         let bufname = 'non-file'
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
         setlocal buftype=nofile
       End
@@ -92,6 +98,8 @@ Describe gita
         let bufname = g:P.join(g:repository_root, 'foo.txt')
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
       End
       It should return a gita instance
@@ -120,6 +128,8 @@ Describe gita
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
       End
       It should return a gita instance while cwd is in a git repository
@@ -161,6 +171,8 @@ Describe gita
         let bufname = 'non-file'
         if empty(bufname(bufname))
           silent execute printf('new %s', bufname)
+        else
+          silent execute printf('%dwincmd w', bufwinnr(bufname))
         endif
         setlocal buftype=nofile
       End
