@@ -15,14 +15,16 @@ install:
   - sudo apt-get install vim-nox
 
 before_script:
-  - git clone https://github.com/syngan/vim-vimlint /tmp/vim-vimlint
-  - git clone https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
-  - git clone https://github.com/thinca/vim-themis --branch v1.4.1 --single-branch --depth 1 /tmp/vim-themis
-  - git clone https://github.com/Shougo/vimproc.vim /tmp/vimproc
+  - export VIMLINT=/tmp/vim-vimlint
+  - export VIMLPARSER=/tmp/vim-vimlparser
+  - export VIMTHEMIS=/tmp/vim-themis
+  - export VIMPROC=/tmp/vimproc.vim
+  - git clone https://github.com/syngan/vim-vimlint                --single-branch --depth 1 $VIMLINT
+  - git clone https://github.com/ynkdir/vim-vimlparser             --single-branch --depth 1 $VIMLPARSER
+  - git clone https://github.com/thinca/vim-themis --branch v1.4.1 --single-branch --depth 1 $VIMTHEMIS
+  - git clone https://github.com/Shougo/vimproc.vim                --single-branch --depth 1 $VIMPROC
   - (cd /tmp/vimproc && make)
 
 script:
-  - sh /tmp/vim-vimlint/bin/vimlint.sh -l /tmp/vim-vimlint -p /tmp/vim-vimlparser -e EVL103=1 -e EVL102.l:_=1 -c func_abort=1 autoload
   - vim --cmd version --cmd quit
-  - vim --cmd "try | helptags doc/ | catch | cquit | endtry" --cmd quit
-  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vimproc --reporter dot
+  - ./test/run_all.sh

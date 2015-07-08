@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-themis --reporter dot \
-       --runtimepath $HOME/.vim/bundle/vital.vim \
-       --runtimepath $HOME/.vim/bundle/vimproc.vim \
-       $@
+: ${VIMTHEMIS:=~/.vim/bundle/vim-themis}
+: ${VIMPROC:=~/.vim/bundle/vimproc.vim}
+
+# themis
+sh ${VIMTHEMIS}/bin/themis \
+     --reporter dot \
+     --runtimepath ${VIMPROC} \
+     $@
 
