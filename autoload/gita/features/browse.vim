@@ -136,13 +136,7 @@ function! s:find_url(gita, expr, options) abort " {{{
 endfunction " }}}
 function! s:translate_url(url, translation_patterns, options) abort " {{{
   for pattern in a:translation_patterns
-    if a:url =~# pattern[0] . '\.git'
-      " Prefer second pattern if 'exact' is specified. Use first pattern if
-      " no second pattern exists
-      let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
-      let repl = substitute(a:url, pattern[0] . '\.git', repl, 'g')
-      return repl
-    elseif a:url =~# pattern[0]
+    if a:url =~# pattern[0]
       " Prefer second pattern if 'exact' is specified. Use first pattern if
       " no second pattern exists
       let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
