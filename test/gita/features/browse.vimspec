@@ -1,0 +1,60 @@
+Describe gita#features#browse
+  Context #_translate_url({url}, {translate_patterns}, {options})
+    It should be able to translate a Github (https://github.com/) urls
+      let patterns = [
+            \ 'https://github.com/%s/%s',
+            \ 'git://github.com/%s/%s',
+            \ 'git@github.com:%s/%s',
+            \ 'https://github.com/%s/%s.git',
+            \ 'git://github.com/%s/%s.git',
+            \ 'git@github.com:%s/%s.git',
+            \]
+      let pairs = [
+            \ ['lambdalisue', 'vim-gita'],
+            \ ['vim-jp', 'vital.vim'],
+            \]
+      for pattern in patterns
+        for [user, repo] in pairs
+          let url = gita#features#browse#_translate_url(
+                \ printf(pattern, user, repo),
+                \ g:gita#features#browse#translation_patterns,
+                \ {},
+                \)
+          Assert Match(
+                \ url,
+                \ printf('^https://github.com/%s/%s/blob', user, repo),
+                \)
+        endfor
+      endfor
+    End
+
+    It should be able to translate a bitbucket (https://bitbucket.org/) urls
+      let patterns = [
+            \ 'https://bitbucket.org/%s/%s',
+            \ 'git://bitbucket.org/%s/%s',
+            \ 'git@bitbucket.org:%s/%s',
+            \ 'https://bitbucket.org/%s/%s.git',
+            \ 'git://bitbucket.org/%s/%s.git',
+            \ 'git@bitbucket.org:%s/%s.git',
+            \]
+      let pairs = [
+            \ ['lambdalisue', 'vim-gita'],
+            \ ['vim-jp', 'vital.vim'],
+            \]
+      for pattern in patterns
+        for [user, repo] in pairs
+          let url = gita#features#browse#_translate_url(
+                \ printf(pattern, user, repo),
+                \ g:gita#features#browse#translation_patterns,
+                \ {},
+                \)
+          Assert Match(
+                \ url,
+                \ printf('^https://bitbucket.org/%s/%s/src', user, repo),
+                \)
+        endfor
+      endfor
+    End
+  End
+End
+

@@ -120,15 +120,10 @@ function! s:find_url(gita, expr, options) abort " {{{
         \ deepcopy(g:gita#features#browse#translation_patterns),
         \ g:gita#features#browse#extra_translation_patterns,
         \)
-  for pattern in translation_patterns
-    if data.remote_url =~# pattern[0]
-      " Prefer second pattern if 'exact' is specified. Use first pattern if
-      " no second pattern exists
-      let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
-      let repl = substitute(data.remote_url, pattern[0], repl, 'g')
-      return gita#utils#format_string(repl, format_map, data)
-    endif
-  endfor
+  let url = s:translate_url(data.remote_url, translation_patterns, a:options)
+  if !empty(url)
+    return gita#utils#format_string(url, format_map, data)
+  endif
   redraw
   call gita#utils#warn(printf(
         \ 'No url translation pattern for "%s" is found.',
@@ -137,6 +132,24 @@ function! s:find_url(gita, expr, options) abort " {{{
   if gita#utils#asktf('Do you want to open a help for adding extra translation patterns?')
     help g:gita#features#browse#extra_translation_patterns
   endif
+  return ''
+endfunction " }}}
+function! s:translate_url(url, translation_patterns, options) abort " {{{
+  for pattern in a:translation_patterns
+    if a:url =~# pattern[0] . '\.git'
+      " Prefer second pattern if 'exact' is specified. Use first pattern if
+      " no second pattern exists
+      let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
+      let repl = substitute(a:url, pattern[0] . '\.git', repl, 'g')
+      return repl
+    elseif a:url =~# pattern[0]
+      " Prefer second pattern if 'exact' is specified. Use first pattern if
+      " no second pattern exists
+      let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
+      let repl = substitute(a:url, pattern[0], repl, 'g')
+      return repl
+    endif
+  endfor
   return ''
 endfunction " }}}
 
@@ -240,6 +253,10 @@ endfunction " }}}
 function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
+endfunction " }}}
+
+function! gita#features#browse#_translate_url(...) abort " {{{
+  return call('s:translate_url', a:000)
 endfunction " }}}
 
 let &cpo = s:save_cpo
