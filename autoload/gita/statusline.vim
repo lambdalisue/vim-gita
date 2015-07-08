@@ -90,7 +90,7 @@ function! gita#statusline#format(format, ...) abort " {{{
     return gita.git.cache.repository.get(a:format)
   endif
   call s:logger.debug('No statusline cache is found (%s)', expand('<sfile>'))
-  let info = gita#statusline#get(expr)
+  let info = get(a:000, 1, gita#statusline#get(expr))
   let formatted = gita#utils#format_string(a:format, s:format_map, info)
   call gita.git.cache.repository.set(a:format, formatted)
   return formatted

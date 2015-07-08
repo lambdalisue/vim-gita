@@ -24,12 +24,25 @@ Describe gita
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It should return a gita instance
+      It should return a gita instance while cwd is in a git repository
         let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.enabled, 1)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
+      End
+      It should NOT return a gita instance if cwd is not in a git repository
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:non_repository_root)
+          let gita = gita#new(bufname)
+          Assert Equals(gita.enabled, 0)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
       End
       It should return a different gita instance
         let gita1 = gita#new(bufname)
@@ -99,12 +112,25 @@ Describe gita
         let bufname = g:P.join(g:non_repository_root, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It should return a gita instance
+      It should return a gita instance while cwd is in a git repository
         let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.enabled, 1)
         Assert Equals(gita.bufname, bufname(bufname))
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
+      End
+      It should NOT return a gita instance if cwd is not in a git repository
+        let original_cwd = getcwd()
+        try
+          silent execute printf('cd %s', g:non_repository_root)
+          let gita = gita#get(bufname)
+          Assert Equals(gita.enabled, 0)
+          Assert Equals(gita.bufname, bufname(bufname))
+          Assert Equals(gita.bufnum, bufnr(bufname))
+          Assert Equals(gita.cwd, getcwd())
+        finally
+          silent execute printf('cd %s', original_cwd)
+        endtry
       End
       It should return a same gita instance
         let gita1 = gita#get(bufname)

@@ -77,10 +77,8 @@ Describe gita#operations
       let ret = gita#operations#_translate_options(options, {})
       Assert Equals(sort(ret), sort([
             \ '--foo',
-            \ '',
             \ '--hoge=''hoge''',
             \ '-f',
-            \ '',
             \ '-hhoge',
             \]))
     End
@@ -98,7 +96,6 @@ Describe gita#operations
       let ret = gita#operations#_translate_options(options, schemes)
       Assert Equals(sort(ret), sort([
             \ '---foo',
-            \ '',
             \ 'hoge',
             \]))
     End

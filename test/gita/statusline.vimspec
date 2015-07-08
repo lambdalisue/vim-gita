@@ -1,6 +1,9 @@
 Describe gita#statusline
   Before
     let bufname = g:P.join(g:repository_root, 'foo.txt')
+    if empty(bufname(bufname))
+      silent execute printf('new %s', bufname)
+    endif
   End
 
   Context #get([{expr}])
@@ -58,7 +61,7 @@ Describe gita#statusline
       for key in keys
         let info[key] = key
       endfor
-      let ret = gita#statusline#format(format, info)
+      let ret = gita#statusline#format(format, '%', info)
       let exp = join(keys)
       Assert Equals(ret, exp)
     End
