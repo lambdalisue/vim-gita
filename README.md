@@ -2,7 +2,7 @@
 <p align="center">vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.<br>
 Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
 
-vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita.vim)
+vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
 ===============================================================================
 ![Screencast (status to commit)](./doc/status-commit.gif)
 
@@ -30,7 +30,7 @@ Build Status
 
 Name                                 | Description                         | Status
 -------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------
-vim-gita                             | This plugin                         | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita.vim)
+vim-gita                             | This plugin                         | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
 [vim-jp/vital.vim][]                 | A core library                      | [![Build Status](https://travis-ci.org/vim-jp/vital.vim.svg?branch=master)](https://travis-ci.org/vim-jp/vital.vim)
 [lambdalisue/vital-ArgumentParser][] | A command argument library          | [![Build Status](https://travis-ci.org/lambdalisue/vital-ArgumentParser.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-ArgumentParser)
 [lambdalisue/vital-VCS-Git][]        | A core library for git manipulation | [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-VCS-Git)
