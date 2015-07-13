@@ -1,5 +1,5 @@
 vim_gita
-dc61d67
+f436ff5
 
 Prelude
 Data.List
@@ -11,4 +11,3 @@ VCS.Git.Conflict
 Vim.Buffer
 Vim.BufferManager
 System.File
-System.Logging
