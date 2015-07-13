@@ -77,7 +77,7 @@ function! s:ensure_commit_option(options) abort " {{{
     let gita = gita#get()
     let commit = gita#utils#ask(
           \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.) ',
-          \ get(gita.meta, 'revision', 'INDEX'),
+          \ get(gita.meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
       call gita#utils#warn(
@@ -206,10 +206,12 @@ function! s:diff1(...) abort " {{{
   setlocal filetype=diff
 
   if !empty(file)
-    let b:_gita_original_filename = file
+    call gita#set_original_filename(file)
   endif
-  let gita.meta.file = file
-  let gita.meta.revision = options.commit
+  call gita#set_meta({
+        \ 'file': file,
+        \ 'commit': options.commit,
+        \})
 endfunction " }}}
 function! s:diff2(...) abort " {{{
   let gita = gita#get()
@@ -283,10 +285,12 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT1)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    let b:_gita_original_filename = options.file
+    call gita#set_original_filename(options.file)
   endif
-  let gita.meta.file = options.file
-  let gita.meta.revison = commit1
+  call gita#set_meta({
+        \ 'file': options.file,
+        \ 'commit': commit1,
+        \})
   diffthis
 
   " COMMIT2
@@ -295,10 +299,12 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT2)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    let b:_gita_original_filename = options.file
+    call gita#set_original_filename(options.file)
   endif
-  let gita.meta.file = options.file
-  let gita.meta.revison = commit2
+  call gita#set_meta({
+        \ 'file': options.file,
+        \ 'commit': commit2,
+        \})
   diffthis
   diffupdate
 endfunction " }}}
