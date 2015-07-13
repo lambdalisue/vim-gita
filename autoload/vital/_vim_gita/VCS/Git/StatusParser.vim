@@ -43,8 +43,12 @@ function! s:parse_record(line, ...) abort " {{{
       " 'XY PATH1 -> PATH2' pattern
       let result.index = m[1]
       let result.worktree = m[2]
-      let result.path = substitute(m[3], '\v%(^"|"$)', '', 'g')
-      let result.path2 = substitute(m[4], '\v%(^"|"$)', '', 'g')
+      let result.path  = fnamemodify(
+            \ substitute(m[3], '\v%(^"|"$)', '', 'g'), ':p',
+            \)
+      let result.path2 = fnamemodify(
+            \ substitute(m[4], '\v%(^"|"$)', '', 'g'), ':p',
+            \)
       let result.record = a:line
       let result.sign = m[1] . m[2]
       let result.is_conflicted = s:is_conflicted(result.sign)
@@ -57,7 +61,9 @@ function! s:parse_record(line, ...) abort " {{{
       " 'XY PATH' pattern
       let result.index = m[1]
       let result.worktree = m[2]
-      let result.path = substitute(m[3], '\v%(^"|"$)', '', 'g')
+      let result.path  = fnamemodify(
+            \ substitute(m[3], '\v%(^"|"$)', '', 'g'), ':p',
+            \)
       let result.record = a:line
       let result.sign = m[1] . m[2]
       let result.is_conflicted = s:is_conflicted(result.sign)
