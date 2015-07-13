@@ -7,8 +7,6 @@ let s:D = gita#utils#import('Data.Dict')
 let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
-let s:logger = gita#utils#logging#get_logger(expand('<sfile>'))
-
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')
   let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
@@ -354,7 +352,6 @@ function! gita#features#diff#exec_cached(...) abort " {{{
   if !empty(cached_status)
     return cached_status
   endif
-  call s:logger.debug('No cached status is found (%s)', expand('<sfile>'))
   let result = gita#features#diff#exec(options, config)
   if result.status != get(config, 'success_status', 0)
     return result

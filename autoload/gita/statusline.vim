@@ -27,8 +27,6 @@ let s:preset = {
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
       \}
 
-let s:logger = gita#utils#logging#get_logger(expand('<sfile>'))
-
 function! gita#statusline#get(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = gita#get(expr)
@@ -89,7 +87,6 @@ function! gita#statusline#format(format, ...) abort " {{{
   if cache.has(a:format) && !gita.git.is_updated('index', 'statusline')
     return cache.get(a:format)
   endif
-  call s:logger.debug('No statusline cache is found (%s)', expand('<sfile>'))
   let info = get(a:000, 1, gita#statusline#get(expr))
   let formatted = gita#utils#format_string(a:format, s:format_map, info)
   call cache.set(a:format, formatted)
