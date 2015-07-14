@@ -2,9 +2,6 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:S = gita#utils#import('VCS.Git.StatusParser')
-
-
 function! gita#utils#completes#complete_branch(arglead, cmdline, cursorpos, ...) abort " {{{
   let gita = gita#get()
   if !gita.enabled
@@ -72,12 +69,12 @@ function! gita#utils#completes#complete_staged_files(arglead, cmdline, cursorpos
         \}, {
         \ 'echo': '',
         \})
-  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
-  if get(status, 'status', 0)
+  let statuses = gita#utils#status#parse(result.stdout, { 'fail_silently': 1 })
+  if get(statuses, 'status')
     return []
   endif
   let candidates = filter(
-        \ map(status.staged, 'v:val.path'),
+        \ map(statuses.staged, 'gita#utils#ensure_relpath(get(v:val, "path2", v:val.path))'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -89,12 +86,12 @@ function! gita#utils#completes#complete_unstaged_files(arglead, cmdline, cursorp
         \}, {
         \ 'echo': 'fail',
         \})
-  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
-  if get(status, 'status', 0)
+  let statuses = gita#utils#status#parse(result.stdout, { 'fail_silently': 1 })
+  if get(statuses, 'status')
     return []
   endif
   let candidates = filter(
-        \ map(status.unstaged, 'v:val.path'),
+        \ map(statuses.unstaged, 'gita#utils#ensure_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -106,12 +103,12 @@ function! gita#utils#completes#complete_conflicted_files(arglead, cmdline, curso
         \}, {
         \ 'echo': '',
         \})
-  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
-  if get(status, 'status', 0)
+  let statuses = gita#utils#status#parse(result.stdout, { 'fail_silently': 1 })
+  if get(statuses, 'status')
     return []
   endif
   let candidates = filter(
-        \ map(status.conflicted, 'v:val.path'),
+        \ map(statuses.conflicted, 'gita#utils#ensure_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -123,12 +120,12 @@ function! gita#utils#completes#complete_untracked_files(arglead, cmdline, cursor
         \}, {
         \ 'echo': '',
         \})
-  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
-  if get(status, 'status', 0)
+  let statuses = gita#utils#status#parse(result.stdout, { 'fail_silently': 1 })
+  if get(statuses, 'status')
     return []
   endif
   let candidates = filter(
-        \ map(status.untracked, 'v:val.path'),
+        \ map(statuses.untracked, 'gita#utils#ensure_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
