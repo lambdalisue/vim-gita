@@ -13,9 +13,8 @@ endfunction " }}}
 function! s:actions.edit(candidates, options) abort " {{{
   let gita = gita#get()
   for candidate in a:candidates
-    let abspath = gita.git.get_absolute_path(candidate.path)
     call gita#utils#anchor#focus()
-    call gita#utils#buffer#open(abspath, '', a:options)
+    call gita#utils#buffer#open(candidate.path, '', a:options)
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{

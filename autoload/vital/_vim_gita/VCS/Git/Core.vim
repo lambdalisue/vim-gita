@@ -75,9 +75,9 @@ function! s:find_repository(worktree) abort " {{{
 endfunction " }}}
 
 function! s:get_relative_path(worktree, path) abort " {{{
-  if !s:Path.is_absolute(a:path)
+  if s:Path.is_relative(a:path)
     throw printf(
-          \ 'vital: VCS.Git.Core: "%s" is already an absolute path',
+          \ 'vital: VCS.Git.Core: "%s" is already a relative path',
           \ a:path,
           \)
   endif
@@ -85,9 +85,9 @@ function! s:get_relative_path(worktree, path) abort " {{{
   return substitute(a:path, prefix, '', '')
 endfunction " }}}
 function! s:get_absolute_path(worktree, path) abort " {{{
-  if !s:Path.is_relative(a:path)
+  if s:Path.is_absolute(a:path)
     throw printf(
-          \ 'vital: VCS.Git.Core: "%s" is already a relative path',
+          \ 'vital: VCS.Git.Core: "%s" is already an absolute path',
           \ a:path,
           \)
   endif
