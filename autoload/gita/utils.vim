@@ -17,13 +17,12 @@ let s:P = gita#utils#import('Prelude')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 " string
-function! gita#utils#smart_string(value) abort " {{{
-  let P = gita#utils#import('Prelude')
-  if P.is_string(a:value)
+function! s:smart_string(value) abort " {{{
+  if s:P.is_string(a:value)
     return a:value
-  elseif P.is_numeric(a:value)
+  elseif s:P.is_numeric(a:value)
     return a:value ? string(a:value) : ''
-  elseif P.is_list(a:value) || P.is_dict(a:value)
+  elseif s:P.is_list(a:value) || s:P.is_dict(a:value)
     return !empty(a:value) ? string(a:value) : ''
   else
     return string(a:value)
@@ -46,7 +45,7 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   let pattern_base = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
   let str = copy(a:format)
   for [key, value] in items(a:format_map)
-    let result = gita#utils#smart_string(get(a:data, value, ''))
+    let result = s:smart_string(get(a:data, value, ''))
     let pattern = printf(pattern_base, key)
     let repl = strlen(result) ? printf('\1%s\2', result) : ''
     let str = substitute(str, pattern, repl, 'g')
