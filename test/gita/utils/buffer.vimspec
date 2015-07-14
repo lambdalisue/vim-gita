@@ -4,7 +4,7 @@ Describe gita#utils#buffer
     let g:gita#utils#buffer#separator = '_'
   End
   After
-    %bwipeout
+    call WipeoutAll()
     let g:gita#utils#buffer#separator = saved_separator
   End
 

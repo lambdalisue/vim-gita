@@ -18,7 +18,7 @@ function! gita#utils#buffer#bufname(...) abort " {{{
   return join(bits, g:gita#utils#buffer#separator)
 endfunction " }}}
 function! gita#utils#buffer#update(buflines) abort " {{{
-  let saved_cursor = getcurpos()
+  let saved_cursor = gita#compat#getcurpos()
   let saved_modifiable = &l:modifiable
   let saved_readonly = &l:readonly
   let saved_undolevels = &l:undolevels
@@ -51,13 +51,13 @@ function! gita#utils#buffer#open(name, group, ...) abort " {{{
           \}
   else
     let vname = printf('_buffer_manager_%s', a:group)
-    if !has_key(s:, vname)              
-      let s:{vname} = s:BM.new(config)  
-    endif                               
+    if !has_key(s:, vname)
+      let s:{vname} = s:BM.new(config)
+    endif
     let ret = s:{vname}.open(a:name, config)
-    return {                            
-          \ 'loaded': ret.loaded,       
-          \ 'bufnum': ret.bufnr,        
+    return {
+          \ 'loaded': ret.loaded,
+          \ 'bufnum': ret.bufnr,
           \}
   endif
 endfunction " }}}

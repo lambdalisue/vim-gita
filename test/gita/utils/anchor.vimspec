@@ -8,7 +8,7 @@ Describe gita#utils#anchor
     let g:gita#utils#anchor#unsuitable_filetype_pattern = '^unsuitable'
   End
   After
-    %bwipeout
+    call WipeoutAll()
     let g:gita#utils#anchor#unsuitable_bufname_pattern =
           \ saved_unsuitable_bufname_pattern
     let g:gita#utils#anchor#unsuitable_filetype_pattern =

@@ -5,7 +5,7 @@ endfunction
 Describe gita#action
   After
     " refresh everything
-    %bwipeout
+    call WipeoutAll()
   End
 
   Context #get_actions()

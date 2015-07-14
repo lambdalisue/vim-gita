@@ -21,6 +21,26 @@ function! s:setup() abort
 endfunction
 call s:setup()
 
+if v:version == 703
+  function! WipeoutAll() abort
+    " Vim 7.3 compatible %bufwipeout
+    let buflist = []
+    for i in range(tabpagenr('$'))
+      call extend(buflist, tabpagebuflist(i + 1))
+    endfor
+    for bufnum in buflist
+      if bufexists(bufnum)
+        silent execute printf('%dbwipeout!', bufnum)
+      endif
+    endfor
+    bwipeout!
+  endfunction
+else
+  function! WipeoutAll() abort
+    %bwipeout!
+  endfunction
+endif
+
 function! Capture(command) abort
   redir => contents
   silent execute a:command

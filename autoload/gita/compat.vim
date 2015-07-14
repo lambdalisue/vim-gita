@@ -1,6 +1,18 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+" getcurpos
+" https://github.com/vim-jp/vim/commit/0ea3beb7e39b21e2c6e6fd4f9a3121747bebe09f
+if (v:version == 704 && has('patch313')) || v:version > 704
+  function! gita#compat#getcurpos() abort " {{{
+    return getcurpos()
+  endfunction
+else
+  function! gita#compat#getcurpos() abort " {{{
+    return getpos('.')
+  endfunction
+endif
+
 " doautocmd User with <nomodeline>
 " https://github.com/vim-jp/vim/commit/8399b184df06f80ca030b505920dd3e97be72f20
 if (v:version == 703 && has('patch438')) || v:version >= 704

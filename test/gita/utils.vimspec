@@ -118,7 +118,7 @@ Describe gita#utils
       silent execute printf('new %s', bufname)
     End
     After
-      %bwipeout
+      call WipeoutAll()
     End
 
     It should return 'original_filename' when '%' is specified and original_filename is specified
@@ -216,7 +216,7 @@ Describe gita#utils
       silent execute printf('new %s', bufname)
     End
     After
-      %bwipeout
+      call WipeoutAll()
     End
 
     It should return a list of absolute path
