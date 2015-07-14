@@ -183,13 +183,16 @@ function! s:diff1(...) abort " {{{
   endif
 
   if len(get(options, '--', [])) == 1
-    let file = options['--'][0]
+    let abspath = gita#utils#ensure_abspath(
+          \ gita#utils#expand(options['--'][0]),
+          \)
+    let relpath = gita#utils#ensure_relpath(abspath)
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ printf('%s.diff', file),
+          \ printf('%s.diff', relpath),
           \)
   else
-    let file = ''
+    let abspath = ''
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
           \ 'diff',
@@ -203,11 +206,11 @@ function! s:diff1(...) abort " {{{
   setlocal nomodifiable readonly
   setlocal filetype=diff
 
-  if !empty(file)
-    call gita#set_original_filename(file)
+  if !empty(abspath)
+    call gita#set_original_filename(abspath)
   endif
   call gita#set_meta({
-        \ 'file': file,
+        \ 'file': abspath,
         \ 'commit': options.commit,
         \})
 endfunction " }}}
@@ -217,6 +220,11 @@ function! s:diff2(...) abort " {{{
   if s:ensure_file_option(options)
     return
   endif
+
+  let abspath = gita#utils#ensure_abspath(
+        \ gita#utils#expand(options.file)
+        \)
+  let relpath = gita#utils#ensure_relpath(abspath)
 
   " find commit1 and commit2
   let result = s:construct_commit(options)
@@ -244,12 +252,15 @@ function! s:diff2(...) abort " {{{
   else
     let COMMIT1_bufname = gita#utils#buffer#bufname(
           \ commit1_display,
-          \ options.file,
+          \ relpath,
           \)
   endif
 
   " commit2
-  let result = gita#features#file#exec({ 'commit': commit2, 'file': options.file }, {
+  let result = gita#features#file#exec({
+        \ 'commit': commit2,
+        \ 'file': options.file,
+        \}, {
         \ 'echo': '',
         \})
   if result.status == 0
@@ -264,7 +275,7 @@ function! s:diff2(...) abort " {{{
   else
     let COMMIT2_bufname = gita#utils#buffer#bufname(
           \ commit2_display,
-          \ options.file,
+          \ relpath,
           \)
   endif
 
@@ -283,10 +294,10 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT1)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    call gita#set_original_filename(options.file)
+    call gita#set_original_filename(abspath)
   endif
   call gita#set_meta({
-        \ 'file': options.file,
+        \ 'file': abspath,
         \ 'commit': commit1,
         \})
   diffthis
@@ -297,10 +308,10 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT2)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    call gita#set_original_filename(options.file)
+    call gita#set_original_filename(abspath)
   endif
   call gita#set_meta({
-        \ 'file': options.file,
+        \ 'file': abspath,
         \ 'commit': commit2,
         \})
   diffthis
@@ -365,10 +376,14 @@ function! gita#features#diff#show(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  if type(options.window) ==# type(0) && !options.window
-    call gita#features#diff#exec(options, config)
+  if type(options.window) ==# type(0)
+    if options.window
+      call s:diff1(options, config)
+    else
+      call gita#features#diff#exec(options, config)
+    endif
   else
-    if options.window == 'single'
+    if options.window ==# 'single'
       call s:diff1(options, config)
     else
       call s:diff2(options, config)

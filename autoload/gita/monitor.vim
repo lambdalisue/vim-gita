@@ -106,9 +106,9 @@ function! gita#monitor#define_mappings() abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-diff-v)
         \ :<C-u>call gita#action#exec('diff', { 'opener': 'vsplit' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-h)
-        \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 0 })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'window': 'double', 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
-        \ :<C-u>call gita#action#exec('diff', { 'compare': 1, 'vertical': 1 })<CR>
+        \ :<C-u>call gita#action#exec('diff', { 'window': 'double', 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer> q     <Plug>(gita-action-quit)

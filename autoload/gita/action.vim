@@ -13,10 +13,12 @@ endfunction " }}}
 function! s:actions.edit(candidates, options) abort " {{{
   for candidate in a:candidates
     call gita#utils#anchor#focus()
-    call gita#features#file#show(extend(a:options, {
-          \ 'file': get(candidate, 'path2', candidate.path),
+    call gita#features#file#show({
           \ 'commit': 'WORKTREE',
-          \}))
+          \ 'file':   get(candidate, 'path2', candidate.path),
+          \ 'opener': get(a:options, 'opener', 'edit'),
+          \ 'range':  get(a:options, 'range', 'tabpage'),
+          \})
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
@@ -28,10 +30,12 @@ function! s:actions.open(candidates, options) abort " {{{
             \ : 'HEAD'
     endif
     call gita#utils#anchor#focus()
-    call gita#features#file#show(extend(a:options, {
-          \ 'file': candidate.path,
+    call gita#features#file#show({
           \ 'commit': commit,
-          \}))
+          \ 'file': candidate.path,
+          \ 'opener': get(a:options, 'opener', 'edit'),
+          \ 'range':  get(a:options, 'range', 'tabpage'),
+          \})
   endfor
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
@@ -43,10 +47,15 @@ function! s:actions.diff(candidates, options) abort " {{{
             \ : 'HEAD'
     endif
     call gita#utils#anchor#focus()
-    call gita#features#diff#show(extend(a:options, {
+    call gita#features#diff#show({
           \ '--': [candidate.path],
           \ 'commit': commit,
-          \}))
+          \ 'window':   get(a:options, 'window', 'single'),
+          \ 'opener':   get(a:options, 'opener', 'edit'),
+          \ 'opener2':  get(a:options, 'opener2', 'split'),
+          \ 'range':    get(a:options, 'range', 'tabpage'),
+          \ 'vertical': get(a:options, 'vertical', 0),
+          \})
   endfor
 endfunction " }}}
 
@@ -88,7 +97,7 @@ function! gita#action#smart_map(lhs, rhs) abort range " {{{
 endfunction " }}}
 function! gita#action#exec(name, ...) abort range " {{{
   let options = extend(
-        \ get(w:, '_gita_options', {}),
+        \ deepcopy(get(w:, '_gita_options', {})),
         \ get(a:000, 0, {}),
         \)
   let candidates = gita#action#get_candidates(
