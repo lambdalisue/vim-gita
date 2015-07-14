@@ -54,16 +54,6 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
 
-" ensure
-function! gita#utils#ensure_string(x) abort " {{{
-  let P = gita#utils#import('Prelude')
-  return P.is_string(a:x) ? a:x : [a:x]
-endfunction " }}}
-function! gita#utils#ensure_list(x) abort " {{{
-  let P = gita#utils#import('Prelude')
-  return P.is_list(a:x) ? a:x : [a:x]
-endfunction " }}}
-
 " misc
 function! gita#utils#get_status(path) abort " {{{
   let gita = gita#get()
