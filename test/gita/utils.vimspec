@@ -209,5 +209,29 @@ Describe gita#utils
       Assert Equals(ret, fnamemodify(abspath, ':~:.'))
     End
   End
+
+  Context #ensure_pathlist({pathlist})
+    Before
+      let bufname = g:P.join(g:repository_root, 'foo.txt')
+      silent execute printf('new %s', bufname)
+    End
+    After
+      %bwipeout
+    End
+
+    It should return a list of absolute path
+      let pathlist = [
+            \ '%',
+            \ 'foo.txt',
+            \ gita#utils#ensure_abspath('bar.txt'),
+            \]
+      let ret = gita#utils#ensure_pathlist(pathlist)
+      Assert Equals(len(ret), 3)
+      Assert Equals(ret[0], gita#utils#ensure_abspath(bufname))
+      Assert Equals(ret[1], gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(ret[2], gita#utils#ensure_abspath('bar.txt'))
+
+    End
+  End
 End
 
