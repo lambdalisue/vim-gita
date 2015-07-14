@@ -315,7 +315,7 @@ function! gita#features#diff#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    call map(options['--'], 'gita#utils#expand(v:val)')
+    let options['--'] = gita#utils#ensure_pathlist(options['--'])
   endif
   if has_key(options, 'commit')
     let options.commit = substitute(options.commit, 'INDEX', '', 'g')

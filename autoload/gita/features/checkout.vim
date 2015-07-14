@@ -103,7 +103,7 @@ function! gita#features#checkout#exec(...) abort " {{{
     return
   endif
   if !empty(get(options, '--', []))
-    call map(options['--'], 'gita#utils#expand(v:val)')
+    let options['--'] = gita#utils#ensure_pathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
