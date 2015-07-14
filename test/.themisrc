@@ -21,6 +21,13 @@ function! s:setup() abort
 endfunction
 call s:setup()
 
+function! Capture(command) abort
+  redir => contents
+  silent execute a:command
+  redir END
+  return split(contents, '\v\r?\n')
+endfunction
+
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
