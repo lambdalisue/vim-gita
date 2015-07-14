@@ -102,25 +102,5 @@ function! gita#utils#expand(expr) abort " {{{
   endif
 endfunction " }}}
 
-" getbufvar, getwinvar, gettabvar
-" https://github.com/vim-jp/vim/commit/51d92c00e8c731c3b8f79b1e5f3e6b47cb1d1192
-if (v:version == 703 && has('patch831')) || v:version >= 704
-  function! gita#utils#getbufvar(...) abort " {{{
-    return call('getbufvar', a:000)
-  endfunction " }}}
-  function! gita#utils#getwinvar(...) abort " {{{
-    return call('getwinvar', a:000)
-  endfunction " }}}
-else
-  function! gita#utils#getbufvar(expr, varname, ...) abort " {{{
-    let v = getbufvar(a:expr, a:varname)
-    return empty(v) ? get(a:000, 0, '') : v
-  endfunction " }}}
-  function! gita#utils#getwinvar(expr, varname, ...) abort " {{{
-    let v = getwinvar(a:expr, a:varname)
-    return empty(v) ? get(a:000, 0, '') : v
-  endfunction " }}}
-endif
-
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

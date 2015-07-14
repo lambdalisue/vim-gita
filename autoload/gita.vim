@@ -10,7 +10,7 @@ let s:gita = {}
 function! s:gita.is_expired() abort " {{{
   let bufnum = get(self, 'bufnum', -1)
   let bufname = bufname(bufnum)
-  let buftype = gita#utils#getbufvar(bufnum, '&buftype')
+  let buftype = gita#compat#getbufvar(bufnum, '&buftype')
   if get(self, 'force_expired')
     return 1
   elseif empty(buftype) && bufname !=# self.bufname
@@ -34,8 +34,8 @@ endfunction " }}}
 function! gita#new(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
-  let btype = gita#utils#getbufvar(expr, '&l:buftype')
-  let ftype = gita#utils#getbufvar(expr, '&l:filetype')
+  let btype = gita#compat#getbufvar(expr, '&l:buftype')
+  let ftype = gita#compat#getbufvar(expr, '&l:filetype')
   let filename = gita#utils#expand(expr)
   if !empty(g:gita#invalid_buftype_pattern) && btype =~# g:gita#invalid_buftype_pattern
     let git = {}
@@ -61,7 +61,7 @@ function! gita#new(...) abort " {{{
         \ 'meta':     {},
         \})
   let gita.operations = gita#operations#new(gita)
-  if !empty(gita#utils#getwinvar(bufwinnr(expr), '_gita'))
+  if !empty(gita#compat#getwinvar(bufwinnr(expr), '_gita'))
     call setwinvar(bufwinnr(expr), '_gita', gita)
   else
     call setbufvar(expr, '_gita', gita)
@@ -70,9 +70,9 @@ function! gita#new(...) abort " {{{
 endfunction " }}}
 function! gita#get(...) abort " {{{
   let expr = get(a:000, 0, '%')
-  let gita = gita#utils#getwinvar(bufwinnr(expr), '_gita', {})
+  let gita = gita#compat#getwinvar(bufwinnr(expr), '_gita', {})
   let gita = empty(gita)
-        \ ? gita#utils#getbufvar(expr, '_gita', {})
+        \ ? gita#compat#getbufvar(expr, '_gita', {})
         \ : gita
   if !empty(gita) && !gita.is_expired()
     return gita
@@ -89,7 +89,7 @@ function! gita#set_meta(meta, ...) abort " {{{
   return extend(meta, a:meta)
 endfunction " }}}
 function! gita#get_original_filename(...) abort " {{{
-  return gita#utils#getbufvar(get(a:000, 0, '%'), '_gita_original_filename', '')
+  return gita#compat#getbufvar(get(a:000, 0, '%'), '_gita_original_filename', '')
 endfunction " }}}
 function! gita#set_original_filename(filename, ...) abort " {{{
   call setbufvar(get(a:000, 0, '%'), '_gita_original_filename', a:filename)
