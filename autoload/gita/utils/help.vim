@@ -2,19 +2,35 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " Modules
-let s:scriptfile = expand('<sfile>')
 let s:P = gita#utils#import('System.Filepath')
+let s:C = gita#utils#import('System.Cache.Memory')
 
+let s:sfile = expand('<sfile>:p')
+let s:cache = s:C.new()
 
 function! s:get_help_directory() abort " {{{
-  let repository_root = fnamemodify(s:scriptfile, ':h:h:h:h:p')
+  let repository_root = fnamemodify(s:sfile, ':h:h:h:h')
   return s:P.join(repository_root, 'help')
 endfunction " }}}
 
-
+function! gita#utils#help#is_enabled(name) abort " {{{
+  let varname = printf('_gita_help_%s_enabled', a:name)
+  return get(b:, varname, 0)
+endfunction " }}}
+function! gita#utils#help#enable(name) abort " {{{
+  let varname = printf('_gita_help_%s_enabled', a:name)
+  let b:[varname] = 1
+endfunction " }}}
+function! gita#utils#help#disable(name) abort " {{{
+  let varname = printf('_gita_help_%s_enabled', a:name)
+  let b:[varname] = 0
+endfunction " }}}
+function! gita#utils#help#toggle(name) abort " {{{
+  let varname = printf('_gita_help_%s_enabled', a:name)
+  let b:[varname] = !get(b:, varname, 0)
+endfunction " }}}
 function! gita#utils#help#read(name) abort " {{{
-  let cache_name = printf('_help_%s_cache', a:name)
-  if !has_key(s:, cache_name)
+  if !s:cache.has(a:name)
     let filename = s:P.join(s:get_help_directory(), a:name . '.txt')
     if !filereadable(filename)
       throw printf(
@@ -22,25 +38,9 @@ function! gita#utils#help#read(name) abort " {{{
             \ filename,
             \)
     endif
-    let s:[cache_name] = readfile(filename)
+    call s:cache.set(a:name, readfile(filename))
   endif
-  return s:[cache_name]
-endfunction " }}}
-function! gita#utils#help#is_enabled(name) abort " {{{
-  let varname = printf('_help_%s_enabled', a:name)
-  return get(b:, varname, 0)
-endfunction " }}}
-function! gita#utils#help#enable(name) abort " {{{
-  let varname = printf('_help_%s_enabled', a:name)
-  let b:[varname] = 1
-endfunction " }}}
-function! gita#utils#help#disable(name) abort " {{{
-  let varname = printf('_help_%s_enabled', a:name)
-  let b:[varname] = 0
-endfunction " }}}
-function! gita#utils#help#toggle(name) abort " {{{
-  let varname = printf('_help_%s_enabled', a:name)
-  let b:[varname] = !get(b:, varname, 0)
+  return s:cache.get(a:name)
 endfunction " }}}
 function! gita#utils#help#get(name) abort " {{{
   if gita#utils#help#is_enabled(a:name)
