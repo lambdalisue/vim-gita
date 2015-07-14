@@ -126,17 +126,17 @@ function! s:ensure_commit_option(options) abort " {{{
 endfunction " }}}
 
 function! s:exec_worktree(gita, options, config) abort " {{{
-  let relpath = a:gita.git.get_relative_path(
-        \ fnamemodify(gita#utils#expand(a:options.file), ':p'),
+  let abspath = gita#utils#ensure_abspath(
+        \ gita#utils#expand(a:options.file),
         \)
-  let abspath = a:gita.git.get_absolute_path(relpath)
+  let relpath = gita#utils#ensure_relpath(abspath)
   if filereadable(abspath)
     return {
           \ 'status': 0,
           \ 'stdout': join(readfile(abspath), "\n"),
           \}
   else
-    let errormsg = printf('%s is not readable.', abspath)
+    let errormsg = printf('%s is not readable.', relpath)
     if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
       call gita#utils#prompt#error(errormsg)
     endif
@@ -189,11 +189,14 @@ function! s:exec_commit(gita, options, config) abort " {{{
         \ '\v\.?\zsINDEX\ze\.?$',
         \ '', '',
         \)
-  let file = a:gita.git.get_relative_path(
-        \ fnamemodify(gita#utils#expand(a:options.file), ':p'),
+  let abspath = gita#utils#ensure_abspath(
+        \ gita#utils#expand(a:options.file),
         \)
+  " Note:
+  "   relative from a repository root
+  let relpath = a:gita.git.get_relative_path(abspath)
   return a:gita.operations.show({
-        \ 'object': printf('%s:%s', commit, file),
+        \ 'object': printf('%s:%s', commit, relpath),
         \}, a:config)
 endfunction " }}}
 
@@ -237,15 +240,15 @@ function! gita#features#file#show(...) abort " {{{
   if result.status
     return
   endif
+  let abspath = gita#utils#ensure_abspath(options.file)
+  let relpath = gita#utils#ensure_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
-    let bufname = fnamemodify(options.file, ':p')
+    let bufname = abspath
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ gita.git.get_relative_path(
-          \   fnamemodify(options.file, ':p'),
-          \ ),
+          \ relpath,
           \)
   endif
   call gita#utils#buffer#open(bufname, '', {
@@ -257,10 +260,10 @@ function! gita#features#file#show(...) abort " {{{
     call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')
           \)
-    call gita#set_original_filename(options.file)
+    call gita#set_original_filename(abspath)
   endif
   call gita#set_meta({
-        \ 'file': options.file,
+        \ 'file': abspath,
         \ 'commit': options.commit,
         \})
 endfunction " }}}
