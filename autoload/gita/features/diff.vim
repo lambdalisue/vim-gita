@@ -215,7 +215,6 @@ function! s:diff1(...) abort " {{{
         \})
 endfunction " }}}
 function! s:diff2(...) abort " {{{
-  let gita = gita#get()
   let options = get(a:000, 0, {})
   if s:ensure_file_option(options)
     return

@@ -226,7 +226,6 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
-  let gita = gita#get()
   let options = get(a:000, 0, {})
   if s:ensure_file_option(options)
     return

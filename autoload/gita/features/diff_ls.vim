@@ -106,7 +106,6 @@ function! gita#features#diff_ls#open(...) abort " {{{
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#diff_ls#update(...) abort " {{{
-  let gita = gita#get()
   let options = extend(
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
