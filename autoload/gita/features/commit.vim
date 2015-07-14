@@ -5,7 +5,6 @@ let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:P = gita#utils#import('System.Filepath')
 let s:F = gita#utils#import('System.File')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
@@ -268,6 +267,7 @@ function! gita#features#commit#open(...) abort " {{{
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#commit#update(...) abort " {{{
+  let gita = gita#get()
   let options = extend(
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
@@ -285,20 +285,15 @@ function! gita#features#commit#update(...) abort " {{{
     bwipe
     return
   endif
-  let statuses = s:S.parse(result.stdout)
-  let gita = gita#get()
+  let statuses = gita#utils#status#parse(result.stdout)
 
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
   for status in statuses.all
-    let record = printf('# %s', status.record)
-    call add(statuses_lines, record)
-    let statuses_map[record] = status
-    let status.path = gita.git.get_absolute_path(status.path)
-    if has_key(status, 'path2')
-      let status.path2 = gita.git.get_absolute_path(status.path2)
-    endif
+    let status_record = printf('# %s', status.record)
+    let statuses_map[status_record] = status
+    call add(statuses_lines, status_record)
   endfor
   let w:_gita_statuses_map = statuses_map
 
@@ -333,7 +328,7 @@ function! gita#features#commit#update(...) abort " {{{
   " update content
   let buflines = s:L.flatten([
         \ commitmsg,
-        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ '# Press ?m and/or ?s to toggle a help of mapping and/or short format.',
         \ gita#utils#help#get('commit_mapping'),
         \ gita#utils#help#get('short_format'),
         \ s:get_status_header(gita),

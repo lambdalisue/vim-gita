@@ -4,7 +4,6 @@ set cpo&vim
 
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:A = gita#utils#import('ArgumentParser')
 
 let s:const = {}
@@ -107,6 +106,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#diff_ls#update(...) abort " {{{
+  let gita = gita#get()
   let options = extend(
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
@@ -122,27 +122,24 @@ function! gita#features#diff_ls#update(...) abort " {{{
     bwipe
     return
   endif
-  let statuses = s:S.parse(substitute(result.stdout, '\t', '  ', 'g'))
-  let gita = gita#get()
+  let statuses = gita#utils#status#parse(
+        \ substitute(result.stdout, '\t', '  ', 'g')
+        \)
 
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
   for status in statuses.all
-    let line = printf('%s', status.record)
-    call add(statuses_lines, line)
-    let statuses_map[line] = status
-    let status.path = gita.git.get_absolute_path(status.path)
-    if has_key(status, 'path2')
-      let status.path2 = gita.git.get_absolute_path(status.path2)
-    endif
+    let status_record = status.record
+    let statuses_map[status_record] = status
+    call add(statuses_lines, status_record)
   endfor
   let w:_gita_statuses_map = statuses_map
 
   " update content
   let buflines = s:L.flatten([
-        \ ['# Files difference between "' . options.commit . '".',
-        \  '# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ '# Files difference between "' . options.commit . '".',
+        \ '# Press ?m and/or ?s to toggle a help of mapping and/or short format.',
         \ gita#utils#help#get('diff_ls_mapping'),
         \ gita#utils#help#get('short_format'),
         \ statuses_lines,

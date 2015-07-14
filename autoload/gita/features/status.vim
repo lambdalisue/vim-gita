@@ -5,7 +5,6 @@ set cpo&vim
 let s:L = gita#utils#import('Data.List')
 let s:D = gita#utils#import('Data.Dict')
 let s:F = gita#utils#import('System.File')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:P = gita#utils#import('System.Filepath')
 let s:A = gita#utils#import('ArgumentParser')
 
@@ -289,7 +288,7 @@ function! gita#features#status#exec_cached(...) abort " {{{
         \ 'ignored',
         \ 'ignore_submodules',
         \])))
-  let cached_status = gita.git.is_updated('index', 'status') || get(config, 'force_update', 0)
+  let cached_status = gita.git.is_updated('index', 'status') || get(config, 'force_update')
         \ ? {}
         \ : gita.git.cache.repository.get(cache_name, {})
   if !empty(cached_status)
@@ -330,6 +329,7 @@ function! gita#features#status#open(...) abort " {{{
   silent execute printf("setlocal filetype=%s", s:const.filetype)
 endfunction " }}}
 function! gita#features#status#update(...) abort " {{{
+  let gita = gita#get()
   let options = extend(
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
@@ -343,27 +343,21 @@ function! gita#features#status#update(...) abort " {{{
     bwipe
     return
   endif
-  let statuses = s:S.parse(result.stdout)
-  let gita = gita#get()
+  let statuses = gita#utils#status#parse(result.stdout)
 
   " create statuses lines & map
-  " Note:
-  "   status.path/status.path2 are relative path from a git repository root
   let statuses_map = {}
   let statuses_lines = []
   for status in statuses.all
-    call add(statuses_lines, status.record)
-    let statuses_map[status.record] = status
-    let status.path = gita.git.get_absolute_path(status.path)
-    if has_key(status, 'path2')
-      let status.path2 = gita.git.get_absolute_path(status.path2)
-    endif
+    let status_record = status.record
+    let statuses_map[status_record] = status
+    call add(statuses_lines, status_record)
   endfor
   let w:_gita_statuses_map = statuses_map
 
   " update content
   let buflines = s:L.flatten([
-        \ ['# Press ?m and/or ?s to toggle a help of mapping and/or short format.'],
+        \ '# Press ?m and/or ?s to toggle a help of mapping and/or short format.',
         \ gita#utils#help#get('status_mapping'),
         \ gita#utils#help#get('short_format'),
         \ s:get_status_header(gita),

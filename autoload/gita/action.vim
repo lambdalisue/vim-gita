@@ -21,6 +21,7 @@ function! s:actions.edit(candidates, options) abort " {{{
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
   for candidate in a:candidates
+    let commit = get(a:options, 'commit', '')
     if empty(commit)
       let commit = candidate.is_unstaged
             \ ? 'INDEX'
