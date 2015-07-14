@@ -76,14 +76,20 @@ endfunction " }}}
 
 function! s:get_relative_path(worktree, path) abort " {{{
   if !s:Path.is_absolute(a:path)
-    return a:path
+    throw printf(
+          \ 'vital: VCS.Git.Core: "%s" is already an absolute path',
+          \ a:path,
+          \)
   endif
   let prefix = a:worktree . s:Path.separator()
   return substitute(a:path, prefix, '', '')
 endfunction " }}}
 function! s:get_absolute_path(worktree, path) abort " {{{
   if !s:Path.is_relative(a:path)
-    return a:path
+    throw printf(
+          \ 'vital: VCS.Git.Core: "%s" is already a relative path',
+          \ a:path,
+          \)
   endif
   return s:Path.join([a:worktree, a:path])
 endfunction " }}}
