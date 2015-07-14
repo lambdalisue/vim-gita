@@ -81,14 +81,6 @@ function! gita#utils#get_status(path) abort " {{{
   let statuses = s:S.parse(result.stdout)
   return get(statuses.all, 0, {})
 endfunction " }}}
-function! gita#utils#doautocmd(name) abort " {{{
-  let name = printf('vim-gita-%s', a:name)
-  if 703 < v:version || (v:version == 703 && has('patch438'))
-    silent execute 'doautocmd <nomodeline> User ' . name
-  else
-    silent execute 'doautocmd User ' . name
-  endif
-endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   if a:expr =~# '^%'
     let expr = '%'

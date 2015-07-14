@@ -78,7 +78,7 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   endif
   " call autocmd
   if config.doautocmd && result.status == config.success_status
-    call gita#utils#doautocmd(printf('%s-post', args[0]))
+    call gita#compat#doautocmd(printf('vim-gita-%s-post', args[0]))
   endif
   return result
 endfunction " }}}
