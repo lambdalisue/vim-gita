@@ -42,6 +42,7 @@ let s:default_config = {
       \     'tagbar',
       \   ], '\|')
       \ ),
+      \ 'utils#buffer#separator': has('unix') ? ':' : '_',
       \ 'features#add#default_options': {},
       \ 'features#browse#default_options': {},
       \ 'features#browse#translation_patterns': [

@@ -3,9 +3,42 @@ set cpo&vim
 
 let s:B = gita#utils#import('Vim.Buffer')
 let s:BM = gita#utils#import('Vim.BufferManager')
-let s:SEP = has('unix') ? ':' : '_'
 
+function! s:is_listed_in_tabpage(expr) abort " {{{
+  let bufnum = bufnr(a:expr)
+  if bufnum == -1
+    return 0
+  endif
+  let buflist = tabpagebuflist()
+  return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
+endfunction " }}}
 
+function! gita#utils#buffer#bufname(...) abort " {{{
+  let bits = filter(deepcopy(a:000), '!empty(v:val)')
+  return join(bits, g:gita#utils#buffer#separator)
+endfunction " }}}
+function! gita#utils#buffer#update(buflines) abort " {{{
+  let saved_cursor = getcurpos()
+  let saved_modifiable = &l:modifiable
+  let saved_readonly = &l:readonly
+  let saved_undolevels = &l:undolevels
+  let &l:modifiable=1
+  let &l:undolevels=-1
+  let &l:readonly=0
+  silent %delete _
+  call setline(1, a:buflines)
+  call setpos('.', saved_cursor)
+  let &l:modifiable = saved_modifiable
+  let &l:readonly = saved_readonly
+  let &l:undolevels = saved_undolevels
+  setlocal nomodified
+endfunction " }}}
+function! gita#utils#buffer#clear_undo_history() abort " {{{
+  let saved_undolevels = &undolevels
+  let &undolevels = -1
+  silent execute "normal a \<BS>\<ESC>"
+  let &undolevels = saved_undolevels
+endfunction " }}}
 function! gita#utils#buffer#open(name, group, ...) abort " {{{
   let config = get(a:000, 0, {})
   if empty(a:group)
@@ -18,13 +51,13 @@ function! gita#utils#buffer#open(name, group, ...) abort " {{{
           \}
   else
     let vname = printf('_buffer_manager_%s', a:group)
-    if !has_key(s:, vname)
-      let s:{vname} = s:BM.new(config)
-    endif
+    if !has_key(s:, vname)              
+      let s:{vname} = s:BM.new(config)  
+    endif                               
     let ret = s:{vname}.open(a:name, config)
-    return {
-          \ 'loaded': ret.loaded,
-          \ 'bufnum': ret.bufnr,
+    return {                            
+          \ 'loaded': ret.loaded,       
+          \ 'bufnum': ret.bufnr,        
           \}
   endif
 endfunction " }}}
@@ -42,7 +75,7 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
         \})
   " 2nd buffer
   let vertical = get(options, 'vertical', 0)
-  if gita#utils#buffer#is_listed_in_tabpage(a:name2)
+  if s:is_listed_in_tabpage(a:name2)
     let opener = 'edit'
   else
     let opener = vertical ? 'vert split' : 'split'
@@ -72,7 +105,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \})
   " 2nd buffer (from 1st)
   let vertical = get(options, 'vertical', 0)
-  if gita#utils#buffer#is_listed_in_tabpage(a:name2)
+  if s:is_listed_in_tabpage(a:name2)
     let opener = 'edit'
   else
     let opener = vertical ? 'vert leftabove split' : 'leftabove split'
@@ -83,7 +116,7 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \})
   " 3rd buffer (from 1st)
   silent execute printf('%swincmd w', bufwinnr(result1.bufnum))
-  if gita#utils#buffer#is_listed_in_tabpage(a:name3)
+  if s:is_listed_in_tabpage(a:name3)
     let opener = 'edit'
   else
     let opener = vertical ? 'vert rightbelow split' : 'rightbelow split'
@@ -100,43 +133,6 @@ function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
         \ 'loaded2': result2.loaded,
         \ 'loaded3': result3.loaded,
         \}
-endfunction " }}}
-function! gita#utils#buffer#update(buflines) abort " {{{
-  let saved_cursor = getpos('.')
-  let saved_modifiable = &l:modifiable
-  let saved_readonly = &l:readonly
-  let saved_undolevels = &l:undolevels
-  let &l:modifiable=1
-  let &l:undolevels=-1
-  let &l:readonly=0
-  silent %delete _
-  call setline(1, a:buflines)
-  call setpos('.', saved_cursor)
-  let &l:modifiable = saved_modifiable
-  let &l:readonly = saved_readonly
-  let &l:undolevels = saved_undolevels
-  setlocal nomodified
-endfunction " }}}
-function! gita#utils#buffer#is_listed_in_tabpage(expr) abort " {{{
-  let bufnum = bufnr(a:expr)
-  if bufnum == -1
-    return 0
-  endif
-  let buflist = tabpagebuflist()
-  return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
-endfunction " }}}
-function! gita#utils#buffer#bufname(...) abort " {{{
-  let bits = filter(deepcopy(a:000), 'v:val')
-  let bits = has('unix')
-        \ ? map(bits, 'substitute(v:val, ":", s:SEP, "g")')
-        \ : bits
-  return join(a:000, s:SEP)
-endfunction " }}}
-function! gita#utils#buffer#clear_undo_history() abort " {{{
-  let saved_undolevels = &undolevels
-  let &undolevels = -1
-  silent execute "normal a \<BS>\<ESC>"
-  let &undolevels = saved_undolevels
 endfunction " }}}
 
 let &cpo = s:save_cpo
