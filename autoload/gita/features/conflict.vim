@@ -32,7 +32,7 @@ function! s:ensure_status_option(options) abort " {{{
   elseif has_key(a:options, 'status')
     let a:options.file = get(a:options.status, 'path2', a:options.status.path)
   else
-    let a:options.status = gita#utils#get_status(a:options.file)
+    let a:options.status = gita#utils#status#retrieve(a:options.file)
   endif
   let a:options.file = gita#utils#expand(a:options.file)
   return 0

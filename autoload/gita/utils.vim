@@ -60,23 +60,6 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
 
-" misc
-function! gita#utils#get_status(path) abort " {{{
-  let gita = gita#get()
-  let options = {
-        \ 'porcelain': 1,
-        \ 'ignore_submodules': 1,
-        \ '--': [a:path],
-        \}
-  let result = gita.operations.status(options, {
-        \ 'echo': 'fail',
-        \})
-  if result.status != 0
-    return {}
-  endif
-  let statuses = s:S.parse(result.stdout)
-  return get(statuses.all, 0, {})
-endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
   if a:expr =~# '^%'
     let expr = '%'
