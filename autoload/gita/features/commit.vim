@@ -100,13 +100,13 @@ function! s:commit(expr, options) abort " {{{
   if empty(meta.merge_head) && empty(staged_statuses)
     " not in merge mode and nothing has been staged
     redraw
-    call gita#utils#warn(
+    call gita#utils#prompt#warn(
           \ 'No changes exist for commit. Stage changes first.',
           \)
     return
   elseif getbufvar(a:expr, '&modified')
     redraw
-    call gita#utils#warn(
+    call gita#utils#prompt#warn(
           \ 'You have unsaved changes on the commit message.',
           \ 'Save the changes by ":w" command first.',
           \)
@@ -117,7 +117,7 @@ function! s:commit(expr, options) abort " {{{
   let commitmsg = s:get_current_commitmsg(a:expr)
   if join(commitmsg, '') =~# '\v^\s*$'
     redraw
-    call gita#utils#info(
+    call gita#utils#prompt#echo(
           \ 'No commit message is available.',
           \ 'Note that all lines start from "#" are truncated.',
           \ 'The operation will be canceled.',
@@ -158,13 +158,13 @@ function! s:ac_BufWriteCmd() abort " {{{
     let gita = gita#get()
     let gita.commitmsg_saved = s:get_current_commitmsg()
     setlocal nomodified
-    call gita#utils#title(
+    call gita#utils#prompt#info(
           \ "the commit message is saved in a local cache.",
           \)
   endif
 endfunction " }}}
 function! s:ac_WinLeave() abort " {{{
-  if !&modified && gita#utils#asktf('Do you want to commit changes?', 'y')
+  if !&modified && gita#utils#prompt#asktf('Do you want to commit changes?', 'y')
     call s:commit('%', {})
   endif
 endfunction " }}}

@@ -126,11 +126,11 @@ function! s:find_url(gita, expr, options) abort " {{{
     return gita#utils#format_string(url, format_map, data)
   endif
   redraw
-  call gita#utils#warn(printf(
+  call gita#utils#prompt#warn(printf(
         \ 'No url translation pattern for "%s" is found.',
         \ data.remote_url,
         \))
-  if gita#utils#asktf('Do you want to open a help for adding extra translation patterns?')
+  if gita#utils#prompt#asktf('Do you want to open a help for adding extra translation patterns?')
     help g:gita#features#browse#extra_translation_patterns
   endif
   return ''
@@ -178,7 +178,7 @@ function! gita#features#browse#open(...) abort " {{{
   for url in result.urls
     if !empty(url)
       call s:F.open(url)
-      call gita#utils#info(printf(
+      call gita#utils#prompt#echo(printf(
             \ '"%s" is opened.',
             \ url,
             \))
@@ -197,7 +197,7 @@ function! gita#features#browse#yank(...) abort " {{{
   for url in result.urls
     if !empty(url)
       call s:yank_string(url)
-      call gita#utils#info(printf(
+      call gita#utils#prompt#echo(printf(
             \ '"%s" is yanked.',
             \ url,
             \))
@@ -215,7 +215,7 @@ function! gita#features#browse#echo(...) abort " {{{
   redraw!
   for url in result.urls
     if !empty(url)
-      call gita#utils#info(url)
+      call gita#utils#prompt#echo(url)
     endif
   endfor
 endfunction " }}}

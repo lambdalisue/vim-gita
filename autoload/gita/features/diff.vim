@@ -73,12 +73,12 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if !has_key(a:options, 'commit')
     let gita = gita#get()
-    let commit = gita#utils#ask(
+    let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.) ',
           \ get(gita.meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
-      call gita#utils#warn(
+      call gita#utils#prompt#warn(
             \ 'Operation has canceled by user',
             \)
       return -1
@@ -91,7 +91,7 @@ function! s:ensure_file_option(options) abort " {{{
   if empty(get(a:options, '--', []))
     let a:options['--'] = ['%']
   elseif len(get(a:options, '--', [])) > 1
-    call gita#utils#warn(
+    call gita#utils#prompt#warn(
           \ 'A single file required to be specified to compare the difference.',
           \)
     return -1

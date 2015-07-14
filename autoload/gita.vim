@@ -23,7 +23,7 @@ function! s:gita.is_expired() abort " {{{
 endfunction " }}}
 function! s:gita.fail_on_disabled() abort " {{{
   if !self.enabled
-    call gita#utils#warn(
+    call gita#utils#prompt#warn(
           \ 'Gita is not available on the current buffer.',
           \)
     return 1

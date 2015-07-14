@@ -17,58 +17,6 @@ Describe gita#utils
     End
   End
 
-  Context #echo({hl}, {})
-    It should able to be called without errors
-      call gita#utils#echo('Comment', 'Test')
-    End
-  End
-  Context #debug([{args}...])
-    It should able to be called without errors
-      call gita#utils#debug('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #info([{args}...])
-    It should able to be called without errors
-      call gita#utils#info('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #warn([{args}...])
-    It should able to be called without errors
-      call gita#utils#warn('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #error([{args}...])
-    It should able to be called without errors
-      call gita#utils#error('Hi', ['A', 'B', 'C'])
-    End
-  End
-
-  Context #echomsg({hl}, {msg})
-    It should able to be called without errors
-      call gita#utils#echomsg('Comment', 'Test')
-    End
-  End
-  Context #debugmsg([{args}...])
-    It should able to be called without errors
-      call gita#utils#debugmsg('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #infomsg([{args}...])
-    It should able to be called without errors
-      call gita#utils#infomsg('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #warnmsg([{args}...])
-    It should able to be called without errors
-      call gita#utils#warnmsg('Hi', ['A', 'B', 'C'])
-    End
-  End
-  Context #errormsg([{args}...])
-    It should able to be called without errors
-      call gita#utils#errormsg('Hi', ['A', 'B', 'C'])
-    End
-  End
-
   Context #format_string({format}, {format_map}, {data})
     It should return an empty string if an empty {format} is given
       let ret = gita#utils#format_string('', {}, {})

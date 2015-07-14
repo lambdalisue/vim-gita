@@ -198,7 +198,7 @@ function! s:actions.discard(statuses, options) abort " {{{
   let checkout_statuses = []
   for status in a:statuses
     if status.is_conflicted
-      call gita#utils#warn(printf(
+      call gita#utils#prompt#warn(printf(
             \ 'A conflicted file "%s" cannot be discarded. Resolve the conflict first.',
             \ status.path,
             \))
@@ -210,13 +210,13 @@ function! s:actions.discard(statuses, options) abort " {{{
     endif
   endfor
   if get(a:options, 'confirm', 1)
-    call gita#utils#warn(join([
+    call gita#utils#prompt#warn(join([
           \ 'A discard action will discard all local changes on the working tree',
           \ 'and the operation is irreversible, mean that you have no chance to',
           \ 'revert the operation.',
           \]))
-    if !gita#utils#asktf('Are you sure you want to discard the changes?')
-      call gita#utils#info(
+    if !gita#utils#prompt#asktf('Are you sure you want to discard the changes?')
+      call gita#utils#prompt#echo(
             \ 'The operation has canceled by user.'
             \)
       return

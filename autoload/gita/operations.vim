@@ -66,15 +66,15 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
   " echo result
   if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
-    call gita#utils#title(printf(
+    call gita#utils#prompt#info(printf(
           \ 'Ok: %s', join(result.args),
           \))
-    call gita#utils#info(result.stdout)
+    call gita#utils#prompt#echo(result.stdout)
   elseif config.echo =~# '^\%(both\|fail\)' && result.status != config.success_status
-    call gita#utils#error(printf(
+    call gita#utils#prompt#error(printf(
           \ 'Fail: %s', join(result.args),
           \))
-    call gita#utils#info(result.stdout)
+    call gita#utils#prompt#echo(result.stdout)
   endif
   " call autocmd
   if config.doautocmd && result.status == config.success_status

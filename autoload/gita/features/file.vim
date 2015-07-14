@@ -83,10 +83,10 @@ function! s:ensure_file_option(options) abort " {{{
   if empty(get(a:options, 'file'))
     let filename = gita#utils#expand('%')
     if empty(filename)
-      call gita#utils#warn(
+      call gita#utils#prompt#warn(
             \ 'No file is specified and could not automatically detect.'
             \)
-      call gita#utils#info(
+      call gita#utils#prompt#echo(
             \ 'Operation has canceled.'
             \)
       return -1
@@ -102,12 +102,12 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
     let meta = gita#get_meta()
-    let commit = gita#utils#ask(
+    let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master..., master, etc.) ',
           \ get(meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
-      call gita#utils#info(
+      call gita#utils#prompt#echo(
             \ 'Operation has canceled by user',
             \)
       return -1
@@ -138,7 +138,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
   else
     let errormsg = printf('%s is not readable.', abspath)
     if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
-      call gita#utils#error(errormsg)
+      call gita#utils#prompt#error(errormsg)
     endif
     return {
           \ 'status': -1,
@@ -171,11 +171,11 @@ function! s:exec_ancestor(gita, options, config) abort " {{{
           \ lhs, rhs,
           \)
     if get(a:config, 'echo', 'both') =~# '^\%(both\|fail\)$'
-      call gita#utils#error(printf(
+      call gita#utils#prompt#error(printf(
             \ 'Fail: %s', join(result.args),
             \))
-      call gita#utils#info(result.stdout)
-      call gita#utils#info(errormsg)
+      call gita#utils#prompt#echo(result.stdout)
+      call gita#utils#prompt#echo(errormsg)
     endif
     return {
           \ 'status': -1,
@@ -215,7 +215,7 @@ function! gita#features#file#exec(...) abort " {{{
           \ options.commit,
           \)
     if get(config, 'echo', 'both') =~# '^\%(both\|fail\)$'
-      call gita#utils#error(errormsg)
+      call gita#utils#prompt#error(errormsg)
     endif
     return { 'status': -1, 'stdout': errormsg }
   else

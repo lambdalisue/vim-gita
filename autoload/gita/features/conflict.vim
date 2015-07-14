@@ -25,7 +25,7 @@ call s:parser.add_argument(
 
 function! s:ensure_status_option(options) abort " {{{
   if !has_key(a:options, 'status') && !has_key(a:options, 'file')
-    call gita#utils#error(
+    call gita#utils#prompt#error(
           \ '"status" nor "file" is specified.',
           \)
     return -1
