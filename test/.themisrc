@@ -3,7 +3,7 @@ let g:P = g:V.import('System.Filepath')
 let g:F = g:V.import('System.File')
 
 function! s:setup() abort
-  let root = tempname()
+  let root = resolve(tempname())
   let g:repository_root = g:P.join(root, 'repository_root')
   let g:non_repository_root = g:P.join(root, 'non_repository_root')
 

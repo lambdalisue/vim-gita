@@ -13,16 +13,23 @@ function! gita#utils#import(name) abort " {{{
   return s:[cache_name]
 endfunction " }}}
 
-let s:P = gita#utils#import('Prelude')
+let s:P = gita#utils#import('System.Filepath')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:TYPES = {
+      \ 'STRING': type(''),
+      \ 'NUMBER': type(0),
+      \ 'LIST': type([]),
+      \ 'DICT': type({}),
+      \}
 
 " string
 function! s:smart_string(value) abort " {{{
-  if s:P.is_string(a:value)
+  let type = type(a:value)
+  if type == s:TYPES.STRING
     return a:value
-  elseif s:P.is_numeric(a:value)
+  elseif type == s:TYPES.NUMBER
     return a:value ? string(a:value) : ''
-  elseif s:P.is_list(a:value) || s:P.is_dict(a:value)
+  elseif type == s:TYPES.LIST || type == s:TYPES.DICT
     return !empty(a:value) ? string(a:value) : ''
   else
     return string(a:value)
@@ -81,6 +88,22 @@ function! gita#utils#expand(expr) abort " {{{
   else
     return expand(a:expr)
   endif
+endfunction " }}}
+function! gita#utils#ensure_abspath(path) abort " {{{
+  if s:P.is_absolute(a:path)
+    return a:path
+  endif
+  " Note:
+  "   the behavior of ':p' for non existing file path is not defined
+  return filereadable(a:path)
+        \ ? fnamemodify(a:path, ':p')
+        \ : s:P.join(fnamemodify(getcwd(), ':p'), a:path)
+endfunction " }}}
+function! gita#utils#ensure_relpath(path) abort " {{{
+  if s:P.is_relative(a:path)
+    return a:path
+  endif
+  return fnamemodify(deepcopy(a:path), ':~:.')
 endfunction " }}}
 
 let &cpo = s:save_cpo

@@ -144,5 +144,70 @@ Describe gita#utils
     End
 
   End
+
+  Context #ensure_abspath({path})
+    Before
+      let saved_cwd = getcwd()
+      let file1 = g:P.join(g:repository_root, 'foo.txt')
+      let file2 = g:P.join(g:repository_root, 'hoge', 'bar.txt')
+      execute printf('cd %s', g:repository_root)
+      call writefile(['foo'], file1)
+    End
+    After
+      execute printf('cd %s', saved_cwd)
+      call delete(file1)
+    End
+
+    It should return {path} if {path} is already an absolute path
+      let abspath = g:P.join(g:repository_root, 'foo.txt')
+      let ret = gita#utils#ensure_abspath(abspath)
+      Assert Equals(ret, abspath)
+      Assert Same(ret, abspath)
+    End
+
+    It should return an absolute path of {path} which exists
+      let relpath = 'foo.txt'
+      let ret = gita#utils#ensure_abspath(relpath)
+      Assert NotSame(ret, relpath)
+      Assert NotEquals(ret, relpath)
+      Assert Equals(ret, fnamemodify(relpath, ':p'))
+    End
+
+    It should return an absolute path of {path} which does not exist
+      let relpath = g:P.join('hoge', 'bar.txt')
+      let ret = gita#utils#ensure_abspath(relpath)
+      Assert NotSame(ret, relpath)
+      Assert NotEquals(ret, relpath)
+      " the behavior of ':p' is not defined for non existing file
+      " thus opposite approach is required
+      Assert Equals(fnamemodify(ret, ':~:.'), relpath)
+    End
+  End
+
+  Context #ensure_relpath({path})
+    Before
+      let saved_cwd = getcwd()
+      let file1 = g:P.join(g:repository_root, 'foo.txt')
+      execute printf('cd %s', g:repository_root)
+    End
+    After
+      execute printf('cd %s', saved_cwd)
+    End
+
+    It should return {path} if {path} is already a relative path
+      let relpath = 'foo.txt'
+      let ret = gita#utils#ensure_relpath(relpath)
+      Assert Equals(ret, relpath)
+      Assert Same(ret, relpath)
+    End
+
+    It should return a relative path of {path}
+      let abspath = file1
+      let ret = gita#utils#ensure_relpath(abspath)
+      Assert NotSame(ret, abspath)
+      Assert NotEquals(ret, abspath)
+      Assert Equals(ret, fnamemodify(abspath, ':~:.'))
+    End
+  End
 End
 
