@@ -192,10 +192,16 @@ function! gita#utils#doautocmd(name) abort " {{{
   endif
 endfunction " }}}
 function! gita#utils#expand(expr) abort " {{{
-  " Note:
-  " this function is also used in gita#get thus it should not call that.
-  let original_filename = gita#get_original_filename(a:expr)
-  return empty(original_filename) ? expand(a:expr) : expand(original_filename)
+  if a:expr =~# '^%'
+    let expr = '%'
+    let modi = substitute(a:expr, '^%', '', '')
+    let original_filename = gita#get_original_filename(expr)
+    return empty(original_filename)
+          \ ? expand(a:expr)
+          \ : fnamemodify(original_filename, modi)
+  else
+    return expand(a:expr)
+  endif
 endfunction " }}}
 
 " getbufvar, getwinvar, gettabvar
