@@ -11,19 +11,21 @@ function! s:actions.help(candidates, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.edit(candidates, options) abort " {{{
-  let gita = gita#get()
   for candidate in a:candidates
     call gita#utils#anchor#focus()
-    call gita#utils#buffer#open(candidate.path, '', a:options)
+    call gita#features#file#show(extend(a:options, {
+          \ 'file': get(candidate, 'path2', candidate.path),
+          \ 'commit': 'WORKTREE',
+          \}))
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
-  " gita#features#file#show cannot treat master... thus remove the trailing
-  " characters after ..[.]
-  let commit = get(a:options, 'commit', 'HEAD')
-  let commit = substitute(commit, '\v\.\.\.?.*$', '', '')
-  let commit = substitute(commit, '\v^\.\.\.?', '', '')
   for candidate in a:candidates
+    if empty(commit)
+      let commit = candidate.is_unstaged
+            \ ? 'INDEX'
+            \ : 'HEAD'
+    endif
     call gita#utils#anchor#focus()
     call gita#features#file#show(extend(a:options, {
           \ 'file': candidate.path,
@@ -33,18 +35,29 @@ function! s:actions.open(candidates, options) abort " {{{
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
   for candidate in a:candidates
+    let commit = get(a:options, 'commit', '')
+    if empty(commit)
+      let commit = candidate.is_unstaged
+            \ ? 'INDEX'
+            \ : 'HEAD'
+    endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show(extend(a:options, {
           \ '--': [candidate.path],
-          \ 'commit': get(a:options, 'commit', 'INDEX'),
+          \ 'commit': commit,
           \}))
   endfor
 endfunction " }}}
 
-function! gita#action#smart_map(lhs, rhs) abort range " {{{
-  return empty(gita#action#get_candidates(a:firstline, a:firstline))
-        \ ? a:lhs
-        \ : a:rhs
+function! gita#action#get_actions() abort " {{{
+  let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
+  return b:_gita_actions
+endfunction " }}}
+function! gita#action#extend_actions(actions) abort " {{{
+  call extend(
+        \ gita#action#get_actions(),
+        \ a:actions,
+        \)
 endfunction " }}}
 function! gita#action#get_candidates(...) abort " {{{
   let start = get(a:000, 0, 0)
@@ -67,18 +80,11 @@ function! gita#action#set_candidates(candidates) abort " {{{
     let w:_gita_action_candidates = a:candidates
   endif
 endfunction " }}}
-
-function! gita#action#get_actions() abort " {{{
-  let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
-  return b:_gita_actions
+function! gita#action#smart_map(lhs, rhs) abort range " {{{
+  return empty(gita#action#get_candidates(a:firstline, a:firstline))
+        \ ? a:lhs
+        \ : a:rhs
 endfunction " }}}
-function! gita#action#extend_actions(actions) abort " {{{
-  call extend(
-        \ gita#action#get_actions(),
-        \ a:actions,
-        \)
-endfunction " }}}
-
 function! gita#action#exec(name, ...) abort range " {{{
   let options = extend(
         \ get(w:, '_gita_options', {}),

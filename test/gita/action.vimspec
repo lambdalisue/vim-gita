@@ -1,0 +1,101 @@
+function! GetCandidates(start, end) abort
+  return ['a', 'b', 'c', 'd', 'e'][ a:start : a:end ]
+endfunction
+
+Describe gita#action
+  After
+    " refresh everything
+    %bwipeout
+  End
+
+  Context #get_actions()
+    It should return a singleton instance of 'actions'
+      let ret1 = gita#action#get_actions()
+      let ret2 = gita#action#get_actions()
+      Assert KeyExists(ret1, 'help')
+      Assert KeyExists(ret1, 'edit')
+      Assert KeyExists(ret1, 'open')
+      Assert KeyExists(ret1, 'diff')
+      Assert Same(ret1, ret2)
+    End
+  End
+
+  Context #extend_actions({actions})
+    It should extend a singleton instance of 'actions'
+      let ret1 = gita#action#get_actions()
+      call gita#action#extend_actions({
+            \ 'foo': 'bar',
+            \})
+      let ret2 = gita#action#get_actions()
+      Assert KeyExists(ret1, 'foo')
+      Assert KeyExists(ret2, 'foo')
+      Assert Equals(ret1.foo, 'bar')
+      Assert Equals(ret2.foo, 'bar')
+      Assert Same(ret1, ret2)
+    End
+  End
+
+  Context #get_candidates([{start}, {end}])
+    It should return candidates from w:_gita_action_candidates
+      let w:_gita_action_candidates = [1, 2, 3, 4, 5]
+      let ret = gita#action#get_candidates()
+      Assert Equals(ret, [1, 2, 3, 4, 5])
+
+      let ret = gita#action#get_candidates(2)
+      Assert Equals(ret, [3, 4, 5])
+
+      let ret = gita#action#get_candidates(2, 3)
+      Assert Equals(ret, [3, 4])
+    End
+
+    It should return candidates from b:_gita_action_get_candidates()
+      let b:_gita_action_get_candidates = function('GetCandidates')
+      let ret = gita#action#get_candidates()
+      Assert Equals(ret, ['a', 'b', 'c', 'd', 'e'])
+
+      let ret = gita#action#get_candidates(2)
+      Assert Equals(ret, ['c', 'd', 'e'])
+
+      let ret = gita#action#get_candidates(2, 3)
+      Assert Equals(ret, ['c', 'd'])
+    End
+  End
+
+  Context #set_candidates({candidates})
+    After
+      silent! unlet! g:w_gita_action_candidates
+      silent! unlet! g:B_gita_action_get_candidates
+    End
+    It should let w:_gita_action_candidates when non funcref is specified
+      call gita#action#set_candidates([1, 2, 3, 4, 5])
+      let g:w_gita_action_candidates = get(w:, '_gita_action_candidates', 0)
+      let g:B_gita_action_get_candidates = get(b:, '_gita_action_get_candidates', 0)
+
+      Assert Equals(g:w_gita_action_candidates, [1, 2, 3, 4, 5])
+      Assert Equals(g:B_gita_action_get_candidates, 0)
+    End
+
+    It should let b:_gita_action_get_candidates when funcref is specified
+      call gita#action#set_candidates(function('GetCandidates'))
+      let g:w_gita_action_candidates = get(w:, '_gita_action_candidates', 0)
+      let g:B_gita_action_get_candidates = get(b:, '_gita_action_get_candidates', 0)
+
+      Assert Equals(g:w_gita_action_candidates, 0)
+      Assert Equals(g:B_gita_action_get_candidates, function('GetCandidates'))
+    End
+  End
+
+  Context #smart_map(lhs, rhs)
+    It should return {lhs} when the current line has a candidates
+      Assert True(exists('*gita#action#smart_map'))
+      Skip Behavior test of 'range' function is not available?
+    End
+  End
+
+  Context #exec({name}[, {options})
+    It should execute {name} action
+      Assert True(exists('*gita#action#exec'))
+      Skip Behavior test of 'range' function is not available?
+    End
+  End
+End
