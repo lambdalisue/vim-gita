@@ -295,6 +295,10 @@ function! gita#features#commit#update(...) abort " {{{
     let record = printf('# %s', status.record)
     call add(statuses_lines, record)
     let statuses_map[record] = status
+    let status.path = gita.git.get_absolute_path(status.path)
+    if has_key(status, 'path2')
+      let status.path2 = gita.git.get_absolute_path(status.path2)
+    endif
   endfor
   let w:_gita_statuses_map = statuses_map
 

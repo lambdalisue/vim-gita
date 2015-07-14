@@ -347,11 +347,17 @@ function! gita#features#status#update(...) abort " {{{
   let gita = gita#get()
 
   " create statuses lines & map
+  " Note:
+  "   status.path/status.path2 are relative path from a git repository root
   let statuses_map = {}
   let statuses_lines = []
   for status in statuses.all
     call add(statuses_lines, status.record)
     let statuses_map[status.record] = status
+    let status.path = gita.git.get_absolute_path(status.path)
+    if has_key(status, 'path2')
+      let status.path2 = gita.git.get_absolute_path(status.path2)
+    endif
   endfor
   let w:_gita_statuses_map = statuses_map
 

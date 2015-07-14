@@ -123,6 +123,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
     return
   endif
   let statuses = s:S.parse(substitute(result.stdout, '\t', '  ', 'g'))
+  let gita = gita#get()
 
   " create statuses lines & map
   let statuses_map = {}
@@ -131,6 +132,10 @@ function! gita#features#diff_ls#update(...) abort " {{{
     let line = printf('%s', status.record)
     call add(statuses_lines, line)
     let statuses_map[line] = status
+    let status.path = gita.git.get_absolute_path(status.path)
+    if has_key(status, 'path2')
+      let status.path2 = gita.git.get_absolute_path(status.path2)
+    endif
   endfor
   let w:_gita_statuses_map = statuses_map
 
