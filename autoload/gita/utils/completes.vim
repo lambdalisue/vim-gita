@@ -5,6 +5,26 @@ set cpo&vim
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 
 
+function! gita#utils#completes#complete_branch(arglead, cmdline, cursorpos, ...) abort " {{{
+  let gita = gita#get()
+  if !gita.enabled
+    return []
+  endif
+  let options = {
+        \ 'list': 1,
+        \ 'all': 1,
+        \}
+  let result = gita.operations.branch(options, {
+        \ 'echo': '',
+        \})
+  if result.status
+    return []
+  endif
+  let candidates = split(result.stdout, '\v\r?\n')
+  call map(candidates, 'substitute(v:val, ''\v%(^..remotes/|^..|\s\-\>\s.*$)'', "", "g")')
+  call filter(candidates, 'len(v:val) && v:val =~# "^" . a:arglead')
+  return candidates
+endfunction " }}}
 function! gita#utils#completes#complete_local_branch(arglead, cmdline, cursorpos, ...) abort " {{{
   let gita = gita#get()
   if !gita.enabled
@@ -40,9 +60,9 @@ function! gita#utils#completes#complete_remote_branch(arglead, cmdline, cursorpo
     return []
   endif
   let candidates = split(result.stdout, '\v\r?\n')
-  call filter(candidates, 'len(v:val) && v:val =~# "\v^..remotes/"')
-  call map(candidates, 'substitute(v:val, "\v%(^..remotes/|\s->\s.*$)", "", "g")')
-  call filter(candidates, 'v:val =~# "^" . a:arglead')
+  call filter(candidates, 'v:val =~# ''\v^..remotes/''')
+  call map(candidates, 'substitute(v:val, ''\v%(^..remotes/|\s\-\>\s.*$)'', "", "g")')
+  call filter(candidates, 'len(v:val) && v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}
 function! gita#utils#completes#complete_staged_files(arglead, cmdline, cursorpos, ...) abort " {{{
