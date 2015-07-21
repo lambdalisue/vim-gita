@@ -25,7 +25,7 @@ function! s:ac_WinLeave() abort " {{{
   silent! unlet b:_gita_monitor_QuitPre
 endfunction " }}}
 function! s:ac_WinLeaveVim703() abort " {{{
-  if histget('cmd') =~ /\v^%(q|quit|wq)$/
+  if histget('cmd') =~# '\v^%(q|quit|wq)$'
     call gita#utils#hooks#call('ac_WinLeave')
     call gita#utils#anchor#focus()
   endif
