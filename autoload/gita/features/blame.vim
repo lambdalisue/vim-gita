@@ -117,6 +117,34 @@ function! s:format_chunk(chunk, ...) abort " {{{
   return formatted
 endfunction " }}}
 
+function! gita#features#blame#goto(linenum, ...) abort " {{{
+  let options = extend({
+        \ 'reverse': 0,
+        \ 'move': 1,
+        \}, get(a:000, 0, {}))
+  let meta = gita#get_meta()
+  let blame = get(meta, 'blame', {})
+  if options.reverse
+    " blame linenum to original linenum
+    if has_key(blame, 'linechunks')
+      let linechunk = get(blame.linechunks, a:linenum - 1, a:linenum)
+      let linenum = linechunk.linenum.final
+    else
+      let linenum = a:linenum
+    endif
+  else
+    " original linenum to blame linenum
+    if has_key(blame, 'linenumref')
+      let linenum = get(blame.linenumref, a:linenum - 1, a:linenum)
+    else
+      let linenum = a:linenum
+    endif
+  endif
+  if options.move
+    call setpos('.', [0, linenum, 0, 0])
+  endif
+  return linenum
+endfunction " }}}
 function! gita#features#blame#exec(...) abort " {{{
   let gita = gita#get()
   let options = deepcopy(get(a:000, 0, {}))
@@ -160,21 +188,28 @@ function! gita#features#blame#show(...) abort " {{{
   let blameobj = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
   let chunks = s:create_chunks(blameobj)
   let linechunks = []
+  let linenumref = []
   let NAVI = []
   let VIEW = []
   let HORI = []
+  let linenum = 1
   for chunk in chunks
     let formatted_chunk = s:format_chunk(chunk, 47, len(chunk.contents) > 2)
     for i in range(max([2, len(chunk.contents)]))
+      if i < chunk.nlines
+        call add(linenumref, linenum)
+      endif
       call add(NAVI, get(formatted_chunk, i, ''))
       call add(VIEW, get(chunk.contents, i, ''))
       call add(linechunks, chunk)
+      let linenum += 1
     endfor
     " Add an empty line for sign
     call add(NAVI, '')
     call add(VIEW, '')
     call add(HORI, len(NAVI))
     call add(linechunks, {})
+    let linenum += 1
   endfor
   let NAVI = NAVI[:-2]
   let VIEW = VIEW[:-2]
@@ -217,6 +252,7 @@ function! gita#features#blame#show(...) abort " {{{
         \ 'blame': {
         \   'blameobj': blameobj,
         \   'linechunks': linechunks,
+        \   'linenumref': linenumref,
         \ },
         \})
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
@@ -246,6 +282,7 @@ function! gita#features#blame#show(...) abort " {{{
         \ 'blame': {
         \   'blameobj': blameobj,
         \   'linechunks': linechunks,
+        \   'linenumref': linenumref,
         \ },
         \})
   execute printf('sign unplace * buffer=%d', NAVI_bufnum)
