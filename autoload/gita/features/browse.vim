@@ -236,7 +236,6 @@ function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
-
 function! gita#features#browse#translate_url(url, translation_patterns, ...) abort " {{{
   let options = get(a:000, 0, {})
   for pattern in a:translation_patterns

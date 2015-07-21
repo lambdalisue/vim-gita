@@ -40,13 +40,11 @@ Describe gita#features#add
 
   Context #command({bang}, {range}[, {cmdline}])
     Before
-      let g_gita_features_add_default_options_saved =
-            \ g:gita#features#add#default_options
+      let default_options_saved = g:gita#features#add#default_options
       let g:gita#features#add#default_options = {}
     End
     After
-      let g:gita#features#add#default_options =
-            \ g_gita_features_add_default_options_saved
+      let g:gita#features#add#default_options = default_options_saved
     End
 
     It should automatically expand '%' to absolute path
@@ -79,6 +77,7 @@ Describe gita#features#add
 
   Context #complete({arglead}, {cmdline}, {cursorpos})
     It should call ArgumentParser.complete function
+      Assert True(exists('*gita#features#add#complete'))
       Skip it is not possible to access script local variable
     End
   End

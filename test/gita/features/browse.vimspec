@@ -1,5 +1,6 @@
 Describe gita#features#browse
   Before
+    let prefix = 'https://github.com/lambdalisue/vim-gita/blob/master'
     let gita = gita#get()
     let operations_saved = deepcopy(gita.operations)
 
@@ -10,6 +11,76 @@ Describe gita#features#browse
   End
   After
     let gita.operations = operations_saved
+  End
+
+  Context #exec([{options}, {config}])
+    It should return urls of specifield files
+      let ret = gita#features#browse#exec({
+            \ '--': ['README.md', 'LICENSE.md'],
+            \})
+      Assert Equals(ret.status, 0)
+      Assert Equals(ret.urls, [
+            \ printf('%s/README.md', prefix),
+            \ printf('%s/LICENSE.md', prefix),
+            \])
+    End
+  End
+
+  Context #open([{options}, {config}])
+    It should open system browser to show urls of specifield files
+      Assert True(exists('*gita#features#browse#open'))
+      Skip It is not possible to test this behavior
+    End
+  End
+
+  Context #yank([{options}, {config}])
+    It should yank the last url of the specified files
+      call gita#features#browse#yank({
+            \ '--': ['README.md', 'LICENSE.md'],
+            \})
+      Assert Equals(@", printf('%s/LICENSE.md', prefix))
+    End
+
+    if has('clipboard')
+      It should yank the last url of the specified files to clipboard as well
+        call gita#features#browse#yank({
+              \ '--': ['README.md', 'LICENSE.md'],
+              \})
+        Assert Equals(
+              \ getreg(v:register),
+              \ printf('%s/LICENSE.md', prefix)
+              \)
+      End
+    endif
+  End
+
+  Context #echo([{options}, {config}])
+    It should echo urls of the specified files
+      redir => contents
+      call gita#features#browse#echo({
+            \ '--': ['README.md', 'LICENSE.md'],
+            \})
+      redir END
+      Assert Equals(contents, join([
+            \ '',
+            \ printf('%s/README.md', prefix),
+            \ printf('%s/LICENSE.md', prefix),
+            \], "\n"))
+    End
+  End
+
+  Context #command({bang}, {range}[, {cmdline}])
+    It should automatically call a correct method
+      Assert True(exists('*gita#features#browse#command'))
+      Skip It is difficult to test this behavior
+    End
+  End
+
+  Context #complete({arglead}, {cmdline}, {cursorpos})
+    It should call ArgumentParser.complete function
+      Assert True(exists('*gita#features#browse#complete'))
+      Skip It is not possible to access script local variable
+    End
   End
 
   Context #translate_url({url}, {translate_patterns}, {options})
