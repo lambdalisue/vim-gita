@@ -45,12 +45,12 @@ ToDo
   - [x] Improve the user interface
   - [x] Fix several known issues
 - [ ] Release a 3rd alpha version to add useful features
-  - [ ] Add behavior tests
-  - [ ] Add git blame interface
+  - [ ] Add behavior tests (WIP: https://github.com/lambdalisue/vim-gita/issues/35)
+  - [ ] Add git blame interface (WIP: https://github.com/lambdalisue/vim-gita/pull/29)
   - [ ] Add git add -p interface
   - [ ] Add git reset -p interface
   - [ ] Add git checkout interface (to change, merge, rebase, etc.)
-  - [ ] Add hints mechanisms to tell features
+  - [ ] Add hints mechanisms to tell features (WIP: https://github.com/lambdalisue/vim-gita/pull/27)
 - [ ] Release a beta version to find/fix bugs
   - [ ] Write a better document
   - [ ] Write a CONTRIBUTE.md
