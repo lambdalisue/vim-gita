@@ -77,6 +77,8 @@ function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
   let vertical = get(options, 'vertical', 0)
   if s:is_listed_in_tabpage(a:name2)
     let opener = 'edit'
+  elseif has_key(options, 'opener2')
+    let opener = options.opener2
   else
     let opener = vertical ? 'vert split' : 'split'
   endif

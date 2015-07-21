@@ -216,6 +216,18 @@ function! s:operations.rev_parse(...) abort " {{{
         \}
   return self.exec('rev-parse', options, schemes, config)
 endfunction " }}}
+function! s:operations.blame(...) abort " {{{
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  let schemes = {
+        \ 'L': '--%k %v',
+        \ 'S': '--%k %v',
+        \ 'contents': '--%k %V',
+        \ 'date': '--%k %V',
+        \ 'commit': '%v',
+        \}
+  return self.exec('blame', options, schemes, config)
+endfunction " }}}
 
 
 function! gita#operations#_translate_option(...) abort " {{{

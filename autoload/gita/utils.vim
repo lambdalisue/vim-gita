@@ -13,6 +13,7 @@ function! gita#utils#import(name) abort " {{{
   return s:[cache_name]
 endfunction " }}}
 
+let s:T = gita#utils#import('DateTime')
 let s:P = gita#utils#import('System.Filepath')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
 let s:TYPES = {
@@ -59,6 +60,18 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
+ function! gita#utils#format_timestamp(timestamp, ...) abort " {{{
+  let timezone = get(a:000, 0, '')
+  let prefix1 = get(a:000, 1, '')
+  let prefix2 = get(a:000, 2, '')
+  let time = s:T.from_unix_time(a:timestamp, timezone)
+  let delta = time.delta(s:T.now())
+  if delta.years() < 1
+    return prefix1 . delta.about()
+  else
+    return prefix2 . time.format('%d %b, %Y')
+  endif
+endfunction " }}}
 
 function! gita#utils#expand(expr) abort " {{{
   if a:expr =~# '^%'
@@ -93,6 +106,7 @@ function! gita#utils#ensure_pathlist(pathlist) abort " {{{
         \ 'gita#utils#ensure_abspath(gita#utils#expand(v:val))',
         \)
 endfunction " }}}
+
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

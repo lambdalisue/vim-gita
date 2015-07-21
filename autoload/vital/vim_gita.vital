@@ -11,3 +11,6 @@ VCS.Git.Conflict
 Vim.Buffer
 Vim.BufferManager
 System.File
+VCS.Git.BlameParser
+Data.String
+DateTime
