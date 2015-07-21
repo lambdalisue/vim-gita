@@ -1,0 +1,85 @@
+Describe gita#features#add
+  Before
+    let gita = gita#get()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.add(...) abort
+      let self._previous_args = a:000
+    endfunction
+    let gita.operations._previous_args = []
+  End
+  After
+    let gita.operations = operations_saved
+  End
+
+  Context #exec([{options}, {config}])
+    It should call 'gita.operations.add' internally
+      call gita#features#add#exec({
+            \ 'v': 1, 'verbose': 1,
+            \ 'f': 1, 'force': 1,
+            \ 'A': 1, 'all': 1,
+            \ 'ignore-removal': 1,
+            \ 'ignore-errors': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'v': 1, 'verbose': 1,
+            \ 'f': 1, 'force': 1,
+            \ 'A': 1, 'all': 1,
+            \ 'ignore-removal': 1,
+            \ 'ignore-errors': 1,
+            \}, {}])
+    End
+
+    It should remove unknown options internally
+      call gita#features#add#exec({
+            \ 'unknown_option': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{}, {}])
+    End
+  End
+
+  Context #command({bang}, {range}[, {cmdline}])
+    Before
+      let g_gita_features_add_default_options_saved =
+            \ g:gita#features#add#default_options
+      let g:gita#features#add#default_options = {}
+    End
+    After
+      let g:gita#features#add#default_options =
+            \ g_gita_features_add_default_options_saved
+    End
+
+    It should automatically expand '%' to absolute path
+      call gita#features#add#command('', [0, 0], '-- %')
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [expand('%:p')],
+            \}, {}])
+    End
+    It should automatically add the current buffer to '--'
+      call gita#features#add#command('', [0, 0])
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [expand('%:p')],
+            \}, {}])
+    End
+    It should automatically add default options
+      let g:gita#features#add#default_options = {
+            \ 'verbose': 1,
+            \ 'force': 1,
+            \ 'all': 1,
+            \}
+      call gita#features#add#command('', [0, 0])
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [expand('%:p')],
+            \ 'verbose': 1,
+            \ 'force': 1,
+            \ 'all': 1,
+            \}, {}])
+    End
+  End
+
+  Context #complete({arglead}, {cmdline}, {cursorpos})
+    It should call ArgumentParser.complete function
+      Skip it is not possible to access script local variable
+    End
+  End
+End
