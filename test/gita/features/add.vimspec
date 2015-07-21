@@ -52,13 +52,13 @@ Describe gita#features#add
     It should automatically expand '%' to absolute path
       call gita#features#add#command('', [0, 0], '-- %')
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': [expand('%:p')],
+            \ '--': [gita#utils#expand('%:p')],
             \}, {}])
     End
     It should automatically add the current buffer to '--'
       call gita#features#add#command('', [0, 0])
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': [expand('%:p')],
+            \ '--': [gita#utils#expand('%:p')],
             \}, {}])
     End
     It should automatically add default options
@@ -69,7 +69,7 @@ Describe gita#features#add
             \}
       call gita#features#add#command('', [0, 0])
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': [expand('%:p')],
+            \ '--': [gita#utils#expand('%:p')],
             \ 'verbose': 1,
             \ 'force': 1,
             \ 'all': 1,
