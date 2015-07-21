@@ -4,7 +4,6 @@ Any features, options, mechanisms, etc. might be replaced/removed without any an
 
 vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
 ===============================================================================
-![Screencast (status to commit)](./doc/status-commit.gif)
 
 *vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thinca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 
