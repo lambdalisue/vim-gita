@@ -653,11 +653,6 @@ endfunction " }}}
 function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorpos, opts) abort " {{{
   let candidates = []
   let npositional = 0
-  echomsg printf("arglead: %s, cmdline: %s, cursorpos: %s",
-        \ a:arglead,
-        \ a:cmdline,
-        \ a:cursorpos,
-        \)
   for argument in values(self.arguments)
     if argument.positional && has_key(a:opts, argument.name)
       let npositional += 1
