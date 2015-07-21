@@ -1,5 +1,18 @@
 Describe gita#features#browse
-  Context #_translate_url({url}, {translate_patterns}, {options})
+  Before
+    let gita = gita#get()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.browse(...) abort
+      let self._previous_args = a:000
+    endfunction
+    let gita.operations._previous_args = []
+  End
+  After
+    let gita.operations = operations_saved
+  End
+
+  Context #translate_url({url}, {translate_patterns}, {options})
     It should be able to translate a Github (https://github.com/) urls
       let patterns = [
             \ 'https://github.com/%s/%s',
@@ -17,7 +30,7 @@ Describe gita#features#browse
             \]
       for pattern in patterns
         for [user, repo] in pairs
-          let url = gita#features#browse#_translate_url(
+          let url = gita#features#browse#translate_url(
                 \ printf(pattern, user, repo),
                 \ g:gita#features#browse#translation_patterns,
                 \ {},
@@ -47,7 +60,7 @@ Describe gita#features#browse
             \]
       for pattern in patterns
         for [user, repo] in pairs
-          let url = gita#features#browse#_translate_url(
+          let url = gita#features#browse#translate_url(
                 \ printf(pattern, user, repo),
                 \ g:gita#features#browse#translation_patterns,
                 \ {},

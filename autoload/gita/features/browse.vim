@@ -121,7 +121,7 @@ function! s:find_url(gita, expr, options) abort " {{{
         \ deepcopy(g:gita#features#browse#translation_patterns),
         \ g:gita#features#browse#extra_translation_patterns,
         \)
-  let url = s:translate_url(data.remote_url, translation_patterns, a:options)
+  let url = gita#features#browse#translate_url(data.remote_url, translation_patterns, a:options)
   if !empty(url)
     return gita#utils#format_string(url, format_map, data)
   endif
@@ -133,18 +133,6 @@ function! s:find_url(gita, expr, options) abort " {{{
   if gita#utils#prompt#asktf('Do you want to open a help for adding extra translation patterns?')
     help g:gita#features#browse#extra_translation_patterns
   endif
-  return ''
-endfunction " }}}
-function! s:translate_url(url, translation_patterns, options) abort " {{{
-  for pattern in a:translation_patterns
-    if a:url =~# pattern[0]
-      " Prefer second pattern if 'exact' is specified. Use first pattern if
-      " no second pattern exists
-      let repl = get(pattern, get(a:options, 'exact', 0) ? 2 : 1, pattern[1])
-      let repl = substitute(a:url, pattern[0], repl, 'g')
-      return repl
-    endif
-  endfor
   return ''
 endfunction " }}}
 
@@ -249,8 +237,18 @@ function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
   return candidates
 endfunction " }}}
 
-function! gita#features#browse#_translate_url(...) abort " {{{
-  return call('s:translate_url', a:000)
+function! gita#features#browse#translate_url(url, translation_patterns, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  for pattern in a:translation_patterns
+    if a:url =~# pattern[0]
+      " Prefer second pattern if 'exact' is specified. Use first pattern if
+      " no second pattern exists
+      let repl = get(pattern, get(options, 'exact', 0) ? 2 : 1, pattern[1])
+      let repl = substitute(a:url, pattern[0], repl, 'g')
+      return repl
+    endif
+  endfor
+  return ''
 endfunction " }}}
 
 let &cpo = s:save_cpo
