@@ -38,34 +38,7 @@ vim-gita                             | This plugin                         | [![
 
 ToDo
 -------------------------------------------------------------------------------
-
-- [x] Release a prototype version (1st alpha) to get the image
-  - [x] Gita status interface
-  - [x] Gita commit interface
-  - [x] Gita diff interface
-  - [x] Gita browse interface
-  - [x] 2 or 3 way Conflict solver
-- [x] Release a 2nd alpha version to settle the fundamental mechanisms
-  - [x] Do aggressive refactoring to simplify
-  - [x] Git add/rm/checkout/reset interface
-  - [x] Git diff-ls interface
-  - [x] Git conflict interface
-  - [x] Improve the user interface
-  - [x] Fix several known issues
-- [ ] Release a 3rd alpha version to add useful features
-  - [ ] Add behavior tests (WIP: https://github.com/lambdalisue/vim-gita/issues/35)
-  - [ ] Add git blame interface (WIP: https://github.com/lambdalisue/vim-gita/pull/29)
-  - [ ] Add git add -p interface
-  - [ ] Add git reset -p interface
-  - [ ] Add git checkout interface (to change, merge, rebase, etc.)
-  - [ ] Add hints mechanisms to tell features (WIP: https://github.com/lambdalisue/vim-gita/pull/27)
-- [ ] Release a beta version to find/fix bugs
-  - [ ] Write a better document
-  - [ ] Write a CONTRIBUTE.md
-  - [ ] Add Unite.vim integrations or create an external harmonic plugin
-- [ ] Release a product version to help the world!
-  - [ ] Write a complete document for user
-  - [ ] Write a API document for developer
+https://github.com/lambdalisue/vim-gita/wiki/TODO
 
 
 Install
