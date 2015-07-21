@@ -1,5 +1,5 @@
 <p align="center"><strong align="center">WARNING</strong></p>
-<p align="center">vim-gita is under development status (alpha version), mean that there would be critical bugs for daily usage.<br>
+<p align="center">vim-gita is under development (alpha version), mean that there would be critical bugs for daily use.<br>
 Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
 
 vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
@@ -10,7 +10,7 @@ vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch
 
 Core functions and features are powerd by [vim-jp/vital.vim][] and its external modules ([lambdalisue/vital-ArgumentParser][], [lambdalisue/vital-VCS-Git][]), mean that the fundemental functions are well tested in unittest level and vim-gita can focus to provide a user-friendly interface.
 
-vim-gita use a git repository which a current buffer belongs (not like vim-fugitive which use a current working directory and that leads a wrong git repository recognition). You may notice it is quite useful when you temporary open a file which belongs to a different git repository.
+vim-gita use a git repository which a current buffer belongs or a current working directory. You may notice it is quite useful when you temporary open a file which belongs to a different git repository or a buffer on non-file buffer such as 'help' or so on.
 
 Additionally, vim-gita aggressively use cache mechanisms, mean that the response speed of your Vim might be improved, especially if you are using vim-fugitive or a raw git command (`system()`) to show a current status in
 the statusline.
@@ -45,14 +45,12 @@ ToDo
   - [x] Improve the user interface
   - [x] Fix several known issues
 - [ ] Release a 3rd alpha version to add useful features
-  - [ ] Add behaviour tests? How?
-  - [ ] Add more options to feature commands
-  - [ ] Add hints mechanisms to tell features
-  - [ ] Add git init feature or disable it
-  - [ ] Add git checkout interface (to change, merge, rebase, etc.)
+  - [ ] Add behavior tests
+  - [ ] Add git blame interface
   - [ ] Add git add -p interface
   - [ ] Add git reset -p interface
-  - [ ] Add git blame interface or create an external harmonic plugin
+  - [ ] Add git checkout interface (to change, merge, rebase, etc.)
+  - [ ] Add hints mechanisms to tell features
 - [ ] Release a beta version to find/fix bugs
   - [ ] Write a better document
   - [ ] Write a CONTRIBUTE.md
@@ -60,8 +58,8 @@ ToDo
 - [ ] Release a product version to help the world!
   - [ ] Write a complete document for user
   - [ ] Write a API document for developer
-   
-  
+
+
 Install
 -------------------------------------------------------------------------------
 The repository follow a standard directory structure thus you can use [gmarik/Vundle.vim], [Shougo/neobundle.vim], or other vim plugin manager to install vim-gita like:
@@ -108,7 +106,7 @@ Optional arguments:
 
 To stage/commit changes, follow the steps below:
 
-	1. Hit `:Gita stage` to open a `gita:status` window
+	1. Hit `:Gita status` to open a `gita:status` window
 	2. Hit `--` to stage/unstage file(s) under the cursor
 	3. Hit `cc` to swithc to a `gita:commit` window
 	4. Write a commit message and hit `:wq`
@@ -118,13 +116,13 @@ To stage/commit changes, follow the steps below:
 To list files changed from a master (like 'Files changed' in GitHub PR), follow the steps below:
 
 	1. Hit `:Gita diff-ls` to open a `gita:diff-ls` window
-	2. Answer `master...` to list files changed from a common ancestor
+	2. Hit up arrow to select `origin/HEAD...` to list files changed from a common ancestor of default branch of the remote
 	3. Hit `ee`, `oo` or whatever to open the file
 
 
 To solve conflicts in merge mode, follow the steps below:
 
-	1. Hit `:Gita stage` to open a `gita:status` window
+	1. Hit `:Gita status` to open a `gita:status` window
 	2. Hit `ss`, `sS`, or 'SS' to open `vimdiff`
 	3. Compare difference and write a correct version
 	4. Hit `:Gita add` on a MERGE buffer
@@ -210,8 +208,7 @@ endfunction " }}}
 Documents
 -------------------------------------------------------------------------------
 
-See more documents on [vim-gita.txt](./doc/vim-gita.txt) or execute `:help vim-gita`
-
+WIP
 
 
 
