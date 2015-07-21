@@ -24,6 +24,12 @@ function! s:ac_WinLeave() abort " {{{
   endif
   silent! unlet b:_gita_monitor_QuitPre
 endfunction " }}}
+function! s:ac_WinLeaveVim703() abort " {{{
+  if histget('cmd') =~ /\v^%(q|quit|wq)$/
+    call gita#utils#hooks#call('ac_WinLeave')
+    call gita#utils#anchor#focus()
+  endif
+endfunction " }}}
 
 function! gita#monitor#open(bufname, ...) abort  " {{{
   let gita = gita#get()
@@ -68,8 +74,22 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
 
   augroup vim-gita-monitor
     autocmd! * <buffer>
-    autocmd QuitPre  <buffer> call s:ac_QuitPre()
-    autocmd WinLeave <buffer> call s:ac_WinLeave()
+    if exists('#QuitPre')
+      autocmd QuitPre  <buffer> call s:ac_QuitPre()
+      autocmd WinLeave <buffer> call s:ac_WinLeave()
+    else
+      " Note:
+      "
+      " QuitPre was introduced since Vim 7.3.544
+      " https://github.com/vim-jp/vim/commit/4e7db56d
+      "
+      " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+      " :q        : QuitPre > WinLeave > BufWinLeave
+      " :e        : BufWinLeave
+      " :wincmd w : WinLeave
+      "
+      autocmd WinLeave <buffer> call s:ac_WinLeaveVim703()
+    endif
   augroup END
 
   return {

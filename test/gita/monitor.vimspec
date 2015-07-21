@@ -24,7 +24,9 @@ Describe gita#monitor
       Assert True(has_key(b:, '_gita_constructed'))
       " autocmd
       Assert True(exists('#vim-gita-monitor'))
-      Assert True(exists('#vim-gita-monitor#QuitPre'))
+      if exists('#QuitPre')
+        Assert True(exists('#vim-gita-monitor#QuitPre'))
+      endif
       Assert True(exists('#vim-gita-monitor#WinLeave'))
     End
 
