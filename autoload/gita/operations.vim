@@ -3,6 +3,7 @@ set cpo&vim
 
 
 let s:P = gita#utils#import('Prelude')
+let s:C = gita#utils#import('VCS.Git.Core')
 let s:A = gita#utils#import('ArgumentParser')
 
 
@@ -61,7 +62,11 @@ function! s:operations.exec_raw(args, ...) abort " {{{
         \ 'doautocmd': 1,
         \ 'success_status': 0,
         \}, get(a:000, 0, {}))
-  let result = self.gita.git.exec(args)
+  if self.gita.enabled
+    let result = self.gita.git.exec(args)
+  else
+    let result = s:C.exec(args)
+  endif
   " remove ANSI sequences in case
   let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
   " echo result
