@@ -13,7 +13,7 @@ Describe gita#features#browse
   End
 
   Context #translate_url({url}, {translate_patterns}, {options})
-    It should be able to translate a Github (https://github.com/) urls
+    It should be able to translate Github (https://github.com/) urls
       let patterns = [
             \ 'https://github.com/%s/%s',
             \ 'git://github.com/%s/%s',
@@ -43,7 +43,7 @@ Describe gita#features#browse
       endfor
     End
 
-    It should be able to translate a bitbucket (https://bitbucket.org/) urls
+    It should be able to translate bitbucket (https://bitbucket.org/) urls
       let patterns = [
             \ 'https://bitbucket.org/%s/%s',
             \ 'git://bitbucket.org/%s/%s',
