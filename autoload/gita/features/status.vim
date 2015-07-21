@@ -224,8 +224,7 @@ function! s:actions.discard(statuses, options) abort " {{{
   " delete untracked files
   let gita = gita#get()
   for status in delete_statuses
-    let path = get(status, 'path2', status.path)
-    let abspath = gita.git.get_absolute_path(path)
+    let abspath = get(status, 'path2', status.path)
     if isdirectory(abspath)
       silent! call s:F.rmdir(abspath, 'r')
     elseif filewritable(abspath)
