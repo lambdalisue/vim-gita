@@ -93,9 +93,8 @@ function! s:ensure_file_option(options) abort " {{{
     endif
     let a:options.file = '%'
   endif
-  let a:options.file = fnamemodify(
+  let a:options.file = gita#utils#ensure_abspath(
         \ gita#utils#expand(a:options.file),
-        \ ':p',
         \)
   return 0
 endfunction " }}}
@@ -189,7 +188,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
   let commit = substitute(
         \ a:options.commit,
         \ '\v\.?\zsINDEX\ze\.?$',
-        \ '', '',
+        \ '', 'g',
         \)
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(a:options.file),
