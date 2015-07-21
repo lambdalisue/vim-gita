@@ -56,9 +56,10 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   " Ask which commit the user want to compare if no 'commit' is specified
   if empty(get(a:options, 'commit'))
+    call histadd('input', 'origin/HEAD')
+    call histadd('input', get(a:options, 'commit', 'origin/HEAD'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
-          \ get(a:options, 'commit', 'master'),
           \)
     if empty(commit)
       call gita#utils#prompt#echo('Operation has canceled by user')

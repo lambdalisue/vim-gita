@@ -73,9 +73,11 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if !has_key(a:options, 'commit')
     let gita = gita#get()
+    call histadd('input', 'HEAD')
+    call histadd('input', 'INDEX')
+    call histadd('input', get(gita.meta, 'commit', 'INDEX'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.) ',
-          \ get(gita.meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
       call gita#utils#prompt#warn(

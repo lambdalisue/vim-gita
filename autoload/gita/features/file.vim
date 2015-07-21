@@ -102,9 +102,11 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
     let meta = gita#get_meta()
+    call histadd('input', 'HEAD')
+    call histadd('input', 'INDEX')
+    call histadd('input', get(gita.meta, 'commit', 'INDEX'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master..., master, etc.) ',
-          \ get(meta, 'commit', 'INDEX'),
           \)
     if empty(commit)
       call gita#utils#prompt#echo(
