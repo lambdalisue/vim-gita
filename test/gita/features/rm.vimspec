@@ -1,0 +1,93 @@
+Describe gita#features#rm
+  Before
+    let gita = gita#get()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.rm(...) abort
+      let self._previous_args = a:000
+    endfunction
+    let gita.operations._previous_args = []
+  End
+  After
+    let gita.operations = operations_saved
+  End
+
+  Context #exec([{options}, {config}])
+    It should call 'gita.operations.rm' internally
+      call gita#features#rm#exec({
+            \ 'q': 1, 'quiet': 1,
+            \ 'f': 1, 'force': 1,
+            \ 'r': 1, 'recursive': 1,
+            \ 'cached': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'q': 1, 'quiet': 1,
+            \ 'f': 1, 'force': 1,
+            \ 'r': 1, 'recursive': 1,
+            \ 'cached': 1,
+            \}, {}])
+    End
+
+    It should remove unknown options internally
+      call gita#features#rm#exec({
+            \ 'unknown_option': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{}, {}])
+    End
+  End
+
+  Context #command({bang}, {range}[, {cmdline}])
+    Before
+      let default_options_saved = g:gita#features#rm#default_options
+      let g:gita#features#rm#default_options = {}
+    End
+    After
+      let g:gita#features#rm#default_options = default_options_saved
+    End
+
+    It should automatically specify 'quiet = 1'
+      call gita#features#rm#command('', [0, 0], '-- %')
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
+            \ 'quiet': 1,
+            \}, {}])
+    End
+    It should automatically expand '%' to absolute path
+      call gita#features#rm#command('', [0, 0], '-- %')
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
+            \ 'quiet': 1,
+            \}, {}])
+    End
+    It should automatically add the absolute path of the current buffer
+      call gita#features#rm#command('', [0, 0], '')
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
+            \ 'quiet': 1,
+            \}, {}])
+    End
+    It should automatically add default options
+      let g:gita#features#rm#default_options = {
+            \ 'quiet': 1,
+            \ 'force': 1,
+            \ 'cached': 1,
+            \}
+      call gita#features#rm#command('', [0, 0])
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
+            \ 'quiet': 1,
+            \ 'force': 1,
+            \ 'cached': 1,
+            \}, {}])
+    End
+  End
+
+  Context #complete({arglead}, {cmdline}, {cursorpos})
+    It should call ArgumentParser.complete function
+      Assert True(exists('*gita#features#rm#complete'))
+      Skip It is not possible to access script local variable
+    End
+  End
+End
+
+
