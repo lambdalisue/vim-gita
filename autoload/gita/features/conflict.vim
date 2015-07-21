@@ -56,7 +56,7 @@ endfunction " }}}
 function! s:solve2(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let abspath = gita.git.get_absolute_path(options.file)
+  let abspath = gita#utils#ensure_abspath(options.file)
   let relpath = gita.git.get_relative_path(abspath)
 
   let ORIG = bufexists(abspath)
@@ -113,7 +113,7 @@ endfunction " }}}
 function! s:solve3(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let abspath = gita.git.get_absolute_path(options.file)
+  let abspath = gita#utils#ensure_abspath(options.file)
   let relpath = gita.git.get_relative_path(abspath)
 
   let ORIG = bufexists(abspath)
