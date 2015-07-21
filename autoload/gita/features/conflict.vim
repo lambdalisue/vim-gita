@@ -103,6 +103,7 @@ function! s:solve2(...) abort " {{{
   call gita#utils#buffer#update(MERGE)
   let b:_gita_original_filename = abspath
   setlocal buftype=acwrite bufhidden=hide noswapfile
+  setlocal modified
   augroup vim-gita-conflict-solve2
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:ac_BufWriteCmd()
@@ -198,6 +199,7 @@ function! s:solve3(...) abort " {{{
   let b:_gita_LOCAL_bufnum = LOCAL_bufnum
   let b:_gita_REMOTE_bufnum = REMOTE_bufnum
   setlocal buftype=acwrite bufhidden=hide noswapfile
+  setlocal modified
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffget-LOCAL)',
         \   ':<C-u>diffget %s<BAR>diffupdate<CR>',
