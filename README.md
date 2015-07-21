@@ -40,8 +40,16 @@ ToDo
 -------------------------------------------------------------------------------
 
 - [x] Release a prototype version (1st alpha) to get the image
+  - [x] Gita status interface
+  - [x] Gita commit interface
+  - [x] Gita diff interface
+  - [x] Gita browse interface
+  - [x] 2 or 3 way Conflict solver
 - [x] Release a 2nd alpha version to settle the fundamental mechanisms
   - [x] Do aggressive refactoring to simplify
+  - [x] Git add/rm/checkout/reset interface
+  - [x] Git diff-ls interface
+  - [x] Git conflict interface
   - [x] Improve the user interface
   - [x] Fix several known issues
 - [ ] Release a 3rd alpha version to add useful features
