@@ -222,7 +222,6 @@ function! s:actions.discard(statuses, options) abort " {{{
     endif
   endif
   " delete untracked files
-  let gita = gita#get()
   for status in delete_statuses
     let abspath = get(status, 'path2', status.path)
     if isdirectory(abspath)
