@@ -33,10 +33,14 @@ call s:parser.add_argument(
       \ })
 
 
+function! gita#features#_clear() abort " {{{
+  let s:feature_registry = {}
+  let s:feature_pattern = '^$'
+endfunction " }}}
 function! gita#features#is_registered(name) abort " {{{
   return a:name =~# s:feature_pattern
 endfunction " }}}
-function! gita#features#register(name, command, complete) abort " {{{
+function! gita#features#register(name, command, complete, ...) abort " {{{
   if gita#features#is_registered(a:name) && !g:gita#debug
     throw printf(
           \ 'vim-gita: a feature "%s" has already been registered.',
@@ -45,7 +49,8 @@ function! gita#features#register(name, command, complete) abort " {{{
   endif
   let s:feature_registry[a:name] = {
         \ 'command': a:command,
-        \ 'complete': a:complete
+        \ 'complete': a:complete,
+        \ 'instance': get(a:000, 0, {}),
         \}
   let s:feature_pattern = printf('^\%%(%s\)$',
         \ join(keys(s:feature_registry), '\|'),
@@ -76,7 +81,11 @@ function! gita#features#command(bang, range, ...) abort " {{{
       " execute Gita command
       let feature = s:feature_registry[name]
       let args = [a:bang, a:range, join(opts.__unknown__)]
-      call call(feature.command, args)
+      if empty(get(feature, 'instance', {}))
+        call call(feature.command, args)
+      else
+        call call(feature.command, args, feature.instance)
+      endif
     endif
   endif
 endfunction " }}}
@@ -91,9 +100,13 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   else
     " execute Gita command
     let feature = s:feature_registry[name]
-    let cmdline = printf('%s %s', name, join(opts.__unknown__))
+    let cmdline = join(extend([name], opts.__unknown__))
     let args = [a:arglead, cmdline, a:cursorpos]
-    let candidates = call(feature.complete, args)
+    if empty(get(feature, 'instance', {}))
+      let candidates = call(feature.complete, args)
+    else
+      let candidates = call(feature.complete, args, feature.instance)
+    endif
   endif
   return candidates
 endfunction " }}}
