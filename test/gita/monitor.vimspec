@@ -47,7 +47,6 @@ Describe gita#monitor
   Context #define_mappings()
     It should define <Plug> mappings
       call gita#monitor#define_mappings()
-<<<<<<< HEAD
       Assert False(empty(mapcheck('<Plug>(gita-action-quit)')))
       Assert False(empty(mapcheck('<Plug>(gita-action-help-s)')))
       Assert False(empty(mapcheck('<Plug>(gita-action-edit)')))
@@ -61,28 +60,12 @@ Describe gita#monitor
       Assert False(empty(mapcheck('<Plug>(gita-action-diff-v)')))
       Assert False(empty(mapcheck('<Plug>(gita-action-DIFF-h)')))
       Assert False(empty(mapcheck('<Plug>(gita-action-DIFF-v)')))
-=======
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-quit)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-help-s)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-edit)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-edit-h)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-edit-v)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-open)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-open-h)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-open-v)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-diff)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-diff-h)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-diff-v)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-DIFF-h)'))
-      Assert NotEmpty(mapcheck('<Plug>(gita-action-DIFF-v)'))
->>>>>>> b151164c7f177b7d107ef5db09b2306641e8fb42
     End
   End
 
   Context #define_default_mappings()
     It should define actual mappings
       call gita#monitor#define_default_mappings()
-<<<<<<< HEAD
       Assert Equals(maparg('q'), '<Plug>(gita-action-quit)')
       Assert Equals(maparg('?s'), '<Plug>(gita-action-help-s)')
       Assert Match(maparg('ee'), '<Plug>(gita-action-edit)')
@@ -104,9 +87,6 @@ Describe gita#monitor
       Assert Match(maparg('DD'), '<Plug>(gita-action-DIFF-v)')
       Assert Match(maparg('DH'), '<Plug>(gita-action-DIFF-h)')
       Assert Match(maparg('DV'), '<Plug>(gita-action-DIFF-v)')
-=======
-      " TODO Write mapping tests
->>>>>>> b151164c7f177b7d107ef5db09b2306641e8fb42
     End
   End
 End
