@@ -64,10 +64,10 @@ function! gita#utils#expand(expr) abort " {{{
   if a:expr =~# '^%'
     let expr = '%'
     let modi = substitute(a:expr, '^%', '', '')
-    let original_filename = gita#get_original_filename(expr)
-    return empty(original_filename)
+    let filename = gita#meta#get('filename', '', expr)
+    return empty(filename)
           \ ? expand(a:expr)
-          \ : fnamemodify(original_filename, modi)
+          \ : fnamemodify(filename, modi)
   else
     return expand(a:expr)
   endif

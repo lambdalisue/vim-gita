@@ -567,7 +567,7 @@ function! s:parser._validate_pattern(opts) abort " {{{
   endfor
 endfunction " }}}
 function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort " {{{
-  let cmdline = substitute(a:cmdline, '\v^[^ ]+\s?', '', '')
+  let cmdline = substitute(a:cmdline, '\v^[^ ]+\s', '', '')
   let opts = extend(
         \ self._parse_args(s:splitargs(cmdline)),
         \ get(a:000, 0, {}),
@@ -658,6 +658,9 @@ function! s:parser._complete_positional_argument_value(arglead, cmdline, cursorp
       let npositional += 1
     endif
   endfor
+  if !empty(a:arglead) && npositional > 0
+    let npositional -= 1
+  endif
   let cpositional = get(self.arguments, get(self.positional, npositional), {})
   if !empty(cpositional)
     let candidates = cpositional.complete(

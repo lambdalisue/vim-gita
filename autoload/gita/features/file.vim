@@ -255,7 +255,7 @@ function! gita#features#file#show(...) abort " {{{
     call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')
           \)
-    call gita#meta#set('file', abspath)
+    call gita#meta#set('filename', abspath)
   endif
   call gita#meta#set('commit', options.commit)
 endfunction " }}}
@@ -281,7 +281,7 @@ function! gita#features#file#_complete_commit(arglead, cmdline, cursorpos, ...) 
         \))
   let candidates = extend(['WORKTREE', 'INDEX', 'HEAD'], candidates)
   let candidates = map(candidates, 'leading . v:val')
-  return candidates
+  return filter(deepcopy(candidates), 'v:val =~# "^" . a:arglead')
 endfunction " }}}
 
 let &cpo = s:save_cpo
