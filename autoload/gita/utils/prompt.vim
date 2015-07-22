@@ -29,7 +29,11 @@ endfunction " }}}
 function! s:input(hl, msg, ...) abort " {{{
   execute 'echohl' a:hl
   try
-    return input(a:msg, get(a:000, 0, ''))
+    if empty(get(a:000, 1, ''))
+      return input(a:msg, get(a:000, 0, ''))
+    else
+      return input(a:msg, get(a:000, 0, ''), get(a:000, 1, ''))
+    endif
   finally
     echohl None
   endtry
@@ -84,19 +88,29 @@ function! gita#utils#prompt#errormsg(...) abort " {{{
 endfunction " }}}
 
 function! gita#utils#prompt#input(msg, ...) abort " {{{
-  let result = s:input('None', a:msg, get(a:000, 0, ''))
+  let result = s:input(
+        \ 'None', a:msg,
+        \ get(a:000, 0, ''),
+        \ get(a:000, 1, ''),
+        \)
   redraw
   return result
 endfunction " }}}
 function! gita#utils#prompt#ask(msg, ...) abort " {{{
-  let result = s:input('Question', a:msg, get(a:000, 0, ''))
+  let result = s:input(
+        \ 'Question', a:msg,
+        \ get(a:000, 0, ''),
+        \ get(a:000, 1, ''),
+        \)
   redraw
   return result
 endfunction " }}}
 function! gita#utils#prompt#asktf(msg, ...) abort " {{{
   let result = gita#utils#prompt#ask(
         \ printf('%s (y[es]/n[o]): ', a:msg),
-        \ get(a:000, 0, ''))
+        \ get(a:000, 0, ''),
+        \ 'customlist,gita#utils#prompt#_asktf_complete_yes_or_no',
+        \)
   while result !~? '^\%(y\%[es]\|n\%[o]\)$'
     redraw
     if result == ''
@@ -104,10 +118,17 @@ function! gita#utils#prompt#asktf(msg, ...) abort " {{{
       break
     endif
     call gita#utils#prompt#error('Invalid input.')
-    let result = gita#utils#prompt#ask(printf('%s (y[es]/n[o]): ', a:msg))
+    let result = gita#utils#prompt#ask(
+          \ printf('%s (y[es]/n[o]): ', a:msg),
+          \ get(a:000, 0, ''),
+          \ 'customlist,gita#utils#prompt#_asktf_complete_yes_or_no',
+          \)
   endwhile
   redraw
   return result =~? 'y\%[es]'
+endfunction " }}}
+function! gita#utils#prompt#_asktf_complete_yes_or_no(arglead, cmdline, cursorpos) abort " {{{
+  return filter(['yes', 'no'], 'v:val =~# "^" . a:arglead')
 endfunction " }}}
 
 let &cpo = s:save_cpo
