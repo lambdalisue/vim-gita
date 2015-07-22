@@ -1,0 +1,89 @@
+Describe gita#features#diff
+  Before
+    let gita = gita#get()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.diff(...) abort
+      let self._previous_args = a:000
+      return {
+            \ 'status': 0,
+            \ 'stdout': 'CONTENTS',
+            \}
+    endfunction
+    function! gita.operations.merge_base(...) abort
+      return {
+            \ 'status': 0,
+            \ 'stdout': 'COMMON-ANCESTOR',
+            \}
+    endfunction
+    let gita.operations._previous_args = []
+  End
+  After
+    let gita.operations = operations_saved
+  End
+
+  Context #exec([{options}, {config}])
+    It should call gita.operations.diff internally
+      call gita#features#diff#exec({
+            \ '--': [],
+            \ 'ignore_submodules': 1,
+            \ 'no_prefix': 1,
+            \ 'no_color': 1,
+            \ 'unified': 1,
+            \ 'histogram': 1,
+            \ 'cached': 1,
+            \ 'commit': '',
+            \ 'name_status': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [],
+            \ 'ignore_submodules': 1,
+            \ 'no_prefix': 1,
+            \ 'no_color': 1,
+            \ 'unified': 1,
+            \ 'histogram': 1,
+            \ 'cached': 1,
+            \ 'commit': '',
+            \ 'name_status': 1,
+            \}, {}])
+    End
+
+    It should remove unknown options internally
+      call gita#features#diff#exec({
+            \ 'unknown_option': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{}, {}])
+    End
+  End
+
+  Context #exec_cached([{options}, {config}])
+    It should NOT call gita.operations.diff for 2nd call with same options
+      call gita#features#diff#exec_cached({
+            \ 'ignore_submodules': 1,
+            \})
+      let gita.operations._previous_args = []
+      call gita#features#diff#exec_cached({
+            \ 'ignore_submodules': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [])
+    End
+
+    It should call gita.operations.diff for 2nd call with different options
+      call gita#features#diff#exec_cached({
+            \ 'ignore_submodules': 1,
+            \})
+      let gita.operations._previous_args = []
+      call gita#features#diff#exec_cached({
+            \ 'ignore_submodules': 0,
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'ignore_submodules': 0,
+            \}, {}])
+    End
+  End
+
+  Context #show([{options}, {config}])
+    It should open a single diff buffer if window=single is specified
+    End
+  End
+End

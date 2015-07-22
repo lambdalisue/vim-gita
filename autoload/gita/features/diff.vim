@@ -355,7 +355,12 @@ function! gita#features#diff#exec_cached(...) abort " {{{
   let cache_name = s:P.join('diff', string(s:D.pick(options, [
         \ '--',
         \ 'ignore_submodules',
-        \ 'cached', 'commit',
+        \ 'no_prefix',
+        \ 'no_color',
+        \ 'unified',
+        \ 'histogram',
+        \ 'cached',
+        \ 'commit',
         \ 'name_status',
         \])))
   let cached_status = gita.git.is_updated('index', 'diff') || get(config, 'force_update', 0)

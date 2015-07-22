@@ -86,7 +86,7 @@ Describe gita#features#file
       Assert Equals(bufname('%'), 'INDEX:README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
-            \ gita#meta#get('file'),
+            \ gita#meta#get('filename'),
             \ gita#utils#ensure_abspath('README.md')
             \)
       Assert Equals(gita#meta#get('commit'), 'INDEX')
@@ -101,7 +101,7 @@ Describe gita#features#file
       Assert Equals(bufname('%'), 'commit1...commit2:README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
-            \ gita#meta#get('file'),
+            \ gita#meta#get('filename'),
             \ gita#utils#ensure_abspath('README.md')
             \)
       Assert Equals(gita#meta#get('commit'), 'commit1...commit2')

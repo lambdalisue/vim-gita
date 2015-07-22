@@ -121,24 +121,24 @@ Describe gita#utils
       call WipeoutAll()
     End
 
-    It should return 'original_filename' when '%' is specified and original_filename is specified
-      call gita#set_original_filename('foobar.txt', '%')
+    It should return 'filename' of gita meta when '%' is specified and filename is specified
+      call gita#meta#set('filename', 'foobar.txt', '%')
       let ret = gita#utils#expand('%')
       Assert Equals(ret, 'foobar.txt')
     End
 
-    It should return the current buffer when '%' is specified and no original_filename is specified
-      call gita#set_original_filename('', '%')
+    It should return the current buffer when '%' is specified and no filename is specified
+      call gita#meta#set('filename', '', '%')
       let ret = gita#utils#expand('%')
       Assert Equals(ret, bufname)
     End
 
     It should treat filename-modifiers
-      call gita#set_original_filename('foobar.txt', '%')
+      call gita#meta#set('filename', 'foobar.txt', '%')
       let ret = gita#utils#expand('%:r')
       Assert Equals(ret, 'foobar')
 
-      call gita#set_original_filename('', '%')
+      call gita#meta#set('filename', '', '%')
       let ret = gita#utils#expand('%:r')
       Assert Equals(ret, fnamemodify(bufname, ':r'))
     End
