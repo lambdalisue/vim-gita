@@ -5,6 +5,10 @@ Describe gita#features#file
 
     function! gita.operations.show(...) abort
       let self._previous_args = a:000
+      return {
+            \ 'status': 0,
+            \ 'stdout': 'CONTENTS',
+            \}
     endfunction
     function! gita.operations.merge_base(...) abort
       return {
@@ -63,5 +67,33 @@ Describe gita#features#file
   End
 
   Context #show([{options}, {config}])
+    It should open a file in worktree if WORKTREE is specified
+      call gita#features#file#show({
+            \ 'commit': 'WORKTREE',
+            \ 'file': 'README.md',
+            \})
+      Assert Equals(bufname('%'), 'README.md')
+      Assert Equals(getline(0, '$'), readfile('README.md'))
+    End
+
+    It should open a file in index if INDEX is specified
+      call gita#features#file#show({
+            \ 'commit': 'INDEX',
+            \ 'file': 'README.md',
+            \})
+      " it should call gita.operations.show to obtain contents
+      Assert Equals(bufname('%'), 'INDEX:README.md')
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+    End
+
+    It should open a file of a common ancestor if commit1...commit2 is specified
+      call gita#features#file#show({
+            \ 'commit': 'commit1...commit2',
+            \ 'file': 'README.md',
+            \})
+      " it should call gita.operations.show to obtain contents
+      Assert Equals(bufname('%'), 'commit1...commit2:README.md')
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+    End
   End
 End

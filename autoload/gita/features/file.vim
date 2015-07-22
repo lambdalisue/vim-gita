@@ -241,14 +241,13 @@ function! gita#features#file#show(...) abort " {{{
     return
   endif
   let abspath = gita#utils#ensure_abspath(options.file)
-  let relpath = gita#utils#ensure_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
-    let bufname = abspath
+    let bufname = gita#utils#ensure_relpath(abspath)
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ relpath,
+          \ gita#utils#ensure_relpath(abspath),
           \)
   endif
   call gita#utils#buffer#open(bufname, '', {
