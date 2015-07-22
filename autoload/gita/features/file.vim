@@ -5,17 +5,6 @@ set cpo&vim
 let s:A = gita#utils#import('ArgumentParser')
 
 
-function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  let leading = matchstr(a:arglead, '^.*\.\.\.')
-  let arglead = substitute(a:arglead, '^.*\.\.\.', '', '')
-  let candidates = call('gita#utils#completes#complete_local_branch', extend(
-        \ [arglead, a:cmdline, a:cursorpos],
-        \ a:000,
-        \))
-  let candidates = extend(['WORKTREE', 'INDEX', 'HEAD', 'FORK:master'], candidates)
-  let candidates = map(candidates, 'leading . v:val')
-  return candidates
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] file',
       \ 'description': 'Show a file content of a working tree, index, or specified commit.',
@@ -27,7 +16,7 @@ call s:parser.add_argument(
       \   'INDEX  it show the content of the current index (staging area for next commit).',
       \   '<commit>...<commit>  it show the content of an common ancestor between <commit>.',
       \ ], {
-      \   'complete': function('s:complete_commit'),
+      \   'complete': function('gita#features#file#_complete_commit'),
       \})
 call s:parser.add_argument(
       \ 'file', [
@@ -93,19 +82,19 @@ function! s:ensure_file_option(options) abort " {{{
     endif
     let a:options.file = '%'
   endif
-  let a:options.file = gita#utils#ensure_abspath(
-        \ gita#utils#expand(a:options.file),
-        \)
+  let a:options.file = gita#utils#expand(a:options.file)
   return 0
 endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   if empty(get(a:options, 'commit', ''))
-    let meta = gita#get_meta()
     call histadd('input', 'HEAD')
     call histadd('input', 'INDEX')
-    call histadd('input', get(meta, 'commit', 'INDEX'))
+    call histadd('input', 'WORKTREE')
+    call histadd('input', gita#meta#get('commit', 'WORKTREE'))
     let commit = gita#utils#prompt#ask(
-          \ 'Which commit do you want to show? (e.g. WORKTREE, INDEX, HEAD, master..., master, etc.) ',
+          \ 'Which commit do you want to show? ',
+          \ gita#meta#get('commit', ''),
+          \ 'customlist,gita#features#file#_complete_commit',
           \)
     if empty(commit)
       call gita#utils#prompt#echo(
@@ -127,17 +116,17 @@ function! s:ensure_commit_option(options) abort " {{{
 endfunction " }}}
 
 function! s:exec_worktree(gita, options, config) abort " {{{
-  let abspath = gita#utils#ensure_abspath(
-        \ gita#utils#expand(a:options.file),
-        \)
-  let relpath = gita#utils#ensure_relpath(abspath)
+  let abspath = a:options.file
   if filereadable(abspath)
     return {
           \ 'status': 0,
           \ 'stdout': join(readfile(abspath), "\n"),
           \}
   else
-    let errormsg = printf('%s is not readable.', relpath)
+    let errormsg = printf(
+          \ '%s is not readable.',
+          \ gita#utils#ensure_relpath(abspath),
+          \)
     if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
       call gita#utils#prompt#error(errormsg)
     endif
@@ -185,19 +174,20 @@ function! s:exec_ancestor(gita, options, config) abort " {{{
   endif
 endfunction " }}}
 function! s:exec_commit(gita, options, config) abort " {{{
+  let abspath = a:options.file
   let commit = substitute(
         \ a:options.commit,
         \ '\v\.?\zsINDEX\ze\.?$',
         \ '', 'g',
         \)
-  let abspath = gita#utils#ensure_abspath(
-        \ gita#utils#expand(a:options.file),
-        \)
   " Note:
-  "   relative from a repository root
-  let relpath = a:gita.git.get_relative_path(abspath)
+  "   relpath requires to be a relative path from a repository root for 'show'
   return a:gita.operations.show({
-        \ 'object': printf('%s:%s', commit, relpath),
+        \ 'object': printf(
+        \   '%s:%s',
+        \   commit,
+        \   a:gita.git.get_relative_path(abspath),
+        \ ),
         \}, a:config)
 endfunction " }}}
 
@@ -209,6 +199,10 @@ function! gita#features#file#exec(...) abort " {{{
     return { 'status': -1 }
   endif
 
+  " ensure absolute path
+  let options.file = gita#utils#ensure_abspath(options.file)
+
+  " select a proper function via 'commit'
   if options.commit ==# 'WORKTREE'
     return s:exec_worktree(gita, options, config)
   elseif options.commit =~# '\v^[^.]*\.\.\.[^.]*$'
@@ -240,14 +234,16 @@ function! gita#features#file#show(...) abort " {{{
   if result.status
     return
   endif
+
   let abspath = gita#utils#ensure_abspath(options.file)
+  let relpath = gita#utils#ensure_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
-    let bufname = gita#utils#ensure_relpath(abspath)
+    let bufname = relpath
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ gita#utils#ensure_relpath(abspath),
+          \ relpath,
           \)
   endif
   call gita#utils#buffer#open(bufname, '', {
@@ -259,24 +255,33 @@ function! gita#features#file#show(...) abort " {{{
     call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')
           \)
-    call gita#set_original_filename(abspath)
+    call gita#meta#set('file', abspath)
   endif
-  call gita#set_meta({
-        \ 'file': abspath,
-        \ 'commit': options.commit,
-        \})
+  call gita#meta#set('commit', options.commit)
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
           \ deepcopy(g:gita#features#file#default_options),
-          \ options)
+          \ options,
+          \)
     call gita#features#file#show(options)
   endif
 endfunction " }}}
 function! gita#features#file#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
+endfunction " }}}
+function! gita#features#file#_complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
+  let leading = matchstr(a:arglead, '^.*\.\.\.')
+  let arglead = substitute(a:arglead, '^.*\.\.\.', '', '')
+  let candidates = call('gita#utils#completes#complete_branch', extend(
+        \ [arglead, a:cmdline, a:cursorpos],
+        \ a:000,
+        \))
+  let candidates = extend(['WORKTREE', 'INDEX', 'HEAD'], candidates)
+  let candidates = map(candidates, 'leading . v:val')
+  return candidates
 endfunction " }}}
 
 let &cpo = s:save_cpo

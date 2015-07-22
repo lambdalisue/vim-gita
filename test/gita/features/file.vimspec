@@ -74,6 +74,7 @@ Describe gita#features#file
             \})
       Assert Equals(bufname('%'), 'README.md')
       Assert Equals(getline(0, '$'), readfile('README.md'))
+      Assert Equals(gita#meta#get('commit'), 'WORKTREE')
     End
 
     It should open a file in index if INDEX is specified
@@ -84,6 +85,11 @@ Describe gita#features#file
       " it should call gita.operations.show to obtain contents
       Assert Equals(bufname('%'), 'INDEX:README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(
+            \ gita#meta#get('file'),
+            \ gita#utils#ensure_abspath('README.md')
+            \)
+      Assert Equals(gita#meta#get('commit'), 'INDEX')
     End
 
     It should open a file of a common ancestor if commit1...commit2 is specified
@@ -94,6 +100,11 @@ Describe gita#features#file
       " it should call gita.operations.show to obtain contents
       Assert Equals(bufname('%'), 'commit1...commit2:README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(
+            \ gita#meta#get('file'),
+            \ gita#utils#ensure_abspath('README.md')
+            \)
+      Assert Equals(gita#meta#get('commit'), 'commit1...commit2')
     End
   End
 End
