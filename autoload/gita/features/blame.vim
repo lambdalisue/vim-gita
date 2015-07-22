@@ -48,6 +48,43 @@ call s:parser.add_argument(
       \ ],
       \)
 
+let s:actions = {}
+function! s:actions.blame_down(candidates, options) abort " {{{
+  for candidate in a:candidates
+    if candidate.revision ==# a:options.commit
+      let previous = get(candidate, 'previous', '')
+      if empty(previous)
+        call gita#utils#prompt#warn(
+              \ 'This is a boundary commit',
+              \)
+        continue
+      endif
+      let [revision, filename] = split(previous)
+    else
+      let revision = candidate.revision
+      let filename = candidate.filename
+    endif
+    call s:L.push(a:options.blame_history, [revision, filename])
+    call gita#features#blame#show({
+          \ '--': [filename],
+          \ 'commit': revision,
+          \})
+  endfor
+endfunction " }}}
+function! s:actions.blame_up(candidates, options) abort " {{{
+  if empty(a:options.blame_history)
+    call gita#utils#prompt#warn(
+          \ 'This is a boundary commit',
+          \)
+    return
+  endif
+  let [revision, filename] = s:L.pop(a:options.blame_history)
+  call gita#features#blame#show({
+        \ '--': [filename],
+        \ 'commit': revision,
+        \})
+endfunction " }}}
+
 function! s:ensure_file_option(options) abort " {{{
   if empty(get(a:options, '--', []))
     let a:options['--'] = ['%']
@@ -115,6 +152,12 @@ function! s:format_chunk(chunk, ...) abort " {{{
         \ )
         \])
   return formatted
+endfunction " }}}
+function! s:get_candidates(start, end) abort " {{{
+  let meta = gita#get_meta()
+  let blame = get(meta, 'blame', {})
+  let linechunks = get(blame, 'linechunks', [])
+  return linechunks[a:start : a:end]
 endfunction " }}}
 
 function! gita#features#blame#goto(linenum, ...) abort " {{{
@@ -255,6 +298,7 @@ function! gita#features#blame#show(...) abort " {{{
         \   'linenumref': linenumref,
         \ },
         \})
+
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
   for linenum in HORI
     "execute printf('syntax match GitaHorizontal /\%%%sl.*/', linenum)
@@ -285,6 +329,12 @@ function! gita#features#blame#show(...) abort " {{{
         \   'linenumref': linenumref,
         \ },
         \})
+  let w:_gita_options = extend(deepcopy(w:_gita_options), options)
+  let w:_gita_options.blame_history = get(w:_gita_options, 'blame_history', [])
+  call gita#action#extend_actions(s:actions)
+  call gita#action#set_candidates(function('s:get_candidates'))
+  nmap <buffer> <CR> :call gita#action#exec('blame_down', w:_gita_options)<CR>
+  nmap <buffer> <BS> :call gita#action#exec('blame_up', w:_gita_options)<CR>
   execute printf('sign unplace * buffer=%d', NAVI_bufnum)
   for linenum in HORI
     execute printf(
