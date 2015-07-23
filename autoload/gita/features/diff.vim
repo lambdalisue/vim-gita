@@ -321,7 +321,7 @@ function! gita#features#diff#exec(...) abort " {{{
     let options['--'] = gita#utils#ensure_pathlist(options['--'])
   endif
   if has_key(options, 'commit')
-    let options.commit = substitute(options.commit, 'INDEX', '', 'gI')
+    let options.commit = substitute(options.commit, '\CINDEX', '', 'g')
   endif
   let options = s:D.pick(options, [
         \ '--',

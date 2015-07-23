@@ -86,7 +86,7 @@ function! s:find_url(gita, expr, options) abort " {{{
   let local_branch = get(a:options, 'branch', '')
   let local_branch = empty(local_branch) ? meta.current_branch : local_branch
   let branch_merge = a:gita.git.get_branch_merge(local_branch)
-  let remote_branch = substitute(branch_merge, '^refs/heads/', '', 'I')
+  let remote_branch = substitute(branch_merge, '\C^refs/heads/', '', '')
   " use 'master' if no remote branch is found
   let branch = empty(remote_branch) ? 'master' : remote_branch
   let remote = a:gita.git.get_branch_remote(branch)
@@ -243,7 +243,7 @@ function! gita#features#browse#translate_url(url, translation_patterns, ...) abo
       " Prefer second pattern if 'exact' is specified. Use first pattern if
       " no second pattern exists
       let repl = get(pattern, get(options, 'exact', 0) ? 2 : 1, pattern[1])
-      let repl = substitute(a:url, pattern[0], repl, 'gI')
+      let repl = substitute(a:url, '\C' . pattern[0], repl, 'g')
       return repl
     endif
   endfor
