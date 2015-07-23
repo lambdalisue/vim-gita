@@ -49,9 +49,12 @@ call s:parser.add_argument(
       \)
 
 let s:actions = {}
-function! s:actions.blame_down(candidates, options) abort " {{{
+function! s:actions.jump_in(candidates, options) abort " {{{
+  let history = s:get_history()
+  let current_commit = gita#meta#get('commit')
+  let current_filename = gita#meta#get('filename')
   for candidate in a:candidates
-    if candidate.revision ==# a:options.commit
+    if candidate.revision ==# current_commit
       let previous = get(candidate, 'previous', '')
       if empty(previous)
         call gita#utils#prompt#warn(
@@ -64,25 +67,32 @@ function! s:actions.blame_down(candidates, options) abort " {{{
       let revision = candidate.revision
       let filename = candidate.filename
     endif
-    call s:L.push(a:options.blame_history, [revision, filename])
+    call s:L.push(history, [
+          \ current_commit,
+          \ current_filename,
+          \ gita#compat#getcurpos(),
+          \])
     call gita#features#blame#show({
           \ '--': [filename],
           \ 'commit': revision,
           \})
+    call gita#features#blame#goto(candidate.linenum.original)
   endfor
 endfunction " }}}
-function! s:actions.blame_up(candidates, options) abort " {{{
-  if empty(a:options.blame_history)
+function! s:actions.jump_out(candidates, options) abort " {{{
+  let history = s:get_history()
+  if empty(history)
     call gita#utils#prompt#warn(
           \ 'This is a boundary commit',
           \)
     return
   endif
-  let [revision, filename] = s:L.pop(a:options.blame_history)
+  let [revision, filename, linenum] = s:L.pop(history)
   call gita#features#blame#show({
         \ '--': [filename],
         \ 'commit': revision,
         \})
+  call setpos('.', linenum)
 endfunction " }}}
 
 function! s:ensure_file_option(options) abort " {{{
@@ -156,6 +166,10 @@ endfunction " }}}
 function! s:get_candidates(start, end) abort " {{{
   let linechunks = gita#meta#get('blame#linechunks', [])
   return linechunks[a:start : a:end]
+endfunction " }}}
+function! s:get_history() abort " {{{
+  let w:_gita_blame_history = get(w:, '_gita_blame_history', [])
+  return w:_gita_blame_history
 endfunction " }}}
 
 function! gita#features#blame#goto(linenum, ...) abort " {{{
@@ -249,7 +263,7 @@ function! gita#features#blame#show(...) abort " {{{
     call add(NAVI, '')
     call add(VIEW, '')
     call add(HORI, len(NAVI))
-    call add(linechunks, {})
+    call add(linechunks, chunk)
     let linenum += 1
   endfor
   let NAVI = NAVI[:-2]
@@ -257,13 +271,13 @@ function! gita#features#blame#show(...) abort " {{{
 
   let NAVI_bufname = gita#utils#buffer#bufname(
         \ 'BLAME',
-        \ options.commit,
+        \ options.commit[:7],
         \ 'NAVI',
         \ relpath,
         \)
   let VIEW_bufname = gita#utils#buffer#bufname(
         \ 'BLAME',
-        \ options.commit,
+        \ options.commit[:7],
         \ relpath,
         \)
   let bufnums = gita#utils#buffer#open2(
@@ -325,18 +339,11 @@ function! gita#features#blame#show(...) abort " {{{
         \ 'blame#linechunks': linechunks,
         \ 'blame#linenumref': linenumref,
         \})
-  let w:_gita_options = extend({
-        \ 'blame_history': [],
-        \}, get(w:, '_gita_options', {}))
-  let w:_gita_options = extend(
-        \ w:_gita_options,
-        \ options,
-        \)
 
   call gita#action#extend_actions(s:actions)
   call gita#action#set_candidates(function('s:get_candidates'))
-  nmap <buffer> <CR> :call gita#action#exec('blame_down', w:_gita_options)<CR>
-  nmap <buffer> <BS> :call gita#action#exec('blame_up', w:_gita_options)<CR>
+  nmap <buffer> <CR> :call gita#action#exec('jump_in')<CR>
+  nmap <buffer> <BS> :call gita#action#exec('jump_out')<CR>
   execute printf('sign unplace * buffer=%d', NAVI_bufnum)
   for linenum in HORI
     execute printf(
