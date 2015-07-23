@@ -154,9 +154,7 @@ function! s:format_chunk(chunk, ...) abort " {{{
   return formatted
 endfunction " }}}
 function! s:get_candidates(start, end) abort " {{{
-  let meta = gita#get_meta()
-  let blame = get(meta, 'blame', {})
-  let linechunks = get(blame, 'linechunks', [])
+  let linechunks = gita#meta#get('blame#linechunks', [])
   return linechunks[a:start : a:end]
 endfunction " }}}
 
@@ -165,20 +163,20 @@ function! gita#features#blame#goto(linenum, ...) abort " {{{
         \ 'reverse': 0,
         \ 'move': 1,
         \}, get(a:000, 0, {}))
-  let meta = gita#get_meta()
-  let blame = get(meta, 'blame', {})
   if options.reverse
     " blame linenum to original linenum
-    if has_key(blame, 'linechunks')
-      let linechunk = get(blame.linechunks, a:linenum - 1, a:linenum)
+    let linechunks = gita#meta#get('blame#linechunks', [])
+    if !empty(linechunks)
+      let linechunk = get(linechunks, a:linenum - 1, a:linenum)
       let linenum = linechunk.linenum.final
     else
       let linenum = a:linenum
     endif
   else
     " original linenum to blame linenum
-    if has_key(blame, 'linenumref')
-      let linenum = get(blame.linenumref, a:linenum - 1, a:linenum)
+    let linenumref = gita#meta#get('blame#linenumref', [])
+    if !empty(linenumref)
+      let linenum = get(linenumref, a:linenum - 1, a:linenum)
     else
       let linenum = a:linenum
     endif
@@ -290,12 +288,12 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal foldcolumn=0
   setlocal textwidth=0
   setlocal colorcolumn=0
-  call gita#meta#set('filename', abspath)
-  call gita#meta#set('commit', options.commit)
-  call gita#meta#set('blame', {
-        \ 'blameobj': blameobj,
-        \ 'linechunks': linechunks,
-        \ 'linenumref': linenumref,
+  call gita#meta#extend({
+        \ 'filename': abspath,
+        \ 'commit': options.commit,
+        \ 'blame#blameobj': blameobj,
+        \ 'blame#linechunks': linechunks,
+        \ 'blame#linenumref': linenumref,
         \})
 
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
@@ -320,12 +318,12 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal nolist
   setlocal nonumber
   setlocal foldcolumn=0
-  call gita#meta#set('filename', abspath)
-  call gita#meta#set('commit', options.commit)
-  call gita#meta#set('blame', {
-        \ 'blameobj': blameobj,
-        \ 'linechunks': linechunks,
-        \ 'linenumref': linenumref,
+  call gita#meta#extend({
+        \ 'filename': abspath,
+        \ 'commit': options.commit,
+        \ 'blame#blameobj': blameobj,
+        \ 'blame#linechunks': linechunks,
+        \ 'blame#linenumref': linenumref,
         \})
   let w:_gita_options = extend({
         \ 'blame_history': [],
