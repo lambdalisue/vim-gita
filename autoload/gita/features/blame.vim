@@ -290,13 +290,12 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal foldcolumn=0
   setlocal textwidth=0
   setlocal colorcolumn=0
-  call gita#set_original_filename(abspath)
-  call gita#set_meta({
-        \ 'blame': {
-        \   'blameobj': blameobj,
-        \   'linechunks': linechunks,
-        \   'linenumref': linenumref,
-        \ },
+  call gita#meta#set('filename', abspath)
+  call gita#meta#set('commit', options.commit)
+  call gita#meta#set('blame', {
+        \ 'blameobj': blameobj,
+        \ 'linechunks': linechunks,
+        \ 'linenumref': linenumref,
         \})
 
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
@@ -321,16 +320,21 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal nolist
   setlocal nonumber
   setlocal foldcolumn=0
-  call gita#set_original_filename(abspath)
-  call gita#set_meta({
-        \ 'blame': {
-        \   'blameobj': blameobj,
-        \   'linechunks': linechunks,
-        \   'linenumref': linenumref,
-        \ },
+  call gita#meta#set('filename', abspath)
+  call gita#meta#set('commit', options.commit)
+  call gita#meta#set('blame', {
+        \ 'blameobj': blameobj,
+        \ 'linechunks': linechunks,
+        \ 'linenumref': linenumref,
         \})
-  let w:_gita_options = extend(deepcopy(w:_gita_options), options)
-  let w:_gita_options.blame_history = get(w:_gita_options, 'blame_history', [])
+  let w:_gita_options = extend({
+        \ 'blame_history': [],
+        \}, get(w:, '_gita_options', {}))
+  let w:_gita_options = extend(
+        \ w:_gita_options,
+        \ options,
+        \)
+
   call gita#action#extend_actions(s:actions)
   call gita#action#set_candidates(function('s:get_candidates'))
   nmap <buffer> <CR> :call gita#action#exec('blame_down', w:_gita_options)<CR>
