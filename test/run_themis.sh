@@ -4,7 +4,7 @@
 
 # themis
 sh ${VIMTHEMIS}/bin/themis \
-     --reporter dot \
+     --reporter spec \
      --runtimepath ${VIMPROC} \
      $@
 

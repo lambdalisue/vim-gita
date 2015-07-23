@@ -49,7 +49,7 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   if empty(a:data)
     return ''
   endif
-  let pattern_base = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
+  let pattern_base = '\C\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
   let str = copy(a:format)
   for [key, value] in items(a:format_map)
     let result = s:smart_string(get(a:data, value, ''))

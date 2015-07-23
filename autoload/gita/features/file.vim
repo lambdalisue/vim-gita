@@ -176,7 +176,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
   let abspath = a:options.file
   let commit = substitute(
         \ a:options.commit,
-        \ '\v\.?\zsINDEX\ze\.?$',
+        \ '\C\v\W?\zsINDEX\ze\W?$',
         \ '', 'g',
         \)
   " Note:

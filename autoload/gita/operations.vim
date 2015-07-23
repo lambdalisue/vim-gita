@@ -68,7 +68,7 @@ function! s:operations.exec_raw(args, ...) abort " {{{
     let result = s:C.exec(args)
   endif
   " remove ANSI sequences in case
-  let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
+  let result.stdout = substitute(result.stdout, '\C\e\[\d\{1,3}[mK]', '', 'g')
   " echo result
   if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
     call gita#utils#prompt#info(printf(
@@ -85,6 +85,7 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   if config.doautocmd && result.status == config.success_status
     call gita#compat#doautocmd(printf('vim-gita-%s-post', args[0]))
   endif
+  call gita#utils#prompt#debug(result.args)
   return result
 endfunction " }}}
 function! s:operations.exec(command, options, ...) abort " {{{
