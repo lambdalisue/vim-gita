@@ -47,7 +47,7 @@ function! s:ac_BufWriteCmd() abort " {{{
           \ fnameescape(new_filename),
           \)
   else
-    let filename = fnamemodify(expand(b:_gita_original_filename), ':p')
+    let filename = gita#meta#get('filename')
     if writefile(getline(1, '$'), filename) == 0
       setlocal nomodified
     endif
@@ -93,7 +93,7 @@ function! s:solve2(...) abort " {{{
   " REMOTE
   execute printf('%swincmd w', bufwinnr(REMOTE_bufnum))
   call gita#utils#buffer#update(REMOTE)
-  let b:_gita_original_filename = abspath
+  call gita#meta#set('filename', abspath)
   setlocal buftype=nofile bufhidden=hide noswapfile
   setlocal nomodifiable readonly
   diffthis
@@ -101,7 +101,7 @@ function! s:solve2(...) abort " {{{
   " MERGE
   execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#update(MERGE)
-  let b:_gita_original_filename = abspath
+  call gita#meta#set('filename', abspath)
   setlocal buftype=acwrite bufhidden=hide noswapfile
   setlocal modified
   augroup vim-gita-conflict-solve2
@@ -165,7 +165,7 @@ function! s:solve3(...) abort " {{{
   " LOCAL
   execute printf('%swincmd w', bufwinnr(LOCAL_bufnum))
   call gita#utils#buffer#update(LOCAL)
-  let b:_gita_original_filename = abspath
+  call gita#meta#set('filename', abspath)
   setlocal buftype=nofile bufhidden=hide noswapfile
   setlocal nomodifiable readonly
   execute printf(join([
@@ -180,7 +180,7 @@ function! s:solve3(...) abort " {{{
   " REMOTE
   execute printf('%swincmd w', bufwinnr(REMOTE_bufnum))
   call gita#utils#buffer#update(REMOTE)
-  let b:_gita_original_filename = abspath
+  call gita#meta#set('filename', abspath)
   setlocal buftype=nofile bufhidden=hide noswapfile
   setlocal nomodifiable readonly
   execute printf(join([
@@ -195,7 +195,7 @@ function! s:solve3(...) abort " {{{
   " MERGE
   execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#update(MERGE)
-  let b:_gita_original_filename = abspath
+  call gita#meta#set('filename', abspath)
   let b:_gita_LOCAL_bufnum = LOCAL_bufnum
   let b:_gita_REMOTE_bufnum = REMOTE_bufnum
   setlocal buftype=acwrite bufhidden=hide noswapfile

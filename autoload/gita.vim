@@ -42,8 +42,6 @@ function! gita#new(...) abort " {{{
   elseif !empty(g:gita#invalid_filetype_pattern) && ftype =~# g:gita#invalid_filetype_pattern
     let git = {}
   elseif filereadable(filename)
-    " to follow '_gita_original_filename', use 'expr' and 'gita#utils#expand'
-    " instead of guess from bufname
     let git = s:G.find(filename)
     let git = empty(git)
           \ ? s:G.find(resolve(filename))
@@ -78,21 +76,6 @@ function! gita#get(...) abort " {{{
     return gita
   endif
   return gita#new(expr)
-endfunction " }}}
-function! gita#get_meta(...) abort " {{{
-  let gita = call('gita#get', a:000)
-  let gita.meta = get(gita, 'meta', {})
-  return gita.meta
-endfunction " }}}
-function! gita#set_meta(meta, ...) abort " {{{
-  let meta = call('gita#get_meta', a:000)
-  return extend(meta, a:meta)
-endfunction " }}}
-function! gita#get_original_filename(...) abort " {{{
-  return gita#compat#getbufvar(get(a:000, 0, '%'), '_gita_original_filename', '')
-endfunction " }}}
-function! gita#set_original_filename(filename, ...) abort " {{{
-  call setbufvar(get(a:000, 0, '%'), '_gita_original_filename', a:filename)
 endfunction " }}}
 function! gita#is_enabled(...) abort " {{{
   return call('gita#get', a:000).enabled

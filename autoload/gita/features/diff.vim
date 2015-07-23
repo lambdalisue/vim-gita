@@ -209,12 +209,9 @@ function! s:diff1(...) abort " {{{
   setlocal filetype=diff
 
   if !empty(abspath)
-    call gita#set_original_filename(abspath)
+    call gita#meta#set('filename', abspath)
   endif
-  call gita#set_meta({
-        \ 'file': abspath,
-        \ 'commit': options.commit,
-        \})
+  call gita#meta#set('commit', options.commit)
 endfunction " }}}
 function! s:diff2(...) abort " {{{
   let options = get(a:000, 0, {})
@@ -295,12 +292,9 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT1)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    call gita#set_original_filename(abspath)
+    call gita#meta#set('filename', abspath)
   endif
-  call gita#set_meta({
-        \ 'file': abspath,
-        \ 'commit': commit1,
-        \})
+  call gita#meta#set('commit', commit1)
   diffthis
 
   " COMMIT2
@@ -309,12 +303,9 @@ function! s:diff2(...) abort " {{{
     call gita#utils#buffer#update(COMMIT2)
     setlocal buftype=nofile bufhidden=hide noswapfile
     setlocal nomodifiable
-    call gita#set_original_filename(abspath)
+    call gita#meta#set('filename', abspath)
   endif
-  call gita#set_meta({
-        \ 'file': abspath,
-        \ 'commit': commit2,
-        \})
+  call gita#meta#set('commit', commit2)
   diffthis
   diffupdate
 endfunction " }}}
