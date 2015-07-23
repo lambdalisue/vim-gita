@@ -84,7 +84,7 @@ function! gita#features#command(bang, range, ...) abort " {{{
 endfunction " }}}
 function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   let bang = a:cmdline =~# '\v^Gita!'
-  let cmdline = substitute(a:cmdline, '\v^Gita!?\s', '', '')
+  let cmdline = substitute(a:cmdline, '\C\v^Gita!?\s', '', '')
   let opts = s:parser.parse(bang, [0, 0], cmdline)
   let name = get(opts, 'action', 'help')
 
@@ -93,7 +93,6 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   else
     " execute Gita command
     let feature = s:feature_registry[name]
-    "let cmdline = join(extend([name], opts.__unknown__))
     let args = [a:arglead, cmdline, a:cursorpos]
     if empty(get(feature, 'instance', {}))
       let candidates = call(feature.complete, args)

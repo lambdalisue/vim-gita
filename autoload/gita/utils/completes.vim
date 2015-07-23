@@ -18,7 +18,7 @@ function! gita#utils#completes#complete_branch(arglead, cmdline, cursorpos, ...)
     return []
   endif
   let candidates = split(result.stdout, '\v\r?\n')
-  call map(candidates, 'substitute(v:val, ''\v%(^..remotes/|^..|\s\-\>\s.*$)'', "", "g")')
+  call map(candidates, 'substitute(v:val, ''\C\v%(^..remotes/|^..|\s\-\>\s.*$)'', "", "g")')
   call filter(candidates, 'len(v:val) && v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}
@@ -58,7 +58,7 @@ function! gita#utils#completes#complete_remote_branch(arglead, cmdline, cursorpo
   endif
   let candidates = split(result.stdout, '\v\r?\n')
   call filter(candidates, 'v:val =~# ''\v^..remotes/''')
-  call map(candidates, 'substitute(v:val, ''\v%(^..remotes/|\s\-\>\s.*$)'', "", "g")')
+  call map(candidates, 'substitute(v:val, ''\C\v%(^..remotes/|\s\-\>\s.*$)'', "", "g")')
   call filter(candidates, 'len(v:val) && v:val =~# "^" . a:arglead')
   return candidates
 endfunction " }}}

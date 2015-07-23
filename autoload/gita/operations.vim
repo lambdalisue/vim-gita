@@ -68,7 +68,7 @@ function! s:operations.exec_raw(args, ...) abort " {{{
     let result = s:C.exec(args)
   endif
   " remove ANSI sequences in case
-  let result.stdout = substitute(result.stdout, '\e\[\d\{1,3}[mK]', '', 'g')
+  let result.stdout = substitute(result.stdout, '\C\e\[\d\{1,3}[mK]', '', 'g')
   " echo result
   if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
     call gita#utils#prompt#info(printf(
