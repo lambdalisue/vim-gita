@@ -85,6 +85,7 @@ function! s:operations.exec_raw(args, ...) abort " {{{
   if config.doautocmd && result.status == config.success_status
     call gita#compat#doautocmd(printf('vim-gita-%s-post', args[0]))
   endif
+  call gita#utils#prompt#debug(result.args)
   return result
 endfunction " }}}
 function! s:operations.exec(command, options, ...) abort " {{{
