@@ -11,16 +11,6 @@ let s:feature_registry = {}
 let s:feature_pattern = '^$'
 
 
-function! s:complete_action(arglead, cmdline, cursorpos, ...) abort " {{{
-  let gita_features = keys(s:feature_registry)
-  let git_features = [
-        \ 'push', 'pull', 'submodule', 'remote',
-        \]
-  return filter(
-        \ deepcopy(extend(gita_features, git_features)),
-        \ 'v:val =~# "^" . a:arglead',
-        \)
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!]',
       \ 'description': 'An awesome git handling plugin for Vim',
@@ -32,7 +22,7 @@ call s:parser.add_argument(
       \   'it call a raw git command instead of a Gita command.',
       \ ], {
       \   'terminal': 1,
-      \   'complete': function('s:complete_action'),
+      \   'complete': function('gita#features#_complete_action'),
       \ })
 
 
@@ -112,6 +102,16 @@ function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
     endif
   endif
   return candidates
+endfunction " }}}
+function! gita#features#_complete_action(arglead, cmdline, cursorpos, ...) abort " {{{
+  let gita_features = keys(s:feature_registry)
+  let git_features = [
+        \ 'push', 'pull', 'submodule', 'remote',
+        \]
+  return filter(
+        \ deepcopy(extend(gita_features, git_features)),
+        \ 'v:val =~# "^" . a:arglead',
+        \)
 endfunction " }}}
 
 
