@@ -1,6 +1,6 @@
 Describe gita#features#browse
   Before
-    let prefix = 'https://github.com/lambdalisue/vim-gita/blob/master'
+    let prefix = 'https://github.com/lambdalisue/vim-gita/blob/.*'
     let gita = gita#get()
     let operations_saved = deepcopy(gita.operations)
 
@@ -19,10 +19,8 @@ Describe gita#features#browse
             \ '--': ['README.md', 'LICENSE.md'],
             \})
       Assert Equals(ret.status, 0)
-      Assert Equals(ret.urls, [
-            \ printf('%s/README.md', prefix),
-            \ printf('%s/LICENSE.md', prefix),
-            \])
+      Assert Match(ret.urls[0], printf('%s/README.md', prefix))
+      Assert Match(ret.urls[1], printf('%s/LICENSE.md', prefix))
     End
   End
 
@@ -38,7 +36,7 @@ Describe gita#features#browse
       call gita#features#browse#yank({
             \ '--': ['README.md', 'LICENSE.md'],
             \})
-      Assert Equals(@", printf('%s/LICENSE.md', prefix))
+      Assert Match(@", printf('%s/LICENSE.md', prefix))
     End
 
     if has('clipboard')
@@ -46,7 +44,7 @@ Describe gita#features#browse
         call gita#features#browse#yank({
               \ '--': ['README.md', 'LICENSE.md'],
               \})
-        Assert Equals(
+        Assert Match(
               \ getreg(v:register),
               \ printf('%s/LICENSE.md', prefix)
               \)
@@ -61,11 +59,9 @@ Describe gita#features#browse
             \ '--': ['README.md', 'LICENSE.md'],
             \})
       redir END
-      Assert Equals(contents, join([
-            \ '',
-            \ printf('%s/README.md', prefix),
-            \ printf('%s/LICENSE.md', prefix),
-            \], "\n"))
+      let lines = split(contents, "\n")
+      Assert Match(lines[0], printf('%s/README.md', prefix))
+      Assert Match(lines[1], printf('%s/LICENSE.md', prefix))
     End
   End
 
