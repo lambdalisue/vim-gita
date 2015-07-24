@@ -410,15 +410,17 @@ function! s:parser._parse_args(args, ...) abort " {{{
         let opts[name] = s:strip_quotes(cword)
         let positional_cursor += 1
       else
+        let name = ''
         call add(opts.__unknown__, cword)
       endif
     endif
     " terminal check
-    if get(self.arguments, name, { 'terminal': 0 }).terminal
+    if !empty(name) && get(self.arguments, name, { 'terminal': 0 }).terminal
       let cursor += 1
       break
+    else
+      let cursor += 1
     endif
-    let cursor += 1
   endwhile
   " assign remaining args as unknown
   let opts.__unknown__ = extend(
