@@ -53,7 +53,12 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   let str = copy(a:format)
   for [key, value] in items(a:format_map)
     let result = s:smart_string(get(a:data, value, ''))
-    let pattern = printf(pattern_base, key)
+    let pattern = substitute(
+          \ printf(pattern_base, key),
+          \ '\#',
+          \ '\\#',
+          \ 'g',
+          \)
     let repl = strlen(result) ? printf('\1%s\2', result) : ''
     let str = substitute(str, '\C' . pattern, repl, 'g')
   endfor
