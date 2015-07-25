@@ -1,9 +1,21 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:P = gita#utils#import('Prelude')
-let s:G = gita#utils#import('VCS.Git')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:V = vital#of('vim_gita')
+function! gita#import(name) abort
+  let cache_name = printf(
+        \ '_vital_module_%s',
+        \ substitute(a:name, '\.', '_', 'g'),
+        \)
+  if !has_key(s:, cache_name)
+    let s:[cache_name] = s:V.import(a:name)
+  endif
+  return s:[cache_name]
+endfunction
+
+let s:P = gita#import('Prelude')
+let s:G = gita#import('VCS.Git')
+let s:S = gita#import('VCS.Git.StatusParser')
 let s:file = expand('<sfile>:p')
 let s:repo = fnamemodify(s:file, ':h')
 

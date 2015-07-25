@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:S = gita#import('VCS.Git.StatusParser')
 
 function! gita#utils#status#virtual(path, ...) abort " {{{
   let virtual = extend({

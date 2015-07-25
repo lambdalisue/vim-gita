@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:F = gita#utils#import('System.File')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:F = gita#import('System.File')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({

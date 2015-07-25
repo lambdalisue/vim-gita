@@ -3,15 +3,15 @@ let s:is_windows = has('win16') || has('win32') || has('win64')
 Describe gita#utils
   Context #import({name})
     It should return an instance of a specified vital module
-      let ret = gita#utils#import('Prelude')
+      let ret = gita#import('Prelude')
       let exp = g:V.import('Prelude')
       Assert Equals(ret, exp)
     End
 
     It should return a same instance of a specified vital module
-      let ret1 = gita#utils#import('Prelude')
-      let ret2 = gita#utils#import('Prelude')
-      let ret3 = gita#utils#import('System.Filepath')
+      let ret1 = gita#import('Prelude')
+      let ret2 = gita#import('Prelude')
+      let ret3 = gita#import('System.Filepath')
       Assert Equals(ret1, ret2)
       Assert Same(ret1, ret2)
       Assert NotEquals(ret1, ret3)

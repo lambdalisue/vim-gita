@@ -2,8 +2,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " Modules
-let s:P = gita#utils#import('System.Filepath')
-let s:C = gita#utils#import('System.Cache.Memory')
+let s:P = gita#import('System.Filepath')
+let s:C = gita#import('System.Cache.Memory')
 
 let s:sfile = expand('<sfile>:p')
 let s:cache = s:C.new()

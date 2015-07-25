@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:A = gita#utils#import('ArgumentParser')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({

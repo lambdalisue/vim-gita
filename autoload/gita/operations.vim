@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:P = gita#utils#import('Prelude')
-let s:C = gita#utils#import('VCS.Git.Core')
-let s:A = gita#utils#import('ArgumentParser')
+let s:P = gita#import('Prelude')
+let s:C = gita#import('VCS.Git.Core')
+let s:A = gita#import('ArgumentParser')
 
 
 function! s:translate_option(key, val, scheme) abort " {{{

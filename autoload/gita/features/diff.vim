@@ -2,10 +2,10 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:D = gita#utils#import('Data.Dict')
-let s:P = gita#utils#import('System.Filepath')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:D = gita#import('Data.Dict')
+let s:P = gita#import('System.Filepath')
+let s:A = gita#import('ArgumentParser')
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
   let leading = matchstr(a:arglead, '^.*\.\.\.\?')

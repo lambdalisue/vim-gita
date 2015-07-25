@@ -1,9 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:P = gita#utils#import('Prelude')
-let s:C = gita#utils#import('VCS.Git.Conflict')
-let s:A = gita#utils#import('ArgumentParser')
+let s:P = gita#import('Prelude')
+let s:C = gita#import('VCS.Git.Conflict')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
