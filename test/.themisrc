@@ -37,7 +37,7 @@ if v:version == 703
   endfunction
 else
   function! WipeoutAll() abort
-    %bwipeout!
+    silent execute '%bwipeout!'
   endfunction
 endif
 
