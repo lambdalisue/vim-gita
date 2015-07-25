@@ -144,8 +144,12 @@ function! s:commit(expr, options) abort " {{{
   endif
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('%'), ':p')
+  let new_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('<amatch>')),
+        \)
+  let old_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('%')),
+        \)
   call gita#utils#prompt#debug(
         \ 'new_filename:', new_filename,
         \ 'old_filename:', old_filename,
