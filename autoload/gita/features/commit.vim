@@ -146,12 +146,20 @@ endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
   let new_filename = fnamemodify(expand('<amatch>'), ':p')
   let old_filename = fnamemodify(expand('<afile>'), ':p')
+  call gita#utils#prompt#debug(
+        \ 'new_filename:', new_filename,
+        \ 'old_filename:', old_filename,
+        \)
   if new_filename !=# old_filename
-    execute printf('w%s %s %s',
+    let cmd = printf('w%s %s %s',
           \ v:cmdbang ? '!' : '',
           \ fnameescape(v:cmdarg),
           \ fnameescape(new_filename),
           \)
+    call gita#utils#prompt#debug(
+          \ 'cmd:', cmd,
+          \)
+    silent! execute cmd
   else
     " cache commitmsg if it is called without quitting
     let gita = gita#get()
