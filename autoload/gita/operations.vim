@@ -26,12 +26,24 @@ function! s:translate_option(key, val, scheme) abort " {{{
         \ 'v': 'val',
         \ 'K': 'escaped_key',
         \ 'V': 'escaped_val',
+        \ 'u': 'unixpath_val',
+        \ 'U': 'escaped_unixpath_val',
+        \ 'r': 'realpath_val',
+        \ 'R': 'escaped_realpath_val',
         \}
   let data = {
         \ 'key': a:key,
         \ 'val': val,
         \ 'escaped_key': substitute(a:key, '_', '-', 'g'),
         \ 'escaped_val': len(val) ? shellescape(val) : '',
+        \ 'unixpath_val': gita#utils#ensure_unixpath(val),
+        \ 'escaped_unixpath_val': len(val)
+        \   ? shellescape(gita#utils#ensure_unixpath(val))
+        \   : '',
+        \ 'realpath_val': gita#utils#ensure_realpath(val),
+        \ 'escaped_realpath_val': len(val)
+        \   ? shellescape(gita#utils#ensure_realpath(val))
+        \   : '',
         \}
   return gita#utils#format_string(format, format_map, data)
 endfunction " }}}

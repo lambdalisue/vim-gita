@@ -62,11 +62,11 @@ function! s:yank_string(content) abort " {{{
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
   let path = gita#utils#expand(a:expr)
-  let abspath = fnamemodify(path, ':p')
+  let abspath = gita#utils#ensure_abspath(path)
   let relpath = a:gita.git.get_relative_path(abspath)
 
   " get selected region
-  if path != gita#utils#expand('%')
+  if abspath != gita#utils#ensure_abspath(gita#utils#expand('%'))
     let line_start = ''
     let line_end = ''
   elseif has_key(a:options, '__range__')
@@ -99,7 +99,7 @@ function! s:find_url(gita, expr, options) abort " {{{
 
   " create a URL
   let data = {
-        \ 'path': relpath,
+        \ 'path': gita#utils#ensure_unixpath(relpath),
         \ 'line_start': line_start,
         \ 'line_end': line_end,
         \ 'branch': branch,
@@ -144,7 +144,8 @@ function! gita#features#browse#exec(...) abort " {{{
   endif
   let options = get(a:000, 0, {})
   if !empty(get(options, '--', []))
-    call map(options['--'], 'gita#utils#expand(v:val)')
+    " s:find_url require a REAL path to find relative path
+    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
   endif
   let urls = map(
         \ deepcopy(get(options, '--', [])),

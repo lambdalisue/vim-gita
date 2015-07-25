@@ -318,7 +318,8 @@ function! gita#features#diff#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git store files with UNIX type path separation (/)
+    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   if has_key(options, 'commit')
     let options.commit = substitute(options.commit, '\CINDEX', '', 'g')
