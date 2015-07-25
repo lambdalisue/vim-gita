@@ -257,7 +257,8 @@ function! gita#features#status#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git store files with UNIX type path separation (/)
+    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',

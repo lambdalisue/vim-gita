@@ -185,7 +185,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
         \ 'object': printf(
         \   '%s:%s',
         \   commit,
-        \   a:gita.git.get_relative_path(abspath),
+        \   gita#utils#ensure_unixpath(a:gita.git.get_relative_path(abspath)),
         \ ),
         \}, a:config)
 endfunction " }}}

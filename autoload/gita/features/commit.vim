@@ -194,7 +194,8 @@ function! gita#features#commit#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git understand REAL/UNIX path in working tree
+    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',

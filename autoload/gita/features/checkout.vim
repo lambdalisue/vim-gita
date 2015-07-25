@@ -103,7 +103,8 @@ function! gita#features#checkout#exec(...) abort " {{{
     return
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git store files with UNIX type path separation (/)
+    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
