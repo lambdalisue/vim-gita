@@ -1,6 +1,6 @@
 " preload gita#feature#browse which might not loaded automatically in
 " travis.org because most of tests are skipped
-call gita#preload('gita#feature#browse')
+call gita#preload('gita#features#browse')
 
 Describe gita#features#browse
   let prefix = 'https://github.com/lambdalisue/vim-gita/blob/.*'

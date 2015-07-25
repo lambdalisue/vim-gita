@@ -110,7 +110,7 @@ function! gita#preload(path) abort " {{{
         \ s:repo,
         \ substitute(a:path, '\#', s:P.separator(), 'g'),
         \)
-  silent! execute printf('source %s', abspath)
+  execute printf('source %s.vim', abspath)
 endfunction " }}}
 
 function! s:ac_BufWritePre() abort
