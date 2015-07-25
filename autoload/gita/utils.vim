@@ -103,13 +103,13 @@ endfunction " }}}
 " function! gita#utils#ensure_unixpath(path)/ensure_realpath(path) abort " {{{
 if s:is_windows && exists('&shellslash')
   function! gita#utils#ensure_unixpath(path) abort " {{{
-    return fnamemodify(a:path, ':g?\\?/?')
+    return fnamemodify(a:path, ':gs?\\?/?')
   endfunction " }}}
   function! gita#utils#ensure_realpath(path) abort " {{{
     if &shellslash
       return a:path
     else
-      return fnamemodify(a:path, ':g?/?\\?')
+      return fnamemodify(a:path, ':gs?/?\\?')
     endif
   endfunction " }}}
   function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
