@@ -475,7 +475,7 @@ function! gita#features#status#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#status#default_options,
+          \ deepcopy(g:gita#features#status#default_options),
           \ options)
     if get(options, 'window')
       call gita#features#status#open(options)

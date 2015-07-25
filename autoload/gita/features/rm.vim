@@ -70,7 +70,7 @@ function! gita#features#rm#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#rm#default_options,
+          \ deepcopy(g:gita#features#rm#default_options),
           \ options)
     let options = extend(options, {
           \ '--': options.__unknown__,

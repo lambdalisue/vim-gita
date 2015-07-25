@@ -112,7 +112,7 @@ function! gita#features#reset#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#reset#default_options,
+          \ deepcopy(g:gita#features#reset#default_options),
           \ options)
     let options = extend(options, {
           \ '--': options.__unknown__,
