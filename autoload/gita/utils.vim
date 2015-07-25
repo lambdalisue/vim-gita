@@ -112,12 +112,28 @@ if s:is_windows && exists('&shellslash')
       return fnamemodify(a:path, ':g?/?\\?')
     endif
   endfunction " }}}
+  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
+    return map(deepcopy(a:pathlist),
+          \ 'gita#utils#ensure_unixpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
+          \)
+  endfunction " }}}
+  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
+    return map(deepcopy(a:pathlist),
+          \ 'gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
+          \)
+  endfunction " }}}
 else
   function! gita#utils#ensure_unixpath(path) abort " {{{
     return a:path
   endfunction " }}}
   function! gita#utils#ensure_realpath(path) abort " {{{
     return a:path
+  endfunction " }}}
+  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
+    return gita#utils#ensure_pathlist(a:pathlist)
+  endfunction " }}}
+  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
+    return gita#utils#ensure_pathlist(a:pathlist)
   endfunction " }}}
 endif
 " }}}
