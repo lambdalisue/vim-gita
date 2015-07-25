@@ -4,6 +4,8 @@ set cpo&vim
 let s:P = gita#utils#import('Prelude')
 let s:G = gita#utils#import('VCS.Git')
 let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:file = expand('<sfile>:p')
+let s:repo = fnamemodify(s:file, ':h')
 
 
 let s:gita = {}
@@ -89,6 +91,11 @@ function! gita#clear_cache(...) abort " {{{
   if gita.enabled
     call gita.git.cache.repository.clear()
   endif
+endfunction " }}}
+
+function! gita#preload(path) abort " {{{
+  let abspath = s:P.join(s:repo, substitute(path, '\#', s:P.separator(), 'g'))
+  silent! execute printf('source %s', abspath)
 endfunction " }}}
 
 function! s:ac_BufWritePre() abort
