@@ -11,12 +11,12 @@ Describe gita#monitor
 
     It should properly prepare a monitor buffer
       call gita#monitor#open('foo')
-      " local settings
-      Assert Equals(&l:buftype, 'nofile')
-      Assert Equals(&l:bufhidden, 'hide')
-      Assert Equals(&l:buflisted, 0)
-      Assert Equals(&l:winfixwidth, 1)
-      Assert Equals(&l:winfixheight, 1)
+      " settings
+      Assert Equals(&buftype, 'nofile')
+      Assert Equals(&bufhidden, 'hide')
+      Assert Equals(&buflisted, 0)
+      Assert Equals(&winfixwidth, 1)
+      Assert Equals(&winfixheight, 1)
       " window/buffer variables
       Assert True(has_key(w:, '_gita'))
       Assert True(has_key(w:, '_gita_options'))

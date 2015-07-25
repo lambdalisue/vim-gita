@@ -15,14 +15,14 @@ function! s:get_statuses(start, end) abort " {{{
   return statuses
 endfunction " }}}
 function! s:ac_QuitPre() abort " {{{
-  let b:_gita_monitor_QuitPre = 1
+  let w:_gita_monitor_QuitPre = 1
 endfunction " }}}
 function! s:ac_WinLeave() abort " {{{
-  if get(b:, '_gita_monitor_QuitPre')
+  if get(w:, '_gita_monitor_QuitPre')
     call gita#utils#hooks#call('ac_WinLeave')
     call gita#utils#anchor#focus()
   endif
-  silent! unlet b:_gita_monitor_QuitPre
+  silent! unlet w:_gita_monitor_QuitPre
 endfunction " }}}
 function! s:ac_WinLeaveVim703() abort " {{{
   if histget('cmd') =~# '\v^%(q|quit|wq)$'

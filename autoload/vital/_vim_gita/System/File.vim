@@ -24,7 +24,10 @@ function! s:open(filename) abort "{{{
     if s:need_trans
       let filename = iconv(filename, &encoding, 'char')
     endif
-    silent execute '!start rundll32 url.dll,FileProtocolHandler' filename
+    silent execute printf(
+          \ '!start rundll32 url.dll,FileProtocolHandler %s',
+          \ escape(filename, '#%'),
+          \)
   elseif s:is_cygwin
     " Cygwin.
     call system(printf('%s %s', 'cygstart',

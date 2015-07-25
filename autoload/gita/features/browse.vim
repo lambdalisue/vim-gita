@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:F = gita#utils#import('System.File')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:F = gita#import('System.File')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
@@ -62,11 +62,11 @@ function! s:yank_string(content) abort " {{{
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
   let path = gita#utils#expand(a:expr)
-  let abspath = fnamemodify(path, ':p')
+  let abspath = gita#utils#ensure_abspath(path)
   let relpath = a:gita.git.get_relative_path(abspath)
 
   " get selected region
-  if path != gita#utils#expand('%')
+  if abspath != gita#utils#ensure_abspath(gita#utils#expand('%'))
     let line_start = ''
     let line_end = ''
   elseif has_key(a:options, '__range__')
@@ -99,7 +99,7 @@ function! s:find_url(gita, expr, options) abort " {{{
 
   " create a URL
   let data = {
-        \ 'path': relpath,
+        \ 'path': gita#utils#ensure_unixpath(relpath),
         \ 'line_start': line_start,
         \ 'line_end': line_end,
         \ 'branch': branch,
@@ -144,7 +144,8 @@ function! gita#features#browse#exec(...) abort " {{{
   endif
   let options = get(a:000, 0, {})
   if !empty(get(options, '--', []))
-    call map(options['--'], 'gita#utils#expand(v:val)')
+    " s:find_url require a REAL path to find relative path
+    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
   endif
   let urls = map(
         \ deepcopy(get(options, '--', [])),
@@ -209,26 +210,28 @@ function! gita#features#browse#echo(...) abort " {{{
 endfunction " }}}
 function! gita#features#browse#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  " automatically assign the current buffer if no file is specified
-  let options['--'] = options.__unknown__
-  if empty(get(options, '--', []))
-    let options['--'] = ['%']
-  endif
-  let options = extend(
-        \ deepcopy(g:gita#features#browse#default_options),
-        \ options)
   if !empty(options)
-    if get(options, 'open')
-      call gita#features#browse#open(options)
-    elseif get(options, 'yank')
-      call gita#features#browse#yank(options)
-    elseif get(options, 'echo')
-      call gita#features#browse#echo(options)
-    else
-      call gita#utils#debugmsg(
-            \ 'No available action is specified',
-            \ 'options:', options,
-            \)
+    " automatically assign the current buffer if no file is specified
+    let options['--'] = options.__unknown__
+    if empty(get(options, '--', []))
+      let options['--'] = ['%']
+    endif
+    let options = extend(
+          \ deepcopy(g:gita#features#browse#default_options),
+          \ options)
+    if !empty(options)
+      if get(options, 'open')
+        call gita#features#browse#open(options)
+      elseif get(options, 'yank')
+        call gita#features#browse#yank(options)
+      elseif get(options, 'echo')
+        call gita#features#browse#echo(options)
+      else
+        call gita#utils#debugmsg(
+              \ 'No available action is specified',
+              \ 'options:', options,
+              \)
+      endif
     endif
   endif
 endfunction " }}}

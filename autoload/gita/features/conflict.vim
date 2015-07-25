@@ -1,9 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:P = gita#utils#import('Prelude')
-let s:C = gita#utils#import('VCS.Git.Conflict')
-let s:A = gita#utils#import('ArgumentParser')
+let s:P = gita#import('Prelude')
+let s:C = gita#import('VCS.Git.Conflict')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
@@ -56,7 +56,7 @@ endfunction " }}}
 function! s:solve2(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let abspath = gita#utils#ensure_abspath(options.file)
+  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
   let relpath = gita.git.get_relative_path(abspath)
 
   let ORIG = bufexists(abspath)
@@ -67,7 +67,7 @@ function! s:solve2(...) abort " {{{
         \ : s:C.strip_theirs(ORIG)
   let REMOTE = options.status.sign =~# '\%(DD\|UD\)'
         \ ? []
-        \ : s:C.get_theirs(relpath)
+        \ : s:C.get_theirs(gita#utils#ensure_unixpath(relpath))
   if s:P.is_dict(REMOTE)
     let stdout = REMOTE.stdout
     unlet REMOTE
@@ -114,7 +114,7 @@ endfunction " }}}
 function! s:solve3(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let abspath = gita#utils#ensure_abspath(options.file)
+  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
   let relpath = gita.git.get_relative_path(abspath)
 
   let ORIG = bufexists(abspath)
@@ -123,10 +123,10 @@ function! s:solve3(...) abort " {{{
   let MERGE  = s:C.strip_conflict(ORIG)
   let LOCAL  = options.status.sign =~# '\v%(DD|DU)'
         \ ? []
-        \ : s:C.get_ours(relpath)
+        \ : s:C.get_ours(gita#utils#ensure_unixpath(relpath))
   let REMOTE = options.status.sign =~# '\v%(DD|UD)'
         \ ? []
-        \ : s:C.get_theirs(relpath)
+        \ : s:C.get_theirs(gita#utils#ensure_unixpath(relpath))
   if s:P.is_dict(LOCAL)
     let stdout = LOCAL.stdout
     unlet LOCAL

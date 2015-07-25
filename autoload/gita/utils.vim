@@ -1,20 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:V = vital#of('vim_gita')
-function! gita#utils#import(name) abort " {{{
-  let cache_name = printf(
-        \ '_vital_module_%s',
-        \ substitute(a:name, '\.', '_', 'g'),
-        \)
-  if !has_key(s:, cache_name)
-    let s:[cache_name] = s:V.import(a:name)
-  endif
-  return s:[cache_name]
-endfunction " }}}
-
-let s:P = gita#utils#import('System.Filepath')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:P = gita#import('System.Filepath')
+let s:S = gita#import('VCS.Git.StatusParser')
+let s:is_windows = has('win16') || has('win32') || has('win64')
 let s:TYPES = {
       \ 'STRING': type(''),
       \ 'NUMBER': type(0),
@@ -53,12 +42,7 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   let str = copy(a:format)
   for [key, value] in items(a:format_map)
     let result = s:smart_string(get(a:data, value, ''))
-    let pattern = substitute(
-          \ printf(pattern_base, key),
-          \ '\#',
-          \ '\\#',
-          \ 'g',
-          \)
+    let pattern = printf(pattern_base, key)
     let repl = strlen(result) ? printf('\1%s\2', escape(result, '\')) : ''
     let str = substitute(str, '\C' . pattern, repl, 'g')
   endfor
@@ -98,6 +82,45 @@ function! gita#utils#ensure_pathlist(pathlist) abort " {{{
         \ 'gita#utils#ensure_abspath(gita#utils#expand(v:val))',
         \)
 endfunction " }}}
+
+" function! gita#utils#ensure_unixpath(path)/ensure_realpath(path) abort " {{{
+if s:is_windows && exists('&shellslash')
+  function! gita#utils#ensure_unixpath(path) abort " {{{
+    return fnamemodify(a:path, ':gs?\\?/?')
+  endfunction " }}}
+  function! gita#utils#ensure_realpath(path) abort " {{{
+    if &shellslash
+      return a:path
+    else
+      return fnamemodify(a:path, ':gs?/?\\?')
+    endif
+  endfunction " }}}
+  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
+    return map(deepcopy(a:pathlist),
+          \ 'gita#utils#ensure_unixpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
+          \)
+  endfunction " }}}
+  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
+    return map(deepcopy(a:pathlist),
+          \ 'gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
+          \)
+  endfunction " }}}
+else
+  function! gita#utils#ensure_unixpath(path) abort " {{{
+    return a:path
+  endfunction " }}}
+  function! gita#utils#ensure_realpath(path) abort " {{{
+    return a:path
+  endfunction " }}}
+  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
+    return gita#utils#ensure_pathlist(a:pathlist)
+  endfunction " }}}
+  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
+    return gita#utils#ensure_pathlist(a:pathlist)
+  endfunction " }}}
+endif
+" }}}
+
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
