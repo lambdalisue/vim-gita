@@ -368,7 +368,9 @@ function! gita#features#blame#define_highlights() abort " {{{
   highlight link GitaAuthor     Identifier
   highlight link GitaTimeDelta  Comment
   highlight link GitaRevision   String
-  highlight      GitaHorizontal gui=underline guifg=#363636
+  highlight      GitaHorizontal term=underline
+        \ cterm=underline ctermfg=8
+        \ gui=underline guifg=#363636
 endfunction " }}}
 function! gita#features#blame#define_syntax() abort " {{{
   syntax match GitaSummary   /.*/
