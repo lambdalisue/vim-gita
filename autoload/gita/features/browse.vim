@@ -209,26 +209,28 @@ function! gita#features#browse#echo(...) abort " {{{
 endfunction " }}}
 function! gita#features#browse#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
-  " automatically assign the current buffer if no file is specified
-  let options['--'] = options.__unknown__
-  if empty(get(options, '--', []))
-    let options['--'] = ['%']
-  endif
-  let options = extend(
-        \ deepcopy(g:gita#features#browse#default_options),
-        \ options)
   if !empty(options)
-    if get(options, 'open')
-      call gita#features#browse#open(options)
-    elseif get(options, 'yank')
-      call gita#features#browse#yank(options)
-    elseif get(options, 'echo')
-      call gita#features#browse#echo(options)
-    else
-      call gita#utils#debugmsg(
-            \ 'No available action is specified',
-            \ 'options:', options,
-            \)
+    " automatically assign the current buffer if no file is specified
+    let options['--'] = options.__unknown__
+    if empty(get(options, '--', []))
+      let options['--'] = ['%']
+    endif
+    let options = extend(
+          \ deepcopy(g:gita#features#browse#default_options),
+          \ options)
+    if !empty(options)
+      if get(options, 'open')
+        call gita#features#browse#open(options)
+      elseif get(options, 'yank')
+        call gita#features#browse#yank(options)
+      elseif get(options, 'echo')
+        call gita#features#browse#echo(options)
+      else
+        call gita#utils#debugmsg(
+              \ 'No available action is specified',
+              \ 'options:', options,
+              \)
+      endif
     endif
   endif
 endfunction " }}}
