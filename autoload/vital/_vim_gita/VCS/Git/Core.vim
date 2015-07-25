@@ -82,7 +82,7 @@ function! s:get_relative_path(worktree, path) abort " {{{
           \)
   endif
   let prefix = a:worktree . s:Path.separator()
-  return substitute(a:path, prefix, '', '')
+  return substitute(a:path, escape(prefix, '\'), '', '')
 endfunction " }}}
 function! s:get_absolute_path(worktree, path) abort " {{{
   if s:Path.is_absolute(a:path)
