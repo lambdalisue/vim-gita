@@ -2,11 +2,11 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:D = gita#utils#import('Data.Dict')
-let s:F = gita#utils#import('System.File')
-let s:P = gita#utils#import('System.Filepath')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:D = gita#import('Data.Dict')
+let s:F = gita#import('System.File')
+let s:P = gita#import('System.Filepath')
+let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
@@ -257,7 +257,8 @@ function! gita#features#status#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git store files with UNIX type path separation (/)
+    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -474,7 +475,7 @@ function! gita#features#status#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#status#default_options,
+          \ deepcopy(g:gita#features#status#default_options),
           \ options)
     if get(options, 'window')
       call gita#features#status#open(options)

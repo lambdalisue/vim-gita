@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:D = gita#utils#import('Data.Dict')
-let s:L = gita#utils#import('Data.List')
-let s:A = gita#utils#import('ArgumentParser')
+let s:D = gita#import('Data.Dict')
+let s:L = gita#import('Data.List')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
@@ -71,7 +71,8 @@ function! gita#features#add#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git understand REAL/UNIX path in working tree
+    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',

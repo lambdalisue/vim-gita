@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:D = gita#utils#import('Data.Dict')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:D = gita#import('Data.Dict')
+let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
@@ -165,7 +165,7 @@ function! gita#features#diff_ls#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#diff_ls#default_options,
+          \ deepcopy(g:gita#features#diff_ls#default_options),
           \ options)
     call gita#features#diff_ls#open(options)
   endif

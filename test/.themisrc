@@ -2,6 +2,9 @@ let g:V = vital#of('vim_gita')
 let g:P = g:V.import('System.Filepath')
 let g:F = g:V.import('System.File')
 
+" disable interactive features
+let g:gita#_disable_interactive = 1
+
 function! s:setup() abort
   let root = resolve(tempname())
   let g:repository_root = g:P.join(root, 'repository_root')
@@ -37,7 +40,11 @@ if v:version == 703
   endfunction
 else
   function! WipeoutAll() abort
-    %bwipeout!
+    try
+      silent execute '%bwipeout!'
+    catch
+      " fail silently
+    endtry
   endfunction
 endif
 

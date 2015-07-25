@@ -1,15 +1,17 @@
+let s:is_windows = has('win16') || has('win32') || has('win64')
+
 Describe gita#utils
   Context #import({name})
     It should return an instance of a specified vital module
-      let ret = gita#utils#import('Prelude')
+      let ret = gita#import('Prelude')
       let exp = g:V.import('Prelude')
       Assert Equals(ret, exp)
     End
 
     It should return a same instance of a specified vital module
-      let ret1 = gita#utils#import('Prelude')
-      let ret2 = gita#utils#import('Prelude')
-      let ret3 = gita#utils#import('System.Filepath')
+      let ret1 = gita#import('Prelude')
+      let ret2 = gita#import('Prelude')
+      let ret3 = gita#import('System.Filepath')
       Assert Equals(ret1, ret2)
       Assert Same(ret1, ret2)
       Assert NotEquals(ret1, ret3)
@@ -233,5 +235,169 @@ Describe gita#utils
 
     End
   End
-End
 
+  Context #ensure_unixpath({path))
+    if !s:is_windows || !exists('&shellslash')
+      It should return a same instance of {path} in non Windows OS or without +shellslash
+        let path = 'C:\Foo\Bar\Hoge.txt'
+        let ret = gita#utils#ensure_unixpath(path)
+        Assert Equals(ret, path)
+        Assert Same(ret, path)
+      End
+    else
+      Before
+        let saved_shellslash = &shellslash
+      End
+      After
+        let &shellslash = saved_shellslash
+      End
+
+      It should return a same instance of {path} in Windows if shellslash is specified
+        set shellslash
+        let path = 'C:\Foo\Bar\Hoge.txt'
+        let ret = gita#utils#ensure_unixpath(path)
+        Assert Equals(ret, path)
+        Assert Same(ret, path)
+      End
+
+      It should return a modified instance of {path} in Windows if noshellslash is specified
+        set noshellslash
+        let path = 'C:\Foo\Bar\Hoge.txt'
+        let ret = gita#utils#ensure_unixpath(path)
+        Assert NotEquals(ret, path)
+        Assert NotSame(ret, path)
+        Assert Equals(ret, 'C:/Foo/Bar/Hoge.txt')
+      End
+    endif
+  End
+
+  Context #ensure_realpath({path))
+    if !s:is_windows || !exists('&shellslash')
+      It should return a same instance of {path} in non Windows OS or without +shellslash
+        let path = 'C:/Foo/Bar/Hoge.txt'
+        let ret = gita#utils#ensure_realpath(path)
+        Assert Equals(ret, path)
+        Assert Same(ret, path)
+      End
+    else
+      Before
+        let saved_shellslash = &shellslash
+      End
+      After
+        let &shellslash = saved_shellslash
+      End
+
+      It should return a same instance of {path} in Windows if shellslash is specified
+        set shellslash
+        let path = 'C:/Foo/Bar/Hoge.txt'
+        let ret = gita#utils#ensure_realpath(path)
+        Assert Equals(ret, path)
+        Assert Same(ret, path)
+      End
+
+      It should return a modified instance of {path} in Windows if noshellslash is specified
+        set noshellslash
+        let path = 'C:/Foo/Bar/Hoge.txt'
+        let ret = gita#utils#ensure_realpath(path)
+        Assert NotEquals(ret, path)
+        Assert NotSame(ret, path)
+        Assert Equals(ret, 'C:\Foo\Bar\Hoge.txt')
+      End
+    endif
+  End
+
+  Context #ensure_unixpathlist({pathlist})
+    if !s:is_windows || !exists('&shellslash')
+      It should works as same as gita#utils#ensure_pathlist in non Windows or without +shellslash
+        let pathlist = [
+              \ 'C:\Foo\Bar\Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_unixpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert Equals(ret, exp)
+      End
+    else
+      Before
+        let saved_shellslash = &shellslash
+      End
+      After
+        let &shellslash = saved_shellslash
+      End
+
+      It should works as same as gita#utils#ensure_pathlist in Windows if shellslash is specified
+        set shellslash
+        let pathlist = [
+              \ 'C:\Foo\Bar\Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_unixpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert Equals(ret, exp)
+      End
+
+      It should return a modified version of gita#utils#ensure_pathlist in Windows if noshellslash is specified
+        set noshellslash
+        let pathlist = [
+              \ 'C:\Foo\Bar\Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_unixpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert NotEquals(ret, exp)
+        Assert Equals(ret, map(exp, 'fnamemodify(v:val, '':g?\\?/?'')'))
+      End
+    endif
+  End
+
+  Context #ensure_realpathlist({pathlist})
+    if !s:is_windows || !exists('&shellslash')
+      It should works as same as gita#utils#ensure_pathlist in non Windows or without +shellslash
+        let pathlist = [
+              \ 'C:/Foo/Bar/Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_realpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert Equals(ret, exp)
+      End
+    else
+      Before
+        let saved_shellslash = &shellslash
+      End
+      After
+        let &shellslash = saved_shellslash
+      End
+
+      It should works as same as gita#utils#ensure_pathlist in Windows if shellslash is specified
+        set shellslash
+        let pathlist = [
+              \ 'C:/Foo/Bar/Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_realpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert Equals(ret, exp)
+      End
+
+      It should return a modified version of gita#utils#ensure_pathlist in Windows if noshellslash is specified
+        set noshellslash
+        let pathlist = [
+              \ 'C:/Foo/Bar/Hoge.txt',
+              \ 'Piyo.txt',
+              \ '%',
+              \]
+        let ret = gita#utils#ensure_realpathlist(pathlist)
+        let exp = gita#utils#ensure_pathlist(pathlist)
+        Assert NotEquals(ret, exp)
+        Assert Equals(ret, map(exp, 'fnamemodify(v:val, '':g?/?\\?'')'))
+      End
+    endif
+  End
+
+End

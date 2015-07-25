@@ -1,11 +1,11 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:L = gita#utils#import('Data.List')
-let s:D = gita#utils#import('Data.Dict')
-let s:P = gita#utils#import('System.Filepath')
-let s:F = gita#utils#import('System.File')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:D = gita#import('Data.Dict')
+let s:P = gita#import('System.Filepath')
+let s:F = gita#import('System.File')
+let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
 let s:const.bufname_sep = has('unix') ? ':' : '-'
@@ -144,14 +144,25 @@ function! s:commit(expr, options) abort " {{{
   endif
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  let new_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('<amatch>')),
+        \)
+  let old_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('%')),
+        \)
+  call gita#utils#prompt#debug(
+        \ 'new_filename:', new_filename,
+        \ 'old_filename:', old_filename,
+        \)
   if new_filename !=# old_filename
-    execute printf('w%s %s %s',
+    let cmd = printf('w%s %s',
           \ v:cmdbang ? '!' : '',
-          \ fnameescape(v:cmdarg),
           \ fnameescape(new_filename),
           \)
+    call gita#utils#prompt#debug(
+          \ 'cmd:', cmd,
+          \)
+    silent! execute cmd
   else
     " cache commitmsg if it is called without quitting
     let gita = gita#get()
@@ -194,7 +205,8 @@ function! gita#features#commit#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git understand REAL/UNIX path in working tree
+    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -368,7 +380,7 @@ function! gita#features#commit#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#commit#default_options,
+          \ deepcopy(g:gita#features#commit#default_options),
           \ options)
     if get(options, 'window')
       call gita#features#commit#open(options)

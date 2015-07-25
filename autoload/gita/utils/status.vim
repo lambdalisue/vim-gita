@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:S = gita#import('VCS.Git.StatusParser')
 
 function! gita#utils#status#virtual(path, ...) abort " {{{
   let virtual = extend({
@@ -29,9 +29,15 @@ function! gita#utils#status#extend_status(status, gita, ...) abort " {{{
         \ 'inplace': 0,
         \}, get(a:000, 0, {}))
   let status = options.inplace ? a:status : deepcopy(a:status)
-  let status.path = a:gita.git.get_absolute_path(status.path)
+  " Note:
+  "   git status return UNIX path even in Windows + noshellslash
+  let status.path = a:gita.git.get_absolute_path(
+        \ gita#utils#ensure_realpath(status.path)
+        \)
   if has_key(status, 'path2')
-    let status.path2 = a:gita.git.get_absolute_path(status.path2)
+    let status.path2 = a:gita.git.get_absolute_path(
+          \ gita#utils#ensure_realpath(status.path2)
+          \)
   endif
   let status._gita_extended = 1
   return status

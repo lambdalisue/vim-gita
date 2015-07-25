@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:P = gita#utils#import('Prelude')
+let s:P = gita#import('Prelude')
 
 let s:actions = {}
 function! s:actions.help(candidates, options) abort " {{{

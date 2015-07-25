@@ -1,8 +1,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:B = gita#utils#import('Vim.Buffer')
-let s:BM = gita#utils#import('Vim.BufferManager')
+let s:B = gita#import('Vim.Buffer')
+let s:BM = gita#import('Vim.BufferManager')
 
 function! s:is_listed_in_tabpage(expr) abort " {{{
   let bufnum = bufnr(a:expr)

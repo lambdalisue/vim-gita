@@ -2,8 +2,8 @@ let s:save_cpo = &cpo
 set cpo&vim
 scriptencoding utf8
 
-let s:P = gita#utils#import('Prelude')
-let s:S = gita#utils#import('VCS.Git.StatusParser')
+let s:P = gita#import('Prelude')
+let s:S = gita#import('VCS.Git.StatusParser')
 let s:format_map = {
       \ 'ln': 'local_name',
       \ 'lb': 'local_branch',

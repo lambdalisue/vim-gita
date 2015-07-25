@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:A = gita#utils#import('ArgumentParser')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
@@ -185,7 +185,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
         \ 'object': printf(
         \   '%s:%s',
         \   commit,
-        \   a:gita.git.get_relative_path(abspath),
+        \   gita#utils#ensure_unixpath(a:gita.git.get_relative_path(abspath)),
         \ ),
         \}, a:config)
 endfunction " }}}

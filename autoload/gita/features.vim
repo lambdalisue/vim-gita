@@ -3,8 +3,8 @@ set cpo&vim
 
 
 " Modules
-let s:P = gita#utils#import('Prelude')
-let s:A = gita#utils#import('ArgumentParser')
+let s:P = gita#import('Prelude')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:feature_registry = {}

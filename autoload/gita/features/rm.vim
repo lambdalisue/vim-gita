@@ -2,9 +2,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-let s:L = gita#utils#import('Data.List')
-let s:D = gita#utils#import('Data.Dict')
-let s:A = gita#utils#import('ArgumentParser')
+let s:L = gita#import('Data.List')
+let s:D = gita#import('Data.Dict')
+let s:A = gita#import('ArgumentParser')
 
 
 let s:parser = s:A.new({
@@ -54,7 +54,8 @@ function! gita#features#rm#exec(...) abort " {{{
     return { 'status': -1 }
   endif
   if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+    " git store files with UNIX type path separation (/)
+    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -69,7 +70,7 @@ function! gita#features#rm#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
     let options = extend(
-          \ g:gita#features#rm#default_options,
+          \ deepcopy(g:gita#features#rm#default_options),
           \ options)
     let options = extend(options, {
           \ '--': options.__unknown__,
