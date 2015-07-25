@@ -145,15 +145,14 @@ function! s:commit(expr, options) abort " {{{
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
   let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  let old_filename = fnamemodify(expand('%'), ':p')
   call gita#utils#prompt#debug(
         \ 'new_filename:', new_filename,
         \ 'old_filename:', old_filename,
         \)
   if new_filename !=# old_filename
-    let cmd = printf('w%s %s %s',
+    let cmd = printf('w%s %s',
           \ v:cmdbang ? '!' : '',
-          \ fnameescape(v:cmdarg),
           \ fnameescape(new_filename),
           \)
     call gita#utils#prompt#debug(
