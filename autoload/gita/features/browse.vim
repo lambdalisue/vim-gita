@@ -66,7 +66,7 @@ function! s:find_url(gita, expr, options) abort " {{{
   let relpath = a:gita.git.get_relative_path(abspath)
 
   " get selected region
-  if path != gita#utils#expand('%')
+  if abspath != gita#utils#ensure_abspath(gita#utils#expand('%'))
     let line_start = ''
     let line_end = ''
   elseif has_key(a:options, '__range__')
