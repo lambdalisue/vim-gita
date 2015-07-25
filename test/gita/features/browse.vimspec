@@ -3,12 +3,16 @@ Describe gita#features#browse
 
   Context #exec([{options}, {config}])
     It should return urls of specifield files
-      let ret = gita#features#browse#exec({
-            \ '--': ['README.md', 'LICENSE.md'],
-            \})
-      Assert Equals(ret.status, 0)
-      Assert Match(ret.urls[0], printf('%s/README.md', prefix))
-      Assert Match(ret.urls[1], printf('%s/LICENSE.md', prefix))
+      if $TRAVIS ==# 'true'
+        Skip The test cannot be executed on Travis
+      else
+        let ret = gita#features#browse#exec({
+              \ '--': ['README.md', 'LICENSE.md'],
+              \})
+        Assert Equals(ret.status, 0)
+        Assert Match(ret.urls[0], printf('%s/README.md', prefix))
+        Assert Match(ret.urls[1], printf('%s/LICENSE.md', prefix))
+      endif
     End
   End
 
@@ -21,13 +25,17 @@ Describe gita#features#browse
 
   Context #yank([{options}, {config}])
     It should yank the last url of the specified files
-      call gita#features#browse#yank({
-            \ '--': ['README.md', 'LICENSE.md'],
-            \})
-      Assert Match(@", printf('%s/LICENSE.md', prefix))
+      if $TRAVIS ==# 'true'
+        Skip The test cannot be executed on Travis
+      else
+        call gita#features#browse#yank({
+              \ '--': ['README.md', 'LICENSE.md'],
+              \})
+        Assert Match(@", printf('%s/LICENSE.md', prefix))
+      endif
     End
 
-    if has('clipboard')
+    if has('clipboard') && $TRAVIS !=# 'true'
       It should yank the last url of the specified files to clipboard as well
         call gita#features#browse#yank({
               \ '--': ['README.md', 'LICENSE.md'],
@@ -42,14 +50,18 @@ Describe gita#features#browse
 
   Context #echo([{options}, {config}])
     It should echo urls of the specified files
-      redir => contents
-      call gita#features#browse#echo({
-            \ '--': ['README.md', 'LICENSE.md'],
-            \})
-      redir END
-      let lines = split(contents, "\n")
-      Assert Match(lines[0], printf('%s/README.md', prefix))
-      Assert Match(lines[1], printf('%s/LICENSE.md', prefix))
+      if $TRAVIS ==# 'true'
+        Skip The test cannot be executed on Travis
+      else
+        redir => contents
+        call gita#features#browse#echo({
+              \ '--': ['README.md', 'LICENSE.md'],
+              \})
+        redir END
+        let lines = split(contents, "\n")
+        Assert Match(lines[0], printf('%s/README.md', prefix))
+        Assert Match(lines[1], printf('%s/LICENSE.md', prefix))
+      endif
     End
   End
 
