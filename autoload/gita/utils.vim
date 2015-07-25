@@ -1,6 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:is_windows = has('win16') || has('win32') || has('win64')
 let s:V = vital#of('vim_gita')
 function! gita#utils#import(name) abort " {{{
   let cache_name = printf(
@@ -98,6 +99,29 @@ function! gita#utils#ensure_pathlist(pathlist) abort " {{{
         \ 'gita#utils#ensure_abspath(gita#utils#expand(v:val))',
         \)
 endfunction " }}}
+
+" function! gita#utils#ensure_unixpath(path)/ensure_realpath(path) abort " {{{
+if s:is_windows && exists('&shellslash')
+  function! gita#utils#ensure_unixpath(path) abort " {{{
+    return fnamemodify(a:path, ':g?\\?/?')
+  endfunction " }}}
+  function! gita#utils#ensure_realpath(path) abort " {{{
+    if &shellslash
+      return a:path
+    else
+      return fnamemodify(a:path, ':g?/?\\?')
+    endif
+  endfunction " }}}
+else
+  function! gita#utils#ensure_unixpath(path) abort " {{{
+    return a:path
+  endfunction " }}}
+  function! gita#utils#ensure_realpath(path) abort " {{{
+    return a:path
+  endfunction " }}}
+endif
+" }}}
+
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
