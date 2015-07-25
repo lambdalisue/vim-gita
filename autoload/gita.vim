@@ -13,7 +13,7 @@ function! gita#import(name) abort
   return s:[cache_name]
 endfunction
 
-let s:P = gita#import('Prelude')
+let s:P = gita#import('System.Filepath')
 let s:G = gita#import('VCS.Git')
 let s:S = gita#import('VCS.Git.StatusParser')
 let s:file = expand('<sfile>:p')
@@ -106,7 +106,10 @@ function! gita#clear_cache(...) abort " {{{
 endfunction " }}}
 
 function! gita#preload(path) abort " {{{
-  let abspath = s:P.join(s:repo, substitute(path, '\#', s:P.separator(), 'g'))
+  let abspath = s:P.join(
+        \ s:repo,
+        \ substitute(a:path, '\#', s:P.separator(), 'g'),
+        \)
   silent! execute printf('source %s', abspath)
 endfunction " }}}
 
