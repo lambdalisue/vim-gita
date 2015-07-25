@@ -59,7 +59,7 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
           \ '\\#',
           \ 'g',
           \)
-    let repl = strlen(result) ? printf('\1%s\2', result) : ''
+    let repl = strlen(result) ? printf('\1%s\2', escape(result, '\')) : ''
     let str = substitute(str, '\C' . pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
