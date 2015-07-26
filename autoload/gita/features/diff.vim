@@ -148,23 +148,6 @@ function! s:construct_commit(options) abort " {{{
         \}
 endfunction " }}}
 
-function! s:split_commit(commit, options) abort " {{{
-  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
-    let rhs = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.\.([^.]*)$',
-          \)[2]
-    return [ a:commit, rhs ]
-  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.([^.]*)$',
-          \)[ 1 : 2 ]
-    return [ lhs, rhs ]
-  else
-    return [ get(a:options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
-  endif
-endfunction " }}}
 
 function! s:diff1(...) abort " {{{
   let gita = gita#get()
@@ -334,6 +317,8 @@ function! gita#features#diff#exec(...) abort " {{{
         \ 'cached',
         \ 'commit',
         \ 'name_status',
+        \ 'stat',
+        \ 'numstat',
         \])
   return gita.operations.diff(options, config)
 endfunction " }}}
@@ -354,6 +339,8 @@ function! gita#features#diff#exec_cached(...) abort " {{{
         \ 'cached',
         \ 'commit',
         \ 'name_status',
+        \ 'stat',
+        \ 'numstat',
         \])))
   let cached_status = gita.git.is_updated('index', 'diff') || get(config, 'force_update', 0)
         \ ? {}

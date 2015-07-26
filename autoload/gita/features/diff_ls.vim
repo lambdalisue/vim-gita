@@ -70,6 +70,41 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
+function! s:split_commit(commit) abort " {{{
+  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    let rhs = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.\.([^.]*)$',
+          \)[2]
+    return [ a:commit, empty(rhs) ? 'HEAD' : rhs ]
+  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.([^.]*)$',
+          \)[ 1 : 2 ]
+    return [ empty(lhs) ? 'HEAD' : lhs, empty(rhs) ? 'HEAD' : rhs ]
+  else
+    return [ 'HEAD', a:commit ]
+  endif
+endfunction " }}}
+function! s:parse_stat(stdout) abort " {{{
+  let statuses = []
+  for line in split(a:stdout, '\v\r?\n')
+    let relpath = substitute(
+          \ escape(line, '\'),
+          \ '\v%(^\s+|\s+\|\s+\d+\s+\+*\-*$)',
+          \ '', 'g',
+          \)
+    let status = { 'record': line[1:] }
+    if relpath !=# line
+      let status.path = gita#utils#ensure_realpath(
+            \ gita#utils#ensure_abspath(relpath),
+            \)
+    endif
+    call add(statuses, status)
+  endfor
+  return statuses
+endfunction " }}}
 
 function! gita#features#diff_ls#open(...) abort " {{{
   let options = extend(
@@ -99,6 +134,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
   endif
 
   setlocal nomodifiable readonly
+  call gita#action#extend_actions(s:actions)
   call gita#features#diff_ls#define_mappings()
   if g:gita#features#diff_ls#enable_default_mappings
     call gita#features#diff_ls#define_default_mappings()
@@ -114,7 +150,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \)
   let options.no_prefix = 1
   let options.no_color = 1
-  let options.name_status = 1
+  let options.stat = winwidth(0)
   let config = get(a:000, 1, {})
   let result = gita#features#diff#exec_cached(options, extend({
         \ 'echo': 'fail',
@@ -123,26 +159,29 @@ function! gita#features#diff_ls#update(...) abort " {{{
     bwipe
     return
   endif
-  let statuses = gita#utils#status#parse(
+
+  let statuses = s:parse_stat(
         \ substitute(result.stdout, '\t', '  ', 'g')
         \)
 
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
-  for status in statuses.all
+  for status in statuses
     let status_record = status.record
-    let statuses_map[status_record] = status
+    if has_key(status, 'path')
+      let statuses_map[status_record] = status
+    endif
     call add(statuses_lines, status_record)
   endfor
   let w:_gita_statuses_map = statuses_map
 
   " update content
+  let [lhs, rhs] = s:split_commit(options.commit)
   let buflines = s:L.flatten([
-        \ '# Files difference between "' . options.commit . '".',
-        \ '# Press ?m and/or ?s to toggle a help of mapping and/or short format.',
+        \ printf('# Files difference between `%s` and `%s`.', lhs, rhs),
+        \ '# Press ?m to toggle a help of mapping.',
         \ gita#utils#help#get('diff_ls_mapping'),
-        \ gita#utils#help#get('short_format'),
         \ statuses_lines,
         \])
   call gita#utils#buffer#update(buflines)
@@ -157,6 +196,7 @@ function! gita#features#diff_ls#define_mappings() abort " {{{
 endfunction " }}}
 function! gita#features#diff_ls#define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
+  unmap <buffer> ?s
 
   nmap <buffer> <C-l> <Plug>(gita-action-update)
   nmap <buffer> ?m    <Plug>(gita-action-help-m)
@@ -174,24 +214,22 @@ function! gita#features#diff_ls#complete(arglead, cmdline, cursorpos) abort " {{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
 function! gita#features#diff_ls#define_highlights() abort " {{{
-  highlight link GitaComment    Comment
-  highlight link GitaConflicted Error
-  highlight link GitaUnstaged   Constant
-  highlight link GitaStaged     Special
-  highlight link GitaUntracked  GitaUnstaged
-  highlight link GitaIgnored    Identifier
-  highlight link GitaBranch     Title
+  highlight default link GitaCommit       Tag
+  highlight default link GitaComment      Comment
+  highlight default link GitaPath         Statement
+  highlight default link GitaChangedCount Title
+  highlight default link GitaAdded        Special
+  highlight default link GitaDeleted      Constant
 endfunction " }}}
 function! gita#features#diff_ls#define_syntax() abort " {{{
-  syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
-  syntax match GitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
-  syntax match GitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
-  syntax match GitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
-  syntax match GitaIgnored    /\v^\!\!\s.*$/
-  syntax match GitaUntracked  /\v^\?\?\s.*$/
-  syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
-  syntax match GitaComment    /\v^.*$/ contains=ALL
-  syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
+  syntax match GitaPath       /\v^.*\ze\s+\|/
+  syntax match GitaStat       /\v\|\s+\d+\s+\+*\-*$/
+        \ contains=GitaChangedCount,GitaAdded,GitaDeleted
+  syntax match GitaChangedCount /\v\d+/ contained display
+  syntax match GitaAdded        /\v\++/ contained display
+  syntax match GitaDeleted      /\v\-+/ contained display
+  syntax match GitaComment      /\v^#.*$/ contains=GitaCommit
+  syntax match GitaCommit       /\v\`.{-}\`/ contained display
 endfunction " }}}
 
 
