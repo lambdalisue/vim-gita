@@ -32,6 +32,13 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_commit'),
       \ })
 call s:parser.add_argument(
+      \ 'file', [
+      \   'A filepath which you want to compare the content.',
+      \   'If it is omitted and the current buffer is a file',
+      \   'buffer, the current buffer will be used for double window mode.',
+      \ ],
+      \)
+call s:parser.add_argument(
       \ '--cached',
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
       \   'conflicts': ['no_index'],
@@ -89,18 +96,6 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:ensure_file_option(options) abort " {{{
-  if empty(get(a:options, '--', []))
-    let a:options['--'] = ['%']
-  elseif len(get(a:options, '--', [])) > 1
-    call gita#utils#prompt#warn(
-          \ 'A single file required to be specified to compare the difference.',
-          \)
-    return -1
-  endif
-  let a:options.file = gita#utils#expand(a:options['--'][0])
-  return 0
-endfunction " }}}
 function! s:construct_commit(options) abort " {{{
   let gita = gita#get()
   let commit1_display = ''
@@ -155,12 +150,16 @@ function! s:diff1(...) abort " {{{
   if gita.fail_on_disabled()
     return
   endif
-
+  " automatically translate 'file' option to '--'
+  if has_key(options, 'file')
+    let options['--'] = [options.file]
+    unlet options.file
+  endif
   let options.no_prefix = 1
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
-  let result = gita#features#diff#exec(options, {
+  let result = gita#features#diff#exec_cached(options, {
         \ 'echo': 'fail',
         \})
   if result.status != 0
@@ -198,10 +197,10 @@ function! s:diff1(...) abort " {{{
 endfunction " }}}
 function! s:diff2(...) abort " {{{
   let options = get(a:000, 0, {})
-  if s:ensure_file_option(options)
-    return
+  " automatically assign the current buffer if no 'file' is specified
+  if empty(get(options, 'file', ''))
+    let options.file = '%'
   endif
-
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(options.file)
         \)
@@ -229,7 +228,7 @@ function! s:diff2(...) abort " {{{
     let COMMIT1 = []
   endif
   if commit1 ==# 'WORKTREE'
-    let COMMIT1_bufname = options.file
+    let COMMIT1_bufname = relpath
   else
     let COMMIT1_bufname = gita#utils#buffer#bufname(
           \ commit1_display,
@@ -252,7 +251,7 @@ function! s:diff2(...) abort " {{{
     let COMMIT2 = []
   endif
   if commit2 ==# 'WORKTREE'
-    let COMMIT2_bufname = options.file
+    let COMMIT2_bufname = relpath
   else
     let COMMIT2_bufname = gita#utils#buffer#bufname(
           \ commit2_display,
@@ -361,18 +360,10 @@ function! gita#features#diff#show(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  if type(options.window) ==# type(0)
-    if options.window
-      call s:diff1(options, config)
-    else
-      call gita#features#diff#exec(options, config)
-    endif
+  if get(options, 'window', '') ==# 'double'
+    call s:diff2(options, config)
   else
-    if options.window ==# 'single'
-      call s:diff1(options, config)
-    else
-      call s:diff2(options, config)
-    endif
+    call s:diff1(options, config)
   endif
 endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
