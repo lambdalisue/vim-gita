@@ -199,7 +199,9 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 
   " ensure absolute path
-  let options.file = gita#utils#ensure_abspath(options.file)
+  let options.file = gita#utils#ensure_abspath(
+        \ gita#utils#expand(options.file),
+        \)
 
   " select a proper function via 'commit'
   if options.commit ==# 'WORKTREE'
