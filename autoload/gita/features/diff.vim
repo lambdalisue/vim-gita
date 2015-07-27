@@ -30,6 +30,7 @@ call s:parser.add_argument(
       \   'If <commit>...<commit> is specified, it show thechanges on the branch containing and up to the second <commit>, starting at a common ancestor of both <commit>.',
       \ ], {
       \   'complete': function('s:complete_commit'),
+      \   'default': 'INDEX',
       \ })
 call s:parser.add_argument(
       \ 'file', [
@@ -41,33 +42,58 @@ call s:parser.add_argument(
 call s:parser.add_argument(
       \ '--cached',
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
-      \   'conflicts': ['no_index'],
+      \   'default': get(g:gita#features#diff#default_options, 'cached', 0),
       \ })
 call s:parser.add_argument(
       \ '--ignore-submodules',
       \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
       \   'choices': ['all', 'dirty', 'untracked'],
+      \   'default': get(g:gita#features#diff#default_options, 'ignore_submodules', ''),
       \   'on_default': 'all',
       \ })
 call s:parser.add_argument(
-      \ '--window', '-w',
-      \ 'Open single/double window to show the difference (Default: single)', {
-      \   'choices': ['single', 'double'],
-      \   'default': 'single',
+      \ '--diff', '-d', [
+      \   'Open a diff file to show the difference.',
+      \   'Otherwise the command show two buffers to compare the difference.',
+      \ ], {
+      \   'default': get(g:gita#features#diff#default_options, 'diff', 0),
       \ })
 call s:parser.add_argument(
-      \ '--opener', '-o', [
+      \ '--opener', [
       \   'A way to open a new buffer such as "edit", "split", or etc.',
       \ ], {
-      \ 'type': s:A.types.value,
+      \   'type': s:A.types.value,
+      \   'default': get(g:gita#features#diff#default_options, 'opener', 'edit'),
       \ },
       \)
 call s:parser.add_argument(
-      \ '--vertical', '-v', [
-      \   'Vertically open a second buffer (vsplit).',
-      \   'If it is omitted, the buffer is opened horizontally (split).',
-      \ ],
+      \ '--opener2', [
+      \   'A way to open a new buffer such as "edit", "split", or etc.',
+      \ ], {
+      \   'type': s:A.types.value,
+      \   'default': get(g:gita#features#diff#default_options, 'opener2', 'split'),
+      \ },
       \)
+call s:parser.add_argument(
+      \ '--vertical', [
+      \   'Vertically open a second buffer (vsplit).',
+      \ ], {
+      \   'conflicts': ['horizontal'],
+      \   'default': get(g:gita#features#diff#default_options, 'vertical', 1),
+      \})
+call s:parser.add_argument(
+      \ '--horizontal', [
+      \   'Horizontally open a second buffer (split).',
+      \ ], {
+      \   'conflicts': ['horizontal'],
+      \   'default': get(g:gita#features#diff#default_options, 'horizontal', 0),
+      \})
+function! s:parser.hooks.post_validate(options) abort " {{{
+  if get(a:options, 'horizontal')
+    let a:options.vertical = 0
+    unlet a:options.horizontal
+  endif
+endfunction " }}}
 function! s:parser.hooks.post_complete_optional_argument(candidates, options) abort " {{{
   let candidates = s:L.flatten([
         \ gita#utils#completes#complete_staged_files('', '', [0, 0], a:options),
@@ -82,9 +108,10 @@ function! s:ensure_commit_option(options) abort " {{{
     let gita = gita#get()
     call histadd('input', 'HEAD')
     call histadd('input', 'INDEX')
-    call histadd('input', get(gita.meta, 'commit', 'INDEX'))
+    call histadd('input', gita#meta#get('commit', 'INDEX'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? (e.g INDEX, HEAD, master, master.., master..., etc.) ',
+          \ gita#meta#get('commit'),
           \)
     if empty(commit)
       call gita#utils#prompt#warn(
@@ -151,7 +178,7 @@ function! s:diff1(...) abort " {{{
     return
   endif
   " automatically translate 'file' option to '--'
-  if has_key(options, 'file')
+  if !empty(get(options, 'file', ''))
     let options['--'] = [options.file]
     unlet options.file
   endif
@@ -159,6 +186,9 @@ function! s:diff1(...) abort " {{{
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
+  call gita#utils#prompt#debug(
+        \ options,
+        \)
   let result = gita#features#diff#exec_cached(options, {
         \ 'echo': 'fail',
         \})
@@ -201,6 +231,9 @@ function! s:diff2(...) abort " {{{
   if empty(get(options, 'file', ''))
     let options.file = '%'
   endif
+  call gita#utils#prompt#debug(
+        \ options,
+        \)
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(options.file)
         \)
@@ -221,6 +254,10 @@ function! s:diff2(...) abort " {{{
   else
     " if the file is removed in commit, the status would be non 0 but
     " it is better to show an empty buffer thus just specify an empty list
+    call gita#utils#prompt#debug(
+          \ result.args,
+          \ result.stdout,
+          \)
     let COMMIT1 = []
   endif
   if commit1 ==# 'WORKTREE'
@@ -244,6 +281,10 @@ function! s:diff2(...) abort " {{{
   else
     " if the file is removed in commit, the status would be non 0 but
     " it is better to show an empty buffer thus just specify an empty list
+    call gita#utils#prompt#debug(
+          \ result.args,
+          \ result.stdout,
+          \)
     let COMMIT2 = []
   endif
   if commit2 ==# 'WORKTREE'
@@ -257,8 +298,8 @@ function! s:diff2(...) abort " {{{
 
   let bufnums = gita#utils#buffer#open2(
         \ COMMIT1_bufname, COMMIT2_bufname, 'vim_gita_diff', {
-        \   'opener': get(options, 'opener', 'edit'),
-        \   'opener2': get(options, 'opener2', 'split'),
+        \   'opener':   get(options, 'opener', 'edit'),
+        \   'opener2':  get(options, 'opener2', 'split'),
         \   'vertical': get(options, 'vertical', 0),
         \})
   let COMMIT1_bufnum = bufnums.bufnum1
@@ -377,10 +418,10 @@ function! gita#features#diff#show(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  if get(options, 'window', '') ==# 'double'
-    call s:diff2(options, config)
-  else
+  if get(options, 'diff')
     call s:diff1(options, config)
+  else
+    call s:diff2(options, config)
   endif
 endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
@@ -389,6 +430,9 @@ function! gita#features#diff#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#diff#default_options),
           \ options)
+    if empty(get(options, 'file', ''))
+      let options.file = get(options.__unknown__, 0)
+    endif
     call gita#features#diff#show(options)
   endif
 endfunction " }}}
