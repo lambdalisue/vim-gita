@@ -48,7 +48,7 @@ function! s:actions.diff(candidates, options) abort " {{{
     endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
-          \ '--': [candidate.path],
+          \ 'file': candidate.path,
           \ 'commit': commit,
           \ 'window':   get(a:options, 'window', 'single'),
           \ 'opener':   get(a:options, 'opener', 'edit'),
