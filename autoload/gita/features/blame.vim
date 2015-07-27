@@ -119,7 +119,12 @@ function! s:create_chunks(blameobj) abort " {{{
             \ deepcopy(lineinfo),
             \ deepcopy(a:blameobj.revisions[previous_revision]),
             \)
-      unlet chunk.contents
+      " add forward/backward link
+      if !empty(chunks)
+        let chunks[-1].next = chunk
+        let chunk.previous = chunks[-1]
+      endif
+      " overwrite contents
       let chunk.contents = [lineinfo.contents]
       call add(chunks, chunk)
     else
@@ -199,6 +204,25 @@ function! gita#features#blame#goto(linenum, ...) abort " {{{
     call setpos('.', [0, linenum, 0, 0])
   endif
   return linenum
+endfunction " }}}
+function! gita#features#blame#get_actual_linenum(linenum) abort " {{{
+    let linechunks = gita#meta#get('blame#linechunks', [])
+    let chunk = get(linechunks, a:linenum - 1, {})
+    return get(get(chunk, 'linenum', {}), 'final', -1)
+endfunction " }}}
+function! gita#features#blame#get_pseudo_linenum(linenum) abort " {{{
+    let linenumref = gita#meta#get('blame#linenumref', [])
+    return get(linenumref, a:linenum - 1, -1)
+endfunction " }}}
+function! gita#features#blame#get_next_chunk(linenum) abort " {{{
+  let linechunks = gita#meta#get('blame#linechunks', [])
+  let chunk = get(linechunks, a:linenum - 1, {})
+  return get(chunk, 'next', {})
+endfunction " }}}
+function! gita#features#blame#get_previous_chunk(linenum) abort " {{{
+  let linechunks = gita#meta#get('blame#linechunks', [])
+  let chunk = get(linechunks, a:linenum - 1, {})
+  return get(chunk, 'previous', {})
 endfunction " }}}
 function! gita#features#blame#exec(...) abort " {{{
   let gita = gita#get()
