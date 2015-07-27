@@ -389,9 +389,6 @@ function! gita#features#diff#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#diff#default_options),
           \ options)
-    let options = extend(options, {
-          \ '--': options.__unknown__,
-          \})
     call gita#features#diff#show(options)
   endif
 endfunction " }}}
