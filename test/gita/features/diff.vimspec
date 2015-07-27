@@ -1,10 +1,18 @@
 Describe gita#features#diff
   Before
+    edit README.md
     let gita = gita#get()
     let operations_saved = deepcopy(gita.operations)
 
     function! gita.operations.diff(...) abort
       let self._previous_args = a:000
+      return {
+            \ 'status': 0,
+            \ 'stdout': 'CONTENTS',
+            \}
+    endfunction
+    function! gita.operations.show(...) abort
+      let self._previous_args_show = a:000
       return {
             \ 'status': 0,
             \ 'stdout': 'CONTENTS',
@@ -17,9 +25,39 @@ Describe gita#features#diff
             \}
     endfunction
     let gita.operations._previous_args = []
+    let gita.operations._previous_args_show = []
   End
   After
     let gita.operations = operations_saved
+    call WipeoutAll()
+  End
+
+  Context #split_commit({commit}[, {options}])
+    It should split commit1...commit2 to commit1...commit2 and commit2
+      let ret = gita#features#diff#split_commit('commit1...commit2')
+      Assert Equals(ret[0], 'commit1...commit2')
+      Assert Equals(ret[1], 'commit2')
+    End
+
+    It should split commit1..commit2 to commit1 and commit2
+      let ret = gita#features#diff#split_commit('commit1..commit2')
+      Assert Equals(ret[0], 'commit1')
+      Assert Equals(ret[1], 'commit2')
+    End
+
+    It should split commit1 to WORKTREE and commit1
+      let ret = gita#features#diff#split_commit('commit1')
+      Assert Equals(ret[0], 'WORKTREE')
+      Assert Equals(ret[1], 'commit1')
+    End
+
+    It should split commit1 to INDEX and commit1 if cached is specified
+      let ret = gita#features#diff#split_commit('commit1', {
+            \ 'cached': 1,
+            \})
+      Assert Equals(ret[0], 'INDEX')
+      Assert Equals(ret[1], 'commit1')
+    End
   End
 
   Context #exec([{options}, {config}])
@@ -83,7 +121,128 @@ Describe gita#features#diff
   End
 
   Context #show([{options}, {config}])
-    It should open a single diff buffer if window=single is specified
+    It should open a single diff buffer for entire repository if no filename is specified
+      call gita#features#diff#show({
+            \ 'commit': 'HEAD',
+            \})
+      " it should execute gita.operations.diff internally
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'no_prefix': 1,
+            \ 'no_color': 1,
+            \ 'unified': '0',
+            \ 'histogram': 1,
+            \ 'commit': 'HEAD',
+            \}, { 'echo': 'fail' }])
+      " check the buffer
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname('HEAD', 'diff'))
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(&l:buftype, 'nofile')
+      Assert Equals(&l:bufhidden, 'hide')
+      Assert Equals(&l:modifiable, 0)
+      Assert Equals(&l:readonly, 1)
+      Assert Equals(&l:filetype, 'diff')
+      Assert Equals(gita#meta#get('filename'), '')
+      Assert Equals(gita#meta#get('commit'), 'HEAD')
+    End
+
+    It should open a single diff buffer for a particular file if filename is specified
+      call gita#features#diff#show({
+            \ 'commit': 'HEAD',
+            \ 'file': 'README.md',
+            \})
+      " it should execute gita.operations.diff internally
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': [gita#utils#ensure_abspath('README.md')],
+            \ 'no_prefix': 1,
+            \ 'no_color': 1,
+            \ 'unified': '0',
+            \ 'histogram': 1,
+            \ 'commit': 'HEAD',
+            \}, { 'echo': 'fail' }])
+      " check the buffer
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname('HEAD', 'README.md.diff'))
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(&l:buftype, 'nofile')
+      Assert Equals(&l:bufhidden, 'hide')
+      Assert Equals(&l:modifiable, 0)
+      Assert Equals(&l:readonly, 1)
+      Assert Equals(&l:filetype, 'diff')
+      Assert Equals(gita#meta#get('filename'), gita#utils#ensure_abspath('README.md'))
+      Assert Equals(gita#meta#get('commit'), 'HEAD')
+    End
+
+    It should open double diff buffers for the current buffer if no filename is specified with window=double
+      call gita#features#diff#show({
+            \ 'commit': 'HEAD',
+            \ 'window': 'double',
+            \})
+      " it should NOT execute gita.operations.diff internally
+      Assert Equals(gita.operations._previous_args, [])
+      " but it should execute gita.operations.show internally
+      Assert Equals(gita.operations._previous_args_show, [{
+            \ 'object': 'HEAD:README.md',
+            \}, { 'echo': '' }])
+      " check the buffer
+      Assert Equals(
+            \ bufname('%'),
+            \ gita#utils#buffer#bufname('HEAD', 'README.md'),
+            \)
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(&l:buftype, 'nofile')
+      Assert Equals(&l:bufhidden, 'hide')
+      Assert Equals(&l:modifiable, 0)
+      Assert Equals(&l:readonly, 1)
+      Assert Equals(
+            \ gita#meta#get('filename'),
+            \ gita#utils#ensure_abspath('README.md'),
+            \)
+      Assert Equals(gita#meta#get('commit'), 'HEAD')
+    End
+
+    It should open double diff buffers for the specified file if window=double
+      call gita#features#diff#show({
+            \ 'file': 'README.md',
+            \ 'commit': 'HEAD',
+            \ 'window': 'double',
+            \})
+      " it should NOT execute gita.operations.diff internally
+      Assert Equals(gita.operations._previous_args, [])
+      " but it should execute gita.operations.show internally
+      Assert Equals(gita.operations._previous_args_show, [{
+            \ 'object': 'HEAD:README.md',
+            \}, { 'echo': '' }])
+      " check the 1st buffer
+      Assert Equals(
+            \ bufname('%'),
+            \ gita#utils#buffer#bufname('HEAD', 'README.md'),
+            \)
+      Assert Equals(getline(0, '$'), ['CONTENTS'])
+      Assert Equals(&l:buftype, 'nofile')
+      Assert Equals(&l:bufhidden, 'hide')
+      Assert Equals(&l:modifiable, 0)
+      Assert Equals(&l:readonly, 1)
+      Assert Equals(
+            \ gita#meta#get('filename'),
+            \ gita#utils#ensure_abspath('README.md'),
+            \)
+      Assert Equals(gita#meta#get('commit'), 'HEAD')
+
+      " check the 2nd buffer
+      wincmd p
+      Assert Equals(
+            \ bufname('%'),
+            \ gita#utils#buffer#bufname('README.md'),
+            \)
+      Assert Equals(
+            \ getline(0, '$'),
+            \ readfile('README.md'),
+            \)
+      Assert Equals(&l:buftype, '')
+      Assert Equals(&l:bufhidden, '')
+      Assert Equals(&l:modifiable, 1)
+      Assert Equals(&l:readonly, 0)
+      Assert Equals(gita#meta#get('filename'), '')
+      Assert Equals(gita#meta#get('commit'), 'WORKTREE')
     End
   End
 End

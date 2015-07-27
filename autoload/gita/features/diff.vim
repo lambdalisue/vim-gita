@@ -32,6 +32,13 @@ call s:parser.add_argument(
       \   'complete': function('s:complete_commit'),
       \ })
 call s:parser.add_argument(
+      \ 'file', [
+      \   'A filepath which you want to compare the content.',
+      \   'If it is omitted and the current buffer is a file',
+      \   'buffer, the current buffer will be used for double window mode.',
+      \ ],
+      \)
+call s:parser.add_argument(
       \ '--cached',
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
       \   'conflicts': ['no_index'],
@@ -89,18 +96,6 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:ensure_file_option(options) abort " {{{
-  if empty(get(a:options, '--', []))
-    let a:options['--'] = ['%']
-  elseif len(get(a:options, '--', [])) > 1
-    call gita#utils#prompt#warn(
-          \ 'A single file required to be specified to compare the difference.',
-          \)
-    return -1
-  endif
-  let a:options.file = gita#utils#expand(a:options['--'][0])
-  return 0
-endfunction " }}}
 function! s:construct_commit(options) abort " {{{
   let gita = gita#get()
   let commit1_display = ''
@@ -148,23 +143,6 @@ function! s:construct_commit(options) abort " {{{
         \}
 endfunction " }}}
 
-function! s:split_commit(commit, options) abort " {{{
-  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
-    let rhs = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.\.([^.]*)$',
-          \)[2]
-    return [ a:commit, rhs ]
-  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.([^.]*)$',
-          \)[ 1 : 2 ]
-    return [ lhs, rhs ]
-  else
-    return [ get(a:options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
-  endif
-endfunction " }}}
 
 function! s:diff1(...) abort " {{{
   let gita = gita#get()
@@ -172,12 +150,16 @@ function! s:diff1(...) abort " {{{
   if gita.fail_on_disabled()
     return
   endif
-
+  " automatically translate 'file' option to '--'
+  if has_key(options, 'file')
+    let options['--'] = [options.file]
+    unlet options.file
+  endif
   let options.no_prefix = 1
   let options.no_color = 1
   let options.unified = '0'
   let options.histogram = 1
-  let result = gita#features#diff#exec(options, {
+  let result = gita#features#diff#exec_cached(options, {
         \ 'echo': 'fail',
         \})
   if result.status != 0
@@ -215,26 +197,22 @@ function! s:diff1(...) abort " {{{
 endfunction " }}}
 function! s:diff2(...) abort " {{{
   let options = get(a:000, 0, {})
-  if s:ensure_file_option(options)
-    return
+  " automatically assign the current buffer if no 'file' is specified
+  if empty(get(options, 'file', ''))
+    let options.file = '%'
   endif
-
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(options.file)
         \)
   let relpath = gita#utils#ensure_relpath(abspath)
 
   " find commit1 and commit2
-  let result = s:construct_commit(options)
-  let commit1 = result.commit1
-  let commit2 = result.commit2
-  let commit1_display = result.commit1_display
-  let commit2_display = result.commit2_display
+  let [commit1, commit2] = gita#features#diff#split_commit(options.commit)
 
   " commit1
   let result = gita#features#file#exec({
         \ 'commit': commit1,
-        \ 'file': options.file,
+        \ 'file': abspath,
         \}, {
         \ 'echo': '',
         \})
@@ -246,10 +224,10 @@ function! s:diff2(...) abort " {{{
     let COMMIT1 = []
   endif
   if commit1 ==# 'WORKTREE'
-    let COMMIT1_bufname = options.file
+    let COMMIT1_bufname = relpath
   else
     let COMMIT1_bufname = gita#utils#buffer#bufname(
-          \ commit1_display,
+          \ commit1,
           \ relpath,
           \)
   endif
@@ -257,7 +235,7 @@ function! s:diff2(...) abort " {{{
   " commit2
   let result = gita#features#file#exec({
         \ 'commit': commit2,
-        \ 'file': options.file,
+        \ 'file': abspath,
         \}, {
         \ 'echo': '',
         \})
@@ -269,10 +247,10 @@ function! s:diff2(...) abort " {{{
     let COMMIT2 = []
   endif
   if commit2 ==# 'WORKTREE'
-    let COMMIT2_bufname = options.file
+    let COMMIT2_bufname = relpath
   else
     let COMMIT2_bufname = gita#utils#buffer#bufname(
-          \ commit2_display,
+          \ commit2,
           \ relpath,
           \)
   endif
@@ -291,7 +269,7 @@ function! s:diff2(...) abort " {{{
   if commit1 !=# 'WORKTREE'
     call gita#utils#buffer#update(COMMIT1)
     setlocal buftype=nofile bufhidden=hide noswapfile
-    setlocal nomodifiable
+    setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
   endif
   call gita#meta#set('commit', commit1)
@@ -302,7 +280,7 @@ function! s:diff2(...) abort " {{{
   if commit2 !=# 'WORKTREE'
     call gita#utils#buffer#update(COMMIT2)
     setlocal buftype=nofile bufhidden=hide noswapfile
-    setlocal nomodifiable
+    setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
   endif
   call gita#meta#set('commit', commit2)
@@ -310,6 +288,24 @@ function! s:diff2(...) abort " {{{
   diffupdate
 endfunction " }}}
 
+function! gita#features#diff#split_commit(commit, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
+    let rhs = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.\.([^.]*)$',
+          \)[2]
+    return [ a:commit, empty(rhs) ? 'HEAD' : rhs ]
+  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
+    let [lhs, rhs] = matchlist(
+          \ a:commit,
+          \ '\v^([^.]*)\.\.([^.]*)$',
+          \)[ 1 : 2 ]
+    return [ empty(lhs) ? 'HEAD' : lhs, empty(rhs) ? 'HEAD' : rhs ]
+  else
+    return [ get(options, 'cached') ? 'INDEX' : 'WORKTREE', a:commit ]
+  endif
+endfunction " }}}
 function! gita#features#diff#exec(...) abort " {{{
   let gita = gita#get()
   let options = deepcopy(get(a:000, 0, {}))
@@ -322,7 +318,10 @@ function! gita#features#diff#exec(...) abort " {{{
     let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
   endif
   if has_key(options, 'commit')
-    let options.commit = substitute(options.commit, '\CINDEX', '', 'g')
+    let options.commit = substitute(
+          \ options.commit,
+          \ '\v\C\W?INDEX\W?',
+          \ '', 'g')
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -334,6 +333,8 @@ function! gita#features#diff#exec(...) abort " {{{
         \ 'cached',
         \ 'commit',
         \ 'name_status',
+        \ 'stat',
+        \ 'numstat',
         \])
   return gita.operations.diff(options, config)
 endfunction " }}}
@@ -354,6 +355,8 @@ function! gita#features#diff#exec_cached(...) abort " {{{
         \ 'cached',
         \ 'commit',
         \ 'name_status',
+        \ 'stat',
+        \ 'numstat',
         \])))
   let cached_status = gita.git.is_updated('index', 'diff') || get(config, 'force_update', 0)
         \ ? {}
@@ -374,18 +377,10 @@ function! gita#features#diff#show(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  if type(options.window) ==# type(0)
-    if options.window
-      call s:diff1(options, config)
-    else
-      call gita#features#diff#exec(options, config)
-    endif
+  if get(options, 'window', '') ==# 'double'
+    call s:diff2(options, config)
   else
-    if options.window ==# 'single'
-      call s:diff1(options, config)
-    else
-      call s:diff2(options, config)
-    endif
+    call s:diff1(options, config)
   endif
 endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
@@ -403,6 +398,7 @@ endfunction " }}}
 function! gita#features#diff#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
+
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
