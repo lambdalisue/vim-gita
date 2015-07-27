@@ -258,7 +258,7 @@ function! s:diff2(...) abort " {{{
   let bufnums = gita#utils#buffer#open2(
         \ COMMIT1_bufname, COMMIT2_bufname, 'vim_gita_diff', {
         \   'opener': get(options, 'opener', 'edit'),
-        \   'opener2': get(options, 'opener2', ''),
+        \   'opener2': get(options, 'opener2', 'split'),
         \   'vertical': get(options, 'vertical', 0),
         \})
   let COMMIT1_bufnum = bufnums.bufnum1
