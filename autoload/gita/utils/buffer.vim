@@ -25,9 +25,9 @@ function! gita#utils#buffer#update(buflines) abort " {{{
   let &l:modifiable=1
   let &l:undolevels=-1
   let &l:readonly=0
-  silent %delete _
-  call setline(1, a:buflines)
-  call setpos('.', saved_cursor)
+  keepjump silent %delete _
+  keepjump call setline(1, a:buflines)
+  keepjump call setpos('.', saved_cursor)
   let &l:modifiable = saved_modifiable
   let &l:readonly = saved_readonly
   let &l:undolevels = saved_undolevels
