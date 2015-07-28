@@ -96,7 +96,7 @@ function! s:commit(expr, options) abort " {{{
   " validate situation
   let statuses_map = gita#compat#getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
   let staged_statuses = filter(values(statuses_map), 'v:val.is_staged')
-  if empty(meta.merge_head) && empty(staged_statuses)
+  if empty(gita.git.get_merge_msg()) && empty(staged_statuses)
     " not in merge mode and nothing has been staged
     redraw
     call gita#utils#prompt#warn(
