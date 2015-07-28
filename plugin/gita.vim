@@ -25,6 +25,7 @@ command! -nargs=? -range -bang
 
 let s:default_config = {
       \ 'debug': 0,
+      \ 'develop': 1,
       \ 'invalid_buftype_pattern': '^\%(quickfix\|help\)$',
       \ 'invalid_filetype_pattern': '',
       \ 'monitor#opener': 'topleft 15 split',
