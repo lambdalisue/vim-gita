@@ -71,7 +71,10 @@ let s:default_config = {
       \ 'features#commit#monitor_range': '',
       \ 'features#commit#enable_default_mappings': 1,
       \ 'features#conflict#default_options': {},
-      \ 'features#diff#default_options': {},
+      \ 'features#diff#default_options': {
+      \   'split': 1,
+      \   'vertical': 1,
+      \ },
       \ 'features#diff_ls#default_options': {},
       \ 'features#diff_ls#monitor_opener': '',
       \ 'features#diff_ls#monitor_range': '',
