@@ -12,10 +12,6 @@ let s:_vital_files_cache_runtimepath = ''
 let s:_vital_files_cache = []
 let s:_unify_path_cache = {}
 
-function! s:version() abort
-  return s:self_version
-endfunction
-
 function! s:import(name, ...) abort
   let target = {}
   let functions = []
@@ -292,7 +288,7 @@ else
       if a:list[i] ==# a:list[i - 1]
         call remove(a:list, i)
         let i -= 2
-     else
+      else
         let i -= 1
       endif
     endwhile
