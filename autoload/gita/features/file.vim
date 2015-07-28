@@ -1,9 +1,13 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+
+let s:D = gita#import('Data.Dict')
+let s:P = gita#import('System.Filepath')
 let s:A = gita#import('ArgumentParser')
 
 
+" ArgumentParser {{{
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] file',
       \ 'description': 'Show a file content of a working tree, index, or specified commit.',
@@ -11,8 +15,8 @@ let s:parser = s:A.new({
 call s:parser.add_argument(
       \ 'commit', [
       \   'A Gita specialized commit-ish which you want to show. The followings are Gita special terms:',
-      \   'WORKTREE  it show the content of the current working tree.',
-      \   'INDEX  it show the content of the current index (staging area for next commit).',
+      \   'WORKTREE             it show the content of the current working tree.',
+      \   'INDEX                it show the content of the current index (staging area for next commit).',
       \   '<commit>...<commit>  it show the content of an common ancestor between <commit>.',
       \ ], {
       \   'complete': function('gita#features#file#_complete_commit'),
@@ -20,15 +24,14 @@ call s:parser.add_argument(
 call s:parser.add_argument(
       \ 'file', [
       \   'A filepath which you want to see the content.',
-      \   'If it is omitted and the current buffer is a file',
-      \   'buffer, the current buffer will be used.',
+      \   'The current buffer is used automatically when the option is omitted.',
       \ ],
       \)
 call s:parser.add_argument(
-      \ '--opener', '-o', [
+      \ '--opener', [
       \   'A way to open a new buffer such as "edit", "split", or etc.',
       \ ], {
-      \ 'type': s:A.types.value,
+      \   'type': s:A.types.value,
       \ },
       \)
 call s:parser.add_argument(
@@ -67,12 +70,14 @@ function! s:parser.hooks.post_validate(opts) abort " {{{
     let a:opts.commit = ':3'
   endif
 endfunction " }}}
+" }}}
+
 function! s:ensure_file_option(options) abort " {{{
   if empty(get(a:options, 'file'))
     let filename = gita#utils#expand('%')
     if empty(filename)
       call gita#utils#prompt#warn(
-            \ 'No file is specified and could not automatically detect.'
+            \ 'No file is specified and could not automatically be detected.'
             \)
       call gita#utils#prompt#echo(
             \ 'Operation has canceled.'
@@ -81,7 +86,6 @@ function! s:ensure_file_option(options) abort " {{{
     endif
     let a:options.file = '%'
   endif
-  let a:options.file = gita#utils#expand(a:options.file)
   return 0
 endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
@@ -104,6 +108,8 @@ function! s:ensure_commit_option(options) abort " {{{
     let a:options.commit = commit
   endif
 
+  " <commit> might be <commit>..<commit> and git show does not understand
+  " thus simply use a left hand side one
   if a:options.commit =~# '\v^[^.]*\.\.[^.]*$'
     let lhs = matchlist(
           \ a:options.commit,
@@ -156,7 +162,7 @@ function! s:exec_ancestor(gita, options, config) abort " {{{
           \)
   else
     let errormsg = printf(
-          \ 'A fork point between "%s" and "%s" could not be found.',
+          \ 'An common ancestor between "%s" and "%s" could not be found.',
           \ lhs, rhs,
           \)
     if get(a:config, 'echo', 'both') =~# '^\%(both\|fail\)$'
@@ -198,6 +204,14 @@ function! gita#features#file#exec(...) abort " {{{
     return { 'status': -1 }
   endif
 
+  " validate option
+  if g:gita#develop
+    call gita#utils#validate#require(options, 'file', 'options')
+    call gita#utils#validate#require(options, 'commit', 'options')
+    call gita#utils#validate#empty(options.commit, 'options.commit')
+    call gita#utils#validate#pattern(options.commit, '\v^[^ ]+', 'options.commit')
+  endif
+
   " ensure absolute path
   let options.file = gita#utils#ensure_abspath(
         \ gita#utils#expand(options.file),
@@ -221,15 +235,41 @@ function! gita#features#file#exec(...) abort " {{{
     return s:exec_commit(gita, options, config)
   endif
 endfunction " }}}
+function! gita#features#file#exec_cached(...) abort " {{{
+  let gita = gita#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let cache_name = s:P.join('file', string(s:D.pick(options, [
+        \ 'file',
+        \ 'commit',
+        \])))
+  let cached_status =
+        \ options.commit == 'WORKTREE'
+        \ || gita.git.is_updated('index', 'file')
+        \ || get(config, 'force_update')
+        \   ? {}
+        \   : gita.git.cache.repository.get(cache_name, {})
+  if !empty(cached_status)
+    return cached_status
+  endif
+  let result = gita#features#file#exec(options, config)
+  if result.status != get(config, 'success_status', 0)
+    return result
+  endif
+  call gita.git.cache.repository.set(cache_name, result)
+  return result
+endfunction " }}}
 function! gita#features#file#show(...) abort " {{{
   let options = get(a:000, 0, {})
-  if s:ensure_file_option(options)
-    return
-  endif
-  if s:ensure_commit_option(options)
-    return
-  endif
-  let result = gita#features#file#exec(options, {
+
+  " regulate options
+  if s:ensure_file_option(options)   | return | endif
+  if s:ensure_commit_option(options) | return | endif
+
+  let result = gita#features#file#exec_cached(options, {
         \ 'echo': 'fail',
         \})
   if result.status
@@ -247,11 +287,12 @@ function! gita#features#file#show(...) abort " {{{
           \ relpath,
           \)
   endif
-  call gita#utils#buffer#open(bufname, '', {
+  call gita#utils#buffer2#open(bufname, {
         \ 'opener': get(options, 'opener', 'edit'),
         \})
+
   if options.commit !=# 'WORKTREE'
-    setlocal buftype=nofile bufhidden=hide noswapfile
+    setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
     call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')

@@ -18,10 +18,10 @@ Describe gita#features#file
     endfunction
     let gita.operations._previous_args = []
   End
+
   After
     let gita.operations = operations_saved
   End
-
 
   Context #exec([{options}, {config}])
     It should return a contents of file in worktree if WORKTREE is specified
@@ -64,6 +64,45 @@ Describe gita#features#file
       Assert Equals(ret.status, -1)
       Assert Match(ret.stdout, '\vA commit range')
     End
+
+    It should NOT call gita.operations.show at all if commit is WORKTREE
+      call gita#features#file#exec({
+            \ 'file': 'README.md',
+            \ 'commit': 'WORKTREE',
+            \})
+      Assert Equals(gita.operations._previous_args, [])
+    End
+  End
+
+  Context #exec_cached([{options}, {config}])
+    It should NOT call gita.operations.show for 2nd call with same options
+      call gita#features#file#exec_cached({
+            \ 'file': 'README.md',
+            \ 'commit': 'HEAD',
+            \})
+      let gita.operations._previous_args = []
+      call gita#features#file#exec_cached({
+            \ 'file': 'README.md',
+            \ 'commit': 'HEAD',
+            \})
+      Assert Equals(gita.operations._previous_args, [])
+    End
+
+    It should call gita.operations.show for 2nd call with different options
+      call gita#features#file#exec_cached({
+            \ 'file': 'README.md',
+            \ 'commit': 'HEAD',
+            \})
+      let gita.operations._previous_args = []
+      call gita#features#file#exec_cached({
+            \ 'file': 'README.md',
+            \ 'commit': 'INDEX',
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'object': ':README.md',
+            \}, {}])
+    End
+
   End
 
   Context #show([{options}, {config}])
