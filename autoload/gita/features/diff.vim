@@ -92,7 +92,6 @@ endfunction " }}}
 
 function! s:ensure_commit_option(options) abort " {{{
   if !has_key(a:options, 'commit')
-    let gita = gita#get()
     call histadd('input', 'origin/HEAD...')
     call histadd('input', 'origin/HEAD')
     call histadd('input', 'HEAD')
