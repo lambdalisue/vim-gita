@@ -92,7 +92,6 @@ function! s:get_current_commitmsg(...) abort " {{{
 endfunction " }}}
 function! s:commit(expr, options) abort " {{{
   let gita = gita#get(a:expr)
-  let meta = gita.git.get_meta()
   " validate situation
   let statuses_map = gita#compat#getwinvar(bufwinnr(a:expr), '_gita_statuses_map', {})
   let staged_statuses = filter(values(statuses_map), 'v:val.is_staged')
