@@ -49,18 +49,14 @@ call s:parser.add_argument(
 call s:parser.add_argument(
       \ '--diff-algorithm', [
       \   'Chose a diff algorithm. The variants are as follows:',
-      \   '',
       \   'default, myers',
       \   '  The basic greedy diff algorithm. Currently, this is the default.',
-      \   '',
       \   'minimal',
       \   '  Spend extra time to make sure the smallest possible diff is produced.',
-      \   '',
       \   'patience',
       \   '  Use "patience diff" algorithm when generating pathces.',
-      \   '',
       \   'histogram',
-      \   '  This algorithm extends the patience algorithm to "support low-occurrence common elements".',
+      \   '  Extend the patience algorithm to "support low-occurrence common elements".',
       \ ], {
       \   'conflicts': ['minimal', 'patience', 'histogram'],
       \ })
