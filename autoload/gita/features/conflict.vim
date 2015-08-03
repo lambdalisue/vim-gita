@@ -22,6 +22,12 @@ call s:parser.add_argument(
       \   'choices': ['double', 'triple'],
       \   'default': 'triple',
       \ })
+call s:parser.add_argument(
+      \ '--split', '-s',
+      \ 'Specify the number of buffer for showing conflict', {
+      \   'choices': ['2', '3'],
+      \   'on_default': '3',
+      \ })
 
 function! s:ensure_status_option(options) abort " {{{
   if !has_key(a:options, 'status') && !has_key(a:options, 'file')
@@ -34,18 +40,24 @@ function! s:ensure_status_option(options) abort " {{{
   else
     let a:options.status = gita#utils#status#retrieve(a:options.file)
   endif
-  let a:options.file = gita#utils#expand(a:options.file)
   return 0
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = fnamemodify(expand('<amatch>'), ':p')
-  let old_filename = fnamemodify(expand('<afile>'), ':p')
+  let new_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('<amatch>')),
+        \)
+  let old_filename = gita#utils#ensure_realpath(
+        \ gita#utils#ensure_abspath(expand('%')),
+        \)
   if new_filename !=# old_filename
-    execute printf('w%s %s %s',
+    let cmd = printf('w%s %s',
           \ v:cmdbang ? '!' : '',
-          \ fnameescape(v:cmdarg),
           \ fnameescape(new_filename),
           \)
+    call gita#utils#prompt#debug(
+          \ 'cmd:', cmd,
+          \)
+    silent! execute cmd
   else
     let filename = gita#meta#get('filename')
     if writefile(getline(1, '$'), filename) == 0
@@ -54,10 +66,12 @@ function! s:ac_BufWriteCmd() abort " {{{
   endif
 endfunction " }}}
 function! s:solve2(...) abort " {{{
-  let gita = gita#get()
   let options = get(a:000, 0, {})
-  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
-  let relpath = gita.git.get_relative_path(abspath)
+
+  let abspath = gita#utils#ensure_abspath(
+        \ gita#utils#expand(options.file),
+        \)
+  let relpath = gita#utils#ensure_relpath(abspath)
 
   let ORIG = bufexists(abspath)
         \ ? getbufline(abspath, 1, '$')
