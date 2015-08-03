@@ -1,15 +1,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-" LOGLEVEL
-let s:LOGLEVEL = {
-      \ 'DEBUG':    0,
-      \ 'INFO':     1,
-      \ 'WARNING':  2,
-      \ 'ERROR':    3,
-      \ 'CRITICAL': 4,
-      \}
-
 function! s:Gita(...) abort " {{{
   call call('gita#features#command', a:000)
 endfunction " }}}
