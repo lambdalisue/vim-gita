@@ -133,14 +133,12 @@ Describe gita#features#diff
   Context #show([{options}, {config}])
     It should open a single diff buffer for entire repository if no filename is specified
       call gita#features#diff#show({
+            \ 'split': 0,
             \ 'commit': 'HEAD',
             \})
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
-            \ 'no_prefix': 1,
             \ 'no_color': 1,
-            \ 'unified': '0',
-            \ 'histogram': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer
@@ -156,17 +154,14 @@ Describe gita#features#diff
 
     It should open a unified diff for a particular file if filename is specified with split=0
       call gita#features#diff#show({
-            \ 'commit': 'HEAD',
             \ '--': ['README.md'],
+            \ 'commit': 'HEAD',
             \ 'split': 0,
             \})
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
             \ '--': [gita#utils#ensure_abspath('README.md')],
-            \ 'no_prefix': 1,
             \ 'no_color': 1,
-            \ 'unified': '0',
-            \ 'histogram': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer

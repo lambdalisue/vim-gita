@@ -28,6 +28,43 @@ call s:parser.add_argument(
       \ 'Compare the changes you staged for the next commit relative to the named <commit> or HEAD', {
       \ })
 call s:parser.add_argument(
+      \ '--unified', '-u',
+      \ 'Generate diffs with <n> lines of context instead of usual three.', {
+      \ })
+call s:parser.add_argument(
+      \ '--minimal',
+      \ 'Spend extra time to make sure the smallest possible diff is produced.', {
+      \   'conflicts': ['patience', 'histogram', 'diff_algorithm'],
+      \ })
+call s:parser.add_argument(
+      \ '--patience',
+      \ 'Generate a diff using the "histogram diff" algorithm.', {
+      \   'conflicts': ['minimal', 'histogram', 'diff_algorithm'],
+      \ })
+call s:parser.add_argument(
+      \ '--histogram',
+      \ 'Generate a diff using the "histogram diff" algorithm.', {
+      \   'conflicts': ['minimal', 'patience', 'diff_algorithm'],
+      \ })
+call s:parser.add_argument(
+      \ '--diff-algorithm', [
+      \   'Chose a diff algorithm. The variants are as follows:',
+      \   '',
+      \   'default, myers',
+      \   '  The basic greedy diff algorithm. Currently, this is the default.',
+      \   '',
+      \   'minimal',
+      \   '  Spend extra time to make sure the smallest possible diff is produced.',
+      \   '',
+      \   'patience',
+      \   '  Use "patience diff" algorithm when generating pathces.',
+      \   '',
+      \   'histogram',
+      \   '  This algorithm extends the patience algorithm to "support low-occurrence common elements".',
+      \ ], {
+      \   'conflicts': ['minimal', 'patience', 'histogram'],
+      \ })
+call s:parser.add_argument(
       \ '--ignore-submodules',
       \ 'ignore changes to submodules, optional when: all, dirty, untracked (Default: all)', {
       \   'choices': ['all', 'dirty', 'untracked'],
@@ -99,7 +136,7 @@ function! s:ensure_commit_option(options) abort " {{{
     call histadd('input', gita#meta#get('commit', 'INDEX'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
-          \ gita#meta#get('commit'),
+          \ substitute(gita#meta#get('commit'), '^WORKTREE$', 'INDEX', ''),
           \)
     if empty(commit)
       call gita#utils#prompt#warn(
@@ -118,10 +155,7 @@ function! s:diff1(...) abort " {{{
   if gita.fail_on_disabled()
     return
   endif
-  let options.no_prefix = 1
   let options.no_color = 1
-  let options.unified = '0'
-  let options.histogram = 1
   let result = gita#features#diff#exec_cached(options, {
         \ 'echo': 'fail',
         \})
@@ -317,7 +351,10 @@ function! gita#features#diff#exec(...) abort " {{{
         \ 'no_prefix',
         \ 'no_color',
         \ 'unified',
+        \ 'minimal',
+        \ 'patience',
         \ 'histogram',
+        \ 'diff_algorithm',
         \ 'cached',
         \ 'commit',
         \ 'name_status',
@@ -365,7 +402,7 @@ function! gita#features#diff#show(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  if !get(options, 'split')
+  if !get(options, 'split', 1)
     call s:diff1(options, config)
   else
     call s:diff2(options, config)

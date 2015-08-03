@@ -48,13 +48,13 @@ function! s:actions.diff(candidates, options) abort " {{{
     endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
-          \ 'file': candidate.path,
+          \ '--': [candidate.path],
           \ 'commit': commit,
-          \ 'window':   get(a:options, 'window', 'single'),
+          \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),
           \ 'range':    get(a:options, 'range', 'tabpage'),
-          \ 'vertical': get(a:options, 'vertical', 0),
+          \ 'vertical': get(a:options, 'vertical', 1),
           \})
   endfor
 endfunction " }}}
