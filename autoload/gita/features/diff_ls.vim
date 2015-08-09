@@ -100,8 +100,8 @@ function! s:parse_numstat(stdout, ...) abort " {{{
           \ stat.added + stat.deleted
           \)
     let indicator = printf('%s%s',
-          \ repeat('+', float2nr(round(width * stat.added   / max_nchanged))),
-          \ repeat('-', float2nr(round(width * stat.deleted / max_nchanged))),
+          \ repeat('+', float2nr(ceil(indicator_width * stat.added   / max_nchanged)) + (stat.added > 0 ? 1 : 0)),
+          \ repeat('-', float2nr(ceil(indicator_width * stat.deleted / max_nchanged)) + (stat.deleted > 0 ? 1 : 0)),
           \)
     call add(statuses, {
           \ 'path': gita#utils#ensure_realpath(
