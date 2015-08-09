@@ -93,7 +93,6 @@ function! s:parse_numstat(stdout, ...) abort " {{{
   let nchanged_width  = len(max_nchanged . '')
   let indicator_width = width - nchanged_width - len('|  ')
   let statuses = []
-  let gita = gita#get()
   for stat in stats
     let prefix = printf(
           \ printf('| %%%dd', nchanged_width),
