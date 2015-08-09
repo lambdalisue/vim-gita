@@ -41,12 +41,6 @@ call s:parser.add_argument(
       \   'choices': ['all', 'dirty', 'untracked'],
       \   'on_default': 'all',
       \ })
-call s:parser.add_argument(
-      \ '--window', '-w',
-      \ 'Open a gita:diff:ls window to show changed files (Default behavior)', {
-      \   'deniable': 1,
-      \   'default': 1,
-      \ })
 
 let s:actions = {}
 function! s:actions.update(statuses, options) abort " {{{
@@ -61,6 +55,7 @@ function! s:ensure_commit_option(options) abort " {{{
     call histadd('input', get(a:options, 'commit', 'origin/HEAD...'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
+          \ get(a:options, 'commit', ''),
           \)
     if empty(commit)
       call gita#utils#prompt#echo('Operation has canceled by user')
@@ -70,38 +65,54 @@ function! s:ensure_commit_option(options) abort " {{{
   endif
   return 0
 endfunction " }}}
-function! s:split_commit(commit) abort " {{{
-  if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
-    let rhs = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.\.([^.]*)$',
-          \)[2]
-    return [ a:commit, empty(rhs) ? 'HEAD' : rhs ]
-  elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
-    let [lhs, rhs] = matchlist(
-          \ a:commit,
-          \ '\v^([^.]*)\.\.([^.]*)$',
-          \)[ 1 : 2 ]
-    return [ empty(lhs) ? 'HEAD' : lhs, empty(rhs) ? 'HEAD' : rhs ]
-  else
-    return [ 'HEAD', a:commit ]
-  endif
-endfunction " }}}
-function! s:parse_stat(stdout) abort " {{{
-  let statuses = []
+function! s:parse_numstat(stdout, ...) abort " {{{
+  let width = get(a:000, 0, 50)
+  let stats = []
+  let max_nchanged = 0
+  let max_path_length = 0
+  " Parse --numstat output
   for line in split(a:stdout, '\v\r?\n')
-    let relpath = substitute(
-          \ escape(line, '\'),
-          \ '\v%(^\s+|\s+\|\s+\d+\s+\+*\-*$)',
-          \ '', 'g',
+    let m = matchlist(
+          \ line,
+          \ '\v^(\d+)\s+(\d+)\s+(.+)$',
           \)
-    let status = { 'record': line[1:] }
-    if relpath !=# line
-      let status.path = gita#utils#ensure_realpath(
-            \ gita#utils#ensure_abspath(relpath),
-            \)
+    let [added, deleted, relpath] = m[1 : 3]
+    call add(stats, {
+          \ 'added': added,
+          \ 'deleted': deleted,
+          \ 'path': relpath,
+          \})
+    if max_nchanged < (added + deleted)
+      let max_nchanged = added + deleted
     endif
-    call add(statuses, status)
+    if max_path_length < len(relpath)
+      let max_path_length = len(relpath)
+    endif
+  endfor
+  " Construct '--stat' like records
+  let nchanged_width  = len(max_nchanged . '')
+  let indicator_width = width - nchanged_width - len('|  ')
+  let statuses = []
+  let gita = gita#get()
+  for stat in stats
+    let prefix = printf(
+          \ printf('| %%%dd', nchanged_width),
+          \ stat.added + stat.deleted
+          \)
+    let indicator = printf('%s%s',
+          \ repeat('+', float2nr(round(width * stat.added   / max_nchanged))),
+          \ repeat('-', float2nr(round(width * stat.deleted / max_nchanged))),
+          \)
+    call add(statuses, {
+          \ 'path': gita#utils#ensure_realpath(
+          \   gita#utils#ensure_abspath(stat.path),
+          \ ),
+          \ 'record': printf('%s%s %s %s',
+          \   stat.path,
+          \   repeat(' ', max_path_length - len(stat.path)),
+          \   prefix, indicator,
+          \ ),
+          \})
   endfor
   return statuses
 endfunction " }}}
@@ -150,7 +161,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \)
   let options.no_prefix = 1
   let options.no_color = 1
-  let options.stat = winwidth(0)
+  let options.numstat = 1
   let config = get(a:000, 1, {})
   let result = gita#features#diff#exec_cached(options, extend({
         \ 'echo': 'fail',
@@ -160,7 +171,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
     return
   endif
 
-  let statuses = s:parse_stat(
+  let statuses = s:parse_numstat(
         \ substitute(result.stdout, '\t', '  ', 'g')
         \)
 
@@ -177,7 +188,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
   let w:_gita_statuses_map = statuses_map
 
   " update content
-  let [lhs, rhs] = s:split_commit(options.commit)
+  let [lhs, rhs] = gita#features#diff#split_commit(options.commit, options)
   let buflines = s:L.flatten([
         \ printf('# Files difference between `%s` and `%s`.', lhs, rhs),
         \ '# Press ?m to toggle a help of mapping.',
