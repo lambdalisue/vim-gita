@@ -126,6 +126,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
     return {
           \ 'status': 0,
           \ 'stdout': join(readfile(abspath), "\n"),
+          \ 'args': [],
           \}
   else
     let errormsg = printf(
@@ -138,6 +139,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
     return {
           \ 'status': -1,
           \ 'stdout': errormsg,
+          \ 'args': [],
           \}
   endif
 endfunction " }}}

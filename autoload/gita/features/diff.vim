@@ -152,6 +152,9 @@ function! s:diff1(...) abort " {{{
     return
   endif
   let options.no_color = 1
+  if s:ensure_commit_option(options)
+    return
+  endif
   let result = gita#features#diff#exec_cached(options, {
         \ 'echo': 'fail',
         \})
@@ -192,12 +195,22 @@ function! s:diff2(...) abort " {{{
 
   " validate '--'
   if empty(get(options, '--', []))
+    if !filereadable(expand('%')) && empty(gita#meta#get('filename'))
+      call gita#utils#prompt#warn(
+            \ 'Gita diff --split require a target file. ',
+            \ 'To see the diff of the git repository, use --no-split option.',
+            \)
+      return
+    endif
     let options['--'] = ['%']
   elseif len(get(options, '--', [])) > 1
     call gita#utils#prompt#error(
           \ '"split" mode in gita#features#diff#show require exact one file',
           \ 'in "--" argument of options.',
           \)
+    return
+  endif
+  if s:ensure_commit_option(options)
     return
   endif
 
@@ -395,9 +408,6 @@ endfunction " }}}
 function! gita#features#diff#show(...) abort " {{{
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
-  if s:ensure_commit_option(options)
-    return
-  endif
   if !get(options, 'split', 1)
     call s:diff1(options, config)
   else
