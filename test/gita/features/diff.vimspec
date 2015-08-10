@@ -142,7 +142,7 @@ Describe gita#features#diff
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer
-      Assert Equals(bufname('%'), gita#utils#buffer#bufname('HEAD', 'diff'))
+      Assert Equals(bufname('%'), gita#utils#buffer2#bufname('HEAD', 'diff'))
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(&l:buftype, 'nofile')
       Assert Equals(&l:modifiable, 0)
@@ -165,7 +165,7 @@ Describe gita#features#diff
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer
-      Assert Equals(bufname('%'), gita#utils#buffer#bufname('HEAD', 'README.md.diff'))
+      Assert Equals(bufname('%'), gita#utils#buffer2#bufname('HEAD', 'README.md.diff'))
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(&l:buftype, 'nofile')
       Assert Equals(&l:modifiable, 0)
@@ -189,7 +189,7 @@ Describe gita#features#diff
       " check the buffer
       Assert Equals(
             \ bufname('%'),
-            \ gita#utils#buffer#bufname('HEAD', 'README.md'),
+            \ gita#utils#buffer2#bufname('HEAD', 'README.md'),
             \)
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(&l:buftype, 'nofile')
@@ -217,7 +217,7 @@ Describe gita#features#diff
       " check the 1st buffer
       Assert Equals(
             \ bufname('%'),
-            \ gita#utils#buffer#bufname('HEAD', 'README.md'),
+            \ gita#utils#buffer2#bufname('HEAD', 'README.md'),
             \)
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(&l:buftype, 'nofile')
@@ -233,7 +233,7 @@ Describe gita#features#diff
       wincmd p
       Assert Equals(
             \ bufname('%'),
-            \ gita#utils#buffer#bufname('README.md'),
+            \ gita#utils#buffer2#bufname('README.md'),
             \)
       Assert Equals(
             \ getline(0, '$'),

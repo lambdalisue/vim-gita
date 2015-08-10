@@ -15,7 +15,6 @@ endfunction
 
 let s:P = gita#import('System.Filepath')
 let s:G = gita#import('VCS.Git')
-let s:S = gita#import('VCS.Git.StatusParser')
 let s:file = expand('<sfile>:p')
 let s:repo = fnamemodify(s:file, ':h')
 
@@ -65,12 +64,10 @@ function! gita#new(...) abort " {{{
   endif
   let gita = extend(deepcopy(s:gita), {
         \ 'enabled':  !empty(git),
-        \ 'filename': filename,
         \ 'bufname':  bufname,
         \ 'bufnum':   bufnr(expr),
         \ 'cwd':      getcwd(),
         \ 'git':      git,
-        \ 'meta':     {},
         \})
   let gita.operations = gita#operations#new(gita)
   if !empty(gita#compat#getwinvar(bufwinnr(expr), '_gita'))

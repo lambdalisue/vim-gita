@@ -284,7 +284,7 @@ function! gita#features#file#show(...) abort " {{{
   if options.commit ==# 'WORKTREE'
     let bufname = relpath
   else
-    let bufname = gita#utils#buffer#bufname(
+    let bufname = gita#utils#buffer2#bufname(
           \ options.commit,
           \ relpath,
           \)
@@ -296,7 +296,7 @@ function! gita#features#file#show(...) abort " {{{
   if options.commit !=# 'WORKTREE'
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
-    call gita#utils#buffer#update(
+    call gita#utils#buffer2#update(
           \ split(result.stdout, '\v\r?\n')
           \)
     call gita#meta#set('filename', abspath)

@@ -64,11 +64,11 @@ function! s:solve2(...) abort " {{{
   let relpath = gita#utils#ensure_relpath(abspath)
 
   " Create buffer names of LOCAL, REMOTE
-  let LOCAL_bufname = gita#utils#buffer#bufname(
+  let LOCAL_bufname = gita#utils#buffer2#bufname(
         \ 'LOCAL',
         \ relpath,
         \)
-  let REMOTE_bufname = gita#utils#buffer#bufname(
+  let REMOTE_bufname = gita#utils#buffer2#bufname(
         \ 'REMOTE',
         \ relpath,
         \)
@@ -104,7 +104,7 @@ function! s:solve2(...) abort " {{{
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer#update(REMOTE)
+  call gita#utils#buffer2#update(REMOTE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
@@ -119,7 +119,7 @@ function! s:solve2(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer#update(LOCAL)
+  call gita#utils#buffer2#update(LOCAL)
   call gita#meta#set('filename', abspath)
   setlocal buftype=acwrite noswapfile
   setlocal modified
@@ -138,15 +138,15 @@ function! s:solve3(...) abort " {{{
   let relpath = gita#utils#ensure_relpath(abspath)
 
   " Create buffer names of LOCAL, MERGE, REMOTE
-  let MERGE_bufname = gita#utils#buffer#bufname(
+  let MERGE_bufname = gita#utils#buffer2#bufname(
         \ 'MERGE',
         \ relpath,
         \)
-  let LOCAL_bufname = gita#utils#buffer#bufname(
+  let LOCAL_bufname = gita#utils#buffer2#bufname(
         \ 'LOCAL',
         \ relpath,
         \)
-  let REMOTE_bufname = gita#utils#buffer#bufname(
+  let REMOTE_bufname = gita#utils#buffer2#bufname(
         \ 'REMOTE',
         \ relpath,
         \)
@@ -203,7 +203,7 @@ function! s:solve3(...) abort " {{{
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer#update(MERGE)
+  call gita#utils#buffer2#update(MERGE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=acwrite noswapfile
   setlocal modified
@@ -223,7 +223,7 @@ function! s:solve3(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer#update(LOCAL)
+  call gita#utils#buffer2#update(LOCAL)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
@@ -239,7 +239,7 @@ function! s:solve3(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer#update(REMOTE)
+  call gita#utils#buffer2#update(REMOTE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly

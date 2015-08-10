@@ -46,8 +46,9 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
         \}, get(a:000, 1, {}))
 
   " open a buffer in a 'gita:monitor' window group
-  let result = gita#utils#buffer#open(
-        \ a:bufname, 'vim_gita_monitor', {
+  let result = gita#utils#buffer2#open(
+        \ a:bufname, {
+        \ 'group': 'vim_gita_monitor',
         \ 'opener': empty(config.opener)
         \   ? g:gita#monitor#opener
         \   : config.opener,

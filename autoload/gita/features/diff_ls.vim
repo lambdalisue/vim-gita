@@ -127,7 +127,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  let bufname = gita#utils#buffer#bufname(
+  let bufname = gita#utils#buffer2#bufname(
         \ s:const.bufname,
         \ options.commit,
         \)
@@ -197,7 +197,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \ gita#utils#help#get('diff_ls_mapping'),
         \ statuses_lines,
         \])
-  call gita#utils#buffer#update(buflines)
+  call gita#utils#buffer2#update(buflines)
 endfunction " }}}
 function! gita#features#diff_ls#define_mappings() abort " {{{
   call gita#monitor#define_mappings()

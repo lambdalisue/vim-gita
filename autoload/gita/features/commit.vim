@@ -348,7 +348,7 @@ function! gita#features#commit#update(...) abort " {{{
         \ statuses_lines,
         \])
   let buflines = buflines[0] =~# '\v^#' ? extend([''], buflines) : buflines
-  call gita#utils#buffer#update(buflines)
+  call gita#utils#buffer2#update(buflines)
   if modified_reserved
     setlocal modified
   endif
