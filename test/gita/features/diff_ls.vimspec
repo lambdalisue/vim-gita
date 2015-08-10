@@ -1,0 +1,27 @@
+Describe gita#features#diff_ls
+  Before
+    let gita = gita#get()
+    let gita.git.cache.repository.clear()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.diff(...) abort
+      call add(self._previous_args, a:000)
+      return {
+            \ 'status': 0,
+            \ 'stdout': join([
+            \   '0   10   foo.md',
+            \   '10  10   bar.md',
+            \   '10  10   hoge.md',
+            \ ], '\n'),
+            \}
+    endfunction
+    let gita.operations._previous_args = []
+  End
+
+  After
+    let gita.operations = operations_saved
+    call WipeoutAll()
+  End
+
+End
+
