@@ -90,6 +90,7 @@ function! s:parse_numstat(stdout, ...) abort " {{{
     endif
   endfor
   " Construct '--stat' like records
+  let gita = gita#get()
   let nchanged_width  = len(max_nchanged . '')
   let indicator_width = width - nchanged_width - len('|  ')
   let statuses = []
@@ -102,9 +103,11 @@ function! s:parse_numstat(stdout, ...) abort " {{{
           \ repeat('+', float2nr(ceil(indicator_width * stat.added   / max_nchanged)) + (stat.added > 0 ? 1 : 0)),
           \ repeat('-', float2nr(ceil(indicator_width * stat.deleted / max_nchanged)) + (stat.deleted > 0 ? 1 : 0)),
           \)
+    " Note:
+    "   stat.path is relative path from git root repository
     call add(statuses, {
           \ 'path': gita#utils#ensure_realpath(
-          \   gita#utils#ensure_abspath(stat.path),
+          \   gita.git.get_absolute_path(stat.path),
           \ ),
           \ 'record': printf('%s%s %s %s',
           \   stat.path,
