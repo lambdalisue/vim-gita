@@ -93,6 +93,13 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
     endif
   augroup END
 
+  " vim-gita monitor window does not support <C-o>/<C-u> because it use
+  " window variable which will cause some complex issue on opening the buffer
+  " without throughing gita#features#xxxx#open
+  " Issue #57
+  map <silent><buffer> <C-o> :<C-u>call gita#utils#prompt#warn('CTRL-O is not supported on monitor window')<CR>
+  map <silent><buffer> <C-i> :<C-u>call gita#utils#prompt#warn('CTRL-I is not supported on monitor window')<CR>
+
   return {
         \ 'status': 0,
         \ 'constructed': 0,
