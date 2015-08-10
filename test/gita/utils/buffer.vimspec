@@ -1,4 +1,4 @@
-Describe gita#utils#buffer2
+Describe gita#utils#buffer
   Before
     let saved_separator = g:gita#utils#buffer#separator
     let g:gita#utils#buffer#separator = '_'
@@ -10,7 +10,7 @@ Describe gita#utils#buffer2
 
   Context #bufname([{name}, ...])
     It should concat non empty arguments specified with separator
-      let ret = gita#utils#buffer2#bufname('foo', '', 'bar', 'hoge')
+      let ret = gita#utils#buffer#bufname('foo', '', 'bar', 'hoge')
       Assert Equals(ret, 'foo_bar_hoge')
     End
   End
@@ -18,40 +18,40 @@ Describe gita#utils#buffer2
   Context #update({buflines})
     It should update contents of the current buffer without 'modified'
       Assert Equals(getline(1, '$'), [''])
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       Assert Equals(getline(1, '$'), ['foo', 'bar'])
       Assert Equals(&l:modified, 0)
     End
 
     It should restore cursor position
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       call setpos('.', [0, 1, 2, 0])
-      call gita#utils#buffer2#update(['hoge', 'hoge', 'hoge'])
+      call gita#utils#buffer#update(['hoge', 'hoge', 'hoge'])
       Assert Equals(getpos('.'), [0, 1, 2, 0])
     End
 
     It should restore modifiable
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       Assert Equals(&l:modifiable, 1)
 
       setlocal nomodifiable
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       Assert Equals(&l:modifiable, 0)
     End
 
     It should restore readonly
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       Assert Equals(&l:readonly, 0)
 
       setlocal readonly
-      call gita#utils#buffer2#update(['foo', 'bar'])
+      call gita#utils#buffer#update(['foo', 'bar'])
       Assert Equals(&l:readonly, 1)
     End
   End
 
   Context #clear_undo_history()
     It should clear undo history
-      Assert True(exists('*gita#utils#buffer2#clear_undo_history'))
+      Assert True(exists('*gita#utils#buffer#clear_undo_history'))
       Skip No behavior test for "undo history" is available
     End
   End
@@ -59,15 +59,15 @@ Describe gita#utils#buffer2
   Context #open({name}[, {config}])
     It should open a new buffer on the current buffer
       let nwin = winnr('$')
-      call gita#utils#buffer2#open('foo')
+      call gita#utils#buffer#open('foo')
       Assert Equals(winnr('$'), nwin)
       Assert Equals(bufname('%'), 'foo')
 
-      call gita#utils#buffer2#open('bar')
+      call gita#utils#buffer#open('bar')
       Assert Equals(winnr('$'), nwin)
       Assert Equals(bufname('%'), 'bar')
 
-      call gita#utils#buffer2#open('hoge')
+      call gita#utils#buffer#open('hoge')
       Assert Equals(winnr('$'), nwin)
       Assert Equals(bufname('%'), 'hoge')
     End
@@ -75,20 +75,20 @@ Describe gita#utils#buffer2
     It should open a new window for a new buffer when 'opener: new'
       let nwin = winnr('$')
       let conf = { 'opener': 'new' }
-      call gita#utils#buffer2#open('foo', conf)
+      call gita#utils#buffer#open('foo', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'foo')
 
-      call gita#utils#buffer2#open('bar', conf)
+      call gita#utils#buffer#open('bar', conf)
       Assert Equals(winnr('$'), nwin + 2)
       Assert Equals(bufname('%'), 'bar')
 
-      call gita#utils#buffer2#open('hoge', conf)
+      call gita#utils#buffer#open('hoge', conf)
       Assert Equals(winnr('$'), nwin + 3)
       Assert Equals(bufname('%'), 'hoge')
 
       " even for same named buffer
-      call gita#utils#buffer2#open('foo', conf)
+      call gita#utils#buffer#open('foo', conf)
       Assert Equals(winnr('$'), nwin + 4)
       Assert Equals(bufname('%'), 'foo')
     End
@@ -96,50 +96,50 @@ Describe gita#utils#buffer2
     It should NOT open a new window for a new buffer when {group} is specified
       let nwin = winnr('$')
       let conf = { 'opener': 'new', 'group': 'test' }
-      call gita#utils#buffer2#open('foo', conf)
+      call gita#utils#buffer#open('foo', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'foo')
 
-      call gita#utils#buffer2#open('bar', conf)
+      call gita#utils#buffer#open('bar', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'bar')
 
-      call gita#utils#buffer2#open('hoge', conf)
+      call gita#utils#buffer#open('hoge', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'hoge')
 
       let nwin = winnr('$')
       let conf = { 'opener': 'split', 'group': 'test2' }
-      call gita#utils#buffer2#open('foo', conf)
+      call gita#utils#buffer#open('foo', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'foo')
 
-      call gita#utils#buffer2#open('bar', conf)
+      call gita#utils#buffer#open('bar', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'bar')
 
-      call gita#utils#buffer2#open('hoge', conf)
+      call gita#utils#buffer#open('hoge', conf)
       Assert Equals(winnr('$'), nwin + 1)
       Assert Equals(bufname('%'), 'hoge')
     End
 
     It should return a dictionary with 'bufnum'
-      let ret = gita#utils#buffer2#open('foo')
+      let ret = gita#utils#buffer#open('foo')
       Assert Equals(ret.bufnum, bufnr('%'))
 
-      let ret = gita#utils#buffer2#open('bar', { 'group': 'test' })
+      let ret = gita#utils#buffer#open('bar', { 'group': 'test' })
       Assert Equals(ret.bufnum, bufnr('%'))
     End
 
     It should return a dictionary with 'loaded'
-      let ret = gita#utils#buffer2#open('foo')
+      let ret = gita#utils#buffer#open('foo')
       Assert True(ret.loaded)
-      let ret = gita#utils#buffer2#open('foo')
+      let ret = gita#utils#buffer#open('foo')
       Assert False(ret.loaded)
 
-      let ret = gita#utils#buffer2#open('bar', { 'group': 'test' })
+      let ret = gita#utils#buffer#open('bar', { 'group': 'test' })
       Assert True(ret.loaded)
-      let ret = gita#utils#buffer2#open('bar', { 'group': 'test' })
+      let ret = gita#utils#buffer#open('bar', { 'group': 'test' })
       Assert False(ret.loaded)
     End
   End

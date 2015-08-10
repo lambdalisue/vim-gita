@@ -48,7 +48,7 @@ Describe gita#features#conflict
             \ 'object': ':3:README.md',
             \}, { 'echo': '' }])
       " check the buffer (LOCAL)
-      Assert Equals(bufname('%'), gita#utils#buffer2#bufname(
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'LOCAL', 'README.md'
             \))
       Assert Equals(getline(0, '$'), ['OUR CONTENTS'])
@@ -62,7 +62,7 @@ Describe gita#features#conflict
 
       " check the buffer (REMOTE)
       wincmd p
-      Assert Equals(bufname('%'), gita#utils#buffer2#bufname(
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'REMOTE', 'README.md'
             \))
       Assert Equals(getline(0, '$'), ['THEIR CONTENTS'])
@@ -88,7 +88,7 @@ Describe gita#features#conflict
             \ 'object': ':3:README.md',
             \}, { 'echo': '' }])
       " check the buffer (MERGE)
-      Assert Equals(bufname('%'), gita#utils#buffer2#bufname(
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'MERGE', 'README.md'
             \))
       Assert Equals(getline(0, '$'), readfile('README.md'))
@@ -102,7 +102,7 @@ Describe gita#features#conflict
 
       " check the buffer (LOCAL)
       execute printf('%dwincmd w', bufwinnr(b:_gita_LOCAL_bufnum))
-      Assert Equals(bufname('%'), gita#utils#buffer2#bufname(
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'LOCAL', 'README.md'
             \))
       Assert Equals(getline(0, '$'), ['OUR CONTENTS'])
@@ -116,7 +116,7 @@ Describe gita#features#conflict
 
       " check the buffer (REMOTE)
       execute printf('%dwincmd w', bufwinnr(b:_gita_REMOTE_bufnum))
-      Assert Equals(bufname('%'), gita#utils#buffer2#bufname(
+      Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'REMOTE', 'README.md'
             \))
       Assert Equals(getline(0, '$'), ['THEIR CONTENTS'])

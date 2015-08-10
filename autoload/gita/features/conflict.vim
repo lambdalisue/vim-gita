@@ -64,11 +64,11 @@ function! s:solve2(...) abort " {{{
   let relpath = gita#utils#ensure_relpath(abspath)
 
   " Create buffer names of LOCAL, REMOTE
-  let LOCAL_bufname = gita#utils#buffer2#bufname(
+  let LOCAL_bufname = gita#utils#buffer#bufname(
         \ 'LOCAL',
         \ relpath,
         \)
-  let REMOTE_bufname = gita#utils#buffer2#bufname(
+  let REMOTE_bufname = gita#utils#buffer#bufname(
         \ 'REMOTE',
         \ relpath,
         \)
@@ -99,19 +99,19 @@ function! s:solve2(...) abort " {{{
 
   " Open buffers
   " REMOTE
-  call gita#utils#buffer2#open(REMOTE_bufname, {
+  call gita#utils#buffer#open(REMOTE_bufname, {
         \ 'group': 'conflict2_remote',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer2#update(REMOTE)
+  call gita#utils#buffer#update(REMOTE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
   diffthis
 
   " LOCAL
-  call gita#utils#buffer2#open(LOCAL_bufname, {
+  call gita#utils#buffer#open(LOCAL_bufname, {
         \ 'group': 'conflict2_merge',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('%s%s',
@@ -119,7 +119,7 @@ function! s:solve2(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer2#update(LOCAL)
+  call gita#utils#buffer#update(LOCAL)
   call gita#meta#set('filename', abspath)
   setlocal buftype=acwrite noswapfile
   setlocal modified
@@ -138,15 +138,15 @@ function! s:solve3(...) abort " {{{
   let relpath = gita#utils#ensure_relpath(abspath)
 
   " Create buffer names of LOCAL, MERGE, REMOTE
-  let MERGE_bufname = gita#utils#buffer2#bufname(
+  let MERGE_bufname = gita#utils#buffer#bufname(
         \ 'MERGE',
         \ relpath,
         \)
-  let LOCAL_bufname = gita#utils#buffer2#bufname(
+  let LOCAL_bufname = gita#utils#buffer#bufname(
         \ 'LOCAL',
         \ relpath,
         \)
-  let REMOTE_bufname = gita#utils#buffer2#bufname(
+  let REMOTE_bufname = gita#utils#buffer#bufname(
         \ 'REMOTE',
         \ relpath,
         \)
@@ -198,12 +198,12 @@ function! s:solve3(...) abort " {{{
 
   " Open buffers
   " MERGE
-  call gita#utils#buffer2#open(MERGE_bufname, {
+  call gita#utils#buffer#open(MERGE_bufname, {
         \ 'group': 'conflict3_merge',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer2#update(MERGE)
+  call gita#utils#buffer#update(MERGE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=acwrite noswapfile
   setlocal modified
@@ -215,7 +215,7 @@ function! s:solve3(...) abort " {{{
   let MERGE_bufnum = bufnr('%')
 
   " LOCAL
-  call gita#utils#buffer2#open(LOCAL_bufname, {
+  call gita#utils#buffer#open(LOCAL_bufname, {
         \ 'group': 'conflict2_local',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('leftabove %s%s',
@@ -223,7 +223,7 @@ function! s:solve3(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer2#update(LOCAL)
+  call gita#utils#buffer#update(LOCAL)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
@@ -231,7 +231,7 @@ function! s:solve3(...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
 
   " REMOTE
-  call gita#utils#buffer2#open(REMOTE_bufname, {
+  call gita#utils#buffer#open(REMOTE_bufname, {
         \ 'group': 'conflict2_remote',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('rightbelow %s%s',
@@ -239,7 +239,7 @@ function! s:solve3(...) abort " {{{
         \   get(options, 'opener2', 'split'),
         \ ),
         \})
-  call gita#utils#buffer2#update(REMOTE)
+  call gita#utils#buffer#update(REMOTE)
   call gita#meta#set('filename', abspath)
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly

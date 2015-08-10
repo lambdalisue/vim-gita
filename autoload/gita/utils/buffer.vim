@@ -5,11 +5,11 @@ let s:D = gita#import('Data.Dict')
 let s:B = gita#import('Vim.Buffer')
 let s:BM = gita#import('Vim.BufferManager')
 
-function! gita#utils#buffer2#bufname(...) abort " {{{
+function! gita#utils#buffer#bufname(...) abort " {{{
   let bits = filter(deepcopy(a:000), '!empty(v:val)')
   return join(bits, g:gita#utils#buffer#separator)
 endfunction " }}}
-function! gita#utils#buffer2#is_listed_in_tabpage(expr) abort " {{{
+function! gita#utils#buffer#is_listed_in_tabpage(expr) abort " {{{
   let bufnum = bufnr(a:expr)
   if bufnum == -1
     return 0
@@ -17,7 +17,7 @@ function! gita#utils#buffer2#is_listed_in_tabpage(expr) abort " {{{
   let buflist = tabpagebuflist()
   return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
 endfunction " }}}
-function! gita#utils#buffer2#update(buflines) abort " {{{
+function! gita#utils#buffer#update(buflines) abort " {{{
   let saved_cursor = gita#compat#getcurpos()
   let saved_modifiable = &l:modifiable
   let saved_readonly = &l:readonly
@@ -33,13 +33,13 @@ function! gita#utils#buffer2#update(buflines) abort " {{{
   let &l:undolevels = saved_undolevels
   setlocal nomodified
 endfunction " }}}
-function! gita#utils#buffer2#clear_undo_history() abort " {{{
+function! gita#utils#buffer#clear_undo_history() abort " {{{
   let saved_undolevels = &undolevels
   let &undolevels = -1
   keepjump silent execute "normal a \<BS>\<ESC>"
   let &undolevels = saved_undolevels
 endfunction " }}}
-function! gita#utils#buffer2#open(name, ...) abort " {{{
+function! gita#utils#buffer#open(name, ...) abort " {{{
   let config = get(a:000, 0, {})
   let group  = get(config, 'group', '')
   if empty(group)

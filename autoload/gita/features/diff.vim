@@ -166,21 +166,21 @@ function! s:diff1(...) abort " {{{
     let abspath = gita#utils#ensure_abspath(
           \ gita#utils#expand(options['--'][0]),
           \)
-    let DIFF_bufname = gita#utils#buffer2#bufname(
+    let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
           \ printf('%s.diff', gita#utils#ensure_relpath(abspath)),
           \)
   else
     let abspath = ''
-    let DIFF_bufname = gita#utils#buffer2#bufname(
+    let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
           \ 'diff',
           \)
   endif
-  call gita#utils#buffer2#open(DIFF_bufname, {
+  call gita#utils#buffer#open(DIFF_bufname, {
         \ 'opener': get(options, 'opener', 'edit'),
         \})
-  call gita#utils#buffer2#update(split(result.stdout, '\v\r?\n'))
+  call gita#utils#buffer#update(split(result.stdout, '\v\r?\n'))
   setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
   setlocal filetype=diff
@@ -243,7 +243,7 @@ function! s:diff2(...) abort " {{{
   if commit1 ==# 'WORKTREE'
     let COMMIT1_bufname = relpath
   else
-    let COMMIT1_bufname = gita#utils#buffer2#bufname(
+    let COMMIT1_bufname = gita#utils#buffer#bufname(
           \ commit1,
           \ relpath,
           \)
@@ -270,20 +270,20 @@ function! s:diff2(...) abort " {{{
   if commit2 ==# 'WORKTREE'
     let COMMIT2_bufname = relpath
   else
-    let COMMIT2_bufname = gita#utils#buffer2#bufname(
+    let COMMIT2_bufname = gita#utils#buffer#bufname(
           \ commit2,
           \ relpath,
           \)
   endif
 
   " COMMIT1
-  call gita#utils#buffer2#open(COMMIT1_bufname, {
+  call gita#utils#buffer#open(COMMIT1_bufname, {
         \ 'group': 'diff_lhs',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
         \})
   if commit1 !=# 'WORKTREE'
-    call gita#utils#buffer2#update(COMMIT1)
+    call gita#utils#buffer#update(COMMIT1)
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
@@ -292,7 +292,7 @@ function! s:diff2(...) abort " {{{
   diffthis
 
   " COMMIT2
-  call gita#utils#buffer2#open(COMMIT2_bufname, {
+  call gita#utils#buffer#open(COMMIT2_bufname, {
         \ 'group': 'diff_rhs',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('%s%s',
@@ -301,7 +301,7 @@ function! s:diff2(...) abort " {{{
         \ ),
         \})
   if commit2 !=# 'WORKTREE'
-    call gita#utils#buffer2#update(COMMIT2)
+    call gita#utils#buffer#update(COMMIT2)
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
