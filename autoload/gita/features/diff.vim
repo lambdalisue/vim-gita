@@ -133,6 +133,7 @@ function! s:ensure_commit_option(options) abort " {{{
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
           \ substitute(gita#meta#get('commit'), '^WORKTREE$', 'INDEX', ''),
+          \ 'customlist,gita#features#file#_complete_commit',
           \)
     if empty(commit)
       call gita#utils#prompt#warn(
