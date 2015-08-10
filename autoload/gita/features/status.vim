@@ -363,7 +363,7 @@ function! gita#features#status#update(...) abort " {{{
         \ statuses_lines,
         \ empty(statuses_map) ? ['Nothing to commit (Working tree is clean).'] : [],
         \])
-  call gita#utils#buffer2#update(buflines)
+  call gita#utils#buffer#update(buflines)
 endfunction " }}}
 function! gita#features#status#define_mappings() abort " {{{
   call gita#monitor#define_mappings()

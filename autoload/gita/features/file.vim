@@ -284,19 +284,19 @@ function! gita#features#file#show(...) abort " {{{
   if options.commit ==# 'WORKTREE'
     let bufname = relpath
   else
-    let bufname = gita#utils#buffer2#bufname(
+    let bufname = gita#utils#buffer#bufname(
           \ options.commit,
           \ relpath,
           \)
   endif
-  call gita#utils#buffer2#open(bufname, {
+  call gita#utils#buffer#open(bufname, {
         \ 'opener': get(options, 'opener', 'edit'),
         \})
 
   if options.commit !=# 'WORKTREE'
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
-    call gita#utils#buffer2#update(
+    call gita#utils#buffer#update(
           \ split(result.stdout, '\v\r?\n')
           \)
     call gita#meta#set('filename', abspath)
