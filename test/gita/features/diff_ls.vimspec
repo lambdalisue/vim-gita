@@ -23,5 +23,25 @@ Describe gita#features#diff_ls
     call WipeoutAll()
   End
 
+  Context #open({options})
+    It should open gita:diff-ls (monitor) window
+      call gita#features#diff_ls#open({
+            \ 'commit': 'HEAD',
+            \})
+      " It should call gita.operations.diff internally
+      Assert Equals(gita.operations._previous_args[0], [{
+            \ 'no_prefix': 1,
+            \ 'no_color': 1,
+            \ 'numstat': 1,
+            \ 'commit': 'HEAD',
+            \}, {
+            \ 'echo': 'fail',
+            \ 'force_update': 1,
+            \}])
+      Assert Equals(bufname('%'), 'gita:diff-ls:HEAD')
+      Assert Equals(&modifiable, 0)
+      Assert Equals(&readonly, 1)
+    End
+  End
 End
 
