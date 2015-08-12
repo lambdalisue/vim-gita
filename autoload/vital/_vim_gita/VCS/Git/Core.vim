@@ -115,12 +115,112 @@ function! s:get_merge_head(repository) abort " {{{
   let filename = s:Path.join(a:repository, 'MERGE_HEAD')
   return s:_readline(filename)
 endfunction " }}}
-function! s:get_merge_mode(repository) abort " {{{
-  " Used to communicate constraints that were originally given to git merge to
-  " git commit when a merge conflicts, and a separate git commit is needed to
-  " conclude it. Currently --no-ff is the only constraints passed this way.
-  let filename = s:Path.join(a:repository, 'MERGE_MODE')
+function! s:get_cherry_pick_head(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'CHERRY_PICK_HEAD')
   return s:_readline(filename)
+endfunction " }}}
+function! s:get_revert_head(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'REVERT_HEAD')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_bisect_log(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'BISECT_LOG')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_merge_head(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-merge', 'head-name')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_merge_step(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-merge', 'msgnum')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_merge_total(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-merge', 'end')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_apply_head(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-apply', 'head-name')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_apply_step(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-apply', 'next')
+  return s:_readline(filename)
+endfunction " }}}
+function! s:get_rebase_apply_total(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-apply', 'last')
+  return s:_readline(filename)
+endfunction " }}}
+
+function! s:is_merging(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'MERGE_HEAD')
+  return filereadable(path)
+endfunction " }}}
+function! s:is_cherry_picking(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'CHERRY_PICK_HEAD')
+  return filereadable(path)
+endfunction " }}}
+function! s:is_reverting(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'REVERT_HEAD')
+  return filereadable(path)
+endfunction " }}}
+function! s:is_bisecting(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'BISECT_LOG')
+  return filereadable(path)
+endfunction " }}}
+function! s:is_rebase_merging(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'rebase-merge')
+  return isdirectory(path)
+endfunction " }}}
+function! s:is_rebase_merging_interactive(repository) abort " {{{
+  let filename = s:Path.join(a:repository, 'rebase-merge', 'interactive')
+  return filereadable(filename)
+endfunction " }}}
+function! s:is_rebase_applying(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'rebase-apply')
+  return isdirectory(path)
+endfunction " }}}
+function! s:is_rebase_applying_rebase(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'rebase-apply', 'rebasing')
+  return filereadable(path)
+endfunction " }}}
+function! s:is_rebase_applying_am(repository) abort " {{{
+  let path = s:Path.join(a:repository, 'rebase-apply', 'applying')
+  return filereadable(path)
+endfunction " }}}
+
+function! s:get_mode(repository) abort " {{{
+  " https://github.com/git/git/blob/dd160d7/contrib/completion/git-prompt.sh#L391-L460
+  if s:is_rebase_merging(a:repository)
+    let step  = s:get_rebase_merge_step(a:repository)
+    let total = s:get_rebase_merge_total(a:repository)
+    if s:is_rebase_merging_interactive(a:repository)
+      return printf('REBASE-i %d/%d', step, total)
+    else
+      return printf('REBASE-m %d/%d', step, total)
+    endif
+  else
+    if s:is_rebase_applying(a:repository)
+      let step  = s:get_rebase_apply_step(a:repository)
+      let total = s:get_rebase_apply_total(a:repository)
+      if s:is_rebase_applying_rebase(a:repository)
+        return printf('REBASE %d/%d', step, total)
+      elseif s:is_rebase_applying_am(a:repository)
+        return printf('AM %d/%d', step, total)
+      else
+        return printf('AM/REBASE %d/%d', step, total)
+      endif
+    elseif s:is_merging(a:repository)
+      return 'MERGING'
+    elseif s:is_cherry_picking(a:repository)
+      return 'CHERRY-PICKING'
+    elseif s:is_reverting(a:repository)
+      return 'REVERTING'
+    elseif s:is_bisecting(a:repository)
+      return 'BISECTING'
+    endif
+  endif
+  return ''
 endfunction " }}}
 function! s:get_commit_editmsg(repository) abort " {{{
   " This is the last commit’s message. It’s not actually used by Git at all,
@@ -144,8 +244,11 @@ function! s:get_remote_hash(repository, remote, branch) abort " {{{
   if empty(hash)
     " sometime the file is missing
     let filename = s:Path.join(a:repository, 'packed-refs')
-    let packed_refs = filter(s:_readfile(filename),
-                      \      'v:val[0] != "#" && v:val[-'.len(target).':] == target')
+    let filter_code = printf(
+          \ 'v:val[0] != "#" && v:val[-%d:] ==# target',
+          \ len(target)
+          \)
+    let packed_refs = filter(s:_readfile(filename), filter_code)
     return get(split(get(packed_refs, 0, '')), 0, '')
   endif
   return hash
@@ -221,10 +324,40 @@ function! s:system(args, ...) abort " {{{
   let status = s:Process.get_last_status()
   return { 'stdout': stdout, 'status': status, 'args': args, 'opts': original_opts }
 endfunction " }}}
+function! s:system_interactive(args, ...) abort " {{{
+  let args = s:List.flatten(a:args)
+  let opts = get(a:000, 0, {})
+  let saved_shell = &shell
+  let saved_shellcmdflag = &shellcmdflag
+  set shell&
+  set shellcmdflag& shellcmdflag+=il
+  try
+    redir => stdout
+    execute printf('!%s', join(args, ' '))
+    redir END
+  finally
+    let &shell = saved_shell
+    let &shellcmdflag = saved_shellcmdflag
+  endtry
+  let stdout_lines = split(stdout, '\v%(\r?\n)')
+  let stdout_lines = stdout_lines[1:-1]
+  if stdout_lines[-1] =~# '^shell returned'
+    let status = matchstr(stdout_lines[-1], '\v^shell returned \zs\d\ze') + 0
+    let stdout_lines = stdout_lines[0:-3]
+  else
+    let status = 0
+  endif
+  let stdout = join(stdout_lines, "\n")
+  return { 'stdout': stdout, 'status': status, 'args': args, 'opts': opts }
+endfunction " }}}
 function! s:exec(args, ...) abort " {{{
   let args = [s:_config.executable, s:_config.arguments, a:args]
   let opts = get(a:000, 0, {})
-  return s:system(args, opts)
+  if get(opts, 'interactive', 0)
+    return s:system_interactive(args, opts)
+  else
+    return s:system(args, opts)
+  endif
 endfunction " }}}
 
 " Version

@@ -586,6 +586,7 @@ function! s:parser._validate_pattern(opts) abort " {{{
 endfunction " }}}
 function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort " {{{
   let cmdline = substitute(a:cmdline, '\v^[^ ]+\s', '', '')
+  let cmdline = substitute(cmdline, '\v[^ ]+$', '', '')
   let opts = extend(
         \ self._parse_args(s:splitargs(cmdline)),
         \ get(a:000, 0, {}),
