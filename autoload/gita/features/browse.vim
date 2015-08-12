@@ -84,7 +84,7 @@ function! s:find_url(gita, expr, options) abort " {{{
   " get local/remote branch info
   let meta = a:gita.git.get_meta()
   let local_branch = get(a:options, 'branch', '')
-  let local_branch = empty(local_branch) ? meta.current_branch : local_branch
+  let local_branch = empty(local_branch) ? meta.local.branch_name : local_branch
   let branch_merge = a:gita.git.get_branch_merge(local_branch)
   let remote_branch = substitute(branch_merge, '\C^refs/heads/', '', '')
   " use 'master' if no remote branch is found

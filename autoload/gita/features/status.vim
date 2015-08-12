@@ -43,10 +43,10 @@ call s:parser.add_argument(
 
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
-  let name = fnamemodify(a:gita.git.worktree, ':t')
-  let branch = meta.current_branch
-  let remote_name = meta.current_branch_remote
-  let remote_branch = meta.current_remote_branch
+  let name = meta.local.name
+  let branch = meta.local.branch_name
+  let remote_name = meta.remote.name
+  let remote_branch = meta.remote.branch_name
   let outgoing = a:gita.git.count_commits_ahead_of_remote()
   let incoming = a:gita.git.count_commits_behind_remote()
   let is_connected = !(empty(remote_name) || empty(remote_branch))

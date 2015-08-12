@@ -35,12 +35,12 @@ function! gita#statusline#get(...) abort " {{{
   endif
   let meta = gita.git.get_meta()
   let info = {
-        \ 'local_name': fnamemodify(gita.git.worktree, ':t'),
-        \ 'local_branch': meta.current_branch,
-        \ 'remote_name': meta.current_branch_remote,
-        \ 'remote_branch': meta.current_remote_branch,
-        \ 'outgoing': meta.commits_ahead_of_remote,
-        \ 'incoming': meta.commits_behind_remote,
+        \ 'local_name': meta.local.name,
+        \ 'local_branch': meta.local.branch_name,
+        \ 'remote_name': meta.remote.name,
+        \ 'remote_branch': meta.remote.branch_name,
+        \ 'outgoing': gita.git.count_commits_ahead_of_remote(),
+        \ 'incoming': gita.git.count_commits_behind_remote(),
         \}
   let status_count = {
         \ 'conflicted': 0,
