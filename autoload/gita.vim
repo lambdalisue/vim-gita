@@ -70,6 +70,11 @@ function! gita#new(...) abort " {{{
         \ 'git':      git,
         \})
   let gita.operations = gita#operations#new(gita)
+  " store timestamp of repository cache for debugging
+  if !empty(git)
+    let git.cache.repository._timestamp =
+          \ get(git.cache.repository, '_timestamp', localtime())
+  endif
   if !empty(gita#compat#getwinvar(bufwinnr(expr), '_gita'))
     call setwinvar(bufwinnr(expr), '_gita', gita)
   else
@@ -99,6 +104,8 @@ function! gita#clear_cache(...) abort " {{{
   let gita = call('gita#get', a:000)
   if gita.enabled
     call gita.git.cache.repository.clear()
+    " store timestamp of repository cache for debugging
+    let gita.git.cache.repository._timestamp = localtime()
   endif
 endfunction " }}}
 
@@ -110,20 +117,8 @@ function! gita#preload(path) abort " {{{
   execute printf('source %s.vim', abspath)
 endfunction " }}}
 
-function! s:ac_BufWritePre() abort
-  let b:_gita_clear_cache = &modified
-endfunction
-function! s:ac_BufWritePost() abort
-  if get(b:, '_gita_clear_cache')
-    call gita#clear_cache()
-  endif
-  silent! unlet! b:_gita_clear_cache
-endfunction
-
 augroup vim-gita-clear-cache
   autocmd! *
-  autocmd BufWritePre * call s:ac_BufWritePre()
-  autocmd BufWritePost * call s:ac_BufWritePost()
   autocmd User vim-gita-fetch-post call gita#clear_cache()
   autocmd User vim-gita-push-post call gita#clear_cache()
   autocmd User vim-gita-pull-post call gita#clear_cache()

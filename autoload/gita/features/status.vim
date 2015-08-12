@@ -49,6 +49,7 @@ function! s:get_status_header(gita) abort " {{{
   let remote_branch = meta.remote.branch_name
   let outgoing = a:gita.git.count_commits_ahead_of_remote()
   let incoming = a:gita.git.count_commits_behind_remote()
+  let mode = a:gita.git.get_mode()
   let is_connected = !(empty(remote_name) || empty(remote_branch))
 
   let lines = []
@@ -78,6 +79,11 @@ function! s:get_status_header(gita) abort " {{{
           \ printf('# Index and working tree status on a branch `%s/%s`',
           \   name, branch
           \))
+  endif
+  if !empty(mode)
+    call add(lines,
+          \ printf('# The branch is currently in %s', mode),
+          \)
   endif
   return lines
 endfunction " }}}
@@ -495,6 +501,7 @@ function! gita#features#status#define_highlights() abort " {{{
   highlight link GitaUntracked  GitaUnstaged
   highlight link GitaIgnored    Identifier
   highlight link GitaBranch     Title
+  highlight link GitaImportant  Keyword
 endfunction " }}}
 function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
@@ -506,6 +513,11 @@ function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
   syntax match GitaComment    /\v^.*$/ contains=ALL
   syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
+  syntax match GitaImportant  /\vREBASE-[mi] \d\/\d/
+  syntax match GitaImportant  /\vREBASE \d\/\d/
+  syntax match GitaImportant  /\vAM \d\/\d/
+  syntax match GitaImportant  /\vAM\/REBASE \d\/\d/
+  syntax match GitaImportant  /\v(MERGING|CHERRY-PICKING|REVERTING|BISECTING)/
 endfunction " }}}
 
 
