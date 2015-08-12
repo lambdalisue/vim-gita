@@ -21,7 +21,7 @@ let s:format_map = {
       \ 'nm': 'modified',
       \}
 let s:preset = {
-      \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb',
+      \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md',
       \ 'branch_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md',
       \ 'status': '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu',
       \ 'traffic': '%{<| }ic%{>|}og',
