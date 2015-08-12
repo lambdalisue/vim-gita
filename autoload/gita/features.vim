@@ -4,6 +4,7 @@ set cpo&vim
 
 " Modules
 let s:P = gita#import('Prelude')
+let s:L = gita#import('Data.List')
 let s:A = gita#import('ArgumentParser')
 
 
@@ -24,7 +25,18 @@ call s:parser.add_argument(
       \   'terminal': 1,
       \   'complete': function('gita#features#_complete_action'),
       \ })
-
+function! s:is_interactive_required(args) abort " {{{
+  let required_cases = [
+        \ ['^%(add|reset)$', '^%(-i|--interactive|-p|--patch)$'],
+        \ ['^rebase$',       '^%(-i|--interactive)$'],
+        \]
+  for [a, o] in required_cases
+    if a:args[0] =~# '\v' . a && s:L.any(a:args, printf('v:val =~# "%s"', '\v' . o))
+      return 1
+    endif
+  endfor
+  return 0
+endfunction " }}}
 
 function! gita#features#_clear() abort " {{{
   let s:feature_registry = {}
@@ -69,7 +81,9 @@ function! gita#features#command(bang, range, ...) abort " {{{
       " execute git command
       let gita = gita#get()
       let args = map(opts.__args__, 'gita#utils#expand(v:val)')
-      call gita.operations.exec_raw(args)
+      call gita.operations.exec_raw(args, {
+            \ 'interactive': s:is_interactive_required(args),
+            \})
     else
       " execute Gita command
       let feature = s:feature_registry[name]

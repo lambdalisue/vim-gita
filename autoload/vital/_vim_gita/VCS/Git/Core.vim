@@ -341,7 +341,7 @@ function! s:system_interactive(args, ...) abort " {{{
   endtry
   let stdout_lines = split(stdout, '\v%(\r?\n)')
   let stdout_lines = stdout_lines[1:-1]
-  if stdout_lines[-1] =~# '^shell returned'
+  if get(stdout_lines, -1, '') =~# '^shell returned'
     let status = matchstr(stdout_lines[-1], '\v^shell returned \zs\d\ze') + 0
     let stdout_lines = stdout_lines[0:-3]
   else
