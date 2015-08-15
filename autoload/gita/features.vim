@@ -38,7 +38,7 @@ function! s:is_interactive_required(args) abort " {{{
         return 1
       endif
     endfor
-  fi
+  endif
   return 0
 endfunction " }}}
 
