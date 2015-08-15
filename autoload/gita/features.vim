@@ -14,7 +14,9 @@ let s:feature_pattern = '^$'
 
 let s:parser = s:A.new({
       \ 'name': 'Gita[!]',
-      \ 'description': 'An awesome git handling plugin for Vim',
+      \ 'description': [
+      \   'An awesome git handling plugin for Vim',
+      \ ],
       \})
 call s:parser.add_argument(
       \ 'action', [
@@ -30,11 +32,13 @@ function! s:is_interactive_required(args) abort " {{{
         \ ['^%(add|reset)$', '^%(-i|--interactive|-p|--patch)$'],
         \ ['^rebase$',       '^%(-i|--interactive)$'],
         \]
-  for [a, o] in required_cases
-    if a:args[0] =~# '\v' . a && s:L.any(a:args, printf('v:val =~# "%s"', '\v' . o))
-      return 1
-    endif
-  endfor
+  if len(a:args) > 0
+    for [a, o] in required_cases
+      if a:args[0] =~# '\v' . a && s:L.any(a:args, printf('v:val =~# "%s"', '\v' . o))
+        return 1
+      endif
+    endfor
+  fi
   return 0
 endfunction " }}}
 
@@ -76,8 +80,10 @@ endfunction " }}}
 function! gita#features#command(bang, range, ...) abort " {{{
   let opts = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(opts)
-    let name = get(opts, 'action', 'help')
-    if opts.__bang__ || !gita#features#is_registered(name)
+    let name = get(opts, 'action')
+    if empty(name)
+      echo s:parser.help()
+    elseif opts.__bang__ || !gita#features#is_registered(name)
       " execute git command
       let gita = gita#get()
       let args = map(opts.__args__, 'gita#utils#expand(v:val)')
