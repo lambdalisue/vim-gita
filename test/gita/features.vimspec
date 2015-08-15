@@ -99,14 +99,14 @@ Describe gita#features
     It should call raw git command if the action is not registered in features
       call gita#features#command('', [0, 0], 'unknown -a -b c')
       Assert Equals(gita.operations._previous_args, 
-            \ [['unknown', '-a', '-b', 'c']]
+            \ [['unknown', '-a', '-b', 'c'], { 'interactive': 0 }]
             \)
     End
 
     It should call raw git command if the bang is !
       call gita#features#command('!', [0, 0], 'known -a -b c')
       Assert Equals(gita.operations._previous_args, 
-            \ [['known', '-a', '-b', 'c']]
+            \ [['known', '-a', '-b', 'c'], { 'interactive': 0 }]
             \)
     End
 
