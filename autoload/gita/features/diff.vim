@@ -133,6 +133,7 @@ function! s:ensure_commit_option(options) abort " {{{
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
           \ substitute(gita#meta#get('commit'), '^WORKTREE$', 'INDEX', ''),
+          \ 'customlist,gita#features#file#_complete_commit',
           \)
     if empty(commit)
       call gita#utils#prompt#warn(
@@ -177,7 +178,7 @@ function! s:diff1(...) abort " {{{
           \ 'diff',
           \)
   endif
-  call gita#utils#buffer2#open(DIFF_bufname, {
+  call gita#utils#buffer#open(DIFF_bufname, {
         \ 'opener': get(options, 'opener', 'edit'),
         \})
   call gita#utils#buffer#update(split(result.stdout, '\v\r?\n'))
@@ -277,7 +278,7 @@ function! s:diff2(...) abort " {{{
   endif
 
   " COMMIT1
-  call gita#utils#buffer2#open(COMMIT1_bufname, {
+  call gita#utils#buffer#open(COMMIT1_bufname, {
         \ 'group': 'diff_lhs',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
@@ -292,7 +293,7 @@ function! s:diff2(...) abort " {{{
   diffthis
 
   " COMMIT2
-  call gita#utils#buffer2#open(COMMIT2_bufname, {
+  call gita#utils#buffer#open(COMMIT2_bufname, {
         \ 'group': 'diff_rhs',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('%s%s',

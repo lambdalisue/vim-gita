@@ -1,21 +1,21 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:D = gita#import('Data.Dict')
 let s:B = gita#import('Vim.Buffer')
 let s:BM = gita#import('Vim.BufferManager')
 
-function! s:is_listed_in_tabpage(expr) abort " {{{
+function! gita#utils#buffer#bufname(...) abort " {{{
+  let bits = filter(deepcopy(a:000), '!empty(v:val)')
+  return join(bits, g:gita#utils#buffer#separator)
+endfunction " }}}
+function! gita#utils#buffer#is_listed_in_tabpage(expr) abort " {{{
   let bufnum = bufnr(a:expr)
   if bufnum == -1
     return 0
   endif
   let buflist = tabpagebuflist()
   return string(bufnum) =~# printf('\v^%%(%s)$', join(buflist, '|'))
-endfunction " }}}
-
-function! gita#utils#buffer#bufname(...) abort " {{{
-  let bits = filter(deepcopy(a:000), '!empty(v:val)')
-  return join(bits, g:gita#utils#buffer#separator)
 endfunction " }}}
 function! gita#utils#buffer#update(buflines) abort " {{{
   let saved_cursor = gita#compat#getcurpos()
@@ -36,106 +36,33 @@ endfunction " }}}
 function! gita#utils#buffer#clear_undo_history() abort " {{{
   let saved_undolevels = &undolevels
   let &undolevels = -1
-  silent execute "normal a \<BS>\<ESC>"
+  keepjump silent execute "normal a \<BS>\<ESC>"
   let &undolevels = saved_undolevels
 endfunction " }}}
-function! gita#utils#buffer#open(name, group, ...) abort " {{{
+function! gita#utils#buffer#open(name, ...) abort " {{{
   let config = get(a:000, 0, {})
-  if empty(a:group)
-    let opener = get(config, 'opener', 'edit')
-    let loaded = s:B.open(a:name, opener)
+  let group  = get(config, 'group', '')
+  if empty(group)
+    let loaded = s:B.open(a:name, get(config, 'opener', 'edit'))
     let bufnum = bufnr('%')
     return {
           \ 'loaded': loaded,
           \ 'bufnum': bufnum,
           \}
   else
-    let vname = printf('_buffer_manager_%s', a:group)
+    let vname = printf('_buffer_manager_%s', group)
     if !has_key(s:, vname)
-      let s:{vname} = s:BM.new(config)
+      let s:{vname} = s:BM.new()
     endif
-    let ret = s:{vname}.open(a:name, config)
+    let ret = s:{vname}.open(a:name, s:D.pick(config, [
+          \ 'opener',
+          \ 'range',
+          \]))
     return {
           \ 'loaded': ret.loaded,
           \ 'bufnum': ret.bufnr,
           \}
   endif
 endfunction " }}}
-function! gita#utils#buffer#open2(name1, name2, group, ...) abort " {{{
-  let options = extend({
-        \ 'opener': 'edit',
-        \ 'vertical': 0,
-        \ 'range': 'tabpage',
-        \}, get(a:000, 0, {}))
-  " 1st buffer
-  let opener = get(options, 'opener', 'edit')
-  let result1 = gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
-        \ 'opener': opener,
-        \ 'range': options.range,
-        \})
-  " 2nd buffer
-  let vertical = get(options, 'vertical', 0)
-  if s:is_listed_in_tabpage(a:name2)
-    let opener = 'edit'
-  elseif has_key(options, 'opener2')
-    let opener = options.opener2
-  else
-    let opener = vertical ? 'vert split' : 'split'
-  endif
-  let result2 = gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
-        \ 'opener': opener,
-        \ 'range': options.range,
-        \})
-  return {
-        \ 'bufnum1': result1.bufnum,
-        \ 'bufnum2': result2.bufnum,
-        \ 'loaded1': result1.loaded,
-        \ 'loaded2': result2.loaded,
-        \}
-endfunction " }}}
-function! gita#utils#buffer#open3(name1, name2, name3, group, ...) abort " {{{
-  let options = extend({
-        \ 'opener': 'tabedit',
-        \ 'vertical': 0,
-        \ 'range': 'all',
-        \}, get(a:000, 0, {}))
-  " 1st buffer
-  let opener = get(options, 'opener', 'tabedit')
-  let result1 = gita#utils#buffer#open(a:name1, printf('%s_1', a:group), {
-        \ 'opener': opener,
-        \ 'range': options.range,
-        \})
-  " 2nd buffer (from 1st)
-  let vertical = get(options, 'vertical', 0)
-  if s:is_listed_in_tabpage(a:name2)
-    let opener = 'edit'
-  else
-    let opener = vertical ? 'vert leftabove split' : 'leftabove split'
-  endif
-  let result2 = gita#utils#buffer#open(a:name2, printf('%s_2', a:group), {
-        \ 'opener': opener,
-        \ 'range': options.range,
-        \})
-  " 3rd buffer (from 1st)
-  silent execute printf('%swincmd w', bufwinnr(result1.bufnum))
-  if s:is_listed_in_tabpage(a:name3)
-    let opener = 'edit'
-  else
-    let opener = vertical ? 'vert rightbelow split' : 'rightbelow split'
-  endif
-  let result3 = gita#utils#buffer#open(a:name3, printf('%s_3', a:group), {
-        \ 'opener': opener,
-        \ 'range': options.range,
-        \})
-  return {
-        \ 'bufnum1': result1.bufnum,
-        \ 'bufnum2': result2.bufnum,
-        \ 'bufnum3': result3.bufnum,
-        \ 'loaded1': result1.loaded,
-        \ 'loaded2': result2.loaded,
-        \ 'loaded3': result3.loaded,
-        \}
-endfunction " }}}
-
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

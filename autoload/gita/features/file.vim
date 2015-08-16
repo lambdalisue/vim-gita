@@ -289,7 +289,7 @@ function! gita#features#file#show(...) abort " {{{
           \ relpath,
           \)
   endif
-  call gita#utils#buffer2#open(bufname, {
+  call gita#utils#buffer#open(bufname, {
         \ 'opener': get(options, 'opener', 'edit'),
         \})
 

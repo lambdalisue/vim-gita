@@ -73,25 +73,32 @@ function! s:operations.exec_raw(args, ...) abort " {{{
         \ 'echo': 'both',
         \ 'doautocmd': 1,
         \ 'success_status': 0,
+        \ 'interactive': 0,
         \}, get(a:000, 0, {}))
   if self.gita.enabled
-    let result = self.gita.git.exec(args)
+    let result = self.gita.git.exec(args, {
+          \ 'interactive': config.interactive,
+          \})
   else
-    let result = s:C.exec(args)
+    let result = s:C.exec(args, {
+          \ 'interactive': config.interactive,
+          \})
   endif
   " remove ANSI sequences in case
   let result.stdout = substitute(result.stdout, '\C\e\[\d\{1,3}[mK]', '', 'g')
-  " echo result
-  if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
-    call gita#utils#prompt#info(printf(
-          \ 'Ok: %s', join(result.args),
-          \))
-    call gita#utils#prompt#echo(result.stdout)
-  elseif config.echo =~# '^\%(both\|fail\)' && result.status != config.success_status
-    call gita#utils#prompt#error(printf(
-          \ 'Fail: %s', join(result.args),
-          \))
-    call gita#utils#prompt#echo(result.stdout)
+  if !config.interactive
+    " echo result
+    if config.echo =~# '^\%(both\|success\)' && result.status == config.success_status
+      call gita#utils#prompt#info(printf(
+            \ 'Ok: %s', join(result.args),
+            \))
+      call gita#utils#prompt#echo(result.stdout)
+    elseif config.echo =~# '^\%(both\|fail\)' && result.status != config.success_status
+      call gita#utils#prompt#error(printf(
+            \ 'Fail: %s', join(result.args),
+            \))
+      call gita#utils#prompt#echo(result.stdout)
+    endif
   endif
   " call autocmd
   if config.doautocmd && result.status == config.success_status

@@ -99,7 +99,7 @@ function! s:solve2(...) abort " {{{
 
   " Open buffers
   " REMOTE
-  call gita#utils#buffer2#open(REMOTE_bufname, {
+  call gita#utils#buffer#open(REMOTE_bufname, {
         \ 'group': 'conflict2_remote',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
@@ -111,7 +111,7 @@ function! s:solve2(...) abort " {{{
   diffthis
 
   " LOCAL
-  call gita#utils#buffer2#open(LOCAL_bufname, {
+  call gita#utils#buffer#open(LOCAL_bufname, {
         \ 'group': 'conflict2_merge',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('%s%s',
@@ -198,7 +198,7 @@ function! s:solve3(...) abort " {{{
 
   " Open buffers
   " MERGE
-  call gita#utils#buffer2#open(MERGE_bufname, {
+  call gita#utils#buffer#open(MERGE_bufname, {
         \ 'group': 'conflict3_merge',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'edit'),
@@ -215,7 +215,7 @@ function! s:solve3(...) abort " {{{
   let MERGE_bufnum = bufnr('%')
 
   " LOCAL
-  call gita#utils#buffer2#open(LOCAL_bufname, {
+  call gita#utils#buffer#open(LOCAL_bufname, {
         \ 'group': 'conflict2_local',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('leftabove %s%s',
@@ -231,7 +231,7 @@ function! s:solve3(...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
 
   " REMOTE
-  call gita#utils#buffer2#open(REMOTE_bufname, {
+  call gita#utils#buffer#open(REMOTE_bufname, {
         \ 'group': 'conflict2_remote',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('rightbelow %s%s',

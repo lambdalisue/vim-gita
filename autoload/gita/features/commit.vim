@@ -47,12 +47,13 @@ function! s:smart_map(...) abort " {{{
 endfunction " }}}
 function! s:get_status_header(gita) abort " {{{
   let meta = a:gita.git.get_meta()
-  let name = fnamemodify(a:gita.git.worktree, ':t')
-  let branch = meta.current_branch
-  let remote_name = meta.current_branch_remote
-  let remote_branch = meta.current_remote_branch
+  let name = meta.local.name
+  let branch = meta.local.branch_name
+  let remote_name = meta.remote.name
+  let remote_branch = meta.remote.branch_name
   let outgoing = a:gita.git.count_commits_ahead_of_remote()
   let incoming = a:gita.git.count_commits_behind_remote()
+  let mode = a:gita.git.get_mode()
   let is_connected = !(empty(remote_name) || empty(remote_branch))
 
   let lines = []
@@ -82,6 +83,11 @@ function! s:get_status_header(gita) abort " {{{
           \ printf('# Index and working tree status on a branch `%s/%s`',
           \   name, branch
           \))
+  endif
+  if !empty(mode)
+    call add(lines,
+          \ printf('# The branch is currently in %s', mode),
+          \)
   endif
   return lines
 endfunction " }}}
@@ -393,9 +399,6 @@ function! gita#features#commit#complete(arglead, cmdline, cursorpos) abort " {{{
 endfunction " }}}
 function! gita#features#commit#define_highlights() abort " {{{
   call gita#features#status#define_highlights()
-  " github
-  highlight default link GitaGitHubKeyword Keyword
-  highlight default link GitaGitHubIssue   Define
 endfunction " }}}
 function! gita#features#commit#define_syntax() abort " {{{
   syntax match GitaStaged     /\v^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
@@ -407,10 +410,12 @@ function! gita#features#commit#define_syntax() abort " {{{
   syntax match GitaConflicted /\v^# %(DD|AU|UD|UA|DU|AA|UU)\s.*$/hs=s+2
   syntax match GitaComment    /\v^#.*$/ contains=ALL
   syntax match GitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
-  syntax keyword GitaImportant AMEND MERGE
-  " github
-  syntax keyword GitaGitHubKeyword close closes closed fix fixes fixed resolve resolves resolved
-  syntax match   GitaGitHubIssue   '\v%([^ /#]+/[^ /#]+#\d+|#\d+)'
+  syntax match GitaImportant  /\vREBASE-[mi] \d\/\d/
+  syntax match GitaImportant  /\vREBASE \d\/\d/
+  syntax match GitaImportant  /\vAM \d\/\d/
+  syntax match GitaImportant  /\vAM\/REBASE \d\/\d/
+  syntax match GitaImportant  /\v(MERGING|CHERRY-PICKING|REVERTING|BISECTING)/
+  syntax match GitaImportant  /\v(AMEND|MERGE)/
 endfunction " }}}
 
 

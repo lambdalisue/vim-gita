@@ -11,16 +11,6 @@ let s:const.bufname_sep = has('unix') ? ':' : '-'
 let s:const.bufname = join(['gita', 'diff-ls'], s:const.bufname_sep)
 let s:const.filetype = 'gita-diff-ls'
 
-function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
-  let leading = matchstr(a:arglead, '^.*\.\.\.\?')
-  let arglead = substitute(a:arglead, '^.*\.\.\.\?', '', '')
-  let candidates = call('gita#utils#completes#complete_local_branch', extend(
-        \ [arglead, a:cmdline, a:cursorpos],
-        \ a:000,
-        \))
-  let candidates = map(candidates, 'leading . v:val')
-  return candidates
-endfunction " }}}
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] diff-ls',
       \ 'description': 'Show filename and status difference',
@@ -33,7 +23,7 @@ call s:parser.add_argument(
       \   'If <commit>..<commit> is specified, it show the changes between two arbitrary <commit>.',
       \   'If <commit>...<commit> is specified, it show thechanges on the branch containing and up to the second <commit>, starting at a common ancestor of both <commit>.',
       \ ], {
-      \   'complete': function('s:complete_commit'),
+      \   'complete': function('gita#features#diff#_complete_commit'),
       \ })
 call s:parser.add_argument(
       \ '--ignore-submodules',
@@ -50,12 +40,14 @@ endfunction " }}}
 function! s:ensure_commit_option(options) abort " {{{
   " Ask which commit the user want to compare if no 'commit' is specified
   if empty(get(a:options, 'commit'))
+    call histadd('input', 'HEAD')
     call histadd('input', 'origin/HEAD')
     call histadd('input', 'origin/HEAD...')
-    call histadd('input', get(a:options, 'commit', 'origin/HEAD...'))
+    call histadd('input', gita#meta#get('commit', 'origin/HEAD...'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
-          \ get(a:options, 'commit', ''),
+          \ substitute(gita#meta#get('commit'), '^WORKTREE$', 'INDEX', ''),
+          \ 'customlist,gita#features#diff#_complete_commit',
           \)
     if empty(commit)
       call gita#utils#prompt#echo('Operation has canceled by user')
@@ -90,22 +82,24 @@ function! s:parse_numstat(stdout, ...) abort " {{{
     endif
   endfor
   " Construct '--stat' like records
+  let gita = gita#get()
   let nchanged_width  = len(max_nchanged . '')
   let indicator_width = width - nchanged_width - len('|  ')
   let statuses = []
-  let gita = gita#get()
   for stat in stats
     let prefix = printf(
           \ printf('| %%%dd', nchanged_width),
           \ stat.added + stat.deleted
           \)
     let indicator = printf('%s%s',
-          \ repeat('+', float2nr(round(width * stat.added   / max_nchanged))),
-          \ repeat('-', float2nr(round(width * stat.deleted / max_nchanged))),
+          \ repeat('+', float2nr(ceil(indicator_width * stat.added   / max_nchanged)) + (stat.added > 0 ? 1 : 0)),
+          \ repeat('-', float2nr(ceil(indicator_width * stat.deleted / max_nchanged)) + (stat.deleted > 0 ? 1 : 0)),
           \)
+    " Note:
+    "   stat.path is relative path from git root repository
     call add(statuses, {
           \ 'path': gita#utils#ensure_realpath(
-          \   gita#utils#ensure_abspath(stat.path),
+          \   gita.git.get_absolute_path(stat.path),
           \ ),
           \ 'record': printf('%s%s %s %s',
           \   stat.path,

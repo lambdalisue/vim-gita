@@ -3,23 +3,16 @@ set cpo&vim
 
 let s:T = gita#import('DateTime')
 let s:P = gita#import('System.Filepath')
-let s:S = gita#import('VCS.Git.StatusParser')
 let s:is_windows = has('win16') || has('win32') || has('win64')
-let s:TYPES = {
-      \ 'STRING': type(''),
-      \ 'NUMBER': type(0),
-      \ 'LIST': type([]),
-      \ 'DICT': type({}),
-      \}
 
 " string
 function! s:smart_string(value) abort " {{{
-  let type = type(a:value)
-  if type == s:TYPES.STRING
+  let vtype = type(a:value)
+  if vtype == type('')
     return a:value
-  elseif type == s:TYPES.NUMBER
+  elseif vtype == type(0)
     return a:value ? string(a:value) : ''
-  elseif type == s:TYPES.LIST || type == s:TYPES.DICT
+  elseif vtype == type([]) || vtype == type({})
     return !empty(a:value) ? string(a:value) : ''
   else
     return string(a:value)

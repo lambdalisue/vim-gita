@@ -4,6 +4,7 @@ set cpo&vim
 
 " Modules
 let s:P = gita#import('Prelude')
+let s:L = gita#import('Data.List')
 let s:A = gita#import('ArgumentParser')
 
 
@@ -13,7 +14,9 @@ let s:feature_pattern = '^$'
 
 let s:parser = s:A.new({
       \ 'name': 'Gita[!]',
-      \ 'description': 'An awesome git handling plugin for Vim',
+      \ 'description': [
+      \   'An awesome git handling plugin for Vim',
+      \ ],
       \})
 call s:parser.add_argument(
       \ 'action', [
@@ -24,7 +27,20 @@ call s:parser.add_argument(
       \   'terminal': 1,
       \   'complete': function('gita#features#_complete_action'),
       \ })
-
+function! s:is_interactive_required(args) abort " {{{
+  let required_cases = [
+        \ ['^%(add|reset)$', '^%(-i|--interactive|-p|--patch)$'],
+        \ ['^rebase$',       '^%(-i|--interactive)$'],
+        \]
+  if len(a:args) > 0
+    for [a, o] in required_cases
+      if a:args[0] =~# '\v' . a && s:L.any(a:args, printf('v:val =~# "%s"', '\v' . o))
+        return 1
+      endif
+    endfor
+  endif
+  return 0
+endfunction " }}}
 
 function! gita#features#_clear() abort " {{{
   let s:feature_registry = {}
@@ -64,12 +80,16 @@ endfunction " }}}
 function! gita#features#command(bang, range, ...) abort " {{{
   let opts = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(opts)
-    let name = get(opts, 'action', 'help')
-    if opts.__bang__ || !gita#features#is_registered(name)
+    let name = get(opts, 'action')
+    if empty(name)
+      echo s:parser.help()
+    elseif opts.__bang__ || !gita#features#is_registered(name)
       " execute git command
       let gita = gita#get()
       let args = map(opts.__args__, 'gita#utils#expand(v:val)')
-      call gita.operations.exec_raw(args)
+      call gita.operations.exec_raw(args, {
+            \ 'interactive': s:is_interactive_required(args),
+            \})
     else
       " execute Gita command
       let feature = s:feature_registry[name]

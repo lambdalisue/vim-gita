@@ -151,6 +151,7 @@ endfunction " }}}
 function! s:git.get_absolute_path(path) abort " {{{
   return s:Core.get_absolute_path(self.worktree, a:path)
 endfunction " }}}
+
 function! s:git.get_head(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
@@ -198,6 +199,157 @@ function! s:git.get_merge_head(...) abort " {{{
     call cache.set(name, result)
   endif
   return cache.get(name)
+endfunction " }}}
+function! s:git.get_cherry_pick_head(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = 'CHERRY_PICK_HEAD'
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_cherry_pick_head(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_revert_head(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = 'REVERT_HEAD'
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_revert_head(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_bisect_log(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = 'BISECT_LOG'
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_bisect_log(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_merge_head(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-merge', 'head-name')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_merge_head(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_merge_step(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-merge', 'msgnum')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_merge_step(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_merge_total(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-merge', 'end')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_merge_total(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_apply_head(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-apply', 'head-name')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_apply_head(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_apply_step(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-apply', 'next')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_apply_step(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+function! s:git.get_rebase_apply_total(...) abort " {{{
+  let options = extend({
+        \ 'no_cache': 0,
+        \}, get(a:000, 0, {}))
+  let name = s:Path.join('rebase-apply', 'last')
+  let cache = self.cache.repository
+  if self.is_updated(name) || options.no_cache || !cache.has(name)
+    let result = s:Core.get_rebase_apply_total(self.repository)
+    call cache.set(name, result)
+  endif
+  return cache.get(name)
+endfunction " }}}
+
+function! s:git.is_merging() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_merging(self.repository)
+endfunction " }}}
+function! s:git.is_cherry_picking() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_cherry_picking(self.repository)
+endfunction " }}}
+function! s:git.is_reverting() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_reverting(self.repository)
+endfunction " }}}
+function! s:git.is_bisecting() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_bisecting(self.repository)
+endfunction " }}}
+function! s:git.is_rebase_merging() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_rebase_merging(self.repository)
+endfunction " }}}
+function! s:git.is_rebase_merging_interactive() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_rebase_merging_interactive(self.repository)
+endfunction " }}}
+function! s:git.is_rebase_applying() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_rebase_applying(self.repository)
+endfunction " }}}
+function! s:git.is_rebase_applying_rebase() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_rebase_applying_rebase(self.repository)
+endfunction " }}}
+function! s:git.is_rebase_applying_am() abort " {{{
+  " is_xxxxx just check existence, thus no cache mech. required
+  return s:Core.is_rebase_applying_am(self.repository)
+endfunction " }}}
+
+function! s:git.get_mode() abort " {{{
+  " Core.get_mode mainly use filereadable internally thus no cache mech. is
+  " required
+  return s:Core.get_mode(self.repository)
 endfunction " }}}
 function! s:git.get_commit_editmsg(...) abort " {{{
   let options = extend({
@@ -377,32 +529,35 @@ endfunction " }}}
 function! s:git.get_meta() abort " {{{
   let meta = {}
   let meta.head = self.get_head()
-  let meta.fetch_head = self.get_fetch_head()
-  let meta.orig_head = self.get_orig_head()
-  let meta.merge_head = self.get_merge_head()
-  let meta.commit_editmsg = self.get_commit_editmsg()
-  let meta.last_commitmsg =
-        \ empty(meta.commit_editmsg)
+
+  " commit msg
+  let commit_editmsg = self.get_commit_editmsg()
+  let meta.last_commitmsg = empty(commit_editmsg)
         \ ? self.get_last_commitmsg()
-        \ : meta.commit_editmsg
-  let meta.merge_msg = self.get_merge_msg()
-  let meta.current_branch = meta.head =~? 'refs/heads/'
+        \ : commit_editmsg
+
+  " local
+  let meta.local = {}
+  let meta.local.name = fnamemodify(self.worktree, ':t')
+  let meta.local.branch_name = meta.head =~? 'refs/heads/'
         \ ? matchstr(meta.head, 'refs/heads/\zs.\+$')
-        \ : meta.head[:6]
-  let meta.current_branch_hash = self.get_local_hash(meta.current_branch)
-  let meta.repository_config = self.get_repository_config()
-  let meta.current_branch_remote = self.get_branch_remote(meta.current_branch)
-  let meta.current_branch_merge = self.get_branch_merge(meta.current_branch)
-  let meta.current_remote_fetch = self.get_remote_fetch(meta.current_branch_remote)
-  let meta.current_remote_url = self.get_remote_url(meta.current_branch_remote)
-  let meta.comment_char = self.get_comment_char()
-  let meta.current_remote_branch = matchstr(meta.current_branch_merge, 'refs/heads/\zs.\+$')
-  let meta.current_remote_branch_hash = self.get_remote_hash(
-        \ meta.current_branch_remote,
-        \ meta.current_remote_branch,
+        \ : meta.head[:7]
+  let meta.local.branch_hash = self.get_local_hash(meta.local.branch_name)
+
+  " remote
+  let branch_remote = self.get_branch_remote(meta.local.branch_name)
+  let branch_merge  = self.get_branch_merge(meta.local.branch_name)
+  let meta.remote = {}
+  let meta.remote.name = branch_remote
+  let meta.remote.branch_name = empty(branch_remote) ? '' :
+        \ branch_merge =~? 'refs/heads/'
+        \ ? matchstr(branch_merge, 'refs/heads/\zs.\+$')
+        \ : branch_merge[:7]
+  let meta.remote.branch_hash = self.get_remote_hash(
+        \ branch_remote,
+        \ meta.remote.branch_name,
         \)
-  let meta.commits_ahead_of_remote = self.count_commits_ahead_of_remote()
-  let meta.commits_behind_remote = self.count_commits_behind_remote()
+  let meta.remote.url = self.get_remote_url(branch_remote)
   return meta
 endfunction " }}}
 
