@@ -235,7 +235,7 @@ function! gita#features#commit#exec_cached(...) abort " {{{
   let cache_name = s:P.join('commit', string(s:D.pick(options, [
         \ '--',
         \ 'porcelain',
-        \ 'u', 'untracked_files',
+        \ 'u', 'untracked-files',
         \ 'a', 'all',
         \ 'amend',
         \])))

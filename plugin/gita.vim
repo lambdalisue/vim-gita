@@ -57,7 +57,9 @@ let s:default_config = {
       \ ],
       \ 'features#browse#extra_translation_patterns': [],
       \ 'features#checkout#default_options': {},
-      \ 'features#commit#default_options': {},
+      \ 'features#commit#default_options': {
+      \   'untracked-files': 1,
+      \ },
       \ 'features#commit#monitor_opener': '',
       \ 'features#commit#monitor_range': '',
       \ 'features#commit#enable_default_mappings': 1,
@@ -73,7 +75,9 @@ let s:default_config = {
       \ 'features#file#default_options': {},
       \ 'features#reset#default_options': {},
       \ 'features#rm#default_options': {},
-      \ 'features#status#default_options': {},
+      \ 'features#status#default_options': {
+      \   'untracked-files': 1,
+      \ },
       \ 'features#status#monitor_opener': '',
       \ 'features#status#monitor_range': '',
       \ 'features#status#enable_default_mappings': 1,

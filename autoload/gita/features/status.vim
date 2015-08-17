@@ -269,13 +269,13 @@ function! gita#features#status#exec(...) abort " {{{
   let options = s:D.pick(options, [
         \ '--',
         \ 'porcelain',
-        \ 'u', 'untracked_files',
+        \ 'u', 'untracked-files',
         \ 'ignored',
-        \ 'ignore_submodules',
+        \ 'ignore-submodules',
         \])
   " remove -u/--untracked_files which require Git >= 1.4
   if gita.git.get_version() =~# '^-\|^1\.[1-3]\.'
-    let options = s:D.omit(options, ['u', 'untracked_files'])
+    let options = s:D.omit(options, ['u', 'untracked-files'])
   endif
   return gita.operations.status(options, config)
 endfunction " }}}
@@ -289,9 +289,9 @@ function! gita#features#status#exec_cached(...) abort " {{{
   let cache_name = s:P.join('status', string(s:D.pick(options, [
         \ '--',
         \ 'porcelain',
-        \ 'u', 'untracked_files',
+        \ 'u', 'untracked-files',
         \ 'ignored',
-        \ 'ignore_submodules',
+        \ 'ignore-submodules',
         \])))
   let cached_status = gita.git.is_updated('index', 'status') || get(config, 'force_update')
         \ ? {}

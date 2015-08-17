@@ -153,8 +153,8 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \ deepcopy(w:_gita_options),
         \ get(a:000, 0, {}),
         \)
-  let options.no_prefix = 1
-  let options.no_color = 1
+  let options['no-prefix'] = 1
+  let options['no-color'] = 1
   let options.numstat = 1
   let config = get(a:000, 1, {})
   let result = gita#features#diff#exec_cached(options, extend({

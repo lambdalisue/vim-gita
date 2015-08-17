@@ -30,8 +30,8 @@ Describe gita#features#diff_ls
             \})
       " It should call gita.operations.diff internally
       Assert Equals(gita.operations._previous_args[0], [{
-            \ 'no_prefix': 1,
-            \ 'no_color': 1,
+            \ 'no-prefix': 1,
+            \ 'no-color': 1,
             \ 'numstat': 1,
             \ 'commit': 'HEAD',
             \}, {
