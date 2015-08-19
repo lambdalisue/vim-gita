@@ -304,17 +304,14 @@ function! gita#features#blame#show(...) abort " {{{
         \ options.commit[:7],
         \ relpath,
         \)
-  let bufnums = gita#utils#buffer#open2(
-        \ VIEW_bufname, NAVI_bufname, 'gita_blame', {
-        \   'opener': get(options, 'opener', 'tabedit'),
-        \   'opener2': get(options, 'opener2', 'topleft 50 vsplit'),
-        \   'range': get(options, 'range', 'all'),
-        \})
-  let VIEW_bufnum = bufnums.bufnum1
-  let NAVI_bufnum = bufnums.bufnum2
 
   " VIEW
-  execute printf('%swincmd w', bufwinnr(VIEW_bufnum))
+  call gita#utils#buffer#open(VIEW_bufname, {
+        \ 'group': 'blame_view',
+        \ 'range': get(options, 'range', 'tabpage'),
+        \ 'opener': get(options, 'opener', 'tabedit'),
+        \})
+  let VIEW_bufnum = bufnr('%')
   call gita#utils#buffer#update(VIEW)
   silent execute printf("setlocal filetype=%s", &l:filetype)
   setlocal buftype=nofile bufhidden=wipe noswapfile
@@ -344,7 +341,12 @@ function! gita#features#blame#show(...) abort " {{{
   endfor
 
   " NAVI
-  execute printf('%swincmd w', bufwinnr(NAVI_bufnum))
+  call gita#utils#buffer#open(NAVI_bufname, {
+        \ 'group': 'blame_navi',
+        \ 'range': get(options, 'range', 'tabpage'),
+        \ 'opener': get(options, 'opener2', 'topleft 50 vsplit'),
+        \})
+  let NAVI_bufnum = bufnr('%')
   call gita#utils#buffer#update(NAVI)
   silent execute printf("setlocal filetype=%s", s:const.filetype)
   setlocal buftype=nofile bufhidden=wipe noswapfile
