@@ -1,5 +1,6 @@
 Describe gita#features#diff_ls
   Before
+    new
     let gita = gita#get()
     let gita.git.cache.repository.clear()
     let operations_saved = deepcopy(gita.operations)
@@ -10,9 +11,9 @@ Describe gita#features#diff_ls
             \ 'status': 0,
             \ 'stdout': join([
             \   '0   10   foo.md',
-            \   '10  10   bar.md',
+            \   '10  0    bar.md',
             \   '10  10   hoge.md',
-            \ ], '\n'),
+            \ ], "\n"),
             \}
     endfunction
     let gita.operations._previous_args = []
@@ -30,17 +31,71 @@ Describe gita#features#diff_ls
             \})
       " It should call gita.operations.diff internally
       Assert Equals(gita.operations._previous_args[0], [{
-            \ 'no_prefix': 1,
-            \ 'no_color': 1,
+            \ 'no-prefix': 1,
+            \ 'no-color': 1,
             \ 'numstat': 1,
             \ 'commit': 'HEAD',
             \}, {
             \ 'echo': 'fail',
             \ 'force_update': 1,
             \}])
+
+      " the buffer should follow
       Assert Equals(bufname('%'), 'gita:diff-ls:HEAD')
       Assert Equals(&modifiable, 0)
       Assert Equals(&readonly, 1)
+      Assert Equals(&filetype, 'gita-diff-ls')
+    End
+
+    It should open a window with correct contents
+      call gita#features#diff_ls#open({
+            \ 'commit': 'HEAD',
+            \})
+      " the buffer content should follow
+      let contents = getline(1, '$')
+      Assert Match(contents[0], '^# Files difference between')
+      Assert Match(contents[1], '^# Press ?m to toggle a help')
+      Assert Match(contents[2], '^foo\.md  | 10 -\+$')
+      Assert Match(contents[3], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[4], '^hoge\.md | 20 +\+-\+$')
+    End
+
+    It should open a window with correct gita actions
+      call gita#features#diff_ls#open({
+            \ 'commit': 'HEAD',
+            \})
+      " the opened buffer should contain actions
+      Assert KeyExists(b:, '_gita_actions')
+      Assert KeyExists(b:_gita_actions, 'open')
+      Assert KeyExists(b:_gita_actions, 'edit')
+      Assert KeyExists(b:_gita_actions, 'diff')
+      Assert KeyExists(b:_gita_actions, 'update')
+    End
+
+  End
+
+  Context #update({options})
+    It should update contents of gita:diff-ls window
+      let w:_gita_options = {}
+      call gita#features#diff_ls#update({
+            \ 'commit': 'HEAD',
+            \})
+      " the buffer content should follow
+      let contents = getline(1, '$')
+      Assert Match(contents[0], '^# Files difference between')
+      Assert Match(contents[1], '^# Press ?m to toggle a help')
+      Assert Match(contents[2], '^foo\.md  | 10 -\+$')
+      Assert Match(contents[3], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[4], '^hoge\.md | 20 +\+-\+$')
+    End
+
+    It should update w:_gita_statuses_map
+      let w:_gita_options = {}
+      call gita#features#diff_ls#update({
+            \ 'commit': 'HEAD',
+            \})
+      Assert KeyExists(w:, '_gita_statuses_map')
+      Assert Equals(len(w:_gita_statuses_map), 3)
     End
   End
 End

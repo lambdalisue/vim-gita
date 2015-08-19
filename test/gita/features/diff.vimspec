@@ -66,25 +66,25 @@ Describe gita#features#diff
     It should call gita.operations.diff internally
       call gita#features#diff#exec({
             \ '--': [],
-            \ 'ignore_submodules': 1,
-            \ 'no_prefix': 1,
-            \ 'no_color': 1,
+            \ 'ignore-submodules': 1,
+            \ 'no-prefix': 1,
+            \ 'no-color': 1,
             \ 'unified': 1,
             \ 'histogram': 1,
             \ 'cached': 1,
             \ 'commit': 'HEAD',
-            \ 'name_status': 1,
+            \ 'name-status': 1,
             \})
       Assert Equals(gita.operations._previous_args, [{
             \ '--': [],
-            \ 'ignore_submodules': 1,
-            \ 'no_prefix': 1,
-            \ 'no_color': 1,
+            \ 'ignore-submodules': 1,
+            \ 'no-prefix': 1,
+            \ 'no-color': 1,
             \ 'unified': 1,
             \ 'histogram': 1,
             \ 'cached': 1,
             \ 'commit': 'HEAD',
-            \ 'name_status': 1,
+            \ 'name-status': 1,
             \}, {}])
     End
 
@@ -103,12 +103,12 @@ Describe gita#features#diff
     It should NOT call gita.operations.diff for 2nd call with same options
       call gita#features#diff#exec_cached({
             \ 'commit': 'HEAD',
-            \ 'ignore_submodules': 1,
+            \ 'ignore-submodules': 1,
             \})
       let gita.operations._previous_args = []
       call gita#features#diff#exec_cached({
             \ 'commit': 'HEAD',
-            \ 'ignore_submodules': 1,
+            \ 'ignore-submodules': 1,
             \})
       Assert Equals(gita.operations._previous_args, [])
     End
@@ -116,16 +116,16 @@ Describe gita#features#diff
     It should call gita.operations.diff for 2nd call with different options
       call gita#features#diff#exec_cached({
             \ 'commit': 'HEAD',
-            \ 'ignore_submodules': 1,
+            \ 'ignore-submodules': 1,
             \})
       let gita.operations._previous_args = []
       call gita#features#diff#exec_cached({
             \ 'commit': 'HEAD',
-            \ 'ignore_submodules': 0,
+            \ 'ignore-submodules': 0,
             \})
       Assert Equals(gita.operations._previous_args, [{
             \ 'commit': 'HEAD',
-            \ 'ignore_submodules': 0,
+            \ 'ignore-submodules': 0,
             \}, {}])
     End
   End
@@ -138,7 +138,7 @@ Describe gita#features#diff
             \})
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
-            \ 'no_color': 1,
+            \ 'no-color': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer
@@ -161,7 +161,7 @@ Describe gita#features#diff
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
             \ '--': [gita#utils#ensure_abspath('README.md')],
-            \ 'no_color': 1,
+            \ 'no-color': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
       " check the buffer

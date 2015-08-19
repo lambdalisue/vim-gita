@@ -152,7 +152,7 @@ function! s:diff1(...) abort " {{{
   if gita.fail_on_disabled()
     return
   endif
-  let options.no_color = 1
+  let options['no-color'] = 1
   if s:ensure_commit_option(options)
     return
   endif
@@ -357,17 +357,17 @@ function! gita#features#diff#exec(...) abort " {{{
   endif
   let options = s:D.pick(options, [
         \ '--',
-        \ 'ignore_submodules',
-        \ 'no_prefix',
-        \ 'no_color',
+        \ 'ignore-submodules',
+        \ 'no-prefix',
+        \ 'no-color',
         \ 'unified',
         \ 'minimal',
         \ 'patience',
         \ 'histogram',
-        \ 'diff_algorithm',
+        \ 'diff-algorithm',
         \ 'cached',
         \ 'commit',
-        \ 'name_status',
+        \ 'name-status',
         \ 'stat',
         \ 'numstat',
         \])
@@ -382,14 +382,14 @@ function! gita#features#diff#exec_cached(...) abort " {{{
   endif
   let cache_name = s:P.join('diff', string(s:D.pick(options, [
         \ '--',
-        \ 'ignore_submodules',
-        \ 'no_prefix',
-        \ 'no_color',
+        \ 'ignore-submodules',
+        \ 'no-prefix',
+        \ 'no-color',
         \ 'unified',
         \ 'histogram',
         \ 'cached',
         \ 'commit',
-        \ 'name_status',
+        \ 'name-status',
         \ 'stat',
         \ 'numstat',
         \])))

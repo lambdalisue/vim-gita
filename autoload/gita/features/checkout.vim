@@ -112,7 +112,7 @@ function! gita#features#checkout#exec(...) abort " {{{
         \ 'f', 'force',
         \ 'ours', 'theirs',
         \ 'b', 'B',
-        \ 't', 'track', 'no_track',
+        \ 't', 'track', 'no-track',
         \ 'l',
         \ 'detach',
         \ 'orphan',
