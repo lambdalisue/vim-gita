@@ -217,7 +217,7 @@ function! gita#features#commit#exec(...) abort " {{{
         \ '--',
         \ 'file',
         \ 'porcelain',
-        \ 'dry_run', 'no_status',
+        \ 'dry_run',
         \ 'u', 'untracked_files',
         \ 'a', 'all',
         \ 'reset_author',
@@ -291,7 +291,6 @@ function! gita#features#commit#update(...) abort " {{{
         \)
   let options.porcelain = 1
   let options.dry_run = 1
-  let options.no_status = 1
   let config = get(a:000, 1, {})
   let result = gita#features#commit#exec_cached(options, extend({
         \ 'echo': '',
