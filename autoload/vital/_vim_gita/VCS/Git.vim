@@ -11,7 +11,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " Vital ======================================================================
-function! s:_vital_loaded(V) dict abort " {{{
+function! s:_vital_loaded(V) abort " {{{
   let s:Dict = a:V.import('Data.Dict')
   let s:List = a:V.import('Data.List')
   let s:Prelude = a:V.import('Prelude')

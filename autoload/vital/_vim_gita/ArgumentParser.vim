@@ -9,12 +9,13 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:_vital_loaded(V) dict abort " {{{
+function! s:_vital_loaded(V) abort " {{{
   let s:P = a:V.import('Prelude')
   let s:D = a:V.import('Data.Dict')
   let s:L = a:V.import('Data.List')
   let s:H = a:V.import('System.Filepath')
-
+endfunction " }}}
+function! s:_vital_created(module) abort " {{{
   let s:const = {}
   let s:const.types = {}
   let s:const.types.any = 0
@@ -23,7 +24,7 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:const.types.choice = 3
   lockvar s:const
 
-  call extend(self, s:const)
+  call extend(a:module, s:const)
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
   return ['Prelude', 'Data.Dict', 'Data.List', 'System.Filepath']

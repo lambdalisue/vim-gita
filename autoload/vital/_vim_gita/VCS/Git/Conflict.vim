@@ -9,9 +9,11 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:_vital_loaded(V) dict abort " {{{
+function! s:_vital_loaded(V) abort " {{{
   let s:P = a:V.import('Prelude')
   let s:C = a:V.import('VCS.Git.Core')
+endfunction " }}}
+function! s:_vital_created(module) abort " {{{
   let s:const = {}
   let s:const.markers = {}
   let s:const.markers.ours  = repeat('\<', 7)
@@ -22,7 +24,7 @@ function! s:_vital_loaded(V) dict abort " {{{
   let s:const.patterns.separator = printf('%s[^\n]{-}%%(\n|$)', s:const.markers.separator)
   let s:const.patterns.theirs = printf('%s[^\n]{-}%%(\n|$)', s:const.markers.theirs)
   lockvar s:const
-  let self.const = s:const
+  call extend(a:module, s:const)
 endfunction " }}}
 function! s:_vital_depends() abort " {{{
   return [
