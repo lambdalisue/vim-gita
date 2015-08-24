@@ -24,7 +24,12 @@ function! s:open(filename) abort "{{{
     if s:need_trans
       let filename = iconv(filename, &encoding, 'char')
     endif
-    silent execute '!start rundll32 url.dll,FileProtocolHandler' filename
+    " Note:
+    "   # and % required to be escaped (:help cmdline-special)
+    silent execute printf(
+          \ '!start rundll32 url.dll,FileProtocolHandler %s',
+          \ escape(filename, '#%'),
+          \)
   elseif s:is_cygwin
     " Cygwin.
     call system(printf('%s %s', 'cygstart',
@@ -229,6 +234,7 @@ else
     throw 'vital: System.File.rmdir(): your platform is not supported'
   endfunction
 endif
+
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

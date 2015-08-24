@@ -233,25 +233,43 @@ function! s:get_merge_msg(repository) abort " {{{
   let filename = s:Path.join(a:repository, 'MERGE_MSG')
   return s:_readfile(filename)
 endfunction " }}}
+function! s:_resolve_ref(repository, ref) abort " {{{
+  let filename = s:Path.join(a:repository, a:ref)
+  let contents = s:_readline(filename)
+  if contents =~# '^ref:\s'
+    " recursively resolve ref
+    return s:_resolve_ref(
+          \ a:repository,
+          \ substitute(contents, '^ref:\s', '', ''),
+          \)
+  elseif !empty(contents)
+    return contents
+  endif
+  " ref is missing in traditional directory, the ref should be written in
+  " packed-ref then
+  let filename = s:Path.join(a:repository, 'packed-refs')
+  let filter_code = printf(
+        \ 'v:val[0] != "#" && v:val[-%d:] ==# a:ref',
+        \ len(a:ref)
+        \)
+  let packed_refs = filter(s:_readfile(filename), filter_code)
+  return get(split(get(packed_refs, 0, '')), 0, '')
+endfunction " }}}
 function! s:get_local_hash(repository, branch) abort " {{{
-  let filename = s:Path.join(a:repository, 'refs', 'heads', a:branch)
-  return s:_readline(filename)
+  if a:branch =~# 'HEAD'
+    let HEAD = s:get_head(a:repository)
+    let ref = s:Path.join(
+          \ a:repository,
+          \ substitute(HEAD, '^ref:\s', '', ''),
+          \)
+  else
+    let ref = s:Path.join('refs', 'heads', a:branch)
+  endif
+  return s:_resolve_ref(a:repository, ref)
 endfunction " }}}
 function! s:get_remote_hash(repository, remote, branch) abort " {{{
-  let target = s:Path.join('refs', 'remotes', a:remote, a:branch)
-  let filename = s:Path.join(a:repository, target)
-  let hash = s:_readline(filename)
-  if empty(hash)
-    " sometime the file is missing
-    let filename = s:Path.join(a:repository, 'packed-refs')
-    let filter_code = printf(
-          \ 'v:val[0] != "#" && v:val[-%d:] ==# target',
-          \ len(target)
-          \)
-    let packed_refs = filter(s:_readfile(filename), filter_code)
-    return get(split(get(packed_refs, 0, '')), 0, '')
-  endif
-  return hash
+  let ref = s:Path.join('refs', 'remotes', a:remote, a:branch)
+  return s:_resolve_ref(a:repository, ref)
 endfunction " }}}
 
 " Config (without using 'git config'. read '.git/config' directly)

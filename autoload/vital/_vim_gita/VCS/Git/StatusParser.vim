@@ -26,9 +26,10 @@ let s:const.unstaged_pattern   = '\v^%([ MARC][MD]|DM)$'
 let s:const.untracked_pattern  = '\v^\?\?$'
 let s:const.ignored_pattern    = '\v^!!$'
 
-function! s:_vital_loaded(...) dict abort
+function! s:_vital_created(module) abort
   " define constant variables
-  call extend(self, s:const)
+  lockvar s:const
+  call extend(a:module, s:const)
 endfunction
 
 
