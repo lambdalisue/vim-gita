@@ -1,6 +1,7 @@
 let g:V = vital#of('vim_gita')
 let g:P = g:V.import('System.Filepath')
 let g:F = g:V.import('System.File')
+let g:S = g:V.import('Vim.ScriptLocal')
 
 " disable interactive features
 let g:gita#_disable_interactive = 1

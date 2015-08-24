@@ -73,7 +73,7 @@ function! s:actions.jump_in(candidates, options) abort " {{{
           \ gita#compat#getcurpos(),
           \])
     call gita#features#blame#show({
-          \ '--': [filename],
+          \ 'file': filename,
           \ 'commit': revision,
           \})
     call gita#features#blame#goto(candidate.linenum.original)
@@ -89,26 +89,12 @@ function! s:actions.jump_out(candidates, options) abort " {{{
   endif
   let [revision, filename, linenum] = s:L.pop(history)
   call gita#features#blame#show({
-        \ '--': [filename],
+        \ 'file': filename,
         \ 'commit': revision,
         \})
   call setpos('.', linenum)
 endfunction " }}}
 
-function! s:ensure_file_option(options) abort " {{{
-  if empty(get(a:options, '--', []))
-    let a:options['--'] = ['%']
-  elseif len(get(a:options, '--', [])) > 1
-    call gita#utils#prompt#warn(
-          \ 'A single file required to be specified to blame.',
-          \)
-    return -1
-  endif
-  let a:options.file = gita#utils#ensure_abspath(
-        \ gita#utils#expand(a:options['--'][0]),
-        \)
-  return 0
-endfunction " }}}
 function! s:create_chunks(blameobj) abort " {{{
   let previous_revision = ''
   let chunks = []
@@ -135,17 +121,19 @@ function! s:create_chunks(blameobj) abort " {{{
   return chunks
 endfunction " }}}
 function! s:format_chunk(chunk, ...) abort " {{{
-  let width = get(a:000, 0, winwidth(0))
-  let wrap = get(a:000, 1, 0)
-  if wrap
+  let options = extend({
+        \ 'width': winwidth(0),
+        \ 'wrap': 0,
+        \}, get(a:000, 0, {}))
+  if options.wrap
     let summary = map(
-          \ s:S.wrap(a:chunk.summary, width - 1),
+          \ s:S.wrap(a:chunk.summary, options.width - 1),
           \ 'substitute(v:val, ''\v%(^\s+|\s+$)'', "", "g")',
           \)
   else
     let summary = s:S.truncate_skipping(
           \ a:chunk.summary,
-          \ width - 2,
+          \ options.width - 2,
           \ 3,
           \ '...',
           \)
@@ -162,15 +150,71 @@ function! s:format_chunk(chunk, ...) abort " {{{
         \ summary,
         \ printf('%s%s%s',
         \   author_info,
-        \   repeat(' ', width - 8 - len(author_info)),
+        \   repeat(' ', options.width - 8 - len(author_info)),
         \   revision,
         \ )
         \])
   return formatted
 endfunction " }}}
+function! s:extend_blameobj(blameobj) abort " {{{
+  let chunks = s:create_chunks(a:blameobj)
+  let linechunks = []
+  let linenumref = []
+  let NAVI = []
+  let VIEW = []
+  let HORI = []
+  let linenum = 1
+  for chunk in chunks
+    let formatted_chunk = s:format_chunk(chunk, {
+          \ 'width': 47,
+          \ 'wrap': len(chunk.contents) > 2,
+          \})
+    for i in range(max([2, len(chunk.contents)]))
+      if i < chunk.nlines
+        call add(linenumref, linenum)
+      endif
+      call add(NAVI, get(formatted_chunk, i, ''))
+      call add(VIEW, get(chunk.contents, i, ''))
+      call add(linechunks, chunk)
+      let linenum += 1
+    endfor
+    " Add an empty line for sign
+    if g:gita#features#blame#enable_horizontal_signs
+      call add(NAVI, '')
+      call add(VIEW, '')
+      call add(HORI, len(NAVI))
+      call add(linechunks, chunk)
+      let linenum += 1
+    endif
+  endfor
+  let blameobj = copy(a:blameobj)
+  let blameobj.linechunks = linechunks
+  let blameobj.linenumref = linenumref
+  if g:gita#features#blame#enable_horizontal_signs
+    let blameobj.horizontal_signs = HORI[:-2]
+    let blameobj.contents = {
+          \ 'NAVI': NAVI[:-2],
+          \ 'VIEW': VIEW[:-2],
+          \}
+  else
+    let blameobj.contents = {
+          \ 'NAVI': NAVI,
+          \ 'VIEW': VIEW,
+          \}
+  endif
+  return blameobj
+endfunction "}}}
 function! s:get_candidates(start, end) abort " {{{
-  let linechunks = gita#meta#get('blame#linechunks', [])
-  return linechunks[a:start : a:end]
+  let blameobj = gita#meta#get('blame#blameobj', [])
+  let linechunks = blameobj.linechunks[a:start : a:end]
+  let candidates = []
+  for linechunk in linechunks
+    call add(candidates, extend(
+          \ gita#utils#status#virtual(linechunk.filename), {
+          \   'commit': linechunk.revision,
+          \}))
+  endfor
+  return candidates
 endfunction " }}}
 function! s:get_history() abort " {{{
   let w:_gita_blame_history = get(w:, '_gita_blame_history', [])
@@ -182,9 +226,10 @@ function! gita#features#blame#goto(linenum, ...) abort " {{{
         \ 'reverse': 0,
         \ 'move': 1,
         \}, get(a:000, 0, {}))
+  let blameobj = gita#meta#get('blame#blameobj', {})
   if options.reverse
     " blame linenum to original linenum
-    let linechunks = gita#meta#get('blame#linechunks', [])
+    let linechunks = get(blameobj, 'linechunks', [])
     if !empty(linechunks)
       let linechunk = get(linechunks, a:linenum - 1, a:linenum)
       let linenum = linechunk.linenum.final
@@ -193,7 +238,7 @@ function! gita#features#blame#goto(linenum, ...) abort " {{{
     endif
   else
     " original linenum to blame linenum
-    let linenumref = gita#meta#get('blame#linenumref', [])
+    let linenumref = get(blameobj, 'linenumref', [])
     if !empty(linenumref)
       let linenum = get(linenumref, a:linenum - 1, a:linenum)
     else
@@ -206,21 +251,25 @@ function! gita#features#blame#goto(linenum, ...) abort " {{{
   return linenum
 endfunction " }}}
 function! gita#features#blame#get_actual_linenum(linenum) abort " {{{
-    let linechunks = gita#meta#get('blame#linechunks', [])
-    let chunk = get(linechunks, a:linenum - 1, {})
-    return get(get(chunk, 'linenum', {}), 'final', -1)
+  let blameobj = gita#meta#get('blame#blameobj', {})
+  let linechunks = get(blameobj, 'linechunks', [])
+  let chunk = get(linechunks, a:linenum - 1, {})
+  return get(get(chunk, 'linenum', {}), 'final', -1)
 endfunction " }}}
 function! gita#features#blame#get_pseudo_linenum(linenum) abort " {{{
-    let linenumref = gita#meta#get('blame#linenumref', [])
-    return get(linenumref, a:linenum - 1, -1)
+  let blameobj = gita#meta#get('blame#blameobj', {})
+  let linenumref = get(blameobj, 'linenumref', [])
+  return get(linenumref, a:linenum - 1, -1)
 endfunction " }}}
 function! gita#features#blame#get_next_chunk(linenum) abort " {{{
-  let linechunks = gita#meta#get('blame#linechunks', [])
+  let blameobj = gita#meta#get('blame#blameobj', {})
+  let linechunks = get(blameobj, 'linechunks', [])
   let chunk = get(linechunks, a:linenum - 1, {})
   return get(chunk, 'next', {})
 endfunction " }}}
 function! gita#features#blame#get_previous_chunk(linenum) abort " {{{
-  let linechunks = gita#meta#get('blame#linechunks', [])
+  let blameobj = gita#meta#get('blame#blameobj', {})
+  let linechunks = get(blameobj, 'linechunks', [])
   let chunk = get(linechunks, a:linenum - 1, {})
   return get(chunk, 'previous', {})
 endfunction " }}}
@@ -231,8 +280,19 @@ function! gita#features#blame#exec(...) abort " {{{
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
-  if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
+
+  " validate option
+  if g:gita#develop
+    call gita#utils#validate#require(options, 'file', 'options')
+    call gita#utils#validate#empty(options.file, 'options.file')
+
+    call gita#utils#validate#require(options, 'commit', 'options')
+    call gita#utils#validate#empty(options.commit, 'options.commit')
+    call gita#utils#validate#pattern(options.commit, '\v^[^ ]+', 'options.commit')
+  endif
+
+  if has_key(options, 'file')
+    let options['--'] = [gita#utils#ensure_unixpath(options.file)]
   endif
   if has_key(options, 'commit')
     let options.commit = substitute(options.commit, 'INDEX', '', 'g')
@@ -247,16 +307,8 @@ endfunction " }}}
 function! gita#features#blame#show(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
+  let options.file = get(options, 'file', '%')
   let options.commit = get(options, 'commit', 'HEAD')
-  if s:ensure_file_option(options)
-    return
-  endif
-  if !empty(get(options, '--', []))
-    let options['--'] = gita#utils#ensure_pathlist(options['--'])
-  endif
-  let abspath = get(options['--'], 0)
-  let relpath = gita.git.get_relative_path(abspath)
-
   let options.porcelain = 1
   let result = gita#features#blame#exec(options, {
         \ 'echo': 'fail',
@@ -264,57 +316,25 @@ function! gita#features#blame#show(...) abort " {{{
   if result.status != 0
     return
   endif
-  let blameobj = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
-  let chunks = s:create_chunks(blameobj)
-  let linechunks = []
-  let linenumref = []
-  let NAVI = []
-  let VIEW = []
-  let HORI = []
-  let linenum = 1
-  for chunk in chunks
-    let formatted_chunk = s:format_chunk(chunk, 47, len(chunk.contents) > 2)
-    for i in range(max([2, len(chunk.contents)]))
-      if i < chunk.nlines
-        call add(linenumref, linenum)
-      endif
-      call add(NAVI, get(formatted_chunk, i, ''))
-      call add(VIEW, get(chunk.contents, i, ''))
-      call add(linechunks, chunk)
-      let linenum += 1
-    endfor
-    " Add an empty line for sign
-    call add(NAVI, '')
-    call add(VIEW, '')
-    call add(HORI, len(NAVI))
-    call add(linechunks, chunk)
-    let linenum += 1
-  endfor
-  let NAVI = NAVI[:-2]
-  let VIEW = VIEW[:-2]
-
-  let NAVI_bufname = gita#utils#buffer#bufname(
-        \ 'BLAME',
-        \ options.commit[:7],
-        \ 'NAVI',
-        \ relpath,
+  let blameobj = s:extend_blameobj(
+        \ s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug }),
         \)
+  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
+  let relpath = gita.git.get_relative_path(abspath)
+
+  " VIEW
   let VIEW_bufname = gita#utils#buffer#bufname(
         \ 'BLAME',
         \ options.commit[:7],
         \ relpath,
         \)
-
-  " VIEW
-  call gita#utils#buffer#open(VIEW_bufname, {
+  silent let result = gita#utils#buffer#open(VIEW_bufname, {
         \ 'group': 'blame_view',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener', 'tabedit'),
         \})
-  let VIEW_bufnum = bufnr('%')
-  call gita#utils#buffer#update(VIEW)
-  silent execute printf("setlocal filetype=%s", &l:filetype)
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  let VIEW_bufnum = result.bufnum
+  setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
   setlocal scrollbind cursorbind
   setlocal scrollopt=ver
@@ -327,29 +347,31 @@ function! gita#features#blame#show(...) abort " {{{
         \ 'filename': abspath,
         \ 'commit': options.commit,
         \ 'blame#blameobj': blameobj,
-        \ 'blame#linechunks': linechunks,
-        \ 'blame#linenumref': linenumref,
         \})
-
+  call gita#utils#buffer#update(blameobj.contents.VIEW)
   execute printf('sign unplace * buffer=%d', VIEW_bufnum)
-  for linenum in HORI
-    "execute printf('syntax match GitaHorizontal /\%%%sl.*/', linenum)
+  for linenum in blameobj.horizontal_signs
     execute printf(
           \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%d',
           \ linenum, linenum, VIEW_bufnum,
           \)
   endfor
+  execute printf("setlocal filetype=%s", &l:filetype)
 
   " NAVI
-  call gita#utils#buffer#open(NAVI_bufname, {
+  let NAVI_bufname = gita#utils#buffer#bufname(
+        \ 'BLAME',
+        \ options.commit[:7],
+        \ 'NAVI',
+        \ relpath,
+        \)
+  silent let result = gita#utils#buffer#open(NAVI_bufname, {
         \ 'group': 'blame_navi',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': get(options, 'opener2', 'topleft 50 vsplit'),
         \})
-  let NAVI_bufnum = bufnr('%')
-  call gita#utils#buffer#update(NAVI)
-  silent execute printf("setlocal filetype=%s", s:const.filetype)
-  setlocal buftype=nofile bufhidden=wipe noswapfile
+  let NAVI_bufnum = result.bufnum
+  setlocal buftype=nofile noswapfile
   setlocal nomodifiable readonly
   setlocal scrollbind cursorbind
   setlocal scrollopt=ver
@@ -362,21 +384,36 @@ function! gita#features#blame#show(...) abort " {{{
         \ 'filename': abspath,
         \ 'commit': options.commit,
         \ 'blame#blameobj': blameobj,
-        \ 'blame#linechunks': linechunks,
-        \ 'blame#linenumref': linenumref,
         \})
-
   call gita#action#extend_actions(s:actions)
+  call gita#features#blame#define_mappings()
+  if g:gita#features#blame#enable_default_mappings
+    call gita#features#blame#define_default_mappings()
+  endif
   call gita#action#set_candidates(function('s:get_candidates'))
-  nmap <buffer> <CR> :call gita#action#exec('jump_in')<CR>
-  nmap <buffer> <BS> :call gita#action#exec('jump_out')<CR>
+  call gita#utils#buffer#update(blameobj.contents.NAVI)
   execute printf('sign unplace * buffer=%d', NAVI_bufnum)
-  for linenum in HORI
+  for linenum in blameobj.horizontal_signs
     execute printf(
           \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%s',
           \ linenum, linenum, NAVI_bufnum,
           \)
   endfor
+  execute printf("setlocal filetype=%s", s:const.filetype)
+endfunction " }}}
+function! gita#features#blame#define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+  unmap <buffer> <Plug>(gita-action-help-s)
+
+  nnoremap <buffer><silent> <Plug>(gita-blame-jump-in)  :<C-u>call gita#action#exec('jump_in')<CR>
+  nnoremap <buffer><silent> <Plug>(gita-blame-jump-out) :<C-u>call gita#action#exec('jump_out')<CR>
+endfunction " }}}
+function! gita#features#blame#define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
+
+  unmap <buffer> ?s
+  nmap <buffer> <CR> <Plug>(gita-blame-jump-in)
+  nmap <buffer> <BS> <Plug>(gita-blame-jump-out)
 endfunction " }}}
 function! gita#features#blame#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))

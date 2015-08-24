@@ -1,0 +1,635 @@
+a474c0974cb880e804a1d5a302eb586a5e191215 1 1 1
+author Λlisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1435602526
+author-tz +0900
+committer Λlisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1435602526
+committer-tz +0900
+summary Update README.md
+previous 66ae19ef3fa60341cb7133472b050d3fe271a7b2 README.md
+filename README.md
+	<p align="center"><strong align="center">WARNING</strong></p>
+533602b38632fd0dbb3ed26709dd76c4872f8fac 2 2 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1437492025
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1437492025
+committer-tz +0900
+summary Fix and update docs (but WIP)
+previous 34b7c513b3f26a708ca98b2211ce2e531864fb4c README.md
+filename README.md
+	<p align="center">vim-gita is under development (alpha version), mean that there would be critical bugs for daily use.<br>
+a474c0974cb880e804a1d5a302eb586a5e191215 3 3 2
+	Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
+a474c0974cb880e804a1d5a302eb586a5e191215 4 4
+	
+d06779617099f66e32118697c650b51a98ab1bf9 5 5 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1436337773
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1436337773
+committer-tz +0900
+summary Fix wrong link in README
+previous 288e4a0307d8afe50393f60cc47a24f85d49a8d7 README.md
+filename README.md
+	vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
+3525bd96d78786d3e256248ff813163d5fb7930b 2 6 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426162542
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426162542
+committer-tz +0900
+summary Initial commit
+boundary
+filename README.md
+	===============================================================================
+9edfaa367505d7ccb2f2b499d41bd780bca1a0f9 7 7 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1437500576
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1437500576
+committer-tz +0900
+summary Add GIF screencast hosted via gfycat.
+previous ef263a3ba9ad8b71370e88526fbbb30a1b943109 README.md
+filename README.md
+	![Screencast (status to commit)](http://fat.gfycat.com/DarlingPopularAnnelid.gif)
+feb29873418e81420b2f637e78aac4120a6d2e1b 4 8 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427831241
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427831241
+committer-tz +0900
+summary Add screencasts
+previous faae678c012d4973a1142143caee0af56a48b44a README.md
+filename README.md
+	
+0afe2e33e99c7d21b61aaf820f912ab7a9f4b3fc 9 9 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1435603106
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1435603106
+committer-tz +0900
+summary Fix link
+previous 6110f5388706030d05d3c59610e6c7aff3b8a197 README.md
+filename README.md
+	*vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thinca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 13 10 3
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1435602229
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1435602229
+committer-tz +0900
+summary Update document
+previous 7208be42a15f897c9fd0730145e76e105b5edc83 README.md
+filename README.md
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 14 11
+	Core functions and features are powerd by [vim-jp/vital.vim][] and its external modules ([lambdalisue/vital-ArgumentParser][], [lambdalisue/vital-VCS-Git][]), mean that the fundemental functions are well tested in unittest level and vim-gita can focus to provide a user-friendly interface.
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 15 12
+	
+533602b38632fd0dbb3ed26709dd76c4872f8fac 13 13 1
+	vim-gita use a git repository which a current buffer belongs or a current working directory. You may notice it is quite useful when you temporary open a file which belongs to a different git repository or a buffer on non-file buffer such as 'help' or so on.
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 17 14 12
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 18 15
+	Additionally, vim-gita aggressively use cache mechanisms, mean that the response speed of your Vim might be improved, especially if you are using vim-fugitive or a raw git command (`system()`) to show a current status in
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 19 16
+	the statusline.
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 20 17
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 21 18
+	[tpope/vim-fugitive]:    https://github.com/tpope/vim-fugitive
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 22 19
+	[thinca/vim-vcs]:        https://github.com/thinca/vim-vcs
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 23 20
+	[Shougo/vim-vcs]:        https://github.com/Shougo/vim-vcs
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 24 21
+	[lambdalisue/vim-gista]: https://github.com/lambdalisue/vim-gista
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 25 22
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 26 23
+	[vim-jp/vital.vim]:                 https://github.com/vim-jp/vital.vim
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 27 24
+	[lambdalisue/vital-ArgumentParser]: https://github.com/lambdalisue/vital-ArgumentParser
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 28 25
+	[lambdalisue/vital-VCS-Git]:        https://github.com/lambdalisue/vital-VCS-Git
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 25 26 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427827771
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427829497
+committer-tz +0900
+summary Prepare to release a alpha version
+previous 1ce459f6c2f6bf208556654c2f37f72cfeb2cda7 README.md
+filename README.md
+	
+a474c0974cb880e804a1d5a302eb586a5e191215 27 27 1
+	
+bb015c1a9e8352831521f53f89bff34ce2b6cbe9 28 28 3
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1436337233
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1436337550
+committer-tz +0900
+summary Add .travis.yml
+previous 504320309c14101a3dbae243e014f56e83324447 README.md
+filename README.md
+	Build Status
+bb015c1a9e8352831521f53f89bff34ce2b6cbe9 29 29
+	-------------------------------------------------------------------------------
+bb015c1a9e8352831521f53f89bff34ce2b6cbe9 30 30
+	
+288e4a0307d8afe50393f60cc47a24f85d49a8d7 31 31 2
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1436337692
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1436337692
+committer-tz +0900
+summary Update README
+previous bb015c1a9e8352831521f53f89bff34ce2b6cbe9 README.md
+filename README.md
+	Name                                 | Description                         | Status
+288e4a0307d8afe50393f60cc47a24f85d49a8d7 32 32
+	-------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------
+d06779617099f66e32118697c650b51a98ab1bf9 33 33 1
+	vim-gita                             | This plugin                         | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
+288e4a0307d8afe50393f60cc47a24f85d49a8d7 34 34 3
+	[vim-jp/vital.vim][]                 | A core library                      | [![Build Status](https://travis-ci.org/vim-jp/vital.vim.svg?branch=master)](https://travis-ci.org/vim-jp/vital.vim)
+288e4a0307d8afe50393f60cc47a24f85d49a8d7 35 35
+	[lambdalisue/vital-ArgumentParser][] | A command argument library          | [![Build Status](https://travis-ci.org/lambdalisue/vital-ArgumentParser.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-ArgumentParser)
+288e4a0307d8afe50393f60cc47a24f85d49a8d7 36 36
+	[lambdalisue/vital-VCS-Git][]        | A core library for git manipulation | [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-VCS-Git)
+bb015c1a9e8352831521f53f89bff34ce2b6cbe9 37 37 2
+	
+bb015c1a9e8352831521f53f89bff34ce2b6cbe9 38 38
+	
+a474c0974cb880e804a1d5a302eb586a5e191215 28 39 2
+	ToDo
+a474c0974cb880e804a1d5a302eb586a5e191215 29 40
+	-------------------------------------------------------------------------------
+56a4b35380799746ac96c5f5f7a85a9458db8f37 41 41 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1437498891
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1437498891
+committer-tz +0900
+summary Move TODO into a wiki
+previous b2b769c08fbf2282f749cd4971b86098d927cd89 README.md
+filename README.md
+	https://github.com/lambdalisue/vim-gita/wiki/TODO
+533602b38632fd0dbb3ed26709dd76c4872f8fac 61 42 2
+	
+533602b38632fd0dbb3ed26709dd76c4872f8fac 62 43
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 26 44 1
+	Install
+d4d57165193b759ade35303da48d4ce295e0f19f 14 45 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426360190
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426360190
+committer-tz +0900
+summary Add docs
+previous 107f0fa601d46b998c92d4e5770f0559d527e3f8 README.md
+filename README.md
+	-------------------------------------------------------------------------------
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 28 46 1
+	The repository follow a standard directory structure thus you can use [gmarik/Vundle.vim], [Shougo/neobundle.vim], or other vim plugin manager to install vim-gita like:
+d4d57165193b759ade35303da48d4ce295e0f19f 16 47 10
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 17 48
+	```vim
+d4d57165193b759ade35303da48d4ce295e0f19f 18 49
+	" Vundle.vim
+d4d57165193b759ade35303da48d4ce295e0f19f 19 50
+	Plugin 'lambdalisue/vim-gita'
+d4d57165193b759ade35303da48d4ce295e0f19f 20 51
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 21 52
+	" neobundle.vim
+d4d57165193b759ade35303da48d4ce295e0f19f 22 53
+	NeoBundle 'lambdalisue/vim-gita'
+d4d57165193b759ade35303da48d4ce295e0f19f 23 54
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 24 55
+	" neobundle.vim (Lazy)
+d4d57165193b759ade35303da48d4ce295e0f19f 25 56
+	NeoBundleLazy 'lambdalisue/vim-gita', {
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 39 57 3
+	        \ 'autoload': {
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 40 58
+	        \   'commands': ['Gita'],
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 41 59
+	        \}}
+d4d57165193b759ade35303da48d4ce295e0f19f 30 60 2
+	```
+d4d57165193b759ade35303da48d4ce295e0f19f 31 61
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 44 62 1
+	If you are not using any vim plugin manager, you can copy the repository to your $VIM directory to enable the plugin.
+d4d57165193b759ade35303da48d4ce295e0f19f 34 63 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 50 64 2
+	[Shougo/neobundle.vim]: https://github.com/Shougo/neobundle.vim
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 51 65
+	[gmarik/Vundle.vim]:    https://github.com/gmarik/Vundle.vim
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 113 66 1
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 116 67 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 54 68 2
+	Usage
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 55 69
+	-------------------------------------------------------------------------------
+9e5134aba72542bd542671633c89710aeb48d885 156 70 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427832234
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427832234
+committer-tz +0900
+summary Fix conflict and improve doc
+previous 37c933721ee32d9b85402c9b0abebe845a71ad95 README.md
+filename README.md
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 57 71 1
+	First of all, all commands which vim-gita provides start from `:Gita` and all commands (including `:Gita`) provide `--help/-h` option to show a help message of the command. Like below
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 108 72 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426378745
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426378745
+committer-tz +0900
+summary Add screencast or so o
+previous 05ec4599491e5f48d4546b9ea55a088faba08ac7 README.md
+filename README.md
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 59 73 3
+	```
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 60 74
+	:Gita -h
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 61 75
+	:Gita[!] [action] [--help]
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 110 76 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 63 77 1
+	An awesome git handling plugin for Vim
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 163 78 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 65 79 4
+	Positional arguments:
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 66 80
+	action      An action of the Gita or git command.
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 67 81
+		If a non Gita command is specified or a command is called...
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 68 82
+		it call a raw git command instead of a Gita command.
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 165 83 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 70 84 3
+	Optional arguments:
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 71 85
+	-h, --help  show this help
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 72 86
+	```
+5fd9effa8958d7959172e4d29bea9d6d85644d91 173 87 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427912750
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427912750
+committer-tz +0900
+summary Update README
+previous 39b69542a8774e12da7b8b36a293dc93206b5909 README.md
+filename README.md
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 74 88 1
+	To stage/commit changes, follow the steps below:
+640272abb89547c7263b7fc9f72b0cef957da352 176 89 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427995785
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427995785
+committer-tz +0900
+summary Add YouTube
+previous ed12c0babf37d45dcb2bffa658f7430790bed7c6 README.md
+filename README.md
+	
+533602b38632fd0dbb3ed26709dd76c4872f8fac 109 90 1
+		1. Hit `:Gita status` to open a `gita:status` window
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 77 91 4
+		2. Hit `--` to stage/unstage file(s) under the cursor
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 78 92
+		3. Hit `cc` to swithc to a `gita:commit` window
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 79 93
+		4. Write a commit message and hit `:wq`
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 80 94
+		5. Answer `y` to commit changes
+5fd9effa8958d7959172e4d29bea9d6d85644d91 176 95 1
+	
+5fd9effa8958d7959172e4d29bea9d6d85644d91 178 96 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 83 97 1
+	To list files changed from a master (like 'Files changed' in GitHub PR), follow the steps below:
+5fd9effa8958d7959172e4d29bea9d6d85644d91 180 98 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 85 99 1
+		1. Hit `:Gita diff-ls` to open a `gita:diff-ls` window
+533602b38632fd0dbb3ed26709dd76c4872f8fac 119 100 1
+		2. Hit up arrow to select `origin/HEAD...` to list files changed from a common ancestor of default branch of the remote
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 87 101 1
+		3. Hit `ee`, `oo` or whatever to open the file
+5fd9effa8958d7959172e4d29bea9d6d85644d91 182 102 1
+	
+5fd9effa8958d7959172e4d29bea9d6d85644d91 184 103 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 90 104 1
+	To solve conflicts in merge mode, follow the steps below:
+5fd9effa8958d7959172e4d29bea9d6d85644d91 186 105 1
+	
+533602b38632fd0dbb3ed26709dd76c4872f8fac 125 106 1
+		1. Hit `:Gita status` to open a `gita:status` window
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 93 107 5
+		2. Hit `ss`, `sS`, or 'SS' to open `vimdiff`
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 94 108
+		3. Compare difference and write a correct version
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 95 109
+		4. Hit `:Gita add` on a MERGE buffer
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 96 110
+		5. Hit `:Gita commit` to open a `gita:commit` window
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 97 111
+		6. Write a commit message and hit `:wq` to commit the changes
+5fd9effa8958d7959172e4d29bea9d6d85644d91 188 112 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 99 113 1
+	WIP
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 166 114 3
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 167 115
+	### Statusline
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 168 116
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 103 117 2
+	vim-gita provides a statusline component (`gita#statusline#format()`) which cache a current status aggressively to enhance the performance. It would improve the performance a lot if you are using `system()` to call a raw git command currently.
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 104 118
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 171 119 17
+	Use `gita#statusline#preset()` to get a preset or `gita#statusline#format()` to create your own component.
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 172 120
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 173 121
+	```vim
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 174 122
+	" Example usage of gita#statusline#preset()
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 175 123
+	echo gita#statusline#preset('branch')
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 176 124
+	" vim-gita/master <> origin/master
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 177 125
+	echo gita#statusline#preset('status')
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 178 126
+	" !5 +2 "4 *4
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 179 127
+	echo gita#statusline#preset('traffic')
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 180 128
+	" <5 >4
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 181 129
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 182 130
+	" Example usage of gita#statusline#format()
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 183 131
+	echo gita#statusline#format('%ln/%lb # %rn/%rb')
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 184 132
+	" vim-gita/master # origin/master
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 185 133
+	```
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 186 134
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 187 135
+	The following is my tabline setting via [itchyny/lightline.vim](https://github.com/itchyny/lightline.vim)
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 113 136 52
+	
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 114 137
+	```vim
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 115 138
+	let g:lightline = {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 116 139
+	      \ 'colorscheme': 'hybrid',
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 117 140
+	      \ 'active': {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 118 141
+	      \   'left': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 119 142
+	      \     [ 'mode', 'paste' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 120 143
+	      \     [ 'filename' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 121 144
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 122 145
+	      \   'right': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 123 146
+	      \     [ 'lineinfo' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 124 147
+	      \     [ 'fileformat', 'fileencoding', 'filetype' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 125 148
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 126 149
+	      \ },
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 127 150
+	      \ 'inactive': {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 128 151
+	      \   'left': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 129 152
+	      \     [ 'filename' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 130 153
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 131 154
+	      \   'right': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 132 155
+	      \     [ 'fileformat', 'fileencoding', 'filetype' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 133 156
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 134 157
+	      \ },
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 135 158
+	      \ 'tabline': {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 136 159
+	      \   'left': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 137 160
+	      \     [ 'tabs' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 138 161
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 139 162
+	      \   'right': [
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 140 163
+	      \     [ 'close' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 141 164
+	      \     [ 'git_branch', 'git_traffic', 'git_status', 'cwd' ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 142 165
+	      \   ],
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 143 166
+	      \ },
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 144 167
+	      \ 'component_visible_condition': {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 145 168
+	      \   'lineinfo': '(winwidth(0) >= 70)',
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 146 169
+	      \ },
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 147 170
+	      \ 'component_function': {
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 148 171
+	      \   'git_branch': 'g:lightline.my.git_branch',
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 149 172
+	      \   'git_traffic': 'g:lightline.my.git_traffic',
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 150 173
+	      \   'git_status': 'g:lightline.my.git_status',
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 151 174
+	      \ },
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 152 175
+	      \}
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 153 176
+	let g:lightline.my = {}
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 154 177
+	function! g:lightline.my.git_branch() " {{{
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 155 178
+	  return winwidth(0) > 70 ? gita#statusline#preset('branch') : ''
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 156 179
+	endfunction " }}}
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 157 180
+	function! g:lightline.my.git_traffic() " {{{
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 158 181
+	  return winwidth(0) > 70 ? gita#statusline#preset('traffic') : ''
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 159 182
+	endfunction " }}}
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 160 183
+	function! g:lightline.my.git_status() " {{{
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 161 184
+	  return winwidth(0) > 70 ? gita#statusline#preset('status') : ''
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 162 185
+	endfunction " }}}
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 163 186
+	```
+f0da8c0930b4c6a3afd50626fb49927b8dd287bd 164 187
+	
+faae678c012d4973a1142143caee0af56a48b44a 240 188 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1427829912
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1427829912
+committer-tz +0900
+summary Update documents
+previous 556ad06dd73305a24d90a9057d6d7bf548f4cf2b README.md
+filename README.md
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 255 189 3
+	Documents
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 256 190
+	-------------------------------------------------------------------------------
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 257 191
+	
+533602b38632fd0dbb3ed26709dd76c4872f8fac 211 192 1
+	WIP
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 260 193 1
+	
+66ae19ef3fa60341cb7133472b050d3fe271a7b2 204 194 1
+	
+556ad06dd73305a24d90a9057d6d7bf548f4cf2b 278 195 1
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 100 196 23
+	License
+d4d57165193b759ade35303da48d4ce295e0f19f 101 197
+	-------------------------------------------------------------------------------
+d4d57165193b759ade35303da48d4ce295e0f19f 102 198
+	The MIT License (MIT)
+d4d57165193b759ade35303da48d4ce295e0f19f 103 199
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 104 200
+	Copyright (c) 2015 Alisue, hashnote.net
+d4d57165193b759ade35303da48d4ce295e0f19f 105 201
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 106 202
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+d4d57165193b759ade35303da48d4ce295e0f19f 107 203
+	of this software and associated documentation files (the "Software"), to deal
+d4d57165193b759ade35303da48d4ce295e0f19f 108 204
+	in the Software without restriction, including without limitation the rights
+d4d57165193b759ade35303da48d4ce295e0f19f 109 205
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+d4d57165193b759ade35303da48d4ce295e0f19f 110 206
+	copies of the Software, and to permit persons to whom the Software is
+d4d57165193b759ade35303da48d4ce295e0f19f 111 207
+	furnished to do so, subject to the following conditions:
+d4d57165193b759ade35303da48d4ce295e0f19f 112 208
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 113 209
+	The above copyright notice and this permission notice shall be included in
+d4d57165193b759ade35303da48d4ce295e0f19f 114 210
+	all copies or substantial portions of the Software.
+d4d57165193b759ade35303da48d4ce295e0f19f 115 211
+	
+d4d57165193b759ade35303da48d4ce295e0f19f 116 212
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+d4d57165193b759ade35303da48d4ce295e0f19f 117 213
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+d4d57165193b759ade35303da48d4ce295e0f19f 118 214
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+d4d57165193b759ade35303da48d4ce295e0f19f 119 215
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+d4d57165193b759ade35303da48d4ce295e0f19f 120 216
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+d4d57165193b759ade35303da48d4ce295e0f19f 121 217
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+d4d57165193b759ade35303da48d4ce295e0f19f 122 218
+	THE SOFTWARE.
+

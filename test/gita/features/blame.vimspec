@@ -1,0 +1,53 @@
+let s:MOCKED_STDOUT = readfile(g:P.join('test', 'misc', 'git_blame_README_md'))
+
+Describe gita#features#blame
+  Before
+    new
+    let gita = gita#get()
+    let gita.git.cache.repository.clear()
+    let operations_saved = deepcopy(gita.operations)
+
+    function! gita.operations.blame(...) abort
+      call add(self._previous_args, a:000)
+      " Note:
+      "   --dry-run return 1 always
+      return {
+            \ 'status': 1,
+            \ 'stdout': s:MOCKED_STDOUT,
+            \}
+    endfunction
+    let gita.operations._previous_args = []
+    let sfuncs = g:S.sfuncs('autoload/gita/features/blame.vim')
+  End
+
+  After
+    let gita.operations = operations_saved
+    call WipeoutAll()
+  End
+
+  Context #exec([{options}, {config})
+    It should call gita.operations.blame internally
+      call gita#features#blame#exec({
+            \ 'file': 'README.md',
+            \ 'commit': 'HEAD',
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ '--': ['README.md'],
+            \ 'commit': 'HEAD',
+            \}, {}])
+    End
+
+    It should remove unknown options internally
+      call gita#features#blame#exec({
+            \ 'commit': 'HEAD',
+            \ 'unknown_option': 1,
+            \})
+      Assert Equals(gita.operations._previous_args, [{
+            \ 'commit': 'HEAD',
+            \}, {}])
+    End
+  End
+End
+
+
+

@@ -22,8 +22,8 @@ function! s:actions.edit(candidates, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
+  let commit = get(a:options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
     if empty(commit)
       let commit = candidate.is_unstaged
             \ ? 'INDEX'
@@ -31,16 +31,16 @@ function! s:actions.open(candidates, options) abort " {{{
     endif
     call gita#utils#anchor#focus()
     call gita#features#file#show({
-          \ 'commit': commit,
           \ 'file': candidate.path,
+          \ 'commit': get(candidate, 'commit', commit),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
   endfor
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
+  let commit = get(a:options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
     if empty(commit)
       let commit = candidate.is_unstaged
             \ ? 'INDEX'
@@ -49,7 +49,7 @@ function! s:actions.diff(candidates, options) abort " {{{
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
           \ '--': [candidate.path],
-          \ 'commit': commit,
+          \ 'commit':   get(candidate, 'commit', commit),
           \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),
