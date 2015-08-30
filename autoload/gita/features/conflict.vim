@@ -231,6 +231,7 @@ function! s:solve3(...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
 
   " REMOTE
+  execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#open(REMOTE_bufname, {
         \ 'group': 'conflict2_remote',
         \ 'range': get(options, 'range', 'tabpage'),
