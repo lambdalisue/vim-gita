@@ -380,6 +380,10 @@ function! gita#features#blame#show(...) abort " {{{
   setlocal nolist
   setlocal nonumber
   setlocal foldcolumn=0
+  nnoremap <buffer><silent> <Plug>(gita-blame-jump-in)  :<C-u>call gita#action#exec('jump_in')<CR>
+  nnoremap <buffer><silent> <Plug>(gita-blame-jump-out) :<C-u>call gita#action#exec('jump_out')<CR>
+  nmap <buffer> <CR> <Plug>(gita-blame-jump-in)
+  nmap <buffer> <BS> <Plug>(gita-blame-jump-out)
   call gita#meta#extend({
         \ 'filename': abspath,
         \ 'commit': options.commit,
