@@ -15,16 +15,17 @@ let s:HEADLINE_PATTERN = '\v^([0-9a-fA-F]{40})\s(\d+)\s(\d+)%(\s(\d+))?$'
 let s:INFOLINE_PATTERN = '\v^([^ 	]+)\s(.*)$'
 let s:CONTENTS_PATTERN = '\v^\t\zs(.*)$'
 
-function! s:_vital_loaded(V) dict abort
+function! s:_vital_loaded(V) abort
   let s:D = a:V.import('Data.Dict')
-  let s:const = {}
-  let s:const.HEADLINE_PATTERN = s:HEADLINE_PATTERN
-  let s:const.INFOLINE_PATTERN = s:INFOLINE_PATTERN
-  let s:const.CONTENTS_PATTERN = s:CONTENTS_PATTERN
-  lockvar s:const
-  call extend(self, s:const)
 endfunction
-
+function! s:_vital_created(module) abort
+  let const = {}
+  let const.HEADLINE_PATTERN = s:HEADLINE_PATTERN
+  let const.INFOLINE_PATTERN = s:INFOLINE_PATTERN
+  let const.CONTENTS_PATTERN = s:CONTENTS_PATTERN
+  lockvar const
+  call extend(a:module, const)
+endfunction
 
 function! s:parse_headline(line) abort " {{{
   let m = matchlist(a:line, s:HEADLINE_PATTERN)

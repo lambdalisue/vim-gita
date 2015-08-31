@@ -129,6 +129,12 @@ function! s:solve2(...) abort " {{{
   augroup END
   diffthis
   diffupdate
+
+  " move cursor
+  let curpos = gita#compat#getcurpos()
+  let curpos[1] = get(options, 'line', curpos[1])
+  let curpos[2] = get(options, 'column', curpos[2])
+  keepjumps call setpos('.', curpos)
 endfunction " }}}
 function! s:solve3(...) abort " {{{
   let options = get(a:000, 0, {})
@@ -293,6 +299,12 @@ function! s:solve3(...) abort " {{{
 
   wincmd =
   diffupdate
+
+  " move cursor
+  let curpos = gita#compat#getcurpos()
+  let curpos[1] = get(options, 'line', curpos[1])
+  let curpos[2] = get(options, 'column', curpos[2])
+  keepjumps call setpos('.', curpos)
 endfunction " }}}
 
 function! gita#features#conflict#show(...) abort " {{{

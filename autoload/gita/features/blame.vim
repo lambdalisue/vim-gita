@@ -4,16 +4,21 @@ set cpo&vim
 let s:L = gita#import('Data.List')
 let s:D = gita#import('Data.Dict')
 let s:S = gita#import('Data.String')
+let s:P = gita#import('System.Filepath')
 let s:B = gita#import('VCS.Git.BlameParser')
 let s:A = gita#import('ArgumentParser')
 
 
 let s:const = {}
-let s:const.filetype = 'gita-blame'
+let s:const.filetype = 'gita-blame-navi'
 
-sign define GitaHorizontalSign
+highlight GitaPseudoSeparatorDefault
+      \ term=underline
+      \ cterm=underline ctermfg=8
+      \ gui=underline guifg=#363636
+sign define GitaPseudoSeparatorSign
       \ texthl=SignColumn
-      \ linehl=GitaHorizontal
+      \ linehl=GitaPseudoSeparator
 
 
 function! s:complete_commit(arglead, cmdline, cursorpos, ...) abort " {{{
@@ -47,79 +52,21 @@ call s:parser.add_argument(
       \   'buffer, the current buffer will be used.',
       \ ],
       \)
-
 let s:actions = {}
-function! s:actions.jump_in(candidates, options) abort " {{{
-  let history = s:get_history()
-  let current_commit = gita#meta#get('commit')
-  let current_filename = gita#meta#get('filename')
+function! s:actions.blame(candidates, options) abort " {{{
   for candidate in a:candidates
-    if candidate.revision ==# current_commit
-      let previous = get(candidate, 'previous', '')
-      if empty(previous)
-        call gita#utils#prompt#warn(
-              \ 'This is a boundary commit',
-              \)
-        continue
-      endif
-      let [revision, filename] = split(previous)
-    else
-      let revision = candidate.revision
-      let filename = candidate.filename
-    endif
-    call s:L.push(history, [
-          \ current_commit,
-          \ current_filename,
-          \ gita#compat#getcurpos(),
-          \])
     call gita#features#blame#show({
-          \ 'file': filename,
-          \ 'commit': revision,
+          \ 'commit':  get(candidate, 'commit'),
+          \ 'file':    get(candidate, 'path'),
+          \ 'line':    get(candidate, 'line'),
+          \ 'column':  get(candidate, 'column'),
+          \ 'range':   get(a:options, 'range'),
+          \ 'opener':  get(a:options, 'opener'),
+          \ 'opener2': get(a:options, 'opener2'),
           \})
-    call gita#features#blame#goto(candidate.linenum.original)
   endfor
-endfunction " }}}
-function! s:actions.jump_out(candidates, options) abort " {{{
-  let history = s:get_history()
-  if empty(history)
-    call gita#utils#prompt#warn(
-          \ 'This is a boundary commit',
-          \)
-    return
-  endif
-  let [revision, filename, linenum] = s:L.pop(history)
-  call gita#features#blame#show({
-        \ 'file': filename,
-        \ 'commit': revision,
-        \})
-  call setpos('.', linenum)
 endfunction " }}}
 
-function! s:create_chunks(blameobj) abort " {{{
-  let previous_revision = ''
-  let chunks = []
-  for lineinfo in a:blameobj.lineinfos
-    if previous_revision !=# lineinfo.revision
-      let previous_revision = lineinfo.revision
-      let chunk = extend(
-            \ deepcopy(lineinfo),
-            \ deepcopy(a:blameobj.revisions[previous_revision]),
-            \)
-      " add forward/backward link
-      if !empty(chunks)
-        let chunks[-1].next = chunk
-        let chunk.previous = chunks[-1]
-      endif
-      " overwrite contents
-      let chunk.contents = [lineinfo.contents]
-      call add(chunks, chunk)
-    else
-      let chunk = chunks[-1]
-      call add(chunk.contents, lineinfo.contents)
-    endif
-  endfor
-  return chunks
-endfunction " }}}
 function! s:format_chunk(chunk, ...) abort " {{{
   let options = extend({
         \ 'width': winwidth(0),
@@ -156,130 +103,203 @@ function! s:format_chunk(chunk, ...) abort " {{{
         \])
   return formatted
 endfunction " }}}
-function! s:extend_blameobj(blameobj) abort " {{{
-  let chunks = s:create_chunks(a:blameobj)
+function! s:create_chunks(blameobj) abort " {{{
+  let previous_revision = ''
+  let chunks = []
+  for lineinfo in a:blameobj.lineinfos
+    if previous_revision !=# lineinfo.revision
+      let previous_revision = lineinfo.revision
+      let chunk = extend(
+            \ deepcopy(lineinfo),
+            \ deepcopy(a:blameobj.revisions[previous_revision]),
+            \)
+      " add forward/backward links
+      if !empty(chunks)
+        let chunks[-1].next_chunk = chunk
+        let chunk.previous_chunk = chunks[-1]
+      endif
+      " overwrite contents
+      let chunk.contents = [lineinfo.contents]
+      call add(chunks, chunk)
+    else
+      " extend contents of last chunk
+      let chunk = chunks[-1]
+      call add(chunk.contents, lineinfo.contents)
+    endif
+  endfor
+  return chunks
+endfunction " }}}
+function! s:create_chunkobj(chunks) abort " {{{
   let linechunks = []
   let linenumref = []
   let NAVI = []
   let VIEW = []
   let HORI = []
+  let pseudo_separators = []
   let linenum = 1
-  for chunk in chunks
+  for chunk in a:chunks
     let formatted_chunk = s:format_chunk(chunk, {
           \ 'width': 47,
           \ 'wrap': len(chunk.contents) > 2,
           \})
-    for i in range(max([2, len(chunk.contents)]))
+    for i in range(max([g:gita#features#blame#enable_pseudo_separator ? 2 : 1, len(chunk.contents)]))
       if i < chunk.nlines
         call add(linenumref, linenum)
       endif
       call add(NAVI, get(formatted_chunk, i, ''))
       call add(VIEW, get(chunk.contents, i, ''))
-      call add(linechunks, chunk)
+      call add(linechunks, extend(deepcopy(chunk), {
+            \ 'linenum': {
+            \   'original': linenum - (chunk.linenum.final - chunk.linenum.original),
+            \   'final':    linenum,
+            \ },
+            \}),
+            \)
       let linenum += 1
     endfor
-    " Add an empty line for sign
-    if g:gita#features#blame#enable_horizontal_signs
+    " Add a pseudo line to separate chunks
+    if g:gita#features#blame#enable_pseudo_separator
       call add(NAVI, '')
       call add(VIEW, '')
-      call add(HORI, len(NAVI))
       call add(linechunks, chunk)
+      call add(pseudo_separators, len(NAVI))
       let linenum += 1
     endif
   endfor
-  let blameobj = copy(a:blameobj)
-  let blameobj.linechunks = linechunks
-  let blameobj.linenumref = linenumref
-  if g:gita#features#blame#enable_horizontal_signs
-    let blameobj.horizontal_signs = HORI[:-2]
-    let blameobj.contents = {
+  let chunkobj = {
+        \ 'linechunks': linechunks,
+        \ 'linenumref': linenumref,
+        \}
+  if g:gita#features#blame#enable_pseudo_separator
+    let chunkobj.pseudo_separators = pseudo_separators[:-2]
+    let chunkobj.contents = {
           \ 'NAVI': NAVI[:-2],
           \ 'VIEW': VIEW[:-2],
           \}
   else
-    let blameobj.contents = {
+    let chunkobj.pseudo_separators = []
+    let chunkobj.contents = {
           \ 'NAVI': NAVI,
           \ 'VIEW': VIEW,
           \}
   endif
-  return blameobj
+  return chunkobj
 endfunction "}}}
+function! s:get_blameobj() abort " {{{
+  return gita#meta#get('blame#blameobj', {})
+endfunction " }}}
+function! s:get_chunkobj() abort " {{{
+  return gita#meta#get('blame#chunkobj', {})
+endfunction " }}}
+function! s:get_linechunks() abort " {{{
+  let chunkobj = s:get_chunkobj()
+  return get(chunkobj, 'linechunks', [])
+endfunction " }}}
+function! s:get_linenumref() abort " {{{
+  let chunkobj = s:get_chunkobj()
+  return get(chunkobj, 'linenumref', [])
+endfunction " }}}
+function! s:get_linechunk(...) abort " {{{
+  let linenum = get(a:000, 0, line('.'))
+  let linechunks = s:get_linechunks()
+  return get(linechunks, linenum - 1, {})
+endfunction " }}}
+function! s:get_next_chunk(...) abort " {{{
+  let linechunk = call('s:get_linechunk': a:000)
+  return get(linechunk, 'next_chunk', {})
+endfunction " }}}
+function! s:get_previous_chunk(...) abort " {{{
+  let linechunk = call('s:get_linechunk': a:000)
+  return get(linechunk, 'previous_chunk', {})
+endfunction " }}}
+function! s:get_actual_linenum(pseudo_linenum) abort " {{{
+  let linechunk = s:get_linechunk(a:pseudo_linenum)
+  return get(get(linechunk, 'linenum', {}), 'final', -1)
+endfunction " }}}
+function! s:get_pseudo_linenum(actual_linenum) abort " {{{
+  let linenumref = s:get_linenumref()
+  return get(linenumref, a:actual_linenum - 1, a:actual_linenum)
+endfunction " }}}
 function! s:get_candidates(start, end) abort " {{{
-  let blameobj = gita#meta#get('blame#blameobj', [])
-  let linechunks = blameobj.linechunks[a:start : a:end]
+  let current_commit   = gita#meta#get('commit', '')
+  let current_filename = gita#meta#get('filename', '')
+  let linechunks = s:get_linechunks()
   let candidates = []
-  for linechunk in linechunks
-    call add(candidates, extend(
-          \ gita#utils#status#virtual(linechunk.filename), {
-          \   'commit': linechunk.revision,
-          \}))
+  for linechunk in linechunks[a:start : a:end]
+    if linechunk.revision ==# current_commit
+      let previous = get(linechunk, 'previous', '')
+      if empty(previous)
+        continue
+      endif
+      let [commit, filename] = split(previous)
+      let line = linechunk.linenum.original
+    else
+      let commit   = get(linechunk, 'revision', current_commit)
+      let filename = get(linechunk, 'filename', current_filename)
+      let line = linechunk.linenum.final
+    endif
+    let candidate = gita#utils#status#virtual(filename)
+    let candidate = extend(candidate, {
+          \ 'commit': commit,
+          \ 'line': line,
+          \})
+    call add(candidates, candidate)
   endfor
   return candidates
 endfunction " }}}
-function! s:get_history() abort " {{{
-  let w:_gita_blame_history = get(w:, '_gita_blame_history', [])
-  return w:_gita_blame_history
+function! s:display_pseudo_separators() abort " {{{
+  let bufnum = bufnr('%')
+  let chunkobj = s:get_chunkobj()
+  " remove all signs defined in the buffer
+  execute printf('sign unplace * buffer=%d', bufnum)
+  " place all signs to indicate the chunks
+  for linenum in chunkobj.pseudo_separators
+    execute printf(
+          \ 'sign place %d line=%d name=GitaPseudoSeparatorSign buffer=%s',
+          \ linenum, linenum, bufnum,
+          \)
+  endfor
+endfunction " }}}
+function! s:view_ac_BufWinEnter() abort " {{{
+  let abspath = gita#meta#get('filename')
+  let commit = gita#meta#get('commit')
+  let blameobj = s:get_blameobj()
+  let chunkobj = s:get_chunkobj()
+  try
+    let saved_eventignore = &eventignore
+    set eventignore=BufWinEnter
+    keepjumps call gita#features#blame#navi_open(abspath, commit, blameobj, chunkobj)
+    let chunkobj.bufnums.NAVI_bufnum = bufnr('%')
+    keepjumps wincmd p
+  finally
+    let &eventignore = saved_eventignore
+  endtry
+  call gita#features#blame#goto(s:get_actual_linenum(line('.')))
+endfunction " }}}
+function! s:navi_ac_BufWinEnter() abort " {{{
+  let abspath = gita#meta#get('filename')
+  let commit = gita#meta#get('commit')
+  let blameobj = s:get_blameobj()
+  let chunkobj = s:get_chunkobj()
+  try
+    let saved_eventignore = &eventignore
+    set eventignore=BufWinEnter
+    keepjumps call gita#features#blame#view_open(abspath, commit, blameobj, chunkobj)
+    let chunkobj.bufnums.VIEW_bufnum = bufnr('%')
+    keepjumps wincmd p
+  finally
+    let &eventignore = saved_eventignore
+  endtry
+  call gita#features#blame#goto(s:get_actual_linenum(line('.')))
 endfunction " }}}
 
-function! gita#features#blame#goto(linenum, ...) abort " {{{
-  let options = extend({
-        \ 'reverse': 0,
-        \ 'move': 1,
-        \}, get(a:000, 0, {}))
-  let blameobj = gita#meta#get('blame#blameobj', {})
-  if options.reverse
-    " blame linenum to original linenum
-    let linechunks = get(blameobj, 'linechunks', [])
-    if !empty(linechunks)
-      let linechunk = get(linechunks, a:linenum - 1, a:linenum)
-      let linenum = linechunk.linenum.final
-    else
-      let linenum = a:linenum
-    endif
-  else
-    " original linenum to blame linenum
-    let linenumref = get(blameobj, 'linenumref', [])
-    if !empty(linenumref)
-      let linenum = get(linenumref, a:linenum - 1, a:linenum)
-    else
-      let linenum = a:linenum
-    endif
-  endif
-  if options.move
-    call setpos('.', [0, linenum, 0, 0])
-  endif
-  return linenum
-endfunction " }}}
-function! gita#features#blame#get_actual_linenum(linenum) abort " {{{
-  let blameobj = gita#meta#get('blame#blameobj', {})
-  let linechunks = get(blameobj, 'linechunks', [])
-  let chunk = get(linechunks, a:linenum - 1, {})
-  return get(get(chunk, 'linenum', {}), 'final', -1)
-endfunction " }}}
-function! gita#features#blame#get_pseudo_linenum(linenum) abort " {{{
-  let blameobj = gita#meta#get('blame#blameobj', {})
-  let linenumref = get(blameobj, 'linenumref', [])
-  return get(linenumref, a:linenum - 1, -1)
-endfunction " }}}
-function! gita#features#blame#get_next_chunk(linenum) abort " {{{
-  let blameobj = gita#meta#get('blame#blameobj', {})
-  let linechunks = get(blameobj, 'linechunks', [])
-  let chunk = get(linechunks, a:linenum - 1, {})
-  return get(chunk, 'next', {})
-endfunction " }}}
-function! gita#features#blame#get_previous_chunk(linenum) abort " {{{
-  let blameobj = gita#meta#get('blame#blameobj', {})
-  let linechunks = get(blameobj, 'linechunks', [])
-  let chunk = get(linechunks, a:linenum - 1, {})
-  return get(chunk, 'previous', {})
-endfunction " }}}
 function! gita#features#blame#exec(...) abort " {{{
   let gita = gita#get()
-  let options = deepcopy(get(a:000, 0, {}))
-  let config = get(a:000, 1, {})
   if gita.fail_on_disabled()
     return { 'status': -1 }
   endif
+  let options = deepcopy(get(a:000, 0, {}))
+  let config  = get(a:000, 1, {})
 
   " validate option
   if g:gita#develop
@@ -292,7 +312,9 @@ function! gita#features#blame#exec(...) abort " {{{
   endif
 
   if has_key(options, 'file')
-    let options['--'] = [gita#utils#ensure_unixpath(options.file)]
+    let options['--'] = [
+          \ gita#utils#ensure_unixpath(gita#utils#expand(options.file))
+          \]
   endif
   if has_key(options, 'commit')
     let options.commit = substitute(options.commit, 'INDEX', '', 'g')
@@ -304,147 +326,236 @@ function! gita#features#blame#exec(...) abort " {{{
         \])
   return gita.operations.blame(options, config)
 endfunction " }}}
+function! gita#features#blame#exec_cached(...) abort " {{{
+  let gita = gita#get()
+  let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let cache_name = s:P.join('blame', string(s:D.pick(options, [
+        \ 'file',
+        \ 'commit',
+        \ 'porcelain',
+        \])))
+  let cached_status = gita.git.is_updated('index', 'blame') || get(config, 'force_update', 0)
+        \ ? {}
+        \ : gita.git.cache.repository.get(cache_name, {})
+  if !empty(cached_status)
+    return cached_status
+  endif
+  let result = gita#features#blame#exec(options, config)
+  if result.status != get(config, 'success_status', 0)
+    return result
+  endif
+  call gita.git.cache.repository.set(cache_name, result)
+  return result
+endfunction " }}}
 function! gita#features#blame#show(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
-  let options.file = get(options, 'file', '%')
+  let options.file   = get(options, 'file', '%')
   let options.commit = get(options, 'commit', 'HEAD')
   let options.porcelain = 1
-  let result = gita#features#blame#exec(options, {
+  let result = gita#features#blame#exec_cached(options, {
         \ 'echo': 'fail',
         \})
   if result.status != 0
     return
   endif
-  let blameobj = s:extend_blameobj(
-        \ s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug }),
-        \)
+  let blameobj = s:B.parse(result.stdout, { 'fail_silently': !g:gita#debug })
+  let chunkobj = s:create_chunkobj(s:create_chunks(blameobj))
   let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
-  let relpath = gita.git.get_relative_path(abspath)
-
-  " VIEW
-  let VIEW_bufname = gita#utils#buffer#bufname(
-        \ 'BLAME',
-        \ options.commit[:7],
-        \ relpath,
-        \)
-  silent let result = gita#utils#buffer#open(VIEW_bufname, {
-        \ 'group': 'blame_view',
-        \ 'range': get(options, 'range', 'tabpage'),
-        \ 'opener': get(options, 'opener', 'tabedit'),
-        \})
-  let VIEW_bufnum = result.bufnum
-  setlocal buftype=nofile noswapfile
-  setlocal nomodifiable readonly
-  setlocal scrollbind cursorbind
-  setlocal scrollopt=ver
-  setlocal nowrap
-  setlocal nofoldenable
-  setlocal foldcolumn=0
-  setlocal textwidth=0
-  setlocal colorcolumn=0
-  call gita#meta#extend({
-        \ 'filename': abspath,
-        \ 'commit': options.commit,
-        \ 'blame#blameobj': blameobj,
-        \})
-  call gita#utils#buffer#update(blameobj.contents.VIEW)
-  execute printf('sign unplace * buffer=%d', VIEW_bufnum)
-  for linenum in blameobj.horizontal_signs
-    execute printf(
-          \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%d',
-          \ linenum, linenum, VIEW_bufnum,
+  let commit  = options.commit
+  try
+    let saved_eventignore = &eventignore
+    set eventignore=BufWinEnter
+    call gita#features#blame#view_open(
+          \ abspath, commit, blameobj, chunkobj, extend(deepcopy(options), {
+          \  'range':  get(options, 'range'),
+          \  'opener': get(options, 'opener'),
+          \ }),
           \)
-  endfor
-  execute printf("setlocal filetype=%s", &l:filetype)
-
-  " NAVI
-  let NAVI_bufname = gita#utils#buffer#bufname(
-        \ 'BLAME',
-        \ options.commit[:7],
-        \ 'NAVI',
-        \ relpath,
-        \)
-  silent let result = gita#utils#buffer#open(NAVI_bufname, {
-        \ 'group': 'blame_navi',
-        \ 'range': get(options, 'range', 'tabpage'),
-        \ 'opener': get(options, 'opener2', 'topleft 50 vsplit'),
-        \})
-  let NAVI_bufnum = result.bufnum
-  setlocal buftype=nofile noswapfile
-  setlocal nomodifiable readonly
-  setlocal scrollbind cursorbind
-  setlocal scrollopt=ver
-  setlocal nowrap
-  setlocal nofoldenable
-  setlocal nolist
-  setlocal nonumber
-  setlocal foldcolumn=0
-  nnoremap <buffer><silent> <Plug>(gita-blame-jump-in)  :<C-u>call gita#action#exec('jump_in')<CR>
-  nnoremap <buffer><silent> <Plug>(gita-blame-jump-out) :<C-u>call gita#action#exec('jump_out')<CR>
-  nmap <buffer> <CR> <Plug>(gita-blame-jump-in)
-  nmap <buffer> <BS> <Plug>(gita-blame-jump-out)
-  call gita#meta#extend({
-        \ 'filename': abspath,
-        \ 'commit': options.commit,
-        \ 'blame#blameobj': blameobj,
-        \})
-  call gita#action#extend_actions(s:actions)
-  call gita#features#blame#define_mappings()
-  if g:gita#features#blame#enable_default_mappings
-    call gita#features#blame#define_default_mappings()
-  endif
-  call gita#action#set_candidates(function('s:get_candidates'))
-  call gita#utils#buffer#update(blameobj.contents.NAVI)
-  execute printf('sign unplace * buffer=%d', NAVI_bufnum)
-  for linenum in blameobj.horizontal_signs
-    execute printf(
-          \ 'sign place %d line=%d name=GitaHorizontalSign buffer=%s',
-          \ linenum, linenum, NAVI_bufnum,
+    let VIEW_bufnum = bufnr('%')
+    call gita#features#blame#navi_open(
+          \ abspath, commit, blameobj, chunkobj, extend(deepcopy(options), {
+          \  'range':  get(options, 'range'),
+          \  'opener': get(options, 'opener2'),
+          \ }),
           \)
-  endfor
-  execute printf("setlocal filetype=%s", s:const.filetype)
-endfunction " }}}
-function! gita#features#blame#define_mappings() abort " {{{
-  call gita#monitor#define_mappings()
-  unmap <buffer> <Plug>(gita-action-help-s)
-
-  nnoremap <buffer><silent> <Plug>(gita-blame-jump-in)  :<C-u>call gita#action#exec('jump_in')<CR>
-  nnoremap <buffer><silent> <Plug>(gita-blame-jump-out) :<C-u>call gita#action#exec('jump_out')<CR>
-endfunction " }}}
-function! gita#features#blame#define_default_mappings() abort " {{{
-  call gita#monitor#define_default_mappings()
-
-  unmap <buffer> ?s
-  nmap <buffer> <CR> <Plug>(gita-blame-jump-in)
-  nmap <buffer> <BS> <Plug>(gita-blame-jump-out)
+    let NAVI_bufnum = bufnr('%')
+  finally
+    let &eventignore = saved_eventignore
+  endtry
+  let chunkobj.bufnums = {
+        \ 'VIEW': VIEW_bufnum,
+        \ 'NAVI': NAVI_bufnum,
+        \}
+  keepjumps wincmd p
+  call gita#features#blame#goto(
+        \ get(options, 'line', s:get_actual_linenum(line('.')))
+        \)
 endfunction " }}}
 function! gita#features#blame#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
+    let options = extend(deepcopy(g:gita#features#blame#default_options), {
+          \ 'line': has_key(options, 'file') ? 0 : line('.'),
+          \ 'column': has_key(options, 'file') ? 0 : col('.'),
+          \})
     call gita#features#blame#show(options)
   endif
 endfunction " }}}
 function! gita#features#blame#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
-function! gita#features#blame#define_highlights() abort " {{{
-  highlight link GitaHorizontal Comment
-  highlight link GitaSummary    Title
-  highlight link GitaMetaInfo   Comment
-  highlight link GitaAuthor     Identifier
-  highlight link GitaTimeDelta  Comment
-  highlight link GitaRevision   String
-  highlight      GitaHorizontal term=underline
-        \ cterm=underline ctermfg=8
-        \ gui=underline guifg=#363636
+function! gita#features#blame#goto(linenum, ...) abort " {{{
+  let chunkobj = s:get_chunkobj()
+  let bufnum = bufnr('%')
+  call setbufvar(chunkobj.bufnums.VIEW, '&scrollbind', 0)
+  call setbufvar(chunkobj.bufnums.NAVI, '&scrollbind', 0)
+  " NAVI
+  execute printf('%dwincmd w', bufwinnr(chunkobj.bufnums.NAVI))
+  let pseudo_linenum = s:get_pseudo_linenum(a:linenum)
+  call setpos('.', [0, pseudo_linenum, col('.'), 0])
+  " VIEW
+  execute printf('%dwincmd w', bufwinnr(chunkobj.bufnums.VIEW))
+  let col = get(a:000, 0, col('.'))
+  let off = get(a:000, 1, 0)
+  call setpos('.', [0, pseudo_linenum, col, off])
+  call setbufvar(chunkobj.bufnums.VIEW, '&scrollbind', 1)
+  call setbufvar(chunkobj.bufnums.NAVI, '&scrollbind', 1)
+  execute printf('%dwincmd w', bufwinnr(bufnum))
+  return pseudo_linenum
 endfunction " }}}
-function! gita#features#blame#define_syntax() abort " {{{
+
+function! gita#features#blame#view_open(abspath, commit, blameobj, chunkobj, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  let gita    = gita#get(a:abspath)
+  let relpath = gita.git.get_relative_path(a:abspath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME',
+        \ a:commit,
+        \ relpath,
+        \)
+  silent keepjumps call gita#utils#buffer#open(bufname, {
+        \ 'group': 'blame_view',
+        \ 'range':  gita#utils#eget(options, 'range', 'tabpage'),
+        \ 'opener': gita#utils#eget(options, 'opener', 'tabedit'),
+        \})
+  setlocal buftype=nofile noswapfile
+  setlocal nomodifiable
+  setlocal nowrap nofoldenable
+  call gita#meta#extend({
+        \ 'commit': a:commit,
+        \ 'filename': a:abspath,
+        \ 'blame#blameobj': a:blameobj,
+        \ 'blame#chunkobj': a:chunkobj,
+        \})
+  call gita#action#extend_actions(s:actions)
+  call gita#action#set_candidates(function('s:get_candidates'))
+  call gita#utils#buffer#update(a:chunkobj.contents.VIEW)
+  call s:display_pseudo_separators()
+  call gita#features#blame#view_define_mappings()
+  if g:gita#features#blame#enable_default_mappings || g:gita#features#blame#view_enable_default_mappings
+    call gita#features#blame#view_define_default_mappings()
+  endif
+  augroup vim-gita-blame-view-au
+    autocmd! * <buffer>
+    autocmd BufWinEnter <buffer> call s:view_ac_BufWinEnter()
+  augroup END
+  execute printf("setlocal filetype=%s", &l:filetype)
+endfunction " }}}
+function! gita#features#blame#view_define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+  unmap <buffer> <Plug>(gita-action-help-s)
+
+  nnoremap <buffer><silent> <Plug>(gita-blame-blame)
+        \ :<C-u>call gita#action#exec('blame')<CR>
+endfunction " }}}
+function! gita#features#blame#view_define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
+
+  unmap <buffer> ?s
+  nmap <buffer> <CR> <Plug>(gita-blame-blame)
+endfunction " }}}
+
+function! gita#features#blame#navi_open(abspath, commit, blameobj, chunkobj, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  let gita    = gita#get(a:abspath)
+  let relpath = gita.git.get_relative_path(a:abspath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME',
+        \ a:commit,
+        \ 'NAVI',
+        \ relpath,
+        \)
+  silent keepjumps call gita#utils#buffer#open(bufname, {
+        \ 'group': 'blame_navi',
+        \ 'range':  gita#utils#eget(options, 'range', 'tabpage'),
+        \ 'opener': gita#utils#eget(options, 'opener', 'topleft 50 vsplit'),
+        \})
+  setlocal buftype=nofile noswapfile
+  setlocal nomodifiable
+  setlocal nowrap nofoldenable nolist nonumber foldcolumn=0
+  call gita#meta#extend({
+        \ 'commit': a:commit,
+        \ 'filename': a:abspath,
+        \ 'blame#blameobj': a:blameobj,
+        \ 'blame#chunkobj': a:chunkobj,
+        \})
+  call gita#action#extend_actions(s:actions)
+  call gita#action#set_candidates(function('s:get_candidates'))
+  call gita#utils#buffer#update(a:chunkobj.contents.NAVI)
+  call s:display_pseudo_separators()
+  call gita#features#blame#view_define_mappings()
+  if g:gita#features#blame#enable_default_mappings || g:gita#features#blame#navi_enable_default_mappings
+    call gita#features#blame#view_define_default_mappings()
+  endif
+  augroup vim-gita-blame-navi-au
+    autocmd! * <buffer>
+    autocmd BufWinEnter <buffer> call s:navi_ac_BufWinEnter()
+  augroup END
+  execute printf("setlocal filetype=%s", s:const.filetype)
+endfunction " }}}
+function! gita#features#blame#navi_define_mappings() abort " {{{
+  call gita#monitor#define_mappings()
+  unmap <buffer> <Plug>(gita-action-help-s)
+
+  nnoremap <buffer><silent> <Plug>(gita-blame-blame)
+        \ :<C-u>call gita#action#exec('blame')<CR>
+endfunction " }}}
+function! gita#features#blame#navi_define_default_mappings() abort " {{{
+  call gita#monitor#define_default_mappings()
+
+  unmap <buffer> ?s
+  nmap <buffer> <CR> <Plug>(gita-blame-blame)
+endfunction " }}}
+function! gita#features#blame#navi_define_highlights() abort " {{{
+  highlight default link GitaHorizontal Comment
+  highlight default link GitaSummary    Title
+  highlight default link GitaMetaInfo   Comment
+  highlight default link GitaAuthor     Identifier
+  highlight default link GitaTimeDelta  Comment
+  highlight default link GitaRevision   String
+  highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
+endfunction " }}}
+function! gita#features#blame#navi_define_syntax() abort " {{{
   syntax match GitaSummary   /.*/
   syntax match GitaMetaInfo  /\v^.*\sauthored\s.*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
   syntax match GitaAuthor    /\v^.*\ze\sauthored/ contained
   syntax match GitaTimeDelta /\vauthored\s\zs.*\ze\s+[0-9a-fA-F]{8}$/ contained
   syntax match GitaRevision  /\v[0-9a-fA-F]{8}$/ contained
+endfunction " }}}
+
+function! gita#features#blame#_get_linechunk(...) abort " {{{
+  return call('s:get_linechunk', a:000)
+endfunction " }}}
+function! gita#features#blame#_get_actual_linenum(...) abort " {{{
+  return call('s:get_actual_linenum', a:000)
+endfunction " }}}
+function! gita#features#blame#_get_pseudo_linenum(...) abort " {{{
+  return call('s:get_pseudo_linenum', a:000)
 endfunction " }}}
 
 let &cpo = s:save_cpo

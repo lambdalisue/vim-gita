@@ -494,14 +494,14 @@ function! gita#features#status#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
 function! gita#features#status#define_highlights() abort " {{{
-  highlight link GitaComment    Comment
-  highlight link GitaConflicted Error
-  highlight link GitaUnstaged   Constant
-  highlight link GitaStaged     Special
-  highlight link GitaUntracked  GitaUnstaged
-  highlight link GitaIgnored    Identifier
-  highlight link GitaBranch     Title
-  highlight link GitaImportant  Keyword
+  highlight default link GitaComment    Comment
+  highlight default link GitaConflicted Error
+  highlight default link GitaUnstaged   Constant
+  highlight default link GitaStaged     Special
+  highlight default link GitaUntracked  GitaUnstaged
+  highlight default link GitaIgnored    Identifier
+  highlight default link GitaBranch     Title
+  highlight default link GitaImportant  Keyword
 endfunction " }}}
 function! gita#features#status#define_syntax() abort " {{{
   syntax match GitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL

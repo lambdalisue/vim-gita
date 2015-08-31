@@ -310,6 +310,12 @@ function! s:diff2(...) abort " {{{
   call gita#meta#set('commit', commit2)
   diffthis
   diffupdate
+
+  " move cursor
+  let curpos = gita#compat#getcurpos()
+  let curpos[1] = get(options, 'line', curpos[1])
+  let curpos[2] = get(options, 'column', curpos[2])
+  keepjumps call setpos('.', curpos)
 endfunction " }}}
 
 function! gita#features#diff#split_commit(commit, ...) abort " {{{

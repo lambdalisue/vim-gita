@@ -5,7 +5,10 @@ let s:T = gita#import('DateTime')
 let s:P = gita#import('System.Filepath')
 let s:is_windows = has('win16') || has('win32') || has('win64')
 
-" string
+function! gita#utils#eget(obj, name, default) abort " {{{
+  let result = get(a:obj, a:name, a:default)
+  return empty(result) ? a:default : result
+endfunction " }}}
 function! s:smart_string(value) abort " {{{
   let vtype = type(a:value)
   if vtype == type('')
