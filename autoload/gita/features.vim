@@ -105,6 +105,7 @@ endfunction " }}}
 function! gita#features#complete(arglead, cmdline, cursorpos) abort " {{{
   let bang = a:cmdline =~# '\v^Gita!'
   let cmdline = substitute(a:cmdline, '\C\v^Gita!?\s', '', '')
+  let cmdline = substitute(cmdline, '\v[^ ]*$', '', '')
   let opts = s:parser.parse(bang, [0, 0], cmdline)
   let name = get(opts, 'action', 'help')
 
@@ -168,6 +169,10 @@ call gita#features#register('conflict',
 call gita#features#register('browse',
       \ function('gita#features#browse#command'),
       \ function('gita#features#browse#complete'),
+      \)
+call gita#features#register('blame',
+      \ function('gita#features#blame#command'),
+      \ function('gita#features#blame#complete'),
       \)
 
 call gita#features#register('status',

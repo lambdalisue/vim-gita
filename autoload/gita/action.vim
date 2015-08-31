@@ -11,19 +11,29 @@ function! s:actions.help(candidates, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.edit(candidates, options) abort " {{{
+  " Priority: candidate > option > meta
+  let filename = get(a:options, 'filename', gita#meta#get('filename', ''))
+  let line     = get(a:options, 'line', gita#meta#get('line', 0))
+  let column   = get(a:options, 'column', gita#meta#get('column', 0))
   for candidate in a:candidates
     call gita#utils#anchor#focus()
     call gita#features#file#show({
           \ 'commit': 'WORKTREE',
-          \ 'file':   get(candidate, 'path2', candidate.path),
+          \ 'file':   get(candidate, 'path2', get(candidate, 'path', filename)),
+          \ 'line':   get(candidate, 'line', line),
+          \ 'column': get(candidate, 'column', column),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
+  " Priority: candidate > option > meta
+  let commit   = get(a:options, 'commit', gita#meta#get('commit', ''))
+  let filename = get(a:options, 'filename', gita#meta#get('filename', ''))
+  let line     = get(a:options, 'line', gita#meta#get('line', 0))
+  let column   = get(a:options, 'column', gita#meta#get('column', 0))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
     if empty(commit)
       let commit = candidate.is_unstaged
             \ ? 'INDEX'
@@ -31,25 +41,30 @@ function! s:actions.open(candidates, options) abort " {{{
     endif
     call gita#utils#anchor#focus()
     call gita#features#file#show({
-          \ 'commit': commit,
-          \ 'file': candidate.path,
+          \ 'commit': get(candidate, 'commit', commit),
+          \ 'file':   get(candidate, 'path', filename),
+          \ 'line':   get(candidate, 'line', line),
+          \ 'column': get(candidate, 'column', column),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
   endfor
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
+  " Priority: candidate > option > meta
+  let commit   = get(a:options, 'commit', gita#meta#get('commit', ''))
+  let filename = get(a:options, 'filename', gita#meta#get('filename', ''))
+  let line     = get(a:options, 'line', gita#meta#get('line', 0))
+  let column   = get(a:options, 'column', gita#meta#get('column', 0))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
-    if empty(commit)
-      let commit = candidate.is_unstaged
-            \ ? 'INDEX'
-            \ : 'HEAD'
-    endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
-          \ '--': [candidate.path],
-          \ 'commit': commit,
+          \ 'commit':   get(candidate, 'commit',
+          \   empty(commit) ? 'INDEX' : 'HEAD',
+          \ ),
+          \ '--':       [get(candidate, 'path', filename)],
+          \ 'line':     get(candidate, 'line', line),
+          \ 'column':   get(candidate, 'column', column),
           \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),

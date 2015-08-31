@@ -82,6 +82,11 @@ let s:default_config = {
       \ 'features#status#monitor_range': '',
       \ 'features#status#enable_default_mappings': 1,
       \ 'features#status#prefer_unstage_in_toggle': 0,
+      \ 'features#blame#default_options': {},
+      \ 'features#blame#enable_pseudo_separator': 1,
+      \ 'features#blame#enable_default_mappings': 1,
+      \ 'features#blame#view_enable_default_mappings': 0,
+      \ 'features#blame#navi_enable_default_mappings': 0,
       \}
 function! s:assign_config(config) abort " {{{
   for [key, value] in items(a:config)

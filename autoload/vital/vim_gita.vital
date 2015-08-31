@@ -1,14 +1,17 @@
 vim_gita
-0eccde2
+19546a5
 
 Prelude
+DateTime
 Data.List
-VCS.Git
 Data.Dict
+Data.String
+System.File
 System.Filepath
-ArgumentParser
-VCS.Git.Conflict
 Vim.Buffer
 Vim.BufferManager
-System.File
+ArgumentParser
+VCS.Git
 VCS.Git.Core
+VCS.Git.Conflict
+VCS.Git.BlameParser

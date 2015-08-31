@@ -1,10 +1,14 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:T = gita#import('DateTime')
 let s:P = gita#import('System.Filepath')
 let s:is_windows = has('win16') || has('win32') || has('win64')
 
-" string
+function! gita#utils#eget(obj, name, default) abort " {{{
+  let result = get(a:obj, a:name, a:default)
+  return empty(result) ? a:default : result
+endfunction " }}}
 function! s:smart_string(value) abort " {{{
   let vtype = type(a:value)
   if vtype == type('')
@@ -40,6 +44,18 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
     let str = substitute(str, '\C' . pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
+endfunction " }}}
+ function! gita#utils#format_timestamp(timestamp, ...) abort " {{{
+  let timezone = get(a:000, 0, '')
+  let prefix1 = get(a:000, 1, '')
+  let prefix2 = get(a:000, 2, '')
+  let time = s:T.from_unix_time(a:timestamp, timezone)
+  let delta = time.delta(s:T.now())
+  if delta.years() < 1
+    return prefix1 . delta.about()
+  else
+    return prefix2 . time.format('%d %b, %Y')
+  endif
 endfunction " }}}
 
 function! gita#utils#expand(expr) abort " {{{

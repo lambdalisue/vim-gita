@@ -302,6 +302,11 @@ function! gita#features#file#show(...) abort " {{{
     call gita#meta#set('filename', abspath)
   endif
   call gita#meta#set('commit', options.commit)
+  " move cursor
+  let curpos = gita#compat#getcurpos()
+  let curpos[1] = get(options, 'line', curpos[1])
+  let curpos[2] = get(options, 'column', curpos[2])
+  keepjumps call setpos('.', curpos)
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
