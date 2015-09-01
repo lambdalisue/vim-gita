@@ -286,6 +286,11 @@ function! gita#features#file#show(...) abort " {{{
   " regulate options
   if s:ensure_file_option(options)   | return | endif
   if s:ensure_commit_option(options) | return | endif
+  " assign --line/--column
+  if gita#utils#expand(options.file) ==# gita#utils#expand('%')
+    let options.line   = get(options, 'line', line('.'))
+    let options.column = get(options, 'column', col('.'))
+  endif
 
   let result = gita#features#file#exec_cached(options, {
         \ 'echo': 'fail',
@@ -294,7 +299,7 @@ function! gita#features#file#show(...) abort " {{{
     return
   endif
 
-  let abspath = gita#utils#ensure_abspath(options.file)
+  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
   let relpath = gita#utils#ensure_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
