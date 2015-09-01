@@ -107,6 +107,24 @@ call s:parser.add_argument(
       \   'conflicts': ['vertical'],
       \   'superordinates': ['split'],
       \})
+call s:parser.add_argument(
+      \ '--line', [
+      \   'A line number of the file to move the cursor.',
+      \ ], {
+      \   'type': s:A.types.value,
+      \   'pattern': '\d\+',
+      \   'superordinates': ['split'],
+      \ }
+      \)
+call s:parser.add_argument(
+      \ '--column', [
+      \   'A column number of the file to move the cursor.',
+      \ ], {
+      \   'type': s:A.types.value,
+      \   'pattern': '\d\+',
+      \   'superordinates': ['split'],
+      \ }
+      \)
 function! s:parser.complete_unknown(arglead, cmdline, cursorpos, options) abort " {{{
   let candidates = s:L.flatten([
         \ s:A.complete_files(a:arglead, a:cmdline, a:cursorpos, a:options),
@@ -214,6 +232,11 @@ function! s:diff2(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
+  " assign --line/--column
+  if gita#utils#expand(options['--'][0]) ==# gita#utils#expand('%')
+    let options.line   = get(options, 'line', line('.'))
+    let options.column = get(options, 'column', col('.'))
+  endif
 
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(options['--'][0]),
@@ -310,6 +333,20 @@ function! s:diff2(...) abort " {{{
   call gita#meta#set('commit', commit2)
   diffthis
   diffupdate
+
+  " focus COMMIT1
+  keepjumps wincmd p
+  " move the cursor onto
+  let line   = get(options, 'line', line('.'))
+  let column = get(options, 'column', col('.'))
+  call winrestview({
+        \ 'lnum': line,
+        \ 'col': column - 1,
+        \ 'curswant': column,
+        \})
+  keepjumps normal z.
+  diffupdate
+  syncbind
 endfunction " }}}
 
 function! gita#features#diff#split_commit(commit, ...) abort " {{{
