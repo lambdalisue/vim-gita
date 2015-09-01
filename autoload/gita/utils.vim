@@ -4,7 +4,6 @@ set cpo&vim
 let s:P = gita#import('System.Filepath')
 let s:is_windows = has('win16') || has('win32') || has('win64')
 
-" string
 function! s:smart_string(value) abort " {{{
   let vtype = type(a:value)
   if vtype == type('')
@@ -40,6 +39,10 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
     let str = substitute(str, '\C' . pattern, repl, 'g')
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
+endfunction " }}}
+function! gita#utils#eget(obj, name, default) abort " {{{
+  let result = get(a:obj, a:name, a:default)
+  return empty(result) ? a:default : result
 endfunction " }}}
 
 function! gita#utils#expand(expr) abort " {{{

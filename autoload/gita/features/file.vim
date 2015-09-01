@@ -324,8 +324,8 @@ function! gita#features#file#show(...) abort " {{{
   endif
   call gita#meta#set('commit', options.commit)
   " move the cursor onto
-  let line   = get(options, 'line', line('.'))
-  let column = get(options, 'column', col('.'))
+  let line   = gita#utils#eget(options, 'line', line('.'))
+  let column = gita#utils#eget(options, 'column', col('.'))
   call winrestview({
         \ 'lnum': line,
         \ 'col': column - 1,
