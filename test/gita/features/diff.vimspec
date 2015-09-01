@@ -186,7 +186,20 @@ Describe gita#features#diff
       Assert Equals(gita.operations._previous_args_show, [{
             \ 'object': 'HEAD:README.md',
             \}, { 'echo': '' }])
-      " check the buffer
+      " check the buffer (COMMIT1)
+      Assert Equals(
+            \ bufname('%'),
+            \ gita#utils#buffer#bufname('README.md'),
+            \)
+      Assert Equals(getline(0, '$'), readfile('README.md'))
+      Assert Equals(&l:buftype, '')
+      Assert Equals(&l:modifiable, 1)
+      Assert Equals(&l:readonly, 0)
+      Assert Equals(gita#meta#get('filename'), '')
+      Assert Equals(gita#meta#get('commit'), '')
+
+      " check the buffer (COMMIT2)
+      wincmd p
       Assert Equals(
             \ bufname('%'),
             \ gita#utils#buffer#bufname('HEAD', 'README.md'),
@@ -214,7 +227,24 @@ Describe gita#features#diff
       Assert Equals(gita.operations._previous_args_show, [{
             \ 'object': 'HEAD:README.md',
             \}, { 'echo': '' }])
-      " check the 1st buffer
+      " check the 1st buffer (COMMIT1)
+      Assert Equals(
+            \ bufname('%'),
+            \ gita#utils#buffer#bufname('README.md'),
+            \)
+      Assert Equals(
+            \ getline(0, '$'),
+            \ readfile('README.md'),
+            \)
+      Assert Equals(&l:buftype, '')
+      Assert Equals(&l:bufhidden, '')
+      Assert Equals(&l:modifiable, 1)
+      Assert Equals(&l:readonly, 0)
+      Assert Equals(gita#meta#get('filename'), '')
+      Assert Equals(gita#meta#get('commit'), '')
+
+      " check the 2nd buffer (COMMIT2)
+      wincmd p
       Assert Equals(
             \ bufname('%'),
             \ gita#utils#buffer#bufname('HEAD', 'README.md'),
@@ -229,22 +259,6 @@ Describe gita#features#diff
             \)
       Assert Equals(gita#meta#get('commit'), 'HEAD')
 
-      " check the 2nd buffer
-      wincmd p
-      Assert Equals(
-            \ bufname('%'),
-            \ gita#utils#buffer#bufname('README.md'),
-            \)
-      Assert Equals(
-            \ getline(0, '$'),
-            \ readfile('README.md'),
-            \)
-      Assert Equals(&l:buftype, '')
-      Assert Equals(&l:bufhidden, '')
-      Assert Equals(&l:modifiable, 1)
-      Assert Equals(&l:readonly, 0)
-      Assert Equals(gita#meta#get('filename'), '')
-      Assert Equals(gita#meta#get('commit'), 'WORKTREE')
     End
   End
 

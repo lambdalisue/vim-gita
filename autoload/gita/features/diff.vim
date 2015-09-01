@@ -311,8 +311,8 @@ function! s:diff2(...) abort " {{{
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
+    call gita#meta#set('commit', commit1)
   endif
-  call gita#meta#set('commit', commit1)
   diffthis
 
   " COMMIT2
@@ -329,8 +329,8 @@ function! s:diff2(...) abort " {{{
     setlocal buftype=nofile noswapfile
     setlocal nomodifiable readonly
     call gita#meta#set('filename', abspath)
+    call gita#meta#set('commit', commit2)
   endif
-  call gita#meta#set('commit', commit2)
   diffthis
   diffupdate
 
