@@ -18,6 +18,8 @@ function! s:actions.edit(candidates, options) abort " {{{
     call gita#features#file#show({
           \ 'file':   get(candidate, 'path2', candidate.path),
           \ 'commit': 'WORKTREE',
+          \ 'line':   get(candidate, 'line', get(a:options, 'line', '')),
+          \ 'column': get(candidate, 'column', get(a:options, 'column', '')),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
@@ -35,6 +37,8 @@ function! s:actions.open(candidates, options) abort " {{{
     call gita#features#file#show({
           \ 'file':   candidate.path,
           \ 'commit': get(candidate, 'commit', _commit),
+          \ 'line':   get(candidate, 'line', get(a:options, 'line', '')),
+          \ 'column': get(candidate, 'column', get(a:options, 'column', '')),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
@@ -52,6 +56,8 @@ function! s:actions.diff(candidates, options) abort " {{{
     call gita#features#diff#show({
           \ '--': [candidate.path],
           \ 'commit':   get(candidate, 'commit', _commit),
+          \ 'line':   get(candidate, 'line', get(a:options, 'line', '')),
+          \ 'column': get(candidate, 'column', get(a:options, 'column', '')),
           \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),
