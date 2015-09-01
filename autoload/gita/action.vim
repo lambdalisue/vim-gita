@@ -9,45 +9,47 @@ function! s:actions.help(candidates, options) abort " {{{
   endif
 endfunction " }}}
 function! s:actions.edit(candidates, options) abort " {{{
+  " Note:
+  "   path2 is an actual pass in worktree when the file has renamed
   for candidate in a:candidates
     call gita#utils#anchor#focus()
     call gita#features#file#show({
-          \ 'commit': 'WORKTREE',
           \ 'file':   get(candidate, 'path2', candidate.path),
+          \ 'commit': 'WORKTREE',
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
+  let commit = get(options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
-    if empty(commit)
-      let commit = candidate.is_unstaged
+    if !has_key(candidate, 'commit') && empty(commit)
+      let _commit = candidate.is_unstaged
             \ ? 'INDEX'
             \ : 'HEAD'
     endif
     call gita#utils#anchor#focus()
     call gita#features#file#show({
-          \ 'commit': commit,
-          \ 'file': candidate.path,
+          \ 'file':   candidate.path,
+          \ 'commit': get(candidate, 'commit', _commit),
           \ 'opener': get(a:options, 'opener', 'edit'),
           \ 'range':  get(a:options, 'range', 'tabpage'),
           \})
   endfor
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
+  let commit = get(options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
-    let commit = get(a:options, 'commit', '')
-    if empty(commit)
-      let commit = candidate.is_unstaged
+    if !has_key(candidate, 'commit') && empty(commit)
+      let _commit = candidate.is_unstaged
             \ ? 'INDEX'
             \ : 'HEAD'
     endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
           \ '--': [candidate.path],
-          \ 'commit': commit,
+          \ 'commit':   get(candidate, 'commit', _commit),
           \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),
