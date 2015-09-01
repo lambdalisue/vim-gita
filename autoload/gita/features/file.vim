@@ -58,6 +58,22 @@ call s:parser.add_argument(
       \   'conflicts': ['ours', 'ancestor'],
       \ }
       \)
+call s:parser.add_argument(
+      \ '--line', [
+      \   'A line number of the file to move the cursor.',
+      \ ], {
+      \   'type': s:A.types.value,
+      \   'pattern': '\d\+',
+      \ }
+      \)
+call s:parser.add_argument(
+      \ '--column', [
+      \   'A column number of the file to move the cursor.',
+      \ ], {
+      \   'type': s:A.types.value,
+      \   'pattern': '\d\+',
+      \ }
+      \)
 function! s:parser.hooks.post_validate(opts) abort " {{{
   if get(a:opts, 'ancestor')
     unlet! a:opts.ancestor
@@ -302,6 +318,14 @@ function! gita#features#file#show(...) abort " {{{
     call gita#meta#set('filename', abspath)
   endif
   call gita#meta#set('commit', options.commit)
+  " move the cursor onto
+  let line   = get(options, 'line', line('.'))
+  let column = get(options, 'column', col('.'))
+  call winrestview({
+        \ 'lnum': line,
+        \ 'col': column - 1,
+        \ 'curswant': column,
+        \})
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
