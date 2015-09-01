@@ -1,5 +1,8 @@
 Describe gita#features#commit
   Before
+    let saved_cwd = getcwd()
+    execute printf('cd %s', fnameescape(g:repository_root))
+
     new
     let gita = gita#get()
     let gita.git.cache.repository.clear()
@@ -24,6 +27,7 @@ Describe gita#features#commit
   After
     let gita.operations = operations_saved
     call WipeoutAll()
+    execute printf('cd %s', fnameescape(saved_cwd))
   End
 
   Context #open({options})
@@ -74,7 +78,7 @@ Describe gita#features#commit
   End
 
   Context #update({options})
-    It should update contents of gita:status window
+    It should update contents of gita:commit window
       let w:_gita_options = {}
       call gita#features#commit#update()
       " the buffer content should follow

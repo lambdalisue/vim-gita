@@ -1,5 +1,8 @@
 Describe gita#features#status
   Before
+    let saved_cwd = getcwd()
+    execute printf('cd %s', fnameescape(g:repository_root))
+
     new
     let gita = gita#get()
     let gita.git.cache.repository.clear()
@@ -22,6 +25,7 @@ Describe gita#features#status
   After
     let gita.operations = operations_saved
     call WipeoutAll()
+    execute printf('cd %s', fnameescape(saved_cwd))
   End
 
   Context #open({options})
