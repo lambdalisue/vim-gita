@@ -11,7 +11,10 @@ function! s:get_candidates(start, end, ...) abort " {{{
   for n in range(a:start, a:end)
     let status = get(w:_gita_statuses_map, getline(n), {})
     if !empty(status)
-      let candidate = gita#action#new_candidate(status.path, commit)
+      let candidate = gita#action#new_candidate(status.path, empty(commit)
+            \ ? status.is_unstaged ? 'INDEX' : 'HEAD'
+            \ : commit
+            \)
       call gita#utils#status#extend_candidate(candidate, status)
       call add(candidates, candidate)
     endif

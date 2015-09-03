@@ -142,7 +142,7 @@ function! s:parser.hooks.post_validate(options) abort " {{{
 endfunction " }}}
 
 function! s:ensure_commit_option(options) abort " {{{
-  if !has_key(a:options, 'commit')
+  if empty(get(a:options, 'commit'))
     call histadd('input', 'origin/HEAD...')
     call histadd('input', 'origin/HEAD')
     call histadd('input', 'HEAD')

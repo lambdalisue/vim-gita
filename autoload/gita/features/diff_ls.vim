@@ -47,7 +47,7 @@ function! s:ensure_commit_option(options) abort " {{{
     call histadd('input', gita#meta#get('commit', 'origin/HEAD...'))
     let commit = gita#utils#prompt#ask(
           \ 'Which commit do you want to compare with? ',
-          \ substitute(gita#meta#get('commit'), '^WORKTREE$', 'INDEX', ''),
+          \ substitute(gita#meta#get('commit'), '^WORKTREE$', '', ''),
           \ 'customlist,gita#features#diff#_complete_commit',
           \)
     if empty(commit)
@@ -191,6 +191,9 @@ function! gita#features#diff_ls#update(...) abort " {{{
         \ statuses_lines,
         \])
   call gita#utils#buffer#update(buflines)
+
+  " update meta
+  call gita#meta#set('commit', options.commit)
 endfunction " }}}
 function! gita#features#diff_ls#define_mappings() abort " {{{
   call gita#monitor#define_mappings()
