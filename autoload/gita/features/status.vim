@@ -4,7 +4,6 @@ set cpo&vim
 
 let s:L = gita#import('Data.List')
 let s:D = gita#import('Data.Dict')
-let s:F = gita#import('System.File')
 let s:P = gita#import('System.Filepath')
 let s:A = gita#import('ArgumentParser')
 
@@ -231,42 +230,6 @@ function! gita#features#status#define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
         \ :<C-u>call gita#action#call('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
-
-  noremap <silent><buffer> <Plug>(gita-action-add)
-        \ :call gita#action#call('add')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-ADD)
-        \ :call gita#action#call('add', { 'force': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-rm)
-        \ :call gita#action#call('rm')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-RM)
-        \ :call gita#action#call('rm', { 'force': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-reset)
-        \ :call gita#action#call('reset')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-checkout)
-        \ :call gita#action#call('checkout')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-CHECKOUT)
-        \ :call gita#action#call('checkout', { 'force': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-checkout-ours)
-        \ :call gita#action#call('checkout', { 'ours': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-checkout-theirs)
-        \ :call gita#action#call('checkout', { 'theirs': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-stage)
-        \ :call gita#action#call('stage')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-unstage)
-        \ :call gita#action#call('unstage')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-toggle)
-        \ :call gita#action#call('toggle')<CR>
-  noremap <silent><buffer> <Plug>(gita-action-discard)
-        \ :call gita#action#call('discard')<CR>
-
-  noremap <silent><buffer> <Plug>(gita-action-solve2-h)
-        \ :call gita#action#call('solve', { 'way': 2 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve2-v)
-        \ :call gita#action#call('solve', { 'way': 2, 'vertical': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve3-h)
-        \ :call gita#action#call('solve', { 'way': 3 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve3-v)
-        \ :call gita#action#call('solve', { 'way': 3, 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#features#status#define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()

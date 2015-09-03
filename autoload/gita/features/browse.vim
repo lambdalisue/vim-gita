@@ -58,9 +58,10 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
 endfunction " }}}
 
 function! s:find_remote_branch(gita, branch) abort " {{{
-  let branch_merge = a:gita.git.get_branch_merge(a:branch)
+  let branch = a:branch =~# '^\%(INDEX\|WORKTREE\)$' ? 'HEAD' : a:branch
+  let branch_merge = a:gita.git.get_branch_merge(branch)
   if empty(branch_merge)
-    return a:branch
+    return branch
   endif
   return substitute(branch_merge, '\C^refs/heads/', '', '')
 endfunction " }}}
@@ -221,6 +222,7 @@ function! gita#features#browse#action(candidates, options, config) abort " {{{
           \ 'commit': gita#utils#sget([a:options, candidate], 'commit'),
           \ 'line_start': gita#utils#sget([a:options, candidate], 'line_start'),
           \ 'line_end': gita#utils#sget([a:options, candidate], 'line_end'),
+          \ 'scheme': gita#utils#sget([a:options, candidate], 'scheme'),
           \}, a:options))
     if !empty(url)
       call add(urls, url)
