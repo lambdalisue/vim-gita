@@ -108,10 +108,7 @@ function! gita#action#smart_map(lhs, rhs) abort range " {{{
         \ : a:rhs
 endfunction " }}}
 function! gita#action#exec(name, ...) abort range " {{{
-  let options = extend(
-        \ deepcopy(get(w:, '_gita_options', {})),
-        \ get(a:000, 0, {}),
-        \)
+  let options = get(a:000, 0, {})
   let candidates = gita#action#get_candidates(
         \ a:firstline, a:lastline,
         \)
