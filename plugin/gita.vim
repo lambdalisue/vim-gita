@@ -92,8 +92,8 @@ let s:default_config = {
       \ 'features#status#enable_default_mappings': 1,
       \ 'features#status#prefer_unstage_in_toggle': 0,
       \}
-function! s:assign_config(config) abort " {{{
-  for [key, value] in items(a:config)
+function! s:assign_config() abort " {{{
+  for [key, value] in items(s:default_config)
     let key = printf('g:gita#%s', key)
     if !exists(key)
       silent execute printf('let %s = %s', key, string(value))
@@ -101,7 +101,7 @@ function! s:assign_config(config) abort " {{{
     unlet! value
   endfor
 endfunction " }}}
-call s:assign_config(s:default_config)
+call s:assign_config()
 
 
 let &cpo = s:save_cpo

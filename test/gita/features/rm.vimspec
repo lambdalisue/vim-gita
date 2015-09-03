@@ -1,15 +1,11 @@
 Describe gita#features#rm
   Before
+    Init
     let gita = gita#get()
-    let operations_saved = deepcopy(gita.operations)
-
-    function! gita.operations.rm(...) abort
-      let self._previous_args = a:000
-    endfunction
     let gita.operations._previous_args = []
-  End
-  After
-    let gita.operations = operations_saved
+    function! gita.operations.rm(...) abort
+      call add(self._previous_args, a:000)
+    endfunction
   End
 
   Context #exec([{options}, {config}])
@@ -20,51 +16,46 @@ Describe gita#features#rm
             \ 'r': 1, 'recursive': 1,
             \ 'cached': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ 'q': 1, 'quiet': 1,
             \ 'f': 1, 'force': 1,
             \ 'r': 1, 'recursive': 1,
             \ 'cached': 1,
-            \}, {}])
+            \}, {}]])
     End
 
     It should remove unknown options internally
       call gita#features#rm#exec({
             \ 'unknown_option': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{}, {}])
+      Assert Equals(gita.operations._previous_args, [[{}, {}]])
     End
   End
 
   Context #command({bang}, {range}[, {cmdline}])
-    Before
-      let default_options_saved = g:gita#features#rm#default_options
-      let g:gita#features#rm#default_options = {}
-    End
-    After
-      let g:gita#features#rm#default_options = default_options_saved
-    End
-
     It should automatically specify 'quiet = 1'
+      let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}])
+            \}, {}]])
     End
     It should automatically expand '%' to absolute path
+      let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}])
+            \}, {}]])
     End
     It should automatically add the absolute path of the current buffer
+      let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}])
+            \}, {}]])
     End
     It should automatically add default options
       let g:gita#features#rm#default_options = {
@@ -73,12 +64,12 @@ Describe gita#features#rm
             \ 'cached': 1,
             \}
       call gita#features#rm#command('', [0, 0])
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'cached': 1,
-            \}, {}])
+            \}, {}]])
     End
   End
 
@@ -89,5 +80,3 @@ Describe gita#features#rm
     End
   End
 End
-
-

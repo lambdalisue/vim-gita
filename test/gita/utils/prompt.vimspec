@@ -1,4 +1,14 @@
+function! Capture(command) abort " {{{
+  redir => contents
+  silent execute a:command
+  redir END
+  return split(contents, '\v\r?\n')
+endfunction" }}}
+
 Describe gita#utils#prompt
+  Before
+    Init
+  End
 
   Context #echo({msg}[, ...])
     It should echo a {msg}
@@ -18,12 +28,6 @@ Describe gita#utils#prompt
   End
 
   Context #debug({msg}[, ...])
-    Before
-      let stored_gita_debug = g:gita#debug
-    End
-    After
-      let g:gita#debug = stored_gita_debug
-    End
 
     It should echo a {msg} with a special prefix when g:gita#debug == 1
       let g:gita#debug = 1

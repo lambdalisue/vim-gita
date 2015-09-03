@@ -5,6 +5,10 @@ call gita#preload('gita#features#browse')
 Describe gita#features#browse
   let prefix = 'https://github.com/lambdalisue/vim-gita/blob/.*'
 
+  Before
+    Init
+  End
+
   Context #exec([{options}, {config}])
     It should return urls of specifield files
       if $TRAVIS ==# 'true'

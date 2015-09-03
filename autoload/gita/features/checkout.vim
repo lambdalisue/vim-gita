@@ -94,7 +94,6 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
   return candidates
 endfunction " }}}
 
-
 function! gita#features#checkout#exec(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})

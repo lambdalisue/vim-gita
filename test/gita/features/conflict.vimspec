@@ -1,10 +1,10 @@
 Describe gita#features#conflict
   Before
+    Init
     edit README.md
     let gita = gita#get()
     let gita.git.cache.repository.clear()
-    let operations_saved = deepcopy(gita.operations)
-
+    let gita.operations._previous_args = []
     function! gita.operations.show(...) abort
       call add(self._previous_args, a:000)
       let options = get(a:000, 0, {})
@@ -26,12 +26,6 @@ Describe gita#features#conflict
               \}
       endif
     endfunction
-    let gita.operations._previous_args = []
-  End
-
-  After
-    let gita.operations = operations_saved
-    call WipeoutAll()
   End
 
   Context #show([{options}, {config}])
@@ -129,5 +123,4 @@ Describe gita#features#conflict
             \)
     End
   End
-
 End

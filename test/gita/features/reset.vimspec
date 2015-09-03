@@ -1,15 +1,11 @@
 Describe gita#features#reset
   Before
+    Init
     let gita = gita#get()
-    let operations_saved = deepcopy(gita.operations)
-
-    function! gita.operations.reset(...) abort
-      let self._previous_args = a:000
-    endfunction
     let gita.operations._previous_args = []
-  End
-  After
-    let gita.operations = operations_saved
+    function! gita.operations.reset(...) abort
+      call add(self._previous_args, a:000)
+    endfunction
   End
 
   Context #exec([{options}, {config}])
@@ -24,7 +20,7 @@ Describe gita#features#reset
             \ 'keep': 1,
             \ 'commit': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ 'q': 1, 'quiet': 1,
             \ 'soft': 1,
             \ 'mixed': 1,
@@ -33,39 +29,33 @@ Describe gita#features#reset
             \ 'merge': 1,
             \ 'keep': 1,
             \ 'commit': 1,
-            \}, {}])
+            \}, {}]])
     End
 
     It should remove unknown options internally
       call gita#features#reset#exec({
             \ 'unknown_option': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{}, {}])
+      Assert Equals(gita.operations._previous_args, [[{}, {}]])
     End
   End
 
   Context #command({bang}, {range}[, {cmdline}])
-    Before
-      let default_options_saved = g:gita#features#reset#default_options
-      let g:gita#features#reset#default_options = {}
-    End
-    After
-      let g:gita#features#reset#default_options = default_options_saved
-    End
-
     It should automatically specify 'quiet = 1'
+      let g:gita#features#reset#default_options = {}
       call gita#features#reset#command('', [0, 0], '')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [],
             \ 'quiet': 1,
-            \}, {}])
+            \}, {}]])
     End
     It should automatically expand '%' to absolute path
+      let g:gita#features#reset#default_options = {}
       call gita#features#reset#command('', [0, 0], '-- %')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}])
+            \}, {}]])
     End
     It should automatically add default options
       let g:gita#features#reset#default_options = {
@@ -74,12 +64,12 @@ Describe gita#features#reset
             \ 'mixed': 1,
             \}
       call gita#features#reset#command('', [0, 0])
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [],
             \ 'quiet': 1,
             \ 'soft': 1,
             \ 'mixed': 1,
-            \}, {}])
+            \}, {}]])
     End
   End
 
@@ -90,4 +80,3 @@ Describe gita#features#reset
     End
   End
 End
-

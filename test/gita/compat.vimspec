@@ -1,4 +1,8 @@
 Describe gita#compat
+  Before
+    Init
+  End
+
   Context #doautocmd({name})
     Before
       let g:gita#_autocmd_called = 0
@@ -22,10 +26,6 @@ Describe gita#compat
   End
 
   Context #getbufvar({expr}, {varname}[, {default}])
-    After
-      silent! unlet b:_gita_getbufvar_test
-    End
-
     It should return a value of the buffer variable
       let b:_gita_getbufvar_test = 'foo'
       let ret = gita#compat#getbufvar('%', '_gita_getbufvar_test')
@@ -44,10 +44,6 @@ Describe gita#compat
   End
 
   Context #getwinvar({winnr}, {varname}[, {default}])
-    After
-      silent! unlet w:_gita_getwinvar_test
-    End
-
     It should return a value of the window variable
       let w:_gita_getwinvar_test = 'foo'
       " Note: winnr == 0 := the current window

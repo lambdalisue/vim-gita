@@ -1,6 +1,8 @@
 Describe gita#statusline
   Before
-    let bufname = g:P.join(g:repository_root, 'foo.txt')
+    Init
+    WorkonInside
+    let bufname = 'foo.txt'
     if empty(bufname(bufname))
       silent execute printf('new %s', bufname)
     else

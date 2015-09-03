@@ -1,11 +1,18 @@
 let s:is_windows = has('win16') || has('win32') || has('win64')
 
 Describe gita#utils
+  Before
+    Init
+  End
+
   Context #import({name})
     It should return an instance of a specified vital module
-      let ret = gita#import('Prelude')
-      let exp = g:V.import('Prelude')
-      Assert Equals(ret, exp)
+      let ret = gita#import('Prelude')  " under 'vim_gita'
+      let exp = Import('Prelude')       " under 'vital'
+      " Note:
+      "   funcrefs inside ret/exp are different while they comes from
+      "   different namespace, so compare only keys
+      Assert Equals(sort(keys(ret)), sort(keys(exp)))
     End
 
     It should return a same instance of a specified vital module
@@ -116,11 +123,9 @@ Describe gita#utils
 
   Context #expand({expr})
     Before
-      let bufname = g:P.join(g:repository_root, 'foo.txt')
+      WorkonInside
+      let bufname = 'foo.txt'
       silent execute printf('new %s', bufname)
-    End
-    After
-      call WipeoutAll()
     End
 
     It should return 'filename' of gita meta when '%' is specified and filename is specified
@@ -149,19 +154,17 @@ Describe gita#utils
 
   Context #ensure_abspath({path})
     Before
-      let saved_cwd = getcwd()
-      let file1 = g:P.join(g:repository_root, 'foo.txt')
-      let file2 = g:P.join(g:repository_root, 'hoge', 'bar.txt')
-      execute printf('cd %s', g:repository_root)
+      WorkonInside
+      let P = Import('System.Filepath')
+      let file1 = 'foo.txt'
       call writefile(['foo'], file1)
     End
     After
-      execute printf('cd %s', saved_cwd)
       call delete(file1)
     End
 
     It should return {path} if {path} is already an absolute path
-      let abspath = g:P.join(g:repository_root, 'foo.txt')
+      let abspath = P.join(getcwd(), 'foo.txt')
       let ret = gita#utils#ensure_abspath(abspath)
       Assert Equals(ret, abspath)
       Assert Same(ret, abspath)
@@ -176,7 +179,7 @@ Describe gita#utils
     End
 
     It should return an absolute path of {path} which does not exist
-      let relpath = g:P.join('hoge', 'bar.txt')
+      let relpath = P.join('hoge', 'bar.txt')
       let ret = gita#utils#ensure_abspath(relpath)
       Assert NotSame(ret, relpath)
       Assert NotEquals(ret, relpath)
@@ -188,12 +191,8 @@ Describe gita#utils
 
   Context #ensure_relpath({path})
     Before
-      let saved_cwd = getcwd()
-      let file1 = g:P.join(g:repository_root, 'foo.txt')
-      execute printf('cd %s', g:repository_root)
-    End
-    After
-      execute printf('cd %s', saved_cwd)
+      WorkonInside
+      let file1 = fnamemodify('foo.txt', ':p')
     End
 
     It should return {path} if {path} is already a relative path
@@ -214,11 +213,9 @@ Describe gita#utils
 
   Context #ensure_pathlist({pathlist})
     Before
-      let bufname = g:P.join(g:repository_root, 'foo.txt')
+      WorkonInside
+      let bufname = 'foo.txt'
       silent execute printf('new %s', bufname)
-    End
-    After
-      call WipeoutAll()
     End
 
     It should return a list of absolute path

@@ -7,8 +7,7 @@ let s:D = gita#import('Data.Dict')
 let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'diff-ls'], s:const.bufname_sep)
+let s:const.bufname = 'gita%sdiff-ls'
 let s:const.filetype = 'gita-diff-ls'
 
 let s:parser = s:A.new({
@@ -120,7 +119,7 @@ function! gita#features#diff_ls#open(...) abort " {{{
     return
   endif
   let bufname = gita#utils#buffer#bufname(
-        \ s:const.bufname,
+        \ substitute(s:const.bufname, '%s', g:gita#utils#buffer#separator, 'g'),
         \ options.commit,
         \)
   let result = gita#monitor#open(bufname, options, {

@@ -1,6 +1,6 @@
 Describe gita#utils#hooks
-  After
-    silent! unlet! b:_gita_hooks
+  Before
+    Init
   End
 
   Context #new()

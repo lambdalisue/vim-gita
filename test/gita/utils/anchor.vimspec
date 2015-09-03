@@ -1,18 +1,8 @@
 Describe gita#utils#anchor
   Before
-    let saved_unsuitable_bufname_pattern =
-          \ g:gita#utils#anchor#unsuitable_bufname_pattern
-    let saved_unsuitable_filetype_pattern =
-          \ g:gita#utils#anchor#unsuitable_filetype_pattern
+    Init
     let g:gita#utils#anchor#unsuitable_bufname_pattern = '^unsuitable'
     let g:gita#utils#anchor#unsuitable_filetype_pattern = '^unsuitable'
-  End
-  After
-    call WipeoutAll()
-    let g:gita#utils#anchor#unsuitable_bufname_pattern =
-          \ saved_unsuitable_bufname_pattern
-    let g:gita#utils#anchor#unsuitable_filetype_pattern =
-          \ saved_unsuitable_filetype_pattern
   End
 
   Context #is_suitable({winnr})

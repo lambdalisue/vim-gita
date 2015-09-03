@@ -1,7 +1,6 @@
 Describe gita#meta
-  After
-    silent! unlet! b:_gita_meta
-    silent! unlet! w:_gita_meta
+  Before
+    Init
   End
 
   Context #get({name}[, {default}, {expr}])

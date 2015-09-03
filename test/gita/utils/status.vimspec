@@ -1,4 +1,8 @@
 Describe gita#utils#status
+  Before
+    Init
+  End
+
   Context #virtual({path}[, {extra}])
     It should return a virtual status from a path
       let gita = gita#get()
@@ -115,10 +119,6 @@ Describe gita#utils#status
               \ ], "\n"),
               \}
       endfunction
-    End
-    After
-      " refresh gita instance
-      silent! unlet! b:_gita
     End
 
     It should retrieve a real status from {path}

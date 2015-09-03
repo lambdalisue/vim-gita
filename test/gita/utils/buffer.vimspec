@@ -1,11 +1,7 @@
 Describe gita#utils#buffer
   Before
-    let saved_separator = g:gita#utils#buffer#separator
+    Init
     let g:gita#utils#buffer#separator = '_'
-  End
-  After
-    call WipeoutAll()
-    let g:gita#utils#buffer#separator = saved_separator
   End
 
   Context #bufname([{name}, ...])
@@ -144,20 +140,3 @@ Describe gita#utils#buffer
     End
   End
 End
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

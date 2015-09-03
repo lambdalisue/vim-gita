@@ -1,8 +1,8 @@
 Describe gita#utils#help
-  After
-    silent! unlet b:_gita_help_foo_enabled
-    silent! unlet b:_gita_help_short_format_enabled
+  Before
+    Init
   End
+
   Context #is_enable({name})
     It should return 0 for disabled {name}
       call gita#utils#help#disable('foo')

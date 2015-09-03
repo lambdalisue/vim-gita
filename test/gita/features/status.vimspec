@@ -1,13 +1,11 @@
 Describe gita#features#status
   Before
-    let saved_cwd = getcwd()
-    execute printf('cd %s', fnameescape(g:repository_root))
-
+    Init
+    WorkonInside
     new
     let gita = gita#get()
     let gita.git.cache.repository.clear()
-    let operations_saved = deepcopy(gita.operations)
-
+    let gita.operations._previous_args = []
     function! gita.operations.status(...) abort
       call add(self._previous_args, a:000)
       return {
@@ -19,13 +17,6 @@ Describe gita#features#status
             \ ], "\n"),
             \}
     endfunction
-    let gita.operations._previous_args = []
-  End
-
-  After
-    let gita.operations = operations_saved
-    call WipeoutAll()
-    execute printf('cd %s', fnameescape(saved_cwd))
   End
 
   Context #open({options})

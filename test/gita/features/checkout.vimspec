@@ -1,15 +1,11 @@
 Describe gita#features#checkout
   Before
+    Init
     let gita = gita#get()
-    let operations_saved = deepcopy(gita.operations)
-
-    function! gita.operations.checkout(...) abort
-      let self._previous_args = a:000
-    endfunction
     let gita.operations._previous_args = []
-  End
-  After
-    let gita.operations = operations_saved
+    function! gita.operations.checkout(...) abort
+      call add(self._previous_args, a:000)
+    endfunction
   End
 
   Context #exec([{options}, {config}])
@@ -25,7 +21,7 @@ Describe gita#features#checkout
             \ 'orphan': 1,
             \ 'commit': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ 'q': 1, 'quiet': 1,
             \ 'f': 1, 'force': 1,
             \ 'ours': 1, 'theirs': 1,
@@ -35,42 +31,36 @@ Describe gita#features#checkout
             \ 'detach': 1,
             \ 'orphan': 1,
             \ 'commit': 1,
-            \}, {}])
+            \}, {}]])
     End
 
     It should remove unknown options internally
       call gita#features#checkout#exec({
             \ 'unknown_option': 1,
             \})
-      Assert Equals(gita.operations._previous_args, [{}, {}])
+      Assert Equals(gita.operations._previous_args, [[{}, {}]])
     End
   End
 
   Context #command({bang}, {range}[, {cmdline}])
-    Before
-      let default_options_saved = g:gita#features#checkout#default_options
-      let g:gita#features#checkout#default_options = {}
-    End
-    After
-      let g:gita#features#checkout#default_options = default_options_saved
-    End
-
     It should assume the first unknown argument is 'commit' argument
+      let g:gita#features#checkout#default_options = {}
       call gita#features#checkout#command('', [0, 0], 'foo')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [],
             \ 'commit': 'foo',
-            \}, {}])
+            \}, {}]])
     End
     It should automatically add unknown options to '--'
+      let g:gita#features#checkout#default_options = {}
       call gita#features#checkout#command('', [0, 0], 'foo bar hoge')
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [
             \   gita#utils#ensure_abspath(gita#utils#expand('bar')),
             \   gita#utils#ensure_abspath(gita#utils#expand('hoge')),
             \ ],
             \ 'commit': 'foo',
-            \}, {}])
+            \}, {}]])
     End
     It should automatically add default options
       let g:gita#features#checkout#default_options = {
@@ -79,12 +69,12 @@ Describe gita#features#checkout
             \ 'ours': 1,
             \}
       call gita#features#checkout#command('', [0, 0])
-      Assert Equals(gita.operations._previous_args, [{
+      Assert Equals(gita.operations._previous_args, [[{
             \ '--': [],
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'ours': 1,
-            \}, {}])
+            \}, {}]])
     End
   End
 

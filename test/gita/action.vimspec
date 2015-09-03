@@ -3,9 +3,8 @@ function! GetCandidates(start, end) abort
 endfunction
 
 Describe gita#action
-  After
-    " refresh everything
-    call WipeoutAll()
+  Before
+    Init
   End
 
   Context #get_actions()

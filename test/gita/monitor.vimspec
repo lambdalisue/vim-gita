@@ -1,6 +1,6 @@
 Describe gita#monitor
-  After
-    call WipeoutAll()
+  Before
+    Init
   End
 
   Context #open({bufname}[, {options}, {config}])

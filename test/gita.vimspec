@@ -1,13 +1,15 @@
 Describe gita
+  Before
+    Init
+    let P = Import('System.Filepath')
+  End
+
   Context #new([{expr}])
     Context A file buffer in a git repository
       Before
-        let bufname = g:P.join(g:repository_root, 'foo.txt')
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        WorkonInside
+        let bufname = P.join(g:gita#test#inside, 'foo.txt')
+        silent execute printf('new %s', bufname)
       End
       It should return a gita instance
         let gita = gita#new(bufname)
@@ -25,12 +27,9 @@ Describe gita
 
     Context A file buffer in a non git repository
       Before
-        let bufname = g:P.join(g:non_repository_root, 'foo.txt')
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        WorkonInside
+        let bufname = P.join(g:gita#test#outside, 'foo.txt')
+        silent execute printf('new %s', bufname)
       End
       It should return a gita instance while cwd is in a git repository
         let gita = gita#new(bufname)
@@ -39,20 +38,15 @@ Describe gita
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
-      It should NOT return a gita instance if cwd is not in a git repository
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#new(bufname)
-          Assert Equals(gita.enabled, 0)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+      It should return a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = gita#new(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
       End
-      It should return a different gita instance
+      It should return a different gita instance always
         let gita1 = gita#new(bufname)
         let gita2 = gita#new(bufname)
         Assert NotSame(gita1, gita2)
@@ -61,33 +55,25 @@ Describe gita
 
     Context A non file buffer
       Before
+        WorkonInside
         let bufname = 'non-file'
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        silent execute printf('new %s', bufname)
         setlocal buftype=nofile
       End
-      It should return a gita instance of a current working directory
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:repository_root)
-          let gita = gita#new(bufname)
-          Assert Equals(gita.enabled, 1)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-
-          silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#new(bufname)
-          Assert Equals(gita.enabled, 0)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+      It should return a gita instance while cwd is in a git repository
+        let gita = gita#new(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a gita instance obut not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = gita#new(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
       End
     End
   End
@@ -95,12 +81,9 @@ Describe gita
   Context #get([{expr}])
     Context A file buffer in a git repository
       Before
-        let bufname = g:P.join(g:repository_root, 'foo.txt')
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        WorkonInside
+        let bufname = P.join(g:gita#test#inside, 'foo.txt')
+        silent execute printf('new %s', bufname)
       End
       It should return a gita instance
         let gita = gita#get(bufname)
@@ -125,12 +108,9 @@ Describe gita
 
     Context A file buffer in a non git repository
       Before
-        let bufname = g:P.join(g:non_repository_root, 'foo.txt')
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        WorkonInside
+        let bufname = P.join(g:gita#test#outside, 'foo.txt')
+        silent execute printf('new %s', bufname)
       End
       It should return a gita instance while cwd is in a git repository
         let gita = gita#get(bufname)
@@ -139,18 +119,13 @@ Describe gita
         Assert Equals(gita.bufnum, bufnr(bufname))
         Assert Equals(gita.cwd, getcwd())
       End
-      It should NOT return a gita instance if cwd is not in a git repository
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#get(bufname)
-          Assert Equals(gita.enabled, 0)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+      It should return a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = gita#get(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
       End
       It should return a same gita instance
         let gita1 = gita#get(bufname)
@@ -168,56 +143,36 @@ Describe gita
 
     Context A non file buffer
       Before
+        WorkonInside
         let bufname = 'non-file'
-        if empty(bufname(bufname))
-          silent execute printf('new %s', bufname)
-        else
-          silent execute printf('%dwincmd w', bufwinnr(bufname))
-        endif
+        silent execute printf('new %s', bufname)
         setlocal buftype=nofile
       End
-      It should return a gita instance of a current working directory
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:repository_root)
-          let gita = gita#get(bufname)
-          Assert Equals(gita.enabled, 1)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-
-          silent execute printf('cd %s', g:non_repository_root)
-          let gita = gita#get(bufname)
-          Assert Equals(gita.enabled, 0)
-          Assert Equals(gita.bufname, bufname(bufname))
-          Assert Equals(gita.bufnum, bufnr(bufname))
-          Assert Equals(gita.cwd, getcwd())
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+      It should return a gita instance while cwd is in a git repository
+        let gita = gita#get(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It should return a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = gita#get(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
       End
       It should return a same gita instance
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:repository_root)
-          let gita1 = gita#get(bufname)
-          let gita2 = gita#get(bufname)
-          Assert Same(gita1, gita2)
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+        let gita1 = gita#get(bufname)
+        let gita2 = gita#get(bufname)
+        Assert Same(gita1, gita2)
       End
       It should not return a same gita instance if a current working directory has changed
-        let original_cwd = getcwd()
-        try
-          silent execute printf('cd %s', g:repository_root)
-          let gita1 = gita#get(bufname)
-          silent execute printf('cd %s', g:P.join(g:repository_root, 'foo'))
-          let gita2 = gita#get(bufname)
-          Assert NotSame(gita1, gita2)
-        finally
-          silent execute printf('cd %s', original_cwd)
-        endtry
+        let gita1 = gita#get(bufname)
+        WorkonOutside
+        let gita2 = gita#get(bufname)
+        Assert NotSame(gita1, gita2)
       End
     End
   End

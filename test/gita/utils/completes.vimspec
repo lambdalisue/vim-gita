@@ -1,7 +1,6 @@
 Describe gita#utils#completes
-  After
-    " refresh gita instance
-    silent! unlet! b:_gita
+  Before
+    Init
   End
 
   Context #complete_branch({arglead}, {cmdline}, {cursorpos}[, ...])

@@ -1,10 +1,11 @@
 Describe gita#features#diff
   Before
+    Init
     edit README.md
     let gita = gita#get()
     let gita.git.cache.repository.clear()
-    let operations_saved = deepcopy(gita.operations)
-
+    let gita.operations._previous_args = []
+    let gita.operations._previous_args_show = []
     function! gita.operations.diff(...) abort
       let self._previous_args = a:000
       return {
@@ -25,13 +26,6 @@ Describe gita#features#diff
             \ 'stdout': 'COMMON-ANCESTOR',
             \}
     endfunction
-    let gita.operations._previous_args = []
-    let gita.operations._previous_args_show = []
-  End
-
-  After
-    let gita.operations = operations_saved
-    call WipeoutAll()
   End
 
   Context #split_commit({commit}[, {options}])
@@ -261,5 +255,4 @@ Describe gita#features#diff
 
     End
   End
-
 End

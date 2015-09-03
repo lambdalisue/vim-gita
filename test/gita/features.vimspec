@@ -1,5 +1,6 @@
 Describe gita#features
   Before
+    Init
     call gita#features#_clear()
   End
 
@@ -10,12 +11,10 @@ Describe gita#features
             \ {}, {},
             \)
     End
-
     It should return 1 for registered {name}
       let ret = gita#features#is_registered('registered_feature')
       Assert True(ret)
     End
-
     It should return 0 for unregistered {name}
       let ret = gita#features#is_registered('unregistered_feature')
       Assert False(ret)
@@ -29,12 +28,10 @@ Describe gita#features
             \ {}, {},
             \)
     End
-
     It should throw an exception for {name} which has already registered
       Throw gita#features#register('registered_feature', {}, {})
             \ /^vim-gita: a feature "registered_feature" has already been/
     End
-
     It should register {name} which has not registered
       call gita#features#register(
             \ 'unregistered_feature',
@@ -52,12 +49,10 @@ Describe gita#features
             \ {}, {},
             \)
     End
-
     It should throw an exception for {name} which has not registered yet
       Throw gita#features#unregister('unregistered_feature', {}, {})
             \ /^vim-gita: a feature "unregistered_feature" has not been/
     End
-
     It should unregister {name} which has registered
       call gita#features#unregister(
             \ 'registered_feature',
@@ -70,17 +65,16 @@ Describe gita#features
   Context #command({bang}, {range}[, {cmdline}])
     Before
       let gita = gita#get()
-      let operations_saved = deepcopy(gita.operations)
-      function! gita.operations.exec_raw(...) abort
-        let self._previous_args = a:000
-      endfunction
       let gita.operations._previous_args = []
+      function! gita.operations.exec_raw(...) abort
+        call add(self._previous_args, a:000)
+      endfunction
 
       let feature = {
             \ '_previous_args': [],
             \}
       function! feature.command(...) abort
-        let self._previous_args = a:000
+        call add(self._previous_args, a:000)
       endfunction
       function! feature.complete(...) abort
       endfunction
@@ -91,30 +85,23 @@ Describe gita#features
             \ feature,
             \)
     End
-
-    After
-      let gita.operations = operations_saved
-    End
-
     It should call raw git command if the action is not registered in features
       call gita#features#command('', [0, 0], 'unknown -a -b c')
-      Assert Equals(gita.operations._previous_args, 
+      Assert Equals(gita.operations._previous_args, [
             \ [['unknown', '-a', '-b', 'c'], { 'interactive': 0 }]
-            \)
+            \])
     End
-
     It should call raw git command if the bang is !
       call gita#features#command('!', [0, 0], 'known -a -b c')
-      Assert Equals(gita.operations._previous_args, 
+      Assert Equals(gita.operations._previous_args, [
             \ [['known', '-a', '-b', 'c'], { 'interactive': 0 }]
-            \)
+            \])
     End
-
     It should call gita feature if the action is registered in features
       call gita#features#command('', [0, 0], 'known -a -b c')
-      Assert Equals(feature._previous_args, 
+      Assert Equals(feature._previous_args, [
             \ ['', [0, 0], '-a -b c']
-            \)
+            \])
     End
   End
 
@@ -126,7 +113,7 @@ Describe gita#features
       function! feature.command(...) abort
       endfunction
       function! feature.complete(...) abort
-        let self._previous_args = a:000
+        call add(self._previous_args, a:000)
       endfunction
 
       call gita#features#register('known',
@@ -135,22 +122,19 @@ Describe gita#features
             \ feature,
             \)
     End
-
     It should NOT call gita completion if the action is not registered in features
       call gita#features#complete('a', 'Gita unknown', [0, 0])
       Assert Equals(feature._previous_args, [])
     End
-
     It should NOT call gita completion if the bang is !
       call gita#features#complete('a', 'Gita! known', [0, 0])
       Assert Equals(feature._previous_args, [])
     End
-
     It should call gita completion if the action is registered in features
       call gita#features#complete('a', 'Gita known', [0, 0])
-      Assert Equals(feature._previous_args, 
+      Assert Equals(feature._previous_args, [
             \ ['a', 'known', [0, 0]]
-            \)
+            \])
     End
   End
 End

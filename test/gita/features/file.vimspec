@@ -1,8 +1,8 @@
 Describe gita#features#file
   Before
+    Init
     let gita = gita#get()
-    let operations_saved = deepcopy(gita.operations)
-
+    let gita.operations._previous_args = []
     function! gita.operations.show(...) abort
       let self._previous_args = a:000
       return {
@@ -16,11 +16,6 @@ Describe gita#features#file
             \ 'stdout': 'COMMON-ANCESTOR',
             \}
     endfunction
-    let gita.operations._previous_args = []
-  End
-
-  After
-    let gita.operations = operations_saved
   End
 
   Context #exec([{options}, {config}])
@@ -122,7 +117,7 @@ Describe gita#features#file
             \ 'file': 'README.md',
             \})
       " it should call gita.operations.show to obtain contents
-      Assert Equals(bufname('%'), 'INDEX:README.md')
+      Assert Equals(bufname('%'), 'INDEX_README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
             \ gita#meta#get('filename'),
@@ -137,7 +132,7 @@ Describe gita#features#file
             \ 'file': 'README.md',
             \})
       " it should call gita.operations.show to obtain contents
-      Assert Equals(bufname('%'), 'commit1...commit2:README.md')
+      Assert Equals(bufname('%'), 'commit1...commit2_README.md')
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
             \ gita#meta#get('filename'),
