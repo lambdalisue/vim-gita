@@ -12,3 +12,5 @@ Vim.Buffer
 Vim.BufferManager
 System.File
 VCS.Git.Core
+DateTime
+Data.String
