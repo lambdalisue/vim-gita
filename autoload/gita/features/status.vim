@@ -4,7 +4,6 @@ set cpo&vim
 
 let s:L = gita#import('Data.List')
 let s:D = gita#import('Data.Dict')
-let s:F = gita#import('System.File')
 let s:P = gita#import('System.Filepath')
 let s:A = gita#import('ArgumentParser')
 
