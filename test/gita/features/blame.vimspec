@@ -1,0 +1,210 @@
+let s:T = Import('DateTime')
+let s:P = Import('System.Filepath')
+let s:S = Import('Vim.ScriptLocal')
+let s:sf = s:S.sfuncs(s:P.join(
+      \ g:gita#test#root, 'autoload', 'gita', 'features', 'blame.vim'
+      \))
+
+Describe gita#features#blame
+  Before
+    Init
+    let blameobj = {
+          \ 'revisions': {
+          \   'rev1': {
+          \     'author': 'lambdalisue',
+          \     'summary': '1st revision',
+          \     'filename': 'foo.txt',
+          \     'boundary': 1,
+          \   },
+          \   'rev2': {
+          \     'author': 'lambdalisue',
+          \     'summary': '2nd revision',
+          \     'filename': 'bar.txt',
+          \     'previous': 'revision1 foo.txt',
+          \   },
+          \   'rev3': {
+          \     'author': 'lambdalisue',
+          \     'summary': '3rd revision',
+          \     'filename': 'foo.txt',
+          \     'previous': 'revision2 bar.txt',
+          \     'boundary': 1,
+          \   },
+          \ },
+          \ 'lineinfos': [
+          \   { 'revision': 'rev1', 'linenum': { 'original': 0, 'final': 0 }, 'nlines': 3, 'contents': 'foo' },
+          \   { 'revision': 'rev1', 'linenum': { 'original': 1, 'final': 1 }, 'contents': 'foo' },
+          \   { 'revision': 'rev1', 'linenum': { 'original': 2, 'final': 2 }, 'contents': 'foo' },
+          \   { 'revision': 'rev2', 'linenum': { 'original': 3, 'final': 3 }, 'nlines': 3, 'contents': 'bar' },
+          \   { 'revision': 'rev2', 'linenum': { 'original': 4, 'final': 4 }, 'contents': 'bar' },
+          \   { 'revision': 'rev2', 'linenum': { 'original': 5, 'final': 5 }, 'contents': 'bar' },
+          \   { 'revision': 'rev3', 'linenum': { 'original': 6, 'final': 6 }, 'nlines': 3, 'contents': 'hoge' },
+          \   { 'revision': 'rev3', 'linenum': { 'original': 7, 'final': 7 }, 'contents': 'hoge' },
+          \   { 'revision': 'rev3', 'linenum': { 'original': 8, 'final': 8 }, 'contents': 'hoge' },
+          \ ],
+          \}
+  End
+
+  Context [PRIVATE] s:create_chunks({gita}, {blameobj})
+    It should return chunks
+      let gita = gita#get()
+      let chunks = s:sf.create_chunks(gita, blameobj)
+      Assert Equals(len(chunks), 3)
+      Assert Equals(chunks[0].filename, gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(chunks[1].filename, gita#utils#ensure_abspath('bar.txt'))
+      Assert Equals(chunks[2].filename, gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(chunks[1].previous, 'revision1 foo.txt')
+      Assert Equals(chunks[2].previous, 'revision2 bar.txt')
+      Assert Equals(chunks[0].revision, 'rev1')
+      Assert Equals(chunks[1].revision, 'rev2')
+      Assert Equals(chunks[2].revision, 'rev3')
+      Assert Equals(chunks[0].contents, [ 'foo', 'foo', 'foo' ])
+      Assert Equals(chunks[1].contents, [ 'bar', 'bar', 'bar' ])
+      Assert Equals(chunks[2].contents, [ 'hoge', 'hoge', 'hoge' ])
+    End
+  End
+
+  Context [PRIVATE] s:format_timestamp({timestamp}, {timezone}, {now})
+    It should return 'about' if timedelta is less than 3 months
+      let now = s:T.now()
+      let timestamp = now.to(s:T.delta(-60, 'day')).unix_time()
+      let ret = s:sf.format_timestamp(timestamp, '', now)
+      Assert Equals(ret, '2 months ago')
+    End
+    It should return '%d %b, %Y' if timedelta is more than 3 months
+      let now = s:T.from_date(2000, 8, 1)
+      let timestamp = now.to(s:T.delta(-180, 'day')).unix_time()
+      let ret = s:sf.format_timestamp(timestamp, '', now)
+      Assert Equals(ret, 'on 01 Feb, 2000')
+    End
+  End
+
+  Context [PRIVATE] s:format_chunk({chunk}, {width}, {wrap}, {now})
+    let chunk = {
+          \ 'revision': 'rev1***--------------',
+          \ 'linenum': {
+          \   'original': 1,
+          \   'final': 1,
+          \ },
+          \ 'nlines': 3,
+          \ 'contents': [
+          \   'foo',
+          \   'bar',
+          \   'hoge',
+          \ ],
+          \ 'author': 'lambdalisue',
+          \ 'author_time': 0,
+          \ 'author_tz': '',
+          \ 'summary': 'this is a summary',
+          \}
+    It should return formatted text
+      let now = s:T.now()
+      let ret = s:sf.format_chunk(chunk, 50, 1, now)
+      Assert Equals(ret, [
+            \ 'this is a summary',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev1***',
+            \])
+    End
+    It should return formatted text even with very long summary
+      let chunk.summary = repeat('*', 80)
+      let now = s:T.now()
+      let ret = s:sf.format_chunk(chunk, 50, 1, now)
+      Assert Equals(ret, [
+            \ '************************************************',
+            \ '********************************',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev1***',
+            \])
+
+      let ret = s:sf.format_chunk(chunk, 50, 0, now)
+      Assert Equals(ret, [
+            \ '******************************************...***',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev1***',
+            \])
+    End
+  End
+
+  Context [PRIVATE] s:format_chunks({chunks}, {width})
+    let chunks = [{
+          \   'index': 0,
+          \   'revision': 'rev1',
+          \   'linenum': { 'original': 1, 'final': 1 }, 'nlines': 3,
+          \   'contents': [ 'foo', 'bar', 'hoge' ],
+          \   'author': 'lambdalisue', 'author_time': 0, 'author_tz': '',
+          \   'summary': 'this is a summary',
+          \ }, {
+          \   'index': 1,
+          \   'revision': 'rev2',
+          \   'linenum': { 'original': 4, 'final': 4 }, 'nlines': 3,
+          \   'contents': [ 'foo', 'bar', 'hoge' ],
+          \   'author': 'lambdalisue', 'author_time': 0, 'author_tz': '',
+          \   'summary': 'this is a summary',
+          \ }, {
+          \   'index': 2,
+          \   'revision': 'rev1',
+          \   'linenum': { 'original': 7, 'final': 7 }, 'nlines': 3,
+          \   'contents': [ 'foo', 'bar', 'hoge' ],
+          \   'author': 'lambdalisue', 'author_time': 0, 'author_tz': '',
+          \   'summary': 'this is a summary',
+          \ }, {
+          \   'index': 3,
+          \   'revision': 'rev3',
+          \   'linenum': { 'original': 10, 'final': 10 }, 'nlines': 3,
+          \   'contents': [ 'foo', 'bar', 'hoge' ],
+          \   'author': 'lambdalisue', 'author_time': 0, 'author_tz': '',
+          \   'summary': 'this is a summary',
+          \ },
+          \]
+    It should return {meta} from {chunks} and {width}
+      let meta = s:sf.format_chunks(chunks, 50)
+      Assert Equals(meta.contents.NAVI, [
+            \ 'this is a summary',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev1',
+            \ '', '',
+            \ 'this is a summary',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev2',
+            \ '', '',
+            \ 'this is a summary',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev1',
+            \ '', '',
+            \ 'this is a summary',
+            \ 'lambdalisue authored on 01 Jan, 1970      rev3',
+            \ '',
+            \])
+      Assert Equals(meta.contents.VIEW, [
+            \ 'foo', 'bar', 'hoge',
+            \ '',
+            \ 'foo', 'bar', 'hoge',
+            \ '',
+            \ 'foo', 'bar', 'hoge',
+            \ '',
+            \ 'foo', 'bar', 'hoge',
+            \])
+      Assert Equals(meta.chunks, chunks)
+      Assert Equals(meta.lineinfos, [
+            \ { 'chunkref': 0, 'linenum': { 'original': 1, 'final': 1 } },
+            \ { 'chunkref': 0, 'linenum': { 'original': 2, 'final': 2 } },
+            \ { 'chunkref': 0, 'linenum': { 'original': 3, 'final': 3 } },
+            \ { 'chunkref': 0, 'linenum': { 'original': 3, 'final': 3 } },
+            \ { 'chunkref': 1, 'linenum': { 'original': 4, 'final': 4 } },
+            \ { 'chunkref': 1, 'linenum': { 'original': 5, 'final': 5 } },
+            \ { 'chunkref': 1, 'linenum': { 'original': 6, 'final': 6 } },
+            \ { 'chunkref': 1, 'linenum': { 'original': 6, 'final': 6 } },
+            \ { 'chunkref': 2, 'linenum': { 'original': 7, 'final': 7 } },
+            \ { 'chunkref': 2, 'linenum': { 'original': 8, 'final': 8 } },
+            \ { 'chunkref': 2, 'linenum': { 'original': 9, 'final': 9 } },
+            \ { 'chunkref': 2, 'linenum': { 'original': 9, 'final': 9 } },
+            \ { 'chunkref': 3, 'linenum': { 'original': 10, 'final': 10 } },
+            \ { 'chunkref': 3, 'linenum': { 'original': 11, 'final': 11 } },
+            \ { 'chunkref': 3, 'linenum': { 'original': 12, 'final': 12 } },
+            \])
+      Assert Equals(meta.linerefs, [
+            \ 1, 2, 3,
+            \ 5, 6, 7,
+            \ 9, 10, 11,
+            \ 13, 14, 15,
+            \])
+      Assert Equals(meta.separators, [
+            \ 4, 8, 12,
+            \])
+    End
+  End
+End

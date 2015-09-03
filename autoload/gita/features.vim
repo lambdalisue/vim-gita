@@ -165,6 +165,10 @@ call gita#features#register('conflict',
       \ function('gita#features#conflict#command'),
       \ function('gita#features#conflict#complete'),
       \)
+call gita#features#register('blame',
+      \ function('gita#features#blame#command'),
+      \ function('gita#features#blame#complete'),
+      \)
 call gita#features#register('browse',
       \ function('gita#features#browse#command'),
       \ function('gita#features#browse#complete'),

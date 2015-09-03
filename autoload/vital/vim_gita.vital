@@ -14,3 +14,4 @@ System.File
 VCS.Git.Core
 DateTime
 Data.String
+VCS.Git.BlameParser

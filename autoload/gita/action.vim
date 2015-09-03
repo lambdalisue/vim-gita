@@ -34,6 +34,9 @@ function! s:actions.solve(candidates, options, config) abort " {{{
   call call('gita#features#conflict#action', [a:candidates, a:options, a:config])
   call self.update(a:candidates, a:options, a:config)
 endfunction " }}}
+function! s:actions.blame(candidates, options, config) abort " {{{
+  call call('gita#features#blame#action', [a:candidates, a:options, a:config])
+endfunction " }}}
 function! s:actions.browse(candidates, options, config) abort " {{{
   call call('gita#features#browse#action', [a:candidates, a:options, a:config])
 endfunction " }}}
