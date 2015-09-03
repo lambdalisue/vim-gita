@@ -65,15 +65,15 @@ Describe gita#features#blame
 
   Context [PRIVATE] s:format_timestamp({timestamp}, {timezone}, {now})
     It should return 'about' if timedelta is less than 3 months
-      let now = s:T.now()
+      let now = s:T.now('+09:00')
       let timestamp = now.to(s:T.delta(-60, 'day')).unix_time()
-      let ret = s:sf.format_timestamp(timestamp, '', now)
+      let ret = s:sf.format_timestamp(timestamp, '+09:00', now)
       Assert Equals(ret, '2 months ago')
     End
     It should return '%d %b' if timedelta is more than 3 months
-      let now = s:T.from_date(2000, 8, 1)
+      let now = s:T.from_date(2000, 8, 1, 0, 0, 0, '+09:00')
       let timestamp = now.to(s:T.delta(-180, 'day')).unix_time()
-      let ret = s:sf.format_timestamp(timestamp, '', now)
+      let ret = s:sf.format_timestamp(timestamp, '+09:00', now)
       Assert Equals(ret, 'on 01 Feb')
     End
   End
