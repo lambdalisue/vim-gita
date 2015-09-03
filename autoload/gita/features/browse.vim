@@ -73,6 +73,13 @@ function! s:find_common_ancestor(gita, commit1, commit2) abort " {{{
           \ 'echo': 'fail',
           \})
     if result.status
+      call gita#utils#prompt#debug(
+            \ 'find_common_ancestor',
+            \ a:commit1,
+            \ a:commit2,
+            \ result.status,
+            \ result.stdout,
+            \)
       return ''
     endif
     return result.stdout
@@ -83,10 +90,11 @@ function! s:find_commit_meta(gita, commit) abort " {{{
           \ a:commit,
           \ '\v^([^.]*)\.\.\.([^.]*)$',
           \)[ 1 : 2 ]
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
     let remote = a:gita.git.get_branch_remote(lhs)
     " 'git diff A...B' is equivalent to 'git diff $(git-merge-base A B) B'
     let lhs = s:find_common_ancestor(a:gita, lhs, rhs)
-    let rhs = empty(rhs) ? 'HEAD' : rhs
   elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
     let [lhs, rhs] = matchlist(
           \ a:commit,
