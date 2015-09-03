@@ -70,11 +70,11 @@ Describe gita#features#blame
       let ret = s:sf.format_timestamp(timestamp, '', now)
       Assert Equals(ret, '2 months ago')
     End
-    It should return '%d %b, %Y' if timedelta is more than 3 months
+    It should return '%d %b' if timedelta is more than 3 months
       let now = s:T.from_date(2000, 8, 1)
       let timestamp = now.to(s:T.delta(-180, 'day')).unix_time()
       let ret = s:sf.format_timestamp(timestamp, '', now)
-      Assert Equals(ret, 'on 01 Feb, 2000')
+      Assert Equals(ret, 'on 01 Feb')
     End
   End
 

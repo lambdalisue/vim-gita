@@ -116,6 +116,8 @@ function! s:format_timestamp(timestamp, timezone, now) abort " {{{
   let timedelta = datetime.delta(a:now)
   if timedelta.duration().months() < 3
     return timedelta.about()
+  elseif datetime.year() == a:now.year()
+    return 'on ' . datetime.strftime('%d %b')
   else
     return 'on ' . datetime.strftime('%d %b, %Y')
   endif
