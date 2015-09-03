@@ -200,7 +200,7 @@ function! s:actions.open_status(candidates, options, config) abort " {{{
 endfunction " }}}
 function! s:actions.commit(candidates, options, config) abort " {{{
   call s:commit('%', a:options)
-  call self.update(a:candidates, a:options, config)
+  call self.update(a:candidates, a:options, a:config)
 endfunction " }}}
 
 
