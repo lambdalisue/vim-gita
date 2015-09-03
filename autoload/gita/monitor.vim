@@ -59,7 +59,7 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
   let w:_gita = gita
   let w:_gita_options = deepcopy(options)
   let w:_gita_statuses_map = {}
-  call gita#action#set_candidates(function('s:get_statuses'))
+  call gita#action#register_get_candidates(function('s:get_statuses'))
 
   if get(b:, '_gita_constructed') && !g:gita#debug
     return {

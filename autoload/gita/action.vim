@@ -71,6 +71,23 @@ function! s:actions.diff(candidates, options) abort " {{{
   endfor
 endfunction " }}}
 
+function! s:default_get_candidates(start, end, ...) abort " {{{
+  let filename = gita#utils#expand('%')
+  let commit   = gita#meta#get('commit', '')
+  let candidate = gita#action#new_candidate(filename, commit, {
+        \ 'line_start': a:start,
+        \ 'line_end': a:end,
+        \})
+  return [candidate]
+endfunction " }}}
+
+function! gita#action#new_candidate(filename, commit, ...) abort " {{{
+  let candidate = {
+        \ 'filename': gita#utils#ensure_abspath(a:filename),
+        \ 'commit': a:commit,
+        \}
+  return extend(candidate, get(a:000, 0, {}))
+endfunction " }}}
 function! gita#action#get_actions() abort " {{{
   let b:_gita_actions = get(b:, '_gita_actions', deepcopy(s:actions))
   return b:_gita_actions
@@ -87,20 +104,11 @@ function! gita#action#get_candidates(...) abort " {{{
   if has_key(b:, '_gita_action_get_candidates')
     return b:_gita_action_get_candidates(start, end)
   else
-    return filter(
-          \ get(w:, '_gita_action_candidates', [])[ start : end ],
-          \ '!empty(v:val)',
-          \)
+    return s:default_get_candidates(start, end, get(a:000, 2, {}))
   endif
 endfunction " }}}
-function! gita#action#set_candidates(candidates) abort " {{{
-  if s:P.is_funcref(a:candidates)
-    silent! unlet w:_gita_action_candidates
-    let b:_gita_action_get_candidates = a:candidates
-  else
-    silent! unlet b:_gita_action_get_candidates
-    let w:_gita_action_candidates = a:candidates
-  endif
+function! gita#action#register_get_candidates(get_candidates) abort " {{{
+  let b:_gita_action_get_candidates = a:get_candidates
 endfunction " }}}
 function! gita#action#smart_map(lhs, rhs) abort range " {{{
   return empty(gita#action#get_candidates(a:firstline, a:firstline))
@@ -110,7 +118,7 @@ endfunction " }}}
 function! gita#action#exec(name, ...) abort range " {{{
   let options = get(a:000, 0, {})
   let candidates = gita#action#get_candidates(
-        \ a:firstline, a:lastline,
+        \ a:firstline, a:lastline, options,
         \)
   let actions = gita#action#get_actions()
   call call(

@@ -1,3 +1,9 @@
+let s:P = Import('System.Filepath')
+let s:S = Import('Vim.ScriptLocal')
+let s:sf = s:S.sfuncs(s:P.join(
+      \ g:gita#test#root, 'autoload', 'gita', 'action.vim'
+      \))
+
 function! GetCandidates(start, end) abort
   return ['a', 'b', 'c', 'd', 'e'][ a:start : a:end ]
 endfunction
@@ -5,6 +11,40 @@ endfunction
 Describe gita#action
   Before
     Init
+  End
+
+  Context [PRIVATE] s:default_get_candidates({start}, {end}[, {options}])
+    It should return candidates based on the current buffer
+      let ret = s:sf.default_get_candidates(0, 0)
+      let exp = [{
+            \ 'filename': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'commit': '',
+            \ 'line_start': 0,
+            \ 'line_end': 0,
+            \}]
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Context #new_candidate({filename}, {commit}[, {extra}])
+    It should return a candidate
+      let ret = gita#action#new_candidate('', '')
+      let exp = {
+            \ 'filename': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'commit': '',
+            \}
+      Assert Equals(ret, exp)
+    End
+
+    It should return a candidate with extra fields
+      let ret = gita#action#new_candidate('', '', { 'foo': 'bar' })
+      let exp = {
+            \ 'filename': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'commit': '',
+            \ 'foo': 'bar',
+            \}
+      Assert Equals(ret, exp)
+    End
   End
 
   Context #get_actions()
@@ -35,16 +75,15 @@ Describe gita#action
   End
 
   Context #get_candidates([{start}, {end}])
-    It should return candidates from w:_gita_action_candidates
-      let w:_gita_action_candidates = [1, 2, 3, 4, 5]
+    It should return candidates from s:default_get_candidates
       let ret = gita#action#get_candidates()
-      Assert Equals(ret, [1, 2, 3, 4, 5])
-
-      let ret = gita#action#get_candidates(2)
-      Assert Equals(ret, [3, 4, 5])
-
-      let ret = gita#action#get_candidates(2, 3)
-      Assert Equals(ret, [3, 4])
+      let exp = [{
+            \ 'filename': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'commit': '',
+            \ 'line_start': 0,
+            \ 'line_end': -1,
+            \}]
+      Assert Equals(ret, exp)
     End
 
     It should return candidates from b:_gita_action_get_candidates()
@@ -60,27 +99,11 @@ Describe gita#action
     End
   End
 
-  Context #set_candidates({candidates})
-    After
-      silent! unlet! g:w_gita_action_candidates
-      silent! unlet! g:B_gita_action_get_candidates
-    End
-    It should let w:_gita_action_candidates when non funcref is specified
-      call gita#action#set_candidates([1, 2, 3, 4, 5])
-      let g:w_gita_action_candidates = get(w:, '_gita_action_candidates', 0)
-      let g:B_gita_action_get_candidates = get(b:, '_gita_action_get_candidates', 0)
-
-      Assert Equals(g:w_gita_action_candidates, [1, 2, 3, 4, 5])
-      Assert Equals(g:B_gita_action_get_candidates, 0)
-    End
-
+  Context #register_get_candidates({get_candidates})
     It should let b:_gita_action_get_candidates when funcref is specified
-      call gita#action#set_candidates(function('GetCandidates'))
-      let g:w_gita_action_candidates = get(w:, '_gita_action_candidates', 0)
-      let g:B_gita_action_get_candidates = get(b:, '_gita_action_get_candidates', 0)
-
-      Assert Equals(g:w_gita_action_candidates, 0)
-      Assert Equals(g:B_gita_action_get_candidates, function('GetCandidates'))
+      call gita#action#register_get_candidates(function('GetCandidates'))
+      let Fn = get(b:, '_gita_action_get_candidates', 0)
+      Assert Equals(Fn, function('GetCandidates'))
     End
   End
 
