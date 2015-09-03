@@ -44,6 +44,12 @@ function! gita#utils#eget(obj, name, default) abort " {{{
   let result = get(a:obj, a:name, a:default)
   return empty(result) ? a:default : result
 endfunction " }}}
+function! gita#utils#clip(content) abort " {{{
+  let @" = a:content
+  if has('clipboard')
+    call setreg(v:register, a:content)
+  endif
+endfunction " }}}
 
 function! gita#utils#expand(expr) abort " {{{
   if a:expr =~# '^%'

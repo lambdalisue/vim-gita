@@ -121,6 +121,53 @@ Describe gita#utils
     End
   End
 
+  Context #eget({obj}, {name}, {default})
+    It should return {obj}.{name} if {obj} has {name} entry
+      let obj = { 'foo': 'foo' }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'foo')
+    End
+
+    It should return {default} if {obj} does not have {name} entry
+      let obj = { 'hoge': 'foo' }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'bar')
+    End
+
+    It should return {default} if {obj}.{name} is empty
+      let obj = { 'foo': '' }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'bar')
+
+      let obj = { 'foo': [] }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'bar')
+
+      let obj = { 'foo': {} }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'bar')
+
+      let obj = { 'foo': 0 }
+      let ret = gita#utils#eget(obj, 'foo', 'bar')
+      Assert Equals(ret, 'bar')
+    End
+  End
+
+  Context #clip({content})
+    It should assign {content} to @" register
+      let @" = ""
+      call gita#utils#clip('foo')
+      Assert Equals(@", 'foo')
+    End
+
+    if has('clipboard')
+      It should assign {content} to clipboard register
+        call gita#utils#clip('foo')
+        Assert Equals(getreg(v:register), 'foo')
+      End
+    endif
+  End
+
   Context #expand({expr})
     Before
       WorkonInside
