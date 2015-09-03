@@ -114,7 +114,7 @@ Describe gita#action
 
   Context #exec({name}[, {options})
     It should execute {name} action
-      Assert True(exists('*gita#action#exec'))
+      Assert True(exists('*gita#action#call'))
       Skip Behavior test of 'range' function is not available?
     End
   End

@@ -125,25 +125,23 @@ function! gita#features#checkout#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#checkout#default_options),
           \ options)
-    if !empty(options.__unknown__)
-      let options['--'] = options.__unknown__
-    endif
-    call gita#action#exec('checkout', options)
+    let options['--'] = options.__unknown__
+    call gita#action#exec('checkout', options.__range__, options, { 'echo': 'both' })
   endif
 endfunction " }}}
 function! gita#features#checkout#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
-function! gita#features#checkout#action(candidates, options) abort " {{{
+function! gita#features#checkout#action(candidates, options, config) abort " {{{
   if empty(a:candidates)
     return
   endif
   let options = extend({
         \ '--': map(a:candidates, 'v:val.path'),
         \}, a:options)
-  call gita#features#checkout#exec(options, {
+  call gita#features#checkout#exec(options, extend({
         \ 'echo': 'fail',
-        \})
+        \}, a:config))
 endfunction " }}}
 
 

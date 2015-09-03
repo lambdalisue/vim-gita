@@ -339,7 +339,7 @@ function! gita#features#file#command(bang, range, ...) abort " {{{
           \ deepcopy(g:gita#features#file#default_options),
           \ options,
           \)
-    call gita#features#file#show(options)
+    call gita#action#exec('open', options.__range__, options)
   endif
 endfunction " }}}
 function! gita#features#file#complete(arglead, cmdline, cursorpos) abort " {{{
@@ -356,21 +356,22 @@ function! gita#features#file#_complete_commit(arglead, cmdline, cursorpos, ...) 
   let candidates = map(candidates, 'leading . v:val')
   return filter(deepcopy(candidates), 'v:val =~# "^" . a:arglead')
 endfunction " }}}
-function! gita#features#file#action(candidates, options) abort " {{{
+function! gita#features#file#action(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
   if empty(candidate)
     return
   endif
-  let commit = s:get('commit', a:options, candidate)
+  let commit = gita#utils#sget([a:options, candidate], 'commit')
+  let file = gita#utils#sget([a:options, candidate], 'path')
   let file = (commit ==# 'WORKTREE')
-        \ ? get(candidate, 'realpath', s:get('path', a:options, candidate))
-        \ : s:get('path', a:options, candidate)
+        \ ? gita#utils#sget([a:options, candidate], 'realpath', file)
+        \ : file
   call gita#utils#anchor#focus()
   call gita#features#file#show({
         \ 'file': file,
         \ 'commit': commit,
-        \ 'line_start': s:get('line_start', a:options, candidate, 0),
-        \ 'line_end': s:get('line_end', a:options, candidates, 0),
+        \ 'line_start': gita#utils#sget([a:options, candidate], 'line_start'),
+        \ 'line_end': gita#utils#sget([a:options, candidate], 'line_end'),
         \ 'opener': get(a:options, 'opener', 'edit'),
         \ 'range':  get(a:options, 'range', 'tabpage'),
         \})

@@ -75,13 +75,13 @@ function! gita#features#rm#command(bang, range, ...) abort " {{{
     if !empty(options.__unknown__)
       let options['--'] = options.__unknown__
     endif
-    call gita#action#exec('rm', options)
+    call gita#action#exec('rm', options.__range__, options, { 'echo': 'both' })
   endif
 endfunction " }}}
 function! gita#features#rm#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
-function! gita#features#rm#action(candidates, options) abort " {{{
+function! gita#features#rm#action(candidates, options, config) abort " {{{
   if empty(a:candidates)
     return
   endif
@@ -89,9 +89,9 @@ function! gita#features#rm#action(candidates, options) abort " {{{
         \ '--': map(a:candidates, 'v:val.path'),
         \ 'quiet': 1,
         \}, a:options)
-  call gita#features#rm#exec(options, {
+  call gita#features#rm#exec(options, extend({
         \ 'echo': 'fail',
-        \})
+        \}, a:config))
 endfunction " }}}
 
 

@@ -114,16 +114,14 @@ function! gita#features#reset#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#reset#default_options),
           \ options)
-    if !empty(options.__unknown__)
-      let options['--'] = options.__unknown__
-    endif
-    call gita#action#exec('reset', options)
+    let options['--'] = options.__unknown__
+    call gita#action#exec('reset', options.__range__, options, { 'echo': 'both' })
   endif
 endfunction " }}}
 function! gita#features#reset#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
-function! gita#features#reset#action(candidates, options) abort " {{{
+function! gita#features#reset#action(candidates, options, config) abort " {{{
   if empty(a:candidates)
     return
   endif
@@ -131,9 +129,9 @@ function! gita#features#reset#action(candidates, options) abort " {{{
         \ '--': map(a:candidates, 'v:val.path'),
         \ 'quiet': 1,
         \}, a:options)
-  call gita#features#reset#exec(options, {
+  call gita#features#reset#exec(options, extend({
         \ 'echo': 'fail',
-        \})
+        \}, a:config))
 endfunction " }}}
 
 

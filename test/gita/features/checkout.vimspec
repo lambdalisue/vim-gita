@@ -49,7 +49,7 @@ Describe gita#features#checkout
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [],
             \ 'commit': 'foo',
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add unknown options to '--'
       let g:gita#features#checkout#default_options = {}
@@ -60,7 +60,7 @@ Describe gita#features#checkout
             \   gita#utils#ensure_abspath(gita#utils#expand('hoge')),
             \ ],
             \ 'commit': 'foo',
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add default options
       let g:gita#features#checkout#default_options = {
@@ -74,7 +74,7 @@ Describe gita#features#checkout
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'ours': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
   End
 

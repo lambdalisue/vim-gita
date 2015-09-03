@@ -92,98 +92,13 @@ function! s:smart_map(...) abort " {{{
 endfunction " }}}
 
 let s:actions = {}
-function! s:actions.update(candidates, options) abort " {{{
+function! s:actions.update(candidates, options, config) abort " {{{
   if !get(a:options, 'no_update')
     call gita#features#status#update(a:options, { 'force_update': 1 })
   endif
 endfunction " }}}
-function! s:actions.open_commit(candidates, options) abort " {{{
+function! s:actions.open_commit(candidates, options, config) abort " {{{
   call gita#features#commit#open(a:options)
-endfunction " }}}
-function! s:actions.stage(candidates, options) abort " {{{
-  let add_candidates = []
-  let rm_candidates = []
-  for candidate in a:candidates
-    call gita#utils#status#extend_candidate(candidate)
-    if candidate.status.is_unstaged && candidate.status.worktree ==# 'D'
-      call add(rm_candidates, candidate)
-    else
-      call add(add_candidates, candidate)
-    endif
-  endfor
-  call self.add(add_candidates, extend({ 'no_update': 1 }, a:options))
-  call self.rm(rm_candidates, extend({ 'no_update': 1 }, a:options))
-  call self.update(a:candidates, a:options)
-endfunction " }}}
-function! s:actions.unstage(candidates, options) abort " {{{
-  call self.reset(a:candidates, a:options)
-endfunction " }}}
-function! s:actions.toggle(candidates, options) abort " {{{
-  let stage_candidates = []
-  let reset_candidates = []
-  for candidate in a:candidates
-    call gita#utils#status#extend_candidate(candidate)
-    if candidate.status.is_staged && candidate.status.is_unstaged
-      if g:gita#features#status#prefer_unstage_in_toggle
-        call add(reset_candidates, candidate)
-      else
-        call add(stage_candidates, candidate)
-      endif
-    elseif candidate.status.is_staged
-      call add(reset_candidates, candidate)
-    elseif candidate.status.is_unstaged || candidate.status.is_untracked || candidate.status.is_ignored
-      call add(stage_candidates, candidate)
-    endif
-  endfor
-  call self.stage(stage_candidates, extend({ 'no_update': 1 }, a:options))
-  call self.unstage(reset_candidates, extend({ 'no_update': 1 }, a:options))
-  call self.update(a:candidates, a:options)
-endfunction " }}}
-function! s:actions.discard(candidates, options) abort " {{{
-  let delete_candidates = []
-  let checkout_candidates = []
-  for candidate in a:candidates
-    call gita#utils#status#extend_candidate(candidate)
-    if candidate.status.is_conflicted
-      call gita#utils#prompt#warn(printf(
-            \ 'A conflicted file "%s" cannot be discarded. Resolve the conflict first.',
-            \ candidate.path,
-            \))
-      continue
-    elseif candidate.status.is_untracked || candidate.status.is_ignored
-      call add(delete_candidates, candidate)
-    elseif candidate.status.is_staged || candidate.status.is_unstaged
-      call add(checkout_candidates, candidate)
-    endif
-  endfor
-  if get(a:options, 'confirm', 1)
-    call gita#utils#prompt#warn(join([
-          \ 'A discard action will discard all local changes on the working tree',
-          \ 'and the operation is irreversible, mean that you have no chance to',
-          \ 'revert the operation.',
-          \]))
-    if !gita#utils#prompt#asktf('Are you sure you want to discard the changes?')
-      call gita#utils#prompt#echo(
-            \ 'The operation has canceled by user.'
-            \)
-      return
-    endif
-  endif
-  " delete untracked files
-  for candidate in delete_candidates
-    let abspath = get(candidate, 'realpath', candidate.path)
-    if isdirectory(abspath)
-      silent! call s:F.rmdir(abspath, 'r')
-    elseif filewritable(abspath)
-      silent! call delete(abspath)
-    endif
-  endfor
-  " checkout tracked files from HEAD
-  let options = deepcopy(a:options)
-  let options.commit = 'HEAD'
-  let options.force = 1
-  call self.checkout(checkout_candidates, extend({ 'no_update': 1 }, options))
-  call self.update(a:candidates, a:options)
 endfunction " }}}
 
 function! gita#features#status#exec(...) abort " {{{
@@ -306,52 +221,52 @@ function! gita#features#status#define_mappings() abort " {{{
   call gita#monitor#define_mappings()
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'status_mapping' })<CR>
+        \ :<C-u>call gita#action#call('help', { 'name': 'status_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#action#exec('update')<CR>
+        \ :<C-u>call gita#action#call('update')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#action#exec('open_commit')<CR>
+        \ :<C-u>call gita#action#call('open_commit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-new)
-        \ :<C-u>call gita#action#exec('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
+        \ :<C-u>call gita#action#call('open_commit', { 'amend': 0, 'new_commitmsg': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-switch-amend)
-        \ :<C-u>call gita#action#exec('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
+        \ :<C-u>call gita#action#call('open_commit', { 'amend': 1, 'new_commitmsg': 1 })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-add)
-        \ :call gita#action#exec('add')<CR>
+        \ :call gita#action#call('add')<CR>
   noremap <silent><buffer> <Plug>(gita-action-ADD)
-        \ :call gita#action#exec('add', { 'force': 1 })<CR>
+        \ :call gita#action#call('add', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-rm)
-        \ :call gita#action#exec('rm')<CR>
+        \ :call gita#action#call('rm')<CR>
   noremap <silent><buffer> <Plug>(gita-action-RM)
-        \ :call gita#action#exec('rm', { 'force': 1 })<CR>
+        \ :call gita#action#call('rm', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-reset)
-        \ :call gita#action#exec('reset')<CR>
+        \ :call gita#action#call('reset')<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout)
-        \ :call gita#action#exec('checkout')<CR>
+        \ :call gita#action#call('checkout')<CR>
   noremap <silent><buffer> <Plug>(gita-action-CHECKOUT)
-        \ :call gita#action#exec('checkout', { 'force': 1 })<CR>
+        \ :call gita#action#call('checkout', { 'force': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-ours)
-        \ :call gita#action#exec('checkout', { 'ours': 1 })<CR>
+        \ :call gita#action#call('checkout', { 'ours': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-checkout-theirs)
-        \ :call gita#action#exec('checkout', { 'theirs': 1 })<CR>
+        \ :call gita#action#call('checkout', { 'theirs': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-stage)
-        \ :call gita#action#exec('stage')<CR>
+        \ :call gita#action#call('stage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-unstage)
-        \ :call gita#action#exec('unstage')<CR>
+        \ :call gita#action#call('unstage')<CR>
   noremap <silent><buffer> <Plug>(gita-action-toggle)
-        \ :call gita#action#exec('toggle')<CR>
+        \ :call gita#action#call('toggle')<CR>
   noremap <silent><buffer> <Plug>(gita-action-discard)
-        \ :call gita#action#exec('discard')<CR>
+        \ :call gita#action#call('discard')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-solve2-h)
-        \ :call gita#action#exec('solve', { 'way': 2 })<CR>
+        \ :call gita#action#call('solve', { 'way': 2 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve2-v)
-        \ :call gita#action#exec('solve', { 'way': 2, 'vertical': 1 })<CR>
+        \ :call gita#action#call('solve', { 'way': 2, 'vertical': 1 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-h)
-        \ :call gita#action#exec('solve', { 'way': 3 })<CR>
+        \ :call gita#action#call('solve', { 'way': 3 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-solve3-v)
-        \ :call gita#action#exec('solve', { 'way': 3, 'vertical': 1 })<CR>
+        \ :call gita#action#call('solve', { 'way': 3, 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#features#status#define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()

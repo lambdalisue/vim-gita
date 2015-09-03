@@ -106,41 +106,43 @@ function! s:find_commit_meta(gita, commit) abort " {{{
   let remote_url = a:gita.git.get_remote_url(remote)
   return [lhs, rhs, remote, remote_url]
 endfunction " }}}
-function! s:find_url(gita, expr, options) abort " {{{
-  let commit  = get(a:options, 'commit', gita#meta#get('commit', ''))
-  let abspath = gita#utils#ensure_abspath(gita#utils#expand(a:expr))
-  let relpath = a:gita.git.get_relative_path(abspath)
+function! s:translate_url(url, scheme_name, translation_patterns) abort " {{{
+  for [domain, info] in items(a:translation_patterns)
+    for pattern in info[0]
+      let pattern = substitute(pattern, '\C' . '%domain', domain, 'g')
+      if a:url =~# pattern
+        let scheme = get(info[1], a:scheme_name, info[1]['_'])
+        let repl = substitute(a:url, '\C' . pattern, scheme, 'g')
+        return repl
+      endif
+    endfor
+  endfor
+  return ''
+endfunction " }}}
+function! s:retrieve_url(options) abort "{{{
+  let gita = gita#get(a:options.file)
+  let commit = a:options.commit
+  let abspath = gita#utils#ensure_abspath(gita#utils#expand(a:options.file))
+  let relpath = gita.git.get_relative_path(abspath)
 
   " get selected region
-  if abspath != gita#utils#ensure_abspath(gita#utils#expand('%'))
-    let line_start = ''
-    let line_end = ''
-  elseif has_key(a:options, '__range__')
-    let line_start = a:options.__range__[0]
-    let line_end = a:options.__range__[1]
-  elseif get(a:options, 'multiline', 0)
-    let line_start = getpos("'<")[1]
-    let line_end = getpos("'>")[1]
-  else
-    let line_start = getpos(".")[1]
-    let line_end = ''
-  endif
-  let line_end = line_start == line_end ? '' : line_end
+  let line_start = get(a:options, 'line_start', 0)
+  let line_end   = get(a:options, 'line_end', 0)
+  let line_end   = line_start == line_end ? 0 : line_end
 
   " normalize commit to figure out remote, commit, and remote_url
-  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(gita#get(), commit)
-  let revision1 = a:gita.git.get_remote_hash(remote, commit1)
-  let revision2 = a:gita.git.get_remote_hash(remote, commit2)
+  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(gita, commit)
+  let revision1 = gita.git.get_remote_hash(remote, commit1)
+  let revision2 = gita.git.get_remote_hash(remote, commit2)
 
   " create a URL
   let data = {
-        \ 'path':       gita#utils#ensure_unixpath(relpath),
+        \ 'path':       gita#utils#ensure_unixpath(gita#utils#ensure_realpath(relpath)),
         \ 'commit1':    commit1,
         \ 'commit2':    commit2,
         \ 'revision1':  revision1,
         \ 'revision2':  revision2,
         \ 'remote':     remote,
-        \ 'remote_url': remote_url,
         \ 'line_start': line_start,
         \ 'line_end':   line_end,
         \}
@@ -157,14 +159,18 @@ function! s:find_url(gita, expr, options) abort " {{{
         \ deepcopy(g:gita#features#browse#translation_patterns),
         \ g:gita#features#browse#extra_translation_patterns,
         \)
-  let url = gita#features#browse#translate_url(data.remote_url, translation_patterns, a:options)
+  let url = s:translate_url(
+        \ remote_url,
+        \ get(a:options, 'scheme', '_'),
+        \ translation_patterns
+        \)
   if !empty(url)
     return gita#utils#format_string(url, format_map, data)
   endif
   redraw
   call gita#utils#prompt#warn(printf(
         \ 'No url translation pattern for "%s" is found.',
-        \ data.remote_url,
+        \ remote_url,
         \))
   if gita#utils#prompt#asktf('Do you want to open a help for adding extra translation patterns?')
     help g:gita#features#browse#extra_translation_patterns
@@ -172,123 +178,71 @@ function! s:find_url(gita, expr, options) abort " {{{
   return ''
 endfunction " }}}
 
-function! gita#features#browse#exec(...) abort " {{{
-  let gita = gita#get()
-  if gita.fail_on_disabled()
-    return { 'status': -1 }
-  endif
-  let options = get(a:000, 0, {})
-  if !empty(get(options, '--', []))
-    " s:find_url require a REAL path to find relative path
-    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
-  endif
-  let urls = map(
-        \ deepcopy(get(options, '--', [])),
-        \ 's:find_url(gita, v:val, options)',
-        \)
-  return {
-        \ 'status': 0,
-        \ 'urls': urls,
-        \}
-endfunction " }}}
-function! gita#features#browse#open(...) abort " {{{
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  let result = gita#features#browse#exec(options, config)
-  if result.status != 0
-    return
-  endif
-  redraw!
-  for url in result.urls
-    if !empty(url)
-      call s:F.open(url)
-      call gita#utils#prompt#echo(printf(
-            \ '"%s" is opened.',
-            \ url,
-            \))
-    endif
-  endfor
-endfunction " }}}
-function! gita#features#browse#yank(...) abort " {{{
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  let result = gita#features#browse#exec(options, config)
-  if result.status != 0
-    return
-  endif
-
-  redraw!
-  for url in result.urls
-    if !empty(url)
-      call gita#utils#clip(url)
-      call gita#utils#prompt#echo(printf(
-            \ '"%s" is yanked.',
-            \ url,
-            \))
-    endif
-  endfor
-endfunction " }}}
-function! gita#features#browse#echo(...) abort " {{{
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  let result = gita#features#browse#exec(options, config)
-  if result.status != 0
-    return
-  endif
-
-  redraw!
-  for url in result.urls
-    if !empty(url)
-      call gita#utils#prompt#echo(url)
-    endif
-  endfor
-endfunction " }}}
 function! gita#features#browse#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    " automatically assign the current buffer if no file is specified
-    let options['--'] = options.__unknown__
-    if empty(get(options, '--', []))
-      let options['--'] = ['%']
-    endif
     let options = extend(
           \ deepcopy(g:gita#features#browse#default_options),
           \ options)
-    if !empty(options)
-      if get(options, 'open')
-        call gita#features#browse#open(options)
-      elseif get(options, 'yank')
-        call gita#features#browse#yank(options)
-      elseif get(options, 'echo')
-        call gita#features#browse#echo(options)
-      else
-        call gita#utils#debugmsg(
-              \ 'No available action is specified',
-              \ 'options:', options,
-              \)
-      endif
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
     endif
+    call gita#action#exec(
+          \ 'browse',
+          \ options.__range__,
+          \ options
+          \)
   endif
 endfunction " }}}
 function! gita#features#browse#complete(arglead, cmdline, cursorpos) abort " {{{
   let candidates = s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
   return candidates
 endfunction " }}}
-function! gita#features#browse#translate_url(url, translation_patterns, ...) abort " {{{
-  let options = get(a:000, 0, {})
-  for [domain, info] in items(a:translation_patterns)
-    for pattern in info[0]
-      let pattern = substitute(pattern, '\C' . '%domain', domain, 'g')
-      if a:url =~# pattern
-        let scheme = get(info[1], get(options, 'scheme', '_'), info[1]['_'])
-        " Prefer second pattern if 'exact' is specified. Use first pattern if
-        " no second pattern exists
-        let repl = substitute(a:url, '\C' . pattern, scheme, 'g')
-        return repl
-      endif
-    endfor
+function! gita#features#browse#action(candidates, options, config) abort " {{{
+  if empty(a:candidates)
+    return
+  endif
+  let gita = gita#get()
+  if gita.fail_on_disabled()
+    return { 'status': -1 }
+  endif
+  let urls = []
+  for candidate in a:candidates
+    let url = s:retrieve_url(extend({
+          \ 'file': gita#utils#sget([a:options, candidate], 'path'),
+          \ 'commit': gita#utils#sget([a:options, candidate], 'commit'),
+          \ 'line_start': gita#utils#sget([a:options, candidate], 'line_start'),
+          \ 'line_end': gita#utils#sget([a:options, candidate], 'line_end'),
+          \}, a:options))
+    if !empty(url)
+      call add(urls, url)
+    endif
   endfor
-  return ''
+  if empty(urls)
+    return
+  endif
+  redraw!
+  for url in urls
+    if get(a:options, 'echo')
+      call gita#utils#prompt#echo(url)
+    elseif get(a:options, 'yank')
+      call gita#utils#clip(url)
+      if get(a:config, 'echo', 'both') ==# 'both'
+        call gita#utils#prompt#echo(printf(
+              \ '"%s" is yanked.',
+              \ url,
+              \))
+      endif
+    else
+      call s:F.open(url)
+      if get(a:config, 'echo', 'both') ==# 'both'
+        call gita#utils#prompt#echo(printf(
+              \ '"%s" is opened.',
+              \ url,
+              \))
+      endif
+    endif
+  endfor
 endfunction " }}}
 
 let &cpo = s:save_cpo

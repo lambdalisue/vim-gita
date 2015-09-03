@@ -185,12 +185,12 @@ function! s:ac_WinLeave() abort " {{{
 endfunction " }}}
 
 let s:actions = {}
-function! s:actions.update(candidates, options) abort " {{{
+function! s:actions.update(candidates, options, config) abort " {{{
   if !get(a:options, 'no_update')
     call gita#features#commit#update(a:options, { 'force_update': 1 })
   endif
 endfunction " }}}
-function! s:actions.open_status(candidates, options) abort " {{{
+function! s:actions.open_status(candidates, options, config) abort " {{{
   if &modified
     let gita = gita#get()
     let gita.commitmsg_cached = s:get_current_commitmsg()
@@ -198,9 +198,9 @@ function! s:actions.open_status(candidates, options) abort " {{{
   endif
   call gita#features#status#open(a:options)
 endfunction " }}}
-function! s:actions.commit(candidates, options) abort " {{{
+function! s:actions.commit(candidates, options, config) abort " {{{
   call s:commit('%', a:options)
-  call self.update(a:candidates, a:options)
+  call self.update(a:candidates, a:options, config)
 endfunction " }}}
 
 
@@ -364,15 +364,15 @@ function! gita#features#commit#define_mappings() abort " {{{
   call gita#monitor#define_mappings()
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'commit_mapping' })<CR>
+        \ :<C-u>call gita#action#call('help', { 'name': 'commit_mapping' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#action#exec('update')<CR>
+        \ :<C-u>call gita#action#call('update')<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-switch)
-        \ :<C-u>call gita#action#exec('open_status')<CR>
+        \ :<C-u>call gita#action#call('open_status')<CR>
   noremap <silent><buffer> <Plug>(gita-action-commit)
-        \ :<C-u>call gita#action#exec('commit')<CR>
+        \ :<C-u>call gita#action#call('commit')<CR>
 endfunction " }}}
 function! gita#features#commit#define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()

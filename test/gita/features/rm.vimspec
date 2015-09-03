@@ -39,7 +39,7 @@ Describe gita#features#rm
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically expand '%' to absolute path
       let g:gita#features#rm#default_options = {}
@@ -47,7 +47,7 @@ Describe gita#features#rm
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add the absolute path of the current buffer
       let g:gita#features#rm#default_options = {}
@@ -55,7 +55,7 @@ Describe gita#features#rm
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
             \ 'quiet': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add default options
       let g:gita#features#rm#default_options = {
@@ -69,7 +69,7 @@ Describe gita#features#rm
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'cached': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
   End
 

@@ -209,133 +209,7 @@ Describe gita#features#browse
     End
   End
 
-  Context #exec([{options}, {config}])
-    Before
-      let gita = gita#get()
-      let git_saved = deepcopy(gita.git)
-      function! gita.git.get_branch_merge(branch) " {{{
-        return 'refs/heads/master'
-      endfunction " }}}
-      function! gita.git.get_branch_remote(branch) " {{{
-        return 'origin'
-      endfunction " }}}
-      function! gita.git.get_remote_url(remote) " {{{
-        return 'git@github.com:lambdalisue/vim-gita'
-      endfunction " }}}
-    End
-    After
-      let gita.git = git_saved
-    End
-    It should return urls of specifield files
-      if $TRAVIS ==# 'true'
-        Skip The test cannot be executed on Travis
-      else
-        let ret = gita#features#browse#exec({
-              \ '--': ['README.md', 'LICENSE.md'],
-              \})
-        Assert Equals(ret.status, 0)
-        Assert Match(ret.urls[0], printf('%s/README.md', prefix))
-        Assert Match(ret.urls[1], printf('%s/LICENSE.md', prefix))
-      endif
-    End
-  End
-
-  Context #open([{options}, {config}])
-    It should open system browser to show urls of specifield files
-      Assert True(exists('*gita#features#browse#open'))
-      Skip It is not possible to test this behavior
-    End
-  End
-
-  Context #yank([{options}, {config}])
-    Before
-      let gita = gita#get()
-      let git_saved = deepcopy(gita.git)
-      function! gita.git.get_branch_merge(branch) " {{{
-        return 'refs/heads/master'
-      endfunction " }}}
-      function! gita.git.get_branch_remote(branch) " {{{
-        return 'origin'
-      endfunction " }}}
-      function! gita.git.get_remote_url(remote) " {{{
-        return 'git@github.com:lambdalisue/vim-gita'
-      endfunction " }}}
-    End
-    After
-      let gita.git = git_saved
-    End
-    It should yank the last url of the specified files
-      if $TRAVIS ==# 'true'
-        Skip The test cannot be executed on Travis
-      else
-        call gita#features#browse#yank({
-              \ '--': ['README.md', 'LICENSE.md'],
-              \})
-        Assert Match(@", printf('%s/LICENSE.md', prefix))
-      endif
-    End
-
-    if has('clipboard') && $TRAVIS !=# 'true'
-      It should yank the last url of the specified files to clipboard as well
-        call gita#features#browse#yank({
-              \ '--': ['README.md', 'LICENSE.md'],
-              \})
-        Assert Match(
-              \ getreg(v:register),
-              \ printf('%s/LICENSE.md', prefix)
-              \)
-      End
-    endif
-  End
-
-  Context #echo([{options}, {config}])
-    Before
-      let gita = gita#get()
-      let git_saved = deepcopy(gita.git)
-      function! gita.git.get_branch_merge(branch) " {{{
-        return 'refs/heads/master'
-      endfunction " }}}
-      function! gita.git.get_branch_remote(branch) " {{{
-        return 'origin'
-      endfunction " }}}
-      function! gita.git.get_remote_url(remote) " {{{
-        return 'git@github.com:lambdalisue/vim-gita'
-      endfunction " }}}
-    End
-    After
-      let gita.git = git_saved
-    End
-    It should echo urls of the specified files
-      if $TRAVIS ==# 'true'
-        Skip The test cannot be executed on Travis
-      else
-        redir => contents
-        call gita#features#browse#echo({
-              \ '--': ['README.md', 'LICENSE.md'],
-              \})
-        redir END
-        let lines = split(contents, "\n")
-        Assert Match(lines[0], printf('%s/README.md', prefix))
-        Assert Match(lines[1], printf('%s/LICENSE.md', prefix))
-      endif
-    End
-  End
-
-  Context #command({bang}, {range}[, {cmdline}])
-    It should automatically call a correct method
-      Assert True(exists('*gita#features#browse#command'))
-      Skip It is difficult to test this behavior
-    End
-  End
-
-  Context #complete({arglead}, {cmdline}, {cursorpos})
-    It should call ArgumentParser.complete function
-      Assert True(exists('*gita#features#browse#complete'))
-      Skip It is not possible to access script local variable
-    End
-  End
-
-  Context #translate_url({url}, {translate_patterns}, {options})
+  Context [PRIVATE] s:translate_url({url}, {scheme_name}, {translate_patterns})
     Before
       let gita = gita#get()
       let git_saved = deepcopy(gita.git)
@@ -370,10 +244,10 @@ Describe gita#features#browse
             \]
       for pattern in patterns
         for [user, repo] in pairs
-          let url = gita#features#browse#translate_url(
+          let url = s:sf.translate_url(
                 \ printf(pattern, user, repo),
+                \ '_',
                 \ g:gita#features#browse#translation_patterns,
-                \ {},
                 \)
           Assert Match(
                 \ url,
@@ -400,10 +274,10 @@ Describe gita#features#browse
             \]
       for pattern in patterns
         for [user, repo] in pairs
-          let url = gita#features#browse#translate_url(
+          let url = s:sf.translate_url(
                 \ printf(pattern, user, repo),
+                \ '_',
                 \ g:gita#features#browse#translation_patterns,
-                \ {},
                 \)
           Assert Match(
                 \ url,
@@ -413,5 +287,20 @@ Describe gita#features#browse
       endfor
     End
   End
+
+  Context #command({bang}, {range}[, {cmdline}])
+    It should automatically call a correct method
+      Assert True(exists('*gita#features#browse#command'))
+      Skip It is difficult to test this behavior
+    End
+  End
+
+  Context #complete({arglead}, {cmdline}, {cursorpos})
+    It should call ArgumentParser.complete function
+      Assert True(exists('*gita#features#browse#complete'))
+      Skip It is not possible to access script local variable
+    End
+  End
+
 End
 

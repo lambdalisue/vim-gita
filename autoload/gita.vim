@@ -77,7 +77,7 @@ function! gita#new(...) abort " {{{
   endif
   if !empty(gita#compat#getwinvar(bufwinnr(expr), '_gita'))
     call setwinvar(bufwinnr(expr), '_gita', gita)
-  else
+  elseif !empty(bufname)
     call setbufvar(expr, '_gita', gita)
   endif
   return gita

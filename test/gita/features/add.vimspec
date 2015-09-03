@@ -41,14 +41,14 @@ Describe gita#features#add
       call gita#features#add#command('', [0, 0], '-- %')
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add the current buffer to '--'
       let g:gita#features#add#default_options = {}
       call gita#features#add#command('', [0, 0])
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [gita#utils#ensure_abspath(gita#utils#expand('%'))],
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
     It should automatically add default options
       let g:gita#features#add#default_options = {
@@ -62,7 +62,7 @@ Describe gita#features#add
             \ 'verbose': 1,
             \ 'force': 1,
             \ 'all': 1,
-            \}, {}]])
+            \}, { 'echo': 'both' }]])
     End
   End
 

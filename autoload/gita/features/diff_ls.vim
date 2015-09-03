@@ -32,7 +32,7 @@ call s:parser.add_argument(
       \ })
 
 let s:actions = {}
-function! s:actions.update(candidates, options) abort " {{{
+function! s:actions.update(candidates, options, config) abort " {{{
   if !get(a:options, 'no_update')
     call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
   endif
@@ -196,9 +196,9 @@ function! gita#features#diff_ls#define_mappings() abort " {{{
   call gita#monitor#define_mappings()
 
   noremap <silent><buffer> <Plug>(gita-action-help-m)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'diff_ls_mapping' })<CR>
+        \ :<C-u>call gita#action#call('help', { 'name': 'diff_ls_mapping' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-update)
-        \ :<C-u>call gita#action#exec('update')<CR>
+        \ :<C-u>call gita#action#call('update')<CR>
 endfunction " }}}
 function! gita#features#diff_ls#define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()

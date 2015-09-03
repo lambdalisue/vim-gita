@@ -115,32 +115,32 @@ function! gita#monitor#define_mappings() abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-quit)
         \ :<C-u>q<CR>
   noremap <silent><buffer> <Plug>(gita-action-help-s)
-        \ :<C-u>call gita#action#exec('help', { 'name': 'short_format' })<CR>
+        \ :<C-u>call gita#action#call('help', { 'name': 'short_format' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-edit)
-        \ :<C-u>call gita#action#exec('edit')<CR>
+        \ :<C-u>call gita#action#call('edit')<CR>
   noremap <silent><buffer> <Plug>(gita-action-edit-h)
-        \ :<C-u>call gita#action#exec('edit', { 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#call('edit', { 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-edit-v)
-        \ :<C-u>call gita#action#exec('edit', { 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#call('edit', { 'opener': 'vsplit' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-open)
-        \ :<C-u>call gita#action#exec('open')<CR>
+        \ :<C-u>call gita#action#call('open')<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-h)
-        \ :<C-u>call gita#action#exec('open', { 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#call('open', { 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-open-v)
-        \ :<C-u>call gita#action#exec('open', { 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#call('open', { 'opener': 'vsplit' })<CR>
 
   noremap <silent><buffer> <Plug>(gita-action-diff)
-        \ :<C-u>call gita#action#exec('diff', { 'split': 0 })<CR>
+        \ :<C-u>call gita#action#call('diff', { 'split': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-diff-h)
-        \ :<C-u>call gita#action#exec('diff', { 'split': 0, 'opener': 'split' })<CR>
+        \ :<C-u>call gita#action#call('diff', { 'split': 0, 'opener': 'split' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-diff-v)
-        \ :<C-u>call gita#action#exec('diff', { 'split': 0, 'opener': 'vsplit' })<CR>
+        \ :<C-u>call gita#action#call('diff', { 'split': 0, 'opener': 'vsplit' })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-h)
-        \ :<C-u>call gita#action#exec('diff', { 'vertical': 0 })<CR>
+        \ :<C-u>call gita#action#call('diff', { 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
-        \ :<C-u>call gita#action#exec('diff', { 'vertical': 1 })<CR>
+        \ :<C-u>call gita#action#call('diff', { 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer> q     <Plug>(gita-action-quit)
@@ -172,7 +172,7 @@ endfunction " }}}
 
 augroup vim-gita-update-monitor
   autocmd! *
-  autocmd BufWritePost * call gita#action#exec('update')
+  autocmd BufWritePost * call gita#action#call('update')
 augroup END
 
 let &cpo = s:save_cpo

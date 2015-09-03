@@ -40,9 +40,18 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
-function! gita#utils#eget(obj, name, default) abort " {{{
-  let result = get(a:obj, a:name, a:default)
-  return empty(result) ? a:default : result
+function! gita#utils#eget(obj, name, ...) abort " {{{
+  let default = get(a:000, 0, '')
+  let result = get(a:obj, a:name, default)
+  return empty(result) ? default : result
+endfunction " }}}
+function! gita#utils#sget(objs, name, ...) abort " {{{
+  for obj in a:objs
+    if has_key(obj, a:name)
+      return get(obj, a:name)
+    endif
+  endfor
+  return get(a:000, 0, '')
 endfunction " }}}
 function! gita#utils#clip(content) abort " {{{
   let @" = a:content

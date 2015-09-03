@@ -455,11 +455,13 @@ endfunction " }}}
 function! gita#features#diff#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))
   if !empty(options)
-    let options['--'] = options.__unknown__
     let options = extend(
           \ deepcopy(g:gita#features#diff#default_options),
           \ options)
-    call gita#features#diff#show(options)
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
+    endif
+    call gita#action#exec('diff', options.__range__, options)
   endif
 endfunction " }}}
 function! gita#features#diff#complete(arglead, cmdline, cursorpos) abort " {{{
@@ -475,17 +477,17 @@ function! gita#features#diff#_complete_commit(arglead, cmdline, cursorpos, ...) 
   let candidates = map(candidates, 'leading . v:val')
   return candidates
 endfunction " }}}
-function! gita#features#diff#action(candidates, options) abort " {{{
+function! gita#features#diff#action(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
   if empty(candidate)
     return
   endif
   call gita#utils#anchor#focus()
   call gita#features#diff#show({
-        \ '--': [s:get('path', a:options, candidate)],
-        \ 'commit': s:get('commit', a:options, candidate),
-        \ 'line_start': s:get('line_start', a:options, candidate, 0),
-        \ 'line_end': s:get('line_end', a:options, candidates, 0),
+        \ '--': [gita#utils#sget([a:options, candidate], 'path')],
+        \ 'commit': gita#utils#sget([a:options, candidate], 'commit'),
+        \ 'line_start': gita#utils#sget([a:options, candidate], 'line_start'),
+        \ 'line_end': gita#utils#sget([a:options, candidate], 'line_end'),
         \ 'split': get(a:options, 'split', 1),
         \ 'opener': get(a:options, 'opener', 'edit'),
         \ 'opener2': get(a:options, 'opener2', 'split'),
