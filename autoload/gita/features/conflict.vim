@@ -312,6 +312,9 @@ function! gita#features#conflict#show(...) abort " {{{
   else
     call s:solve3(options)
   endif
+  let line_start = gita#utils#eget(options, 'line_start', line('.'))
+  keepjumps call setpos('.', [0, line_start, 0, 0])
+  keepjumps normal z.
 endfunction " }}}
 function! gita#features#conflict#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))

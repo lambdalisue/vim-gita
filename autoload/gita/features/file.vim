@@ -286,11 +286,6 @@ function! gita#features#file#show(...) abort " {{{
   " regulate options
   if s:ensure_file_option(options)   | return | endif
   if s:ensure_commit_option(options) | return | endif
-  " assign --line/--column
-  if gita#utils#expand(options.file) ==# gita#utils#expand('%')
-    let options.line   = get(options, 'line', line('.'))
-    let options.column = get(options, 'column', col('.'))
-  endif
 
   let result = gita#features#file#exec_cached(options, {
         \ 'echo': 'fail',
@@ -324,13 +319,9 @@ function! gita#features#file#show(...) abort " {{{
   endif
   call gita#meta#set('commit', options.commit)
   " move the cursor onto
-  let line   = gita#utils#eget(options, 'line', line('.'))
-  let column = gita#utils#eget(options, 'column', col('.'))
-  call winrestview({
-        \ 'lnum': line,
-        \ 'col': column - 1,
-        \ 'curswant': column,
-        \})
+  let line_start = gita#utils#eget(options, 'line_start', line('.'))
+  keepjumps call setpos('.', [0, line_start, 0, 0])
+  keepjumps normal z.
 endfunction " }}}
 function! gita#features#file#command(bang, range, ...) abort " {{{
   let options = s:parser.parse(a:bang, a:range, get(a:000, 0, ''))

@@ -232,11 +232,6 @@ function! s:diff2(...) abort " {{{
   if s:ensure_commit_option(options)
     return
   endif
-  " assign --line/--column
-  if gita#utils#expand(options['--'][0]) ==# gita#utils#expand('%')
-    let options.line   = get(options, 'line', line('.'))
-    let options.column = get(options, 'column', col('.'))
-  endif
 
   let abspath = gita#utils#ensure_abspath(
         \ gita#utils#expand(options['--'][0]),
@@ -337,13 +332,8 @@ function! s:diff2(...) abort " {{{
   " focus COMMIT1
   keepjumps wincmd p
   " move the cursor onto
-  let line   = gita#utils#eget(options, 'line', line('.'))
-  let column = gita#utils#eget(options, 'column', col('.'))
-  call winrestview({
-        \ 'lnum': line,
-        \ 'col': column - 1,
-        \ 'curswant': column,
-        \})
+  let line_start = gita#utils#eget(options, 'line_start', line('.'))
+  keepjumps call setpos('.', [0, line_start, 0, 0])
   keepjumps normal z.
   diffupdate
   syncbind
