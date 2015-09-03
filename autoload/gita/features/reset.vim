@@ -127,9 +127,8 @@ function! gita#features#reset#action(candidates, options) abort " {{{
   if empty(a:candidates)
     return
   endif
-  let filenames = map(a:candidates, 'v:val.filename')
   let options = extend({
-        \ '--': filenames,
+        \ '--': map(a:candidates, 'v:val.path'),
         \ 'quiet': 1,
         \}, a:options)
   call gita#features#reset#exec(options, {

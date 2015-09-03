@@ -33,7 +33,9 @@ call s:parser.add_argument(
 
 let s:actions = {}
 function! s:actions.update(candidates, options) abort " {{{
-  call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
+  if !get(a:options, 'no_update')
+    call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
+  endif
 endfunction " }}}
 
 function! s:ensure_commit_option(options) abort " {{{

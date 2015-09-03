@@ -475,7 +475,24 @@ function! gita#features#diff#_complete_commit(arglead, cmdline, cursorpos, ...) 
   let candidates = map(candidates, 'leading . v:val')
   return candidates
 endfunction " }}}
-
+function! gita#features#diff#action(candidates, options) abort " {{{
+  let candidate = get(a:candidates, 0, {})
+  if empty(candidate)
+    return
+  endif
+  call gita#utils#anchor#focus()
+  call gita#features#diff#show({
+        \ '--': [s:get('path', a:options, candidate)],
+        \ 'commit': s:get('commit', a:options, candidate),
+        \ 'line_start': s:get('line_start', a:options, candidate, 0),
+        \ 'line_end': s:get('line_end', a:options, candidates, 0),
+        \ 'split': get(a:options, 'split', 1),
+        \ 'opener': get(a:options, 'opener', 'edit'),
+        \ 'opener2': get(a:options, 'opener2', 'split'),
+        \ 'range': get(a:options, 'range', 'tabpage'),
+        \ 'vertical': get(a:options, 'vertical', 1),
+        \})
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

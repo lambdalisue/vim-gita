@@ -332,8 +332,10 @@ function! gita#features#conflict#action(candidates, options) abort " {{{
   endif
   call gita#utils#anchor#focus()
   call gita#features#conflict#show(extend({
-        \ 'file': candidate.filename,
-        \ 'status': get(candidate, 'status', ''),
+        \ 'file': s:get('path', a:options, candidate),
+        \ 'status': get(candidate, 'status', {}),
+        \ 'line_start': s:get('line_start', a:options, candidate, 0),
+        \ 'line_end': s:get('line_end', a:options, candidates, 0),
         \}, a:options))
 endfunction " }}}
 

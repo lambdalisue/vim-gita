@@ -62,7 +62,6 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
   return candidates
 endfunction " }}}
 
-
 function! gita#features#add#exec(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
@@ -106,12 +105,8 @@ function! gita#features#add#action(candidates, options) abort " {{{
   if empty(a:candidates)
     return
   endif
-  let filenames = map(
-        \ a:candidates,
-        \ 'get(get(v:val, "status", {}), "path2", v:val.filename)',
-        \)
   let options = extend({
-        \ '--': filenames,
+        \ '--': map(a:candidates, 'get(v:val, "realpath", v:val.path)'),
         \ 'ignore_errors': 1,
         \}, a:options)
   call gita#features#add#exec(options, {

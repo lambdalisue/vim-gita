@@ -186,7 +186,9 @@ endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(candidates, options) abort " {{{
-  call gita#features#commit#update(a:options, { 'force_update': 1 })
+  if !get(a:options, 'no_update')
+    call gita#features#commit#update(a:options, { 'force_update': 1 })
+  endif
 endfunction " }}}
 function! s:actions.open_status(candidates, options) abort " {{{
   if &modified

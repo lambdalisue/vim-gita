@@ -93,39 +93,18 @@ endfunction " }}}
 
 let s:actions = {}
 function! s:actions.update(candidates, options) abort " {{{
-  call gita#features#status#update(a:options, { 'force_update': 1 })
+  if !get(a:options, 'no_update')
+    call gita#features#status#update(a:options, { 'force_update': 1 })
+  endif
 endfunction " }}}
 function! s:actions.open_commit(candidates, options) abort " {{{
   call gita#features#commit#open(a:options)
-endfunction " }}}
-function! s:actions.add(candidates, options) abort " {{{
-  call call('gita#features#add#action', [a:candidates, a:options])
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
-endfunction " }}}
-function! s:actions.rm(candidates, options) abort " {{{
-  call call('gita#features#rm#action', [a:candidates, a:options])
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
-endfunction " }}}
-function! s:actions.reset(candidates, options) abort " {{{
-  call call('gita#features#reset#action', [a:candidates, a:options])
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
-endfunction " }}}
-function! s:actions.checkout(candidates, options) abort " {{{
-  call call('gita#features#checkout#action', [a:candidates, a:options])
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
 endfunction " }}}
 function! s:actions.stage(candidates, options) abort " {{{
   let add_candidates = []
   let rm_candidates = []
   for candidate in a:candidates
+    call gita#utils#status#extend_candidate(candidate)
     if candidate.status.is_unstaged && candidate.status.worktree ==# 'D'
       call add(rm_candidates, candidate)
     else
@@ -134,9 +113,7 @@ function! s:actions.stage(candidates, options) abort " {{{
   endfor
   call self.add(add_candidates, extend({ 'no_update': 1 }, a:options))
   call self.rm(rm_candidates, extend({ 'no_update': 1 }, a:options))
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
+  call self.update(a:candidates, a:options)
 endfunction " }}}
 function! s:actions.unstage(candidates, options) abort " {{{
   call self.reset(a:candidates, a:options)
@@ -145,6 +122,7 @@ function! s:actions.toggle(candidates, options) abort " {{{
   let stage_candidates = []
   let reset_candidates = []
   for candidate in a:candidates
+    call gita#utils#status#extend_candidate(candidate)
     if candidate.status.is_staged && candidate.status.is_unstaged
       if g:gita#features#status#prefer_unstage_in_toggle
         call add(reset_candidates, candidate)
@@ -159,18 +137,17 @@ function! s:actions.toggle(candidates, options) abort " {{{
   endfor
   call self.stage(stage_candidates, extend({ 'no_update': 1 }, a:options))
   call self.unstage(reset_candidates, extend({ 'no_update': 1 }, a:options))
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
+  call self.update(a:candidates, a:options)
 endfunction " }}}
 function! s:actions.discard(candidates, options) abort " {{{
   let delete_candidates = []
   let checkout_candidates = []
   for candidate in a:candidates
+    call gita#utils#status#extend_candidate(candidate)
     if candidate.status.is_conflicted
       call gita#utils#prompt#warn(printf(
             \ 'A conflicted file "%s" cannot be discarded. Resolve the conflict first.',
-            \ candidate.filename,
+            \ candidate.path,
             \))
       continue
     elseif candidate.status.is_untracked || candidate.status.is_ignored
@@ -194,7 +171,7 @@ function! s:actions.discard(candidates, options) abort " {{{
   endif
   " delete untracked files
   for candidate in delete_candidates
-    let abspath = get(candidate.status, 'path2', candidate.filename)
+    let abspath = get(candidate, 'realpath', candidate.path)
     if isdirectory(abspath)
       silent! call s:F.rmdir(abspath, 'r')
     elseif filewritable(abspath)
@@ -206,17 +183,8 @@ function! s:actions.discard(candidates, options) abort " {{{
   let options.commit = 'HEAD'
   let options.force = 1
   call self.checkout(checkout_candidates, extend({ 'no_update': 1 }, options))
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
+  call self.update(a:candidates, a:options)
 endfunction " }}}
-function! s:actions.solve(candidates, options) abort " {{{
-  call call('gita#features#conflict#action', [a:candidates, a:options])
-  if !get(a:options, 'no_update', 0)
-    call self.update(a:candidates, a:options)
-  endif
-endfunction " }}}
-
 
 function! gita#features#status#exec(...) abort " {{{
   let gita = gita#get()

@@ -130,4 +130,70 @@ Describe gita#utils#status
       Assert Equals(ret.is_unstaged, 0)
     End
   End
+
+  Context #extend_candidate({candidate}[, {status}])
+    Before
+      let gita = gita#get()
+      let gita.git.cache.repository.clear()
+      function! gita.operations.status(...) abort
+        return {
+              \ 'status': 0,
+              \ 'stdout': join([
+              \   'M  foo.txt',
+              \ ], "\n"),
+              \}
+      endfunction
+    End
+
+    It should extend {candidate} with {status}
+      let status = { 'foo': 'bar' }
+      let candidate = { 'path': 'foo.txt' }
+      call gita#utils#status#extend_candidate(candidate, status)
+      Assert KeyExists(candidate, 'path')
+      Assert KeyExists(candidate, 'status')
+      Assert KeyNotExists(candidate, 'realpath')
+      Assert Equals(candidate.status, status)
+    End
+
+    It should extend 'realpath' to {candidate} with {status} if it has 'path2'
+      let status = { 'foo': 'bar', 'path2': 'bar.txt' }
+      let candidate = { 'path': 'foo.txt' }
+      call gita#utils#status#extend_candidate(candidate, status)
+      Assert KeyExists(candidate, 'path')
+      Assert KeyExists(candidate, 'status')
+      Assert KeyExists(candidate, 'realpath')
+      Assert Equals(candidate.status, status)
+      Assert Equals(candidate.realpath, 'bar.txt')
+    End
+
+    It should extend {candidate} with {candidate}.{status}
+      let status = { 'foo': 'bar' }
+      let candidate = { 'path': 'foo.txt', 'status': status }
+      call gita#utils#status#extend_candidate(candidate)
+      Assert KeyExists(candidate, 'path')
+      Assert KeyExists(candidate, 'status')
+      Assert KeyNotExists(candidate, 'realpath')
+      Assert Equals(candidate.status, status)
+    End
+
+    It should extend 'realpath' to {candidate} with {candidate}.{status} if it has 'path2'
+      let status = { 'foo': 'bar', 'path2': 'bar.txt' }
+      let candidate = { 'path': 'foo.txt', 'status': status }
+      call gita#utils#status#extend_candidate(candidate)
+      Assert KeyExists(candidate, 'path')
+      Assert KeyExists(candidate, 'status')
+      Assert KeyExists(candidate, 'realpath')
+      Assert Equals(candidate.status, status)
+      Assert Equals(candidate.realpath, 'bar.txt')
+    End
+
+    It should extend {candidate} with a retrived status
+      let candidate = { 'path': 'foo.txt' }
+      call gita#utils#status#extend_candidate(candidate)
+      Assert KeyExists(candidate, 'path')
+      Assert KeyExists(candidate, 'status')
+      Assert KeyNotExists(candidate, 'realpath')
+      Assert Equals(candidate.status.record, 'M  foo.txt')
+    End
+  End
 End

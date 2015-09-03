@@ -80,6 +80,16 @@ function! gita#utils#status#retrieve(path, ...) abort " {{{
   endif
   return get(statuses.all, 0, virtual)
 endfunction " }}}
+function! gita#utils#status#extend_candidate(candidate, ...) abort "{{{
+  let status = get(a:candidate, 'status', get(a:000, 0, {}))
+  let status = empty(status)
+        \ ? gita#utils#status#retrieve(a:candidate.path)
+        \ : status
+  if has_key(status, 'path2') && !has_key(a:candidate, 'realpath')
+    let a:candidate.realpath = status.path2
+  endif
+  let a:candidate.status = status
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

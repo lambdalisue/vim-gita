@@ -138,9 +138,8 @@ function! gita#features#checkout#action(candidates, options) abort " {{{
   if empty(a:candidates)
     return
   endif
-  let filenames = map(a:candidates, 'v:val.filename')
   let options = extend({
-        \ '--': filenames,
+        \ '--': map(a:candidates, 'v:val.path'),
         \}, a:options)
   call gita#features#checkout#exec(options, {
         \ 'echo': 'fail',

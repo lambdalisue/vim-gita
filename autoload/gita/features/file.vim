@@ -356,6 +356,25 @@ function! gita#features#file#_complete_commit(arglead, cmdline, cursorpos, ...) 
   let candidates = map(candidates, 'leading . v:val')
   return filter(deepcopy(candidates), 'v:val =~# "^" . a:arglead')
 endfunction " }}}
+function! gita#features#file#action(candidates, options) abort " {{{
+  let candidate = get(a:candidates, 0, {})
+  if empty(candidate)
+    return
+  endif
+  let commit = s:get('commit', a:options, candidate)
+  let file = (commit ==# 'WORKTREE')
+        \ ? get(candidate, 'realpath', s:get('path', a:options, candidate))
+        \ : s:get('path', a:options, candidate)
+  call gita#utils#anchor#focus()
+  call gita#features#file#show({
+        \ 'file': file,
+        \ 'commit': commit,
+        \ 'line_start': s:get('line_start', a:options, candidate, 0),
+        \ 'line_end': s:get('line_end', a:options, candidates, 0),
+        \ 'opener': get(a:options, 'opener', 'edit'),
+        \ 'range':  get(a:options, 'range', 'tabpage'),
+        \})
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
