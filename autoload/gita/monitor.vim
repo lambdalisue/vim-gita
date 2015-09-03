@@ -144,6 +144,60 @@ function! gita#monitor#define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('diff', { 'vertical': 0 })<CR>
   noremap <silent><buffer> <Plug>(gita-action-DIFF-v)
         \ :<C-u>call gita#action#call('diff', { 'vertical': 1 })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-browse-open)
+        \ :<C-u>call gita#action#call('browse')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-browse-echo)
+        \ :<C-u>call gita#action#call('browse', { 'echo': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-browse-yank)
+        \ :<C-u>call gita#action#call('browse', { 'yank': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-BROWSE-OPEN)
+        \ :<C-u>call gita#action#call('browse', { 'scheme': 'exact' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-BROWSE-ECHO)
+        \ :<C-u>call gita#action#call('browse', { 'echo': 1, 'scheme': 'exact' })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-BROWSE-YANK)
+        \ :<C-u>call gita#action#call('browse', { 'yank': 1, 'scheme': 'exact' })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-blame)
+        \ :<C-u>call gita#action#call('blame')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-blame-browse)
+        \ :<C-u>call gita#action#call('browse', { 'scheme': 'blame' })<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-add)
+        \ :call gita#action#call('add')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-ADD)
+        \ :call gita#action#call('add', { 'force': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-rm)
+        \ :call gita#action#call('rm')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-RM)
+        \ :call gita#action#call('rm', { 'force': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-reset)
+        \ :call gita#action#call('reset')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-checkout)
+        \ :call gita#action#call('checkout')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-CHECKOUT)
+        \ :call gita#action#call('checkout', { 'force': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-checkout-ours)
+        \ :call gita#action#call('checkout', { 'ours': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-checkout-theirs)
+        \ :call gita#action#call('checkout', { 'theirs': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-stage)
+        \ :call gita#action#call('stage')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-unstage)
+        \ :call gita#action#call('unstage')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-toggle)
+        \ :call gita#action#call('toggle')<CR>
+  noremap <silent><buffer> <Plug>(gita-action-discard)
+        \ :call gita#action#call('discard')<CR>
+
+  noremap <silent><buffer> <Plug>(gita-action-solve2-h)
+        \ :call gita#action#call('solve', { 'way': 2 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve2-v)
+        \ :call gita#action#call('solve', { 'way': 2, 'vertical': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve3-h)
+        \ :call gita#action#call('solve', { 'way': 3 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-solve3-v)
+        \ :call gita#action#call('solve', { 'way': 3, 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer> q     <Plug>(gita-action-quit)
@@ -171,6 +225,20 @@ function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer><expr> DD <SID>smart_map('DD', '<Plug>(gita-action-DIFF-v)')
   nmap <buffer><expr> DH <SID>smart_map('DH', '<Plug>(gita-action-DIFF-h)')
   nmap <buffer><expr> DV <SID>smart_map('DV', '<Plug>(gita-action-DIFF-v)')
+
+  nmap <buffer><expr> uo <SID>smart_map('uo', '<Plug>(gita-action-browse-open)')
+  nmap <buffer><expr> ue <SID>smart_map('ue', '<Plug>(gita-action-browse-echo)')
+  nmap <buffer><expr> uy <SID>smart_map('uy', '<Plug>(gita-action-browse-yank)')
+  nmap <buffer><expr> uO <SID>smart_map('uO', '<Plug>(gita-action-BROWSE-OPEN)')
+  nmap <buffer><expr> uE <SID>smart_map('uE', '<Plug>(gita-action-BROWSE-ECHO)')
+  nmap <buffer><expr> uY <SID>smart_map('uY', '<Plug>(gita-action-BROWSE-YANK)')
+  nmap <buffer><expr> UO <SID>smart_map('UO', '<Plug>(gita-action-BROWSE-OPEN)')
+  nmap <buffer><expr> UE <SID>smart_map('UE', '<Plug>(gita-action-BROWSE-ECHO)')
+  nmap <buffer><expr> UY <SID>smart_map('UY', '<Plug>(gita-action-BROWSE-YANK)')
+
+  nmap <buffer><expr> bb <SID>smart_map('bb', '<Plug>(gita-action-blame)')
+  nmap <buffer><expr> bB <SID>smart_map('bB', '<Plug>(gita-action-blame-browse)')
+  nmap <buffer><expr> BB <SID>smart_map('BB', '<Plug>(gita-action-blame-browse)')
 endfunction " }}}
 
 augroup vim-gita-update-monitor

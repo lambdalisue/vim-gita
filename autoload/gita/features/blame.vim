@@ -54,6 +54,14 @@ call s:parser.add_argument(
       \)
 
 let s:navi_actions = {}
+function! s:navi_actions.blame_info(candidates, options, config) abort " {{{
+  let candidate = get(a:candidates, 0, {})
+  if empty(candidate)
+    return
+  endif
+  let formatted_chunk = s:format_chunk(candidate.chunk, 80, 1, s:T.now())
+  echo join(formatted_chunk, "\n")
+endfunction " }}}
 function! s:navi_actions.blame_enter(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
   if empty(candidate)
@@ -74,6 +82,11 @@ function! s:navi_actions.blame_history_prev(candidates, options, config) abort "
 endfunction " }}}
 function! s:navi_actions.blame_history_next(candidates, options, config) abort " {{{
   call s:get_history().next()
+endfunction " }}}
+function! s:navi_actions.browse(candidates, options, config) abort " {{{
+  let options = deepcopy(a:options)
+  let options.scheme = 'blame'
+  call call('gita#features#browse#action', [a:candidates, options, a:config])
 endfunction " }}}
 
 function! s:create_chunks(gita, blameobj) abort " {{{
@@ -280,6 +293,7 @@ function! s:navi_get_candidates(start, end, ...) abort " {{{
   let candidate = gita#action#new_candidate(chunk.filename, chunk.revision, {
         \ 'line_start': lineinfo.linenum.original,
         \ 'line_end': lineinfo.linenum.original,
+        \ 'chunk': chunk,
         \})
   return [candidate]
 endfunction " }}}
@@ -324,6 +338,8 @@ function! s:navi_define_mappings() abort " {{{
   call gita#monitor#define_mappings()
   unmap <buffer> <Plug>(gita-action-help-s)
 
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-info)
+        \ :<C-u>call gita#action#call('blame_info')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-enter)
         \ :<C-u>call gita#action#call('blame_enter')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-history-prev)
@@ -335,6 +351,7 @@ function! s:navi_define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
   unmap <buffer> ?s
 
+  nmap <buffer> g<C-g> <Plug>(gita-action-blame-info)
   nmap <buffer> <CR> <Plug>(gita-action-blame-enter)
   nmap <buffer> <C-p> <Plug>(gita-action-blame-history-prev)
   nmap <buffer> <C-n> <Plug>(gita-action-blame-history-next)
