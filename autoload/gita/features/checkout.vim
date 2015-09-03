@@ -125,10 +125,10 @@ function! gita#features#checkout#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#checkout#default_options),
           \ options)
-    let options = extend(options, {
-          \ '--': options.__unknown__,
-          \})
-    call gita#features#checkout#exec(options)
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
+    endif
+    call gita#action#exec('checkout', options)
   endif
 endfunction " }}}
 function! gita#features#checkout#complete(arglead, cmdline, cursorpos) abort " {{{

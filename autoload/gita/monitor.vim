@@ -170,6 +170,10 @@ function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer><expr> DV <SID>smart_map('DV', '<Plug>(gita-action-DIFF-v)')
 endfunction " }}}
 
+augroup vim-gita-update-monitor
+  autocmd! *
+  autocmd BufWritePost * call gita#action#exec('update')
+augroup END
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

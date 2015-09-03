@@ -37,7 +37,7 @@ function! gita#utils#anchor#focus() abort " {{{
   let suitable_winnum = suitable_winnum == 0
         \ ? previous_winnum
         \ : suitable_winnum
-  silent execute printf('%dwincmd w', suitable_winnum)
+  silent execute printf('keepjumps %dwincmd w', suitable_winnum)
 endfunction " }}}
 
 let &cpo = s:save_cpo

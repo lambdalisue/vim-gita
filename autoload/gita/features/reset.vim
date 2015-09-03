@@ -82,8 +82,8 @@ function! s:parser.hooks.post_complete_optionional_argument(candidates, options)
         \])
   return candidates
 endfunction " }}}
-
-
+ 
+ 
 function! gita#features#reset#exec(...) abort " {{{
   let gita = gita#get()
   let options = get(a:000, 0, {})
@@ -114,10 +114,10 @@ function! gita#features#reset#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#reset#default_options),
           \ options)
-    let options = extend(options, {
-          \ '--': options.__unknown__,
-          \})
-    call gita#features#reset#exec(options)
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
+    endif
+    call gita#action#exec('reset', options)
   endif
 endfunction " }}}
 function! gita#features#reset#complete(arglead, cmdline, cursorpos) abort " {{{

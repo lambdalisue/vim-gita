@@ -64,6 +64,24 @@ function! gita#utils#buffer#open(name, ...) abort " {{{
           \}
   endif
 endfunction " }}}
+function! gita#utils#buffer#focus_group(group, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  let vname = printf('_buffer_manager_%s', a:group)
+  if !has_key(s:, vname)
+    return 0
+  endif
+  if get(options, 'keepjumps')
+    let near = s:{vname}.nearest()
+    if empty(near)
+      return 0
+    endif
+    silent execute printf('keepjumps tabnext %d', near[0])
+    silent execute printf('keepjumps %d wincmd w', near[1])
+    return 1
+  else
+    return s:{vname}.move()
+  endif
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

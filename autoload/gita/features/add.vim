@@ -62,13 +62,13 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
   return candidates
 endfunction " }}}
 
-function! gita#features#add#exec(...) abort " {{{
-  let gita = gita#get()
-  let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
-  if gita.fail_on_disabled()
-    return { 'status': -1 }
-  endif
+function! gita#features#add#exec(...) abort " {{{                           
+  let gita = gita#get()                                                     
+  let options = get(a:000, 0, {})                                           
+  let config = get(a:000, 1, {})                                            
+  if gita.fail_on_disabled()                                                
+    return { 'status': -1 }                                                 
+  endif                                                                     
   if !empty(get(options, '--', []))
     " git understand REAL/UNIX path in working tree
     let options['--'] = gita#utils#ensure_realpathlist(options['--'])
@@ -89,13 +89,10 @@ function! gita#features#add#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#add#default_options),
           \ options)
-    let options = extend(options, {
-          \ '--': options.__unknown__,
-          \})
-    if empty(options['--'])
-      let options['--'] = ['%']
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
     endif
-    call gita#features#add#exec(options)
+    call gita#action#exec('add', options)
   endif
 endfunction " }}}
 function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{

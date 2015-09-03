@@ -131,6 +131,5 @@ augroup vim-gita-clear-cache
   autocmd User vim-gita-checkout-post call gita#clear_cache()
 augroup END
 
-
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -72,13 +72,10 @@ function! gita#features#rm#command(bang, range, ...) abort " {{{
     let options = extend(
           \ deepcopy(g:gita#features#rm#default_options),
           \ options)
-    let options = extend(options, {
-          \ '--': options.__unknown__,
-          \})
-    if empty(options['--'])
-      let options['--'] = ['%']
+    if !empty(options.__unknown__)
+      let options['--'] = options.__unknown__
     endif
-    call gita#features#rm#exec(options)
+    call gita#action#exec('rm', options)
   endif
 endfunction " }}}
 function! gita#features#rm#complete(arglead, cmdline, cursorpos) abort " {{{

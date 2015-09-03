@@ -11,6 +11,13 @@ function! s:get(name, options, candidate, ...) abort " {{{
 endfunction " }}}
 let s:actions = {}
 function! s:actions.update(candidates, options) abort " {{{
+  let winnum = winnr()
+  if gita#utils#buffer#focus_group('vim_gita_monitor', { 'keepjumps': 1 })
+    if winnr() != winnum
+      call gita#action#exec('update')
+      execute printf('keepjumps %dwincmd w', winnum)
+    endif
+  endif
 endfunction " }}}
 function! s:actions.help(candidates, options) abort " {{{
   call gita#utils#help#toggle(get(a:options, 'name', ''))
