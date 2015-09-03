@@ -26,12 +26,14 @@ function! s:actions.edit(candidates, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:actions.open(candidates, options) abort " {{{
-  let commit = get(options, 'commit', gita#meta#get('commit', ''))
+  let commit = get(a:options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
     if !has_key(candidate, 'commit') && empty(commit)
       let _commit = candidate.is_unstaged
             \ ? 'INDEX'
             \ : 'HEAD'
+    else
+      let _commit = commit
     endif
     call gita#utils#anchor#focus()
     call gita#features#file#show({
@@ -45,19 +47,21 @@ function! s:actions.open(candidates, options) abort " {{{
   endfor
 endfunction " }}}
 function! s:actions.diff(candidates, options) abort " {{{
-  let commit = get(options, 'commit', gita#meta#get('commit', ''))
+  let commit = get(a:options, 'commit', gita#meta#get('commit', ''))
   for candidate in a:candidates
     if !has_key(candidate, 'commit') && empty(commit)
       let _commit = candidate.is_unstaged
             \ ? 'INDEX'
             \ : 'HEAD'
+    else
+      let _commit = commit
     endif
     call gita#utils#anchor#focus()
     call gita#features#diff#show({
           \ '--': [candidate.path],
           \ 'commit':   get(candidate, 'commit', _commit),
-          \ 'line':   get(candidate, 'line', get(a:options, 'line', '')),
-          \ 'column': get(candidate, 'column', get(a:options, 'column', '')),
+          \ 'line':     get(candidate, 'line', get(a:options, 'line', '')),
+          \ 'column':   get(candidate, 'column', get(a:options, 'column', '')),
           \ 'split':    get(a:options, 'split', 1),
           \ 'opener':   get(a:options, 'opener', 'edit'),
           \ 'opener2':  get(a:options, 'opener2', 'split'),
