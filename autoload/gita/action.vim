@@ -123,7 +123,7 @@ function! gita#action#exec(name, ...) abort range " {{{
   let actions = gita#action#get_actions()
   call call(
         \ actions[a:name],
-        \ [candidates, options],
+        \ [deepcopy(candidates), deepcopy(options)],
         \ actions,
         \)
 endfunction " }}}

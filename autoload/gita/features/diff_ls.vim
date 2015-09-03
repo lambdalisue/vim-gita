@@ -32,7 +32,7 @@ call s:parser.add_argument(
       \ })
 
 let s:actions = {}
-function! s:actions.update(statuses, options) abort " {{{
+function! s:actions.update(candidates, options) abort " {{{
   call gita#features#diff_ls#update(a:options, { 'force_update': 1 })
 endfunction " }}}
 

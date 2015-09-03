@@ -102,6 +102,22 @@ endfunction " }}}
 function! gita#features#add#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
+function! gita#features#add#action(candidates, options) abort " {{{
+  if empty(a:candidates)
+    return
+  endif
+  let filenames = map(
+        \ a:candidates,
+        \ 'get(get(v:val, "status", {}), "path2", v:val.filename)',
+        \)
+  let options = extend({
+        \ '--': filenames,
+        \ 'ignore_errors': 1,
+        \}, a:options)
+  call gita#features#add#exec(options, {
+        \ 'echo': 'fail',
+        \})
+endfunction " }}}
 
 
 let &cpo = s:save_cpo

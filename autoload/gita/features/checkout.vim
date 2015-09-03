@@ -134,6 +134,18 @@ endfunction " }}}
 function! gita#features#checkout#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
+function! gita#features#checkout#action(candidates, options) abort " {{{
+  if empty(a:candidates)
+    return
+  endif
+  let filenames = map(a:candidates, 'v:val.filename')
+  let options = extend({
+        \ '--': filenames,
+        \}, a:options)
+  call gita#features#checkout#exec(options, {
+        \ 'echo': 'fail',
+        \})
+endfunction " }}}
 
 
 let &cpo = s:save_cpo

@@ -325,6 +325,17 @@ endfunction " }}}
 function! gita#features#conflict#complete(arglead, cmdline, cursorpos) abort " {{{
   return s:parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction " }}}
+function! gita#features#conflict#action(candidates, options) abort " {{{
+  let candidate = get(a:candidates, 0, {})
+  if empty(candidate)
+    return
+  endif
+  call gita#utils#anchor#focus()
+  call gita#features#conflict#show(extend({
+        \ 'file': candidate.filename,
+        \ 'status': get(candidate, 'status', ''),
+        \}, a:options))
+endfunction " }}}
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

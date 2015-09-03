@@ -92,126 +92,91 @@ function! s:smart_map(...) abort " {{{
 endfunction " }}}
 
 let s:actions = {}
-function! s:actions.update(statuses, options) abort " {{{
+function! s:actions.update(candidates, options) abort " {{{
   call gita#features#status#update(a:options, { 'force_update': 1 })
 endfunction " }}}
-function! s:actions.open_commit(statuses, options) abort " {{{
+function! s:actions.open_commit(candidates, options) abort " {{{
   call gita#features#commit#open(a:options)
 endfunction " }}}
-function! s:actions.add(statuses, options) abort " {{{
-  if empty(a:statuses)
-    return
-  endif
-  let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'get(v:val, "path2", v:val.path)'),
-        \ 'ignore_errors': 1,
-        \}, a:options)
-  call gita#features#add#exec(options, {
-        \ 'echo': 'fail',
-        \})
+function! s:actions.add(candidates, options) abort " {{{
+  call call('gita#features#add#action', [a:candidates, a:options])
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.rm(statuses, options) abort " {{{
-  if empty(a:statuses)
-    return
-  endif
-  let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
-        \ 'quiet': 1,
-        \}, a:options)
-  call gita#features#rm#exec(options, {
-        \ 'echo': 'fail',
-        \})
+function! s:actions.rm(candidates, options) abort " {{{
+  call call('gita#features#rm#action', [a:candidates, a:options])
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.reset(statuses, options) abort " {{{
-  if empty(a:statuses)
-    return
-  endif
-  let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
-        \ 'quiet': 1,
-        \}, a:options)
-  call gita#features#reset#exec(options, {
-        \ 'echo': 'fail',
-        \})
+function! s:actions.reset(candidates, options) abort " {{{
+  call call('gita#features#reset#action', [a:candidates, a:options])
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.checkout(statuses, options) abort " {{{
-  if empty(a:statuses)
-    return
-  endif
-  let options = extend({
-        \ '--': map(deepcopy(a:statuses), 'v:val.path'),
-        \}, a:options)
-  call gita#features#checkout#exec(options, {
-        \ 'echo': 'fail',
-        \})
+function! s:actions.checkout(candidates, options) abort " {{{
+  call call('gita#features#checkout#action', [a:candidates, a:options])
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.stage(statuses, options) abort " {{{
-  let add_statuses = []
-  let rm_statuses = []
-  for status in a:statuses
-    if status.is_unstaged && status.worktree ==# 'D'
-      call add(rm_statuses, status)
+function! s:actions.stage(candidates, options) abort " {{{
+  let add_candidates = []
+  let rm_candidates = []
+  for candidate in a:candidates
+    if candidate.status.is_unstaged && candidate.status.worktree ==# 'D'
+      call add(rm_candidates, candidate)
     else
-      call add(add_statuses, status)
+      call add(add_candidates, candidate)
     endif
   endfor
-  call self.add(add_statuses, extend({ 'no_update': 1 }, a:options))
-  call self.rm(rm_statuses, extend({ 'no_update': 1 }, a:options))
+  call self.add(add_candidates, extend({ 'no_update': 1 }, a:options))
+  call self.rm(rm_candidates, extend({ 'no_update': 1 }, a:options))
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.unstage(statuses, options) abort " {{{
-  call self.reset(a:statuses, a:options)
+function! s:actions.unstage(candidates, options) abort " {{{
+  call self.reset(a:candidates, a:options)
 endfunction " }}}
-function! s:actions.toggle(statuses, options) abort " {{{
-  let stage_statuses = []
-  let reset_statuses = []
-  for status in a:statuses
-    if status.is_staged && status.is_unstaged
+function! s:actions.toggle(candidates, options) abort " {{{
+  let stage_candidates = []
+  let reset_candidates = []
+  for candidate in a:candidates
+    if candidate.status.is_staged && candidate.status.is_unstaged
       if g:gita#features#status#prefer_unstage_in_toggle
-        call add(reset_statuses, status)
+        call add(reset_candidates, candidate)
       else
-        call add(stage_statuses, status)
+        call add(stage_candidates, candidate)
       endif
-    elseif status.is_staged
-      call add(reset_statuses, status)
-    elseif status.is_unstaged || status.is_untracked || status.is_ignored
-      call add(stage_statuses, status)
+    elseif candidate.status.is_staged
+      call add(reset_candidates, candidate)
+    elseif candidate.status.is_unstaged || candidate.status.is_untracked || candidate.status.is_ignored
+      call add(stage_candidates, candidate)
     endif
   endfor
-  call self.stage(stage_statuses, extend({ 'no_update': 1 }, a:options))
-  call self.unstage(reset_statuses, extend({ 'no_update': 1 }, a:options))
+  call self.stage(stage_candidates, extend({ 'no_update': 1 }, a:options))
+  call self.unstage(reset_candidates, extend({ 'no_update': 1 }, a:options))
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.discard(statuses, options) abort " {{{
-  let delete_statuses = []
-  let checkout_statuses = []
-  for status in a:statuses
-    if status.is_conflicted
+function! s:actions.discard(candidates, options) abort " {{{
+  let delete_candidates = []
+  let checkout_candidates = []
+  for candidate in a:candidates
+    if candidate.status.is_conflicted
       call gita#utils#prompt#warn(printf(
             \ 'A conflicted file "%s" cannot be discarded. Resolve the conflict first.',
-            \ status.path,
+            \ candidate.filename,
             \))
       continue
-    elseif status.is_untracked || status.is_ignored
-      call add(delete_statuses, status)
-    elseif status.is_staged || status.is_unstaged
-      call add(checkout_statuses, status)
+    elseif candidate.status.is_untracked || candidate.status.is_ignored
+      call add(delete_candidates, candidate)
+    elseif candidate.status.is_staged || candidate.status.is_unstaged
+      call add(checkout_candidates, candidate)
     endif
   endfor
   if get(a:options, 'confirm', 1)
@@ -228,8 +193,8 @@ function! s:actions.discard(statuses, options) abort " {{{
     endif
   endif
   " delete untracked files
-  for status in delete_statuses
-    let abspath = get(status, 'path2', status.path)
+  for candidate in delete_candidates
+    let abspath = get(candidate.status, 'path2', candidate.filename)
     if isdirectory(abspath)
       silent! call s:F.rmdir(abspath, 'r')
     elseif filewritable(abspath)
@@ -240,18 +205,16 @@ function! s:actions.discard(statuses, options) abort " {{{
   let options = deepcopy(a:options)
   let options.commit = 'HEAD'
   let options.force = 1
-  call self.checkout(checkout_statuses, extend({ 'no_update': 1 }, options))
+  call self.checkout(checkout_candidates, extend({ 'no_update': 1 }, options))
   if !get(a:options, 'no_update', 0)
-    call self.update(a:statuses, a:options)
+    call self.update(a:candidates, a:options)
   endif
 endfunction " }}}
-function! s:actions.solve(statuses, options) abort " {{{
-  for status in a:statuses
-    call gita#utils#anchor#focus()
-    call gita#features#conflict#show(extend({
-          \ 'status': status,
-          \}, a:options))
-  endfor
+function! s:actions.solve(candidates, options) abort " {{{
+  call call('gita#features#conflict#action', [a:candidates, a:options])
+  if !get(a:options, 'no_update', 0)
+    call self.update(a:candidates, a:options)
+  endif
 endfunction " }}}
 
 

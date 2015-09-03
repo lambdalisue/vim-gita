@@ -185,10 +185,10 @@ function! s:ac_WinLeave() abort " {{{
 endfunction " }}}
 
 let s:actions = {}
-function! s:actions.update(statuses, options) abort " {{{
+function! s:actions.update(candidates, options) abort " {{{
   call gita#features#commit#update(a:options, { 'force_update': 1 })
 endfunction " }}}
-function! s:actions.open_status(statuses, options) abort " {{{
+function! s:actions.open_status(candidates, options) abort " {{{
   if &modified
     let gita = gita#get()
     let gita.commitmsg_cached = s:get_current_commitmsg()
@@ -196,9 +196,9 @@ function! s:actions.open_status(statuses, options) abort " {{{
   endif
   call gita#features#status#open(a:options)
 endfunction " }}}
-function! s:actions.commit(statuses, options) abort " {{{
+function! s:actions.commit(candidates, options) abort " {{{
   call s:commit('%', a:options)
-  call self.update(a:statuses, a:options)
+  call self.update(a:candidates, a:options)
 endfunction " }}}
 
 

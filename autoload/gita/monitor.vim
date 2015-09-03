@@ -4,15 +4,20 @@ set cpo&vim
 function! s:smart_map(...) abort " {{{
   return call('gita#action#smart_map', a:000)
 endfunction " }}}
-function! s:get_statuses(start, end) abort " {{{
-  let statuses = []
+function! s:get_candidates(start, end, ...) abort " {{{
+  let options = get(a:000, 0, {})
+  let commit = get(options, 'commit', gita#meta#get('commit', ''))
+  let candidates = []
   for n in range(a:start, a:end)
     let status = get(w:_gita_statuses_map, getline(n), {})
     if !empty(status)
-      call add(statuses, status)
+      let candidate = gita#action#new_candidate(status.path, commit, {
+            \ 'status': status,
+            \})
+      call add(candidates, candidate)
     endif
   endfor
-  return statuses
+  return candidates
 endfunction " }}}
 function! s:ac_QuitPre() abort " {{{
   let w:_gita_monitor_QuitPre = 1
@@ -59,7 +64,7 @@ function! gita#monitor#open(bufname, ...) abort  " {{{
   let w:_gita = gita
   let w:_gita_options = deepcopy(options)
   let w:_gita_statuses_map = {}
-  call gita#action#register_get_candidates(function('s:get_statuses'))
+  call gita#action#register_get_candidates(function('s:get_candidates'))
 
   if get(b:, '_gita_constructed') && !g:gita#debug
     return {
