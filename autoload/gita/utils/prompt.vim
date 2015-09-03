@@ -27,7 +27,7 @@ function! s:echomsg(hl, msg) abort " {{{
   endtry
 endfunction " }}}
 function! s:input(hl, msg, ...) abort " {{{
-  if get(g:, 'gita#_disable_interactive')
+  if get(g:, 'gita#test')
     return ''
   endif
   execute 'echohl' a:hl
