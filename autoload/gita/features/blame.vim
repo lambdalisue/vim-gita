@@ -286,11 +286,12 @@ function! s:view_ac_BufWinEnter() abort " {{{
   call gita#features#blame#goto(gita#features#blame#get_actual_linenum(line('.')))
 endfunction " }}}
 function! s:navi_get_candidates(start, end, ...) abort " {{{
-  let commit = gita#meta#get('commit')
   let blamemeta = gita#meta#get('blame#meta')
   let lineinfo = blamemeta.lineinfos[a:start]
   let chunk = blamemeta.chunks[lineinfo.chunkref]
-  let candidate = gita#action#new_candidate(chunk.filename, chunk.revision, {
+  let candidate = gita#action#new_candidate(
+        \ chunk.filename,
+        \ chunk.revision, {
         \ 'line_start': lineinfo.linenum.original,
         \ 'line_end': lineinfo.linenum.original,
         \ 'chunk': chunk,
