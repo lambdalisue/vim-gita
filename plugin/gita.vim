@@ -37,25 +37,34 @@ let s:default_config = {
       \ 'utils#buffer#separator': has('unix') ? ':' : '_',
       \ 'features#add#default_options': {},
       \ 'features#browse#default_options': {},
-      \ 'features#browse#translation_patterns': [
-      \   ['\vhttps?://(github\.com)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \   ['\vgit://(github\.com)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \   ['\vgit\@(github\.com):(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \   ['\vssh://git\@(github\.com)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/blob/%br/%pt%{#L|}ls%{-L|}le'],
-      \   ['\vhttps?://(bitbucket\.org)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \   ['\vgit://(bitbucket\.org)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \   ['\vssh://git\@(bitbucket\.org)/(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \   ['\vgit\@(bitbucket\.org):(.{-})/(.{-})%(\.git)?$',
-      \    'https://\1/\2/\3/src/%br/%pt%{#cl-|}ls'],
-      \ ],
-      \ 'features#browse#extra_translation_patterns': [],
+      \ 'features#browse#translation_patterns': {
+      \   'github.com': [
+      \     [
+      \       '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \       '\vgit://(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
+      \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \     ], {
+      \       '_':     'https://\1/\2/\3/blob/%commit/%path%{#L|}ls%{-L|}le',
+      \       'exact': 'https://\1/\2/\3/blob/%revision/%path%{#L|}ls%{-L|}le',
+      \       'blame': 'https://\1/\2/\3/blame/%revision/%path%{#L|}ls%{-L|}le',
+      \     },
+      \   ],
+      \   'bitbucket.org': [
+      \     [
+      \       '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \       '\vgit://(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
+      \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
+      \     ], {
+      \       '_':     'https://\1/\2/\3/src/%commit/%path%{#cl-|}ls',
+      \       'exact': 'https://\1/\2/\3/src/%revision/%path%{#cl-|}ls',
+      \       'blame': 'https://\1/\2/\3/annotate/%revision/%path',
+      \       'diff':  'https://\1/\2/\3/diff/%path?diff2=%revision',
+      \     },
+      \   ],
+      \ },
+      \ 'features#browse#extra_translation_patterns': {},
       \ 'features#checkout#default_options': {},
       \ 'features#commit#default_options': {
       \   'untracked-files': 1,
