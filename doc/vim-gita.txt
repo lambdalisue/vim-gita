@@ -377,44 +377,58 @@ g:gita#debug					*g:gita#debug*
 			*g:gita#features#browse#translation_patterns*
 g:gita#features#browse#translation_patterns
 
-	A |List| of |List| used for translating a remote url to browserble
-	url. See |g:gita#features#browse#extra_translation_patterns| for the
-	detail.
+	A |Dictionary| used for translating a remote url to browserble url.
+	See |g:gita#features#browse#extra_translation_patterns| for the detail.
 
 			*g:gita#features#browse#extra_translation_patterns*
 g:gita#features#browse#extra_translation_patterns
 
-	An extra translation pattern |List| which will be added to
+	An extra translation pattern |Dictionary| which will be extended to
 	|g:gita#features#browse#translation_patterns|.
-	Each list item must be a |List| which have two or three |String|.
-	The first string is a URL pattern used as {pat} attribute of
-	|substitute()|. The second and third (optional) string are substitution
-	pattern which is used as {sub} attribute of |substitute()|.
-	The third string is used when --exact option is specified. If the
-	pattern does not have the third string, the second string will be used
-	even in that case.
+	An item of the dictionary is a |List|, which have an acceptable url
+	pattern |List| and a url translation scheme |Dictionary|.
 
-	After substitution, the following format string are replaced by
-	a rule which explained in |gita#statusline#format()| part.
+	The acceptable url pattern list contains |String| items which indicate
+	a url pattern in regular expression. '%domain' in the pattern will be
+	replaced into a key value of the dictionary for convinience.
 
-	'lb' A local branch name. It might not exist in the remote.
-	'lh' A local branch hash. It might not exist in the remote.
-	'rb' A remote branch name which the current branch is connected.
-	'rh' A remote branch hash which the current branch is connected.
-	'pt' A relative file path from a top of git working tree
-	'ls' A start line number of selection
-	'le' A end line number of selection
+	Users can specify a particular scheme defined in the url translation
+	scheme dictionary with '--scheme' option, mean the following command
+	open a git blame page in github.com while a url translation scheme
+	dictionary of github.com has 'blame' entry.
+>
+	:Gita browse --scheme=blame
+<
+	In the url translation scheme dictionary, the following format strings
+	are replaced by a rule which explained in |gita#statusline#format()|
+
+	c1	A commit1
+	c2	A commit2. It might be an empty string.
+	r1	A revision (SHA256) of commit1.
+	r2	A revision (SHA256) of commit2. It might be an empty string
+	pt	A relative file path from a top of git working tree
+	ls	A start line number of selection
+	le	A end line number of selection
 
 	Example: Add a pattern for GitLab
 >
-	let g:gita#features#browse#extra_translation_patterns = [
-	    \ ['\vgit@(gitlab\.hashnote\.net):([^/]+)/(.+)%(\.git|)',
-	    \  'http://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-}le',
-	    \  'http://\1/\2/\3/blob/%rh/%pt%{#L|}ls%{-}le'],
-	    \ ['\vhttps?://(gitlab\.hashnote\.net):([^/]+)/(.+)',
-	    \  'http://\1/\2/\3/blob/%rb/%pt%{#L|}ls%{-}le',
-	    \  'http://\1/\2/\3/blob/%rh/%pt%{#L|}ls%{-}le'],
-	    \]
+	" %domain in the acceptable url pattern list will be substituted into
+	" 'gitlab.hashnote.net'
+	" '_' of a url translation scheme dictionary is used as a default
+	" scheme
+	let g:gita#features#browse#extra_translation_patterns = {
+	    \ 'gitlab.hashnote.net': [
+	    \   [
+	    \     '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	    \     '\vgit://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	    \     '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
+	    \     '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
+	    \   ], {
+	    \     '_':     'https://\1/\2/\3/blob/%c1/%pt%{#L|}ls%{-}le',
+	    \     'exact': 'https://\1/\2/\3/blob/%r1/%pt%{#L|}ls%{-}le',
+	    \   },
+	    \ ],
+	    \}
 <
 NOTE: WIP
 

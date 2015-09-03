@@ -45,9 +45,9 @@ let s:default_config = {
       \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
       \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
       \     ], {
-      \       '_':     'https://\1/\2/\3/blob/%commit/%path%{#L|}ls%{-L|}le',
-      \       'exact': 'https://\1/\2/\3/blob/%revision/%path%{#L|}ls%{-L|}le',
-      \       'blame': 'https://\1/\2/\3/blame/%revision/%path%{#L|}ls%{-L|}le',
+      \       '_':     'https://\1/\2/\3/blob/%c1/%pt%{#L|}ls%{-L|}le',
+      \       'exact': 'https://\1/\2/\3/blob/%r1/%pt%{#L|}ls%{-L|}le',
+      \       'blame': 'https://\1/\2/\3/blame/%c1/%pt%{#L|}ls%{-L|}le',
       \     },
       \   ],
       \   'bitbucket.org': [
@@ -57,10 +57,10 @@ let s:default_config = {
       \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
       \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
       \     ], {
-      \       '_':     'https://\1/\2/\3/src/%commit/%path%{#cl-|}ls',
-      \       'exact': 'https://\1/\2/\3/src/%revision/%path%{#cl-|}ls',
-      \       'blame': 'https://\1/\2/\3/annotate/%revision/%path',
-      \       'diff':  'https://\1/\2/\3/diff/%path?diff2=%revision',
+      \       '_':     'https://\1/\2/\3/src/%c1/%pt%{#cl-|}ls',
+      \       'exact': 'https://\1/\2/\3/src/%r1/%pt%{#cl-|}ls',
+      \       'blame': 'https://\1/\2/\3/annotate/%c1/%pt',
+      \       'diff':  'https://\1/\2/\3/diff/%pt?diff1=%c1&diff2=%c2',
       \     },
       \   ],
       \ },

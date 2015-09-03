@@ -1,11 +1,9 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-
 let s:L = gita#import('Data.List')
 let s:F = gita#import('System.File')
 let s:A = gita#import('ArgumentParser')
-
 
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] browse',
@@ -59,56 +57,54 @@ function! s:parser.hooks.post_complete_optional_argument(candidates, options) ab
   return candidates
 endfunction " }}}
 
-
-function! s:yank_string(content) abort " {{{
-  let @" = a:content
-  if has('clipboard')
-    call setreg(v:register, a:content)
+function! s:find_remote_branch(gita, branch) abort " {{{
+  let branch_merge = a:gita.git.get_branch_merge(a:branch)
+  if empty(branch_merge)
+    return a:branch
   endif
+  return substitute(branch_merge, '\C^refs/heads/', '', '')
 endfunction " }}}
-function! s:normalize_commit(gita, commit) abort " {{{
+function! s:find_common_ancestor(gita, commit1, commit2) abort " {{{
+    " find a common ancestor by merge-base
+    let result = a:gita.operations.merge_base({
+          \ 'commit1': a:commit1,
+          \ 'commit2': a:commit2,
+          \}, {
+          \ 'echo': 'fail',
+          \})
+    if result.status
+      return ''
+    endif
+    return result.stdout
+endfunction " }}}
+function! s:find_commit_meta(gita, commit) abort " {{{
   if a:commit =~# '\v^[^.]*\.\.\.[^.]*$'
     let [lhs, rhs] = matchlist(
           \ a:commit,
           \ '\v^([^.]*)\.\.\.([^.]*)$',
           \)[ 1 : 2 ]
-    " find a common ancestor by merge-base
-    let result = a:gita.operations.merge_base({
-          \ 'commit1': lhs,
-          \ 'commit2': rhs,
-          \}, {
-          \ 'echo': 'fail',
-          \})
-    if result.status
-      return ['', '', '']
-    endif
-    return s:normalize_commit(a:gita, result.stdout)
+    let remote = a:gita.git.get_branch_remote(lhs)
+    " 'git diff A...B' is equivalent to 'git diff $(git-merge-base A B) B'
+    let lhs = s:find_common_ancestor(a:gita, lhs, rhs)
+    let rhs = empty(rhs) ? 'HEAD' : rhs
   elseif a:commit =~# '\v^[^.]*\.\.[^.]*$'
-    let lhs = matchlist(
+    let [lhs, rhs] = matchlist(
           \ a:commit,
           \ '\v^([^.]*)\.\.([^.]*)$',
-          \)[1]
-    " use lhs
-    return s:normalize_commit(a:gita, lhs)
-  elseif empty(a:commit)
-    " current local branch
-    let meta = a:gita.git.get_meta()
-    let commit = meta.local.branch_name
+          \)[ 1 : 2 ]
+    let remote = a:gita.git.get_branch_remote(lhs)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
   else
-    let commit = a:commit
+    let lhs = empty(a:commit) ? 'HEAD' : a:commit
+    let rhs = ''
+    let remote = a:gita.git.get_branch_remote(lhs)
   endif
-  " find remote branch
-  let branch_merge = a:gita.git.get_branch_merge(commit)
-  if empty(branch_merge)
-    " no remote branch is found. the commit may be sha256 or local branch
-    " so use 'origin' to figur out url
-    let remote = 'origin'
-  else
-    let commit = substitute(branch_merge, '\C^refs/heads/', '', '')
-    let remote = a:gita.git.get_branch_remote(commit)
-  endif
+  let lhs = s:find_remote_branch(a:gita, lhs)
+  let rhs = s:find_remote_branch(a:gita, rhs)
+  let remote = empty(remote) ? 'origin' : remote
   let remote_url = a:gita.git.get_remote_url(remote)
-  return [remote, commit, remote_url]
+  return [lhs, rhs, remote, remote_url]
 endfunction " }}}
 function! s:find_url(gita, expr, options) abort " {{{
   let commit  = get(a:options, 'commit', gita#meta#get('commit', ''))
@@ -132,26 +128,30 @@ function! s:find_url(gita, expr, options) abort " {{{
   let line_end = line_start == line_end ? '' : line_end
 
   " normalize commit to figure out remote, commit, and remote_url
-  let [remote, commit, remote_url] = s:normalize_commit(gita#get(), commit)
-  let revision = a:gita.git.get_remote_hash(remote, commit)
+  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(gita#get(), commit)
+  let revision1 = a:gita.git.get_remote_hash(remote, commit1)
+  let revision2 = a:gita.git.get_remote_hash(remote, commit2)
 
   " create a URL
   let data = {
         \ 'path':       gita#utils#ensure_unixpath(relpath),
-        \ 'commit':     commit,
-        \ 'revision':   revision,
+        \ 'commit1':    commit1,
+        \ 'commit2':    commit2,
+        \ 'revision1':  revision1,
+        \ 'revision2':  revision2,
         \ 'remote':     remote,
         \ 'remote_url': remote_url,
         \ 'line_start': line_start,
         \ 'line_end':   line_end,
         \}
   let format_map = {
-        \ 'path':     'path',
-        \ 'commit':   'commit',
-        \ 'revision': 'revision',
-        \ 'remote':   'remote',
-        \ 'ls':       'line_start',
-        \ 'le':       'line_end',
+        \ 'pt': 'path',
+        \ 'c1': 'commit1',
+        \ 'c2': 'commit2',
+        \ 'r1': 'revision1',
+        \ 'r2': 'revision2',
+        \ 'ls': 'line_start',
+        \ 'le': 'line_end',
         \}
   let translation_patterns = extend(
         \ deepcopy(g:gita#features#browse#translation_patterns),
@@ -220,7 +220,7 @@ function! gita#features#browse#yank(...) abort " {{{
   redraw!
   for url in result.urls
     if !empty(url)
-      call s:yank_string(url)
+      call gita#utils#clip(url)
       call gita#utils#prompt#echo(printf(
             \ '"%s" is yanked.',
             \ url,

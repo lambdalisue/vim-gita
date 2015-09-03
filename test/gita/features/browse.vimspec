@@ -2,6 +2,12 @@
 " travis.org because most of tests are skipped
 call gita#preload('gita#features#browse')
 
+let s:P = Import('System.Filepath')
+let s:S = Import('Vim.ScriptLocal')
+let s:sf = s:S.sfuncs(s:P.join(
+      \ g:gita#test#root, 'autoload', 'gita', 'features', 'browse.vim'
+      \))
+
 Describe gita#features#browse
   let prefix = 'https://github.com/lambdalisue/vim-gita/blob/.*'
 
@@ -9,7 +15,217 @@ Describe gita#features#browse
     Init
   End
 
+  Context [PRIVATE] s:find_remote_branch({gita}, {branch})
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        if a:branch ==# 'same'
+          return 'refs/heads/same'
+        elseif a:branch ==# 'different'
+          return 'refs/heads/helloworld'
+        else
+          return ''
+        endif
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
+
+    It should return {branch} if {branch} does not exists in config
+      let ret = s:sf.find_remote_branch(gita, 'unknown')
+      Assert Equals(ret, 'unknown')
+    End
+    It should return a branch name registered in config
+      let ret = s:sf.find_remote_branch(gita, 'same')
+      Assert Equals(ret, 'same')
+
+      let ret = s:sf.find_remote_branch(gita, 'different')
+      Assert Equals(ret, 'helloworld')
+    End
+  End
+
+  Context [PRIVATE] s:find_common_ancestor({gita}, {commit1}, {commit2})
+    Before
+      let gita = gita#get()
+      let gita.operations._previous_args = []
+      function! gita.operations.merge_base(...) abort
+        call add(self._previous_args, a:000)
+        let options = get(a:000, 0, {})
+        if get(options, 'commit1') ==# 'valid'
+          return { 'status': 0, 'stdout': 'thisisvalidhash' }
+        else
+          return { 'status': 1, 'stdout': '' }
+        endif
+      endfunction
+    End
+    It should return a common ancestor of {commit1} and {commit2}
+      let ret = s:sf.find_common_ancestor(gita, 'valid', 'valid2')
+      " it should call merge_base internally
+      Assert Equals(gita.operations._previous_args, [[{
+            \ 'commit1': 'valid',
+            \ 'commit2': 'valid2',
+            \}, {
+            \ 'echo': 'fail',
+            \}]])
+      Assert Equals(ret, 'thisisvalidhash')
+    End
+    It should return an empty string if the execution has failed
+      let ret = s:sf.find_common_ancestor(gita, 'invalid', 'valid2')
+      " it should call merge_base internally
+      Assert Equals(gita.operations._previous_args, [[{
+            \ 'commit1': 'invalid',
+            \ 'commit2': 'valid2',
+            \}, {
+            \ 'echo': 'fail',
+            \}]])
+      Assert Equals(ret, '')
+    End
+  End
+
+  Context [PRIVATE] s:find_commit_meta({gita}, {commit})
+    Before
+      let gita = gita#get()
+      function! gita.operations.merge_base(...) abort
+        return { 'status': 0, 'stdout': 'acommonancestor' }
+      endfunction
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        if a:branch ==# 'known'
+          return 'refs/heads/known'
+        elseif a:branch ==# 'feature/known'
+          return 'refs/heads/feature/known'
+        elseif a:branch ==# 'remote/known'
+          return 'refs/heads/known'
+        else
+          return ''
+        endif
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        if a:branch ==# 'known'
+          return 'origin'
+        elseif a:branch ==# 'feature/known'
+          return 'origin'
+        elseif a:branch ==# 'remote/known'
+          return 'remote'
+        else
+          return ''
+        endif
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        if a:remote ==# 'origin'
+          return '<url-origin>'
+        elseif a:remote ==# 'remote'
+          return '<url-remote>'
+        else
+          return ''
+        endif
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
+
+    Context when a single commit 'XXXX' is specified
+      It should return ['HEAD', '', 'origin', '<url-origin>'] when {commit} is empty
+        let ret = s:sf.find_commit_meta(gita, '')
+        Assert Equals(ret, ['HEAD', '', 'origin', '<url-origin>'])
+      End
+
+      It should return ['unknown', '', 'origin', '<url-origin>'] when {commit} is 'unknown' (unknown branch)
+        let ret = s:sf.find_commit_meta(gita, 'unknown')
+        Assert Equals(ret, ['unknown', '', 'origin', '<url-origin>'])
+      End
+
+      It should return ['known', '', 'origin', '<url-origin>'] when {commit} is 'known'
+        let ret = s:sf.find_commit_meta(gita, 'known')
+        Assert Equals(ret, ['known', '', 'origin', '<url-origin>'])
+      End
+
+      It should return ['known', '', 'remote', '<url-known>'] when {commit} is 'remote/known'
+        let ret = s:sf.find_commit_meta(gita, 'remote/known')
+        Assert Equals(ret, ['known', '', 'remote', '<url-remote>'])
+      End
+
+      It should return ['feature/known', '', 'origin', '<url-origin>'] when {commit} is 'feature/known'
+        let ret = s:sf.find_commit_meta(gita, 'feature/known')
+        Assert Equals(ret, ['feature/known', '', 'origin', '<url-origin>'])
+      End
+    End
+
+    Context when two commits 'XXXX..YYYY' is specified
+      It should return ['HEAD', 'HEAD', 'origin', '<url-origin>'] when {commit} is ..
+        let ret = s:sf.find_commit_meta(gita, '..')
+        Assert Equals(ret, ['HEAD', 'HEAD', 'origin', '<url-origin>'])
+      End
+      It should return ['known', 'HEAD', 'origin', '<url-origin>'] when {commit} is known..
+        let ret = s:sf.find_commit_meta(gita, 'known..')
+        Assert Equals(ret, ['known', 'HEAD', 'origin', '<url-origin>'])
+      End
+      It should return ['HEAD', 'known', 'origin', '<url-origin>'] when {commit} is ..known
+        let ret = s:sf.find_commit_meta(gita, '..known')
+        Assert Equals(ret, ['HEAD', 'known', 'origin', '<url-origin>'])
+      End
+      It should return ['known', 'known', 'origin', '<url-origin>'] when {commit} is known..known
+        let ret = s:sf.find_commit_meta(gita, 'known..known')
+        Assert Equals(ret, ['known', 'known', 'origin', '<url-origin>'])
+      End
+      It should return ['known', 'feature/known', 'remote', '<url-remote>'] when {commit} is remote/known..feature/known (remote of lhs is used)
+        let ret = s:sf.find_commit_meta(gita, 'remote/known..feature/known')
+        Assert Equals(ret, ['known', 'feature/known', 'remote', '<url-remote>'])
+      End
+      It should return ['feature/known', 'known', 'origin', '<url-origin>'] when {commit} is feature/known..remote/known (remote of rhs commit is ignored)
+        let ret = s:sf.find_commit_meta(gita, 'feature/known..remote/known')
+        Assert Equals(ret, ['feature/known', 'known', 'origin', '<url-origin>'])
+      End
+    End
+
+    Context when two commits 'XXXX...YYYY' is specified
+      It should return ['acommonancestor', 'HEAD', 'origin', '<url-origin>'] when {commit} is ...
+        let ret = s:sf.find_commit_meta(gita, '...')
+        Assert Equals(ret, ['acommonancestor', 'HEAD', 'origin', '<url-origin>'])
+      End
+      It should return ['acommonancestor', 'HEAD', 'origin', '<url-origin>'] when {commit} is known...
+        let ret = s:sf.find_commit_meta(gita, 'known...')
+        Assert Equals(ret, ['acommonancestor', 'HEAD', 'origin', '<url-origin>'])
+      End
+      It should return ['acommonancestor', 'known', 'origin', '<url-origin>'] when {commit} is ...known
+        let ret = s:sf.find_commit_meta(gita, '...known')
+        Assert Equals(ret, ['acommonancestor', 'known', 'origin', '<url-origin>'])
+      End
+      It should return ['acommonancestor', 'known', 'origin', '<url-origin>'] when {commit} is known...known
+        let ret = s:sf.find_commit_meta(gita, 'known...known')
+        Assert Equals(ret, ['acommonancestor', 'known', 'origin', '<url-origin>'])
+      End
+      It should return ['acommonancestor', 'feature/known', 'remote', '<url-remote>'] when {commit} is remote/known...feature/known (remote of lhs is used)
+        let ret = s:sf.find_commit_meta(gita, 'remote/known...feature/known')
+        Assert Equals(ret, ['acommonancestor', 'feature/known', 'remote', '<url-remote>'])
+      End
+      It should return ['acommonancestor', 'known', 'origin', '<url-origin>'] when {commit} is feature/known...remote/known (remote of rhs commit is ignored)
+        let ret = s:sf.find_commit_meta(gita, 'feature/known...remote/known')
+        Assert Equals(ret, ['acommonancestor', 'known', 'origin', '<url-origin>'])
+      End
+    End
+  End
+
   Context #exec([{options}, {config}])
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        return 'refs/heads/master'
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        return 'origin'
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        return 'git@github.com:lambdalisue/vim-gita'
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
     It should return urls of specifield files
       if $TRAVIS ==# 'true'
         Skip The test cannot be executed on Travis
@@ -32,6 +248,22 @@ Describe gita#features#browse
   End
 
   Context #yank([{options}, {config}])
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        return 'refs/heads/master'
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        return 'origin'
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        return 'git@github.com:lambdalisue/vim-gita'
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
     It should yank the last url of the specified files
       if $TRAVIS ==# 'true'
         Skip The test cannot be executed on Travis
@@ -57,6 +289,22 @@ Describe gita#features#browse
   End
 
   Context #echo([{options}, {config}])
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        return 'refs/heads/master'
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        return 'origin'
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        return 'git@github.com:lambdalisue/vim-gita'
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
     It should echo urls of the specified files
       if $TRAVIS ==# 'true'
         Skip The test cannot be executed on Travis
@@ -88,6 +336,23 @@ Describe gita#features#browse
   End
 
   Context #translate_url({url}, {translate_patterns}, {options})
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      function! gita.git.get_branch_merge(branch) " {{{
+        return 'refs/heads/master'
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        return 'origin'
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        return 'git@github.com:lambdalisue/vim-gita'
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
+
     It should be able to translate Github (https://github.com/) urls
       let patterns = [
             \ 'https://github.com/%s/%s',

@@ -1,4 +1,7 @@
 Describe gita#operations
+  Before
+    Init
+  End
 
   Context #_translate_option({key}, {val}, {scheme})
     Context Long format
