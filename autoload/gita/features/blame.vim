@@ -581,7 +581,7 @@ function! gita#features#blame#define_syntax() abort " {{{
   syntax match GitaMetaInfo  /\v^.*\sauthored\s.*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
   syntax match GitaAuthor    /\v^.*\ze\sauthored/ contained
   syntax match GitaTimeDelta /\vauthored\s\zs.*\ze\s+[0-9a-fA-F]{8}$/ contained
-  syntax match GitaRevision  /\v[0-9a-fA-F]{8}$/ contained
+  syntax match GitaRevision  /\v[0-9a-fA-F]{7}$/ contained
 endfunction " }}}
 function! gita#features#blame#action(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
