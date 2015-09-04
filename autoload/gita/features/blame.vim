@@ -191,10 +191,17 @@ function! s:format_chunks(gita, stdout, width) abort " {{{
       let a:namespace.linenum += 1
     endif
   endfunction
-  let callback = {
-        \ 'func': function('s:_format_chunks'),
-        \ 'args': [namespace],
-        \}
+  let callback = { 'args': [namespace] }
+  if v:version == 703 && !has('patch1170')
+    " Vim less than 7.3.1170 does not support using script local funcref
+    " outside of the script file
+    function! gita#features#blame#_internal_format_chunks(...) abort " {{{
+      call call('s:_format_chunks', a:000)
+    endfunction " }}}
+    let callback.func = function('gita#features#blame#_internal_format_chunks')
+  else
+    let callback.func = function('s:_format_chunks')
+  endif
   let result = s:B.parse_to_chunks(a:stdout, callback)
   let offset = g:gita#features#blame#enable_pseudo_separator ? -2 : -1
   let meta = {
