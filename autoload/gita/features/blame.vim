@@ -83,6 +83,36 @@ endfunction " }}}
 function! s:navi_actions.blame_history_next(candidates, options, config) abort " {{{
   call s:get_history().next()
 endfunction " }}}
+function! s:navi_actions.blame_prev_chunk(candidates, options, config) abort " {{{
+  let candidate = get(a:candidates, 0, {})
+  if empty(candidate)
+    return
+  endif
+  let blamemeta = gita#meta#get('blame#meta')
+  let chunks = blamemeta.chunks
+  let chunk = candidate.chunk
+  if chunk.index == 0
+    call gita#utils#prompt#warn('This is a first chunk')
+    return
+  endif
+  let prev_chunk = chunks[chunk.index - 1]
+  call gita#features#blame#goto(prev_chunk.linenum.final)
+endfunction " }}}
+function! s:navi_actions.blame_next_chunk(candidates, options, config) abort " {{{
+  let candidate = get(a:candidates, -1, {})
+  if empty(candidate)
+    return
+  endif
+  let blamemeta = gita#meta#get('blame#meta')
+  let chunks = blamemeta.chunks
+  let chunk = candidate.chunk
+  if chunk.index >= len(chunks)
+    call gita#utils#prompt#warn('This is a last chunk')
+    return
+  endif
+  let next_chunk = chunks[chunk.index + 1]
+  call gita#features#blame#goto(next_chunk.linenum.final)
+endfunction " }}}
 function! s:navi_actions.browse(candidates, options, config) abort " {{{
   let options = deepcopy(a:options)
   let options.scheme = 'blame'
@@ -411,6 +441,10 @@ function! s:navi_define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('blame_history_prev')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-history-next)
         \ :<C-u>call gita#action#call('blame_history_next')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-prev-chunk)
+        \ :<C-u>call gita#action#call('blame_prev_chunk')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-next-chunk)
+        \ :<C-u>call gita#action#call('blame_next_chunk')<CR>
 endfunction " }}}
 function! s:navi_define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
@@ -420,6 +454,9 @@ function! s:navi_define_default_mappings() abort " {{{
   nmap <buffer> <CR> <Plug>(gita-action-blame-enter)
   nmap <buffer> <C-p> <Plug>(gita-action-blame-history-prev)
   nmap <buffer> <C-n> <Plug>(gita-action-blame-history-next)
+
+  nmap <buffer> ]c <Plug>(gita-action-blame-next-chunk)
+  nmap <buffer> [c <Plug>(gita-action-blame-prev-chunk)
 endfunction " }}}
 function! s:navi_ac_BufWinEnter() abort " {{{
   let abspath   = gita#meta#get('filename')
