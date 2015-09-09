@@ -66,7 +66,7 @@ Describe gita#features#status
       Assert KeyExists(b:_gita_actions, 'unstage')
       Assert KeyExists(b:_gita_actions, 'toggle')
       Assert KeyExists(b:_gita_actions, 'discard')
-      Assert KeyExists(b:_gita_actions, 'solve')
+      Assert KeyExists(b:_gita_actions, 'conflict')
     End
 
   End

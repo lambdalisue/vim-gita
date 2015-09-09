@@ -241,16 +241,16 @@ function! gita#features#status#define_default_mappings() abort " {{{
   nmap <buffer> cA    <Plug>(gita-action-switch-amend)
 
   " conflict solve
-  nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-solve2-v)')
-  nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-solve2-h)')
-  nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-solve2-v)')
+  nmap <buffer><expr> ss <SID>smart_map('ss', '<Plug>(gita-action-conflict2-v)')
+  nmap <buffer><expr> sh <SID>smart_map('sh', '<Plug>(gita-action-conflict2-h)')
+  nmap <buffer><expr> sv <SID>smart_map('sv', '<Plug>(gita-action-conflict2-v)')
 
-  nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-solve3-v)')
-  nmap <buffer><expr> sH <SID>smart_map('sH', '<Plug>(gita-action-solve3-h)')
-  nmap <buffer><expr> sV <SID>smart_map('sV', '<Plug>(gita-action-solve3-v)')
-  nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-solve3-v)')
-  nmap <buffer><expr> SH <SID>smart_map('SH', '<Plug>(gita-action-solve3-h)')
-  nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-solve3-v)')
+  nmap <buffer><expr> sS <SID>smart_map('sS', '<Plug>(gita-action-conflict3-v)')
+  nmap <buffer><expr> sH <SID>smart_map('sH', '<Plug>(gita-action-conflict3-h)')
+  nmap <buffer><expr> sV <SID>smart_map('sV', '<Plug>(gita-action-conflict3-v)')
+  nmap <buffer><expr> SS <SID>smart_map('SS', '<Plug>(gita-action-conflict3-v)')
+  nmap <buffer><expr> SH <SID>smart_map('SH', '<Plug>(gita-action-conflict3-h)')
+  nmap <buffer><expr> SV <SID>smart_map('SV', '<Plug>(gita-action-conflict3-v)')
 
   " operations
   nmap <buffer><expr> << <SID>smart_map('<<', '<Plug>(gita-action-stage)')
