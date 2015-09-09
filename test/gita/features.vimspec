@@ -122,18 +122,42 @@ Describe gita#features
             \ feature,
             \)
     End
-    It should NOT call gita completion if the action is not registered in features
+    It should NOT call completion if the action is not registered in features
       call gita#features#complete('a', 'Gita unknown', [0, 0])
       Assert Equals(feature._previous_args, [])
     End
-    It should NOT call gita completion if the bang is !
+    It should NOT call completion if the bang is !
       call gita#features#complete('a', 'Gita! known', [0, 0])
       Assert Equals(feature._previous_args, [])
     End
-    It should call gita completion if the action is registered in features
-      call gita#features#complete('a', 'Gita known', [0, 0])
+    It should call completion of a registered feature
+      " Note:
+      "   Assume '|' indicate the position of the cursor, if user are
+      "   inputting ':Gita known|', the word 'known' might be a part of
+      "   'knownfoo' thus it should not call completion of 'known' yet in this
+      "   point.
+      call gita#features#complete('', 'Gita known', [0, 0])
+      Assert Equals(feature._previous_args, [])
+
+      " Now the input text become ':Gita known |'
+      call gita#features#complete('', 'Gita known ', [0, 0])
       Assert Equals(feature._previous_args, [
-            \ ['a', 'known', [0, 0]]
+            \ ['', 'known ', [0, 0]],
+            \])
+
+      " And then ':Gita known a|'
+      call gita#features#complete('a', 'Gita known ', [0, 0])
+      Assert Equals(feature._previous_args, [
+            \ ['', 'known ', [0, 0]],
+            \ ['a', 'known ', [0, 0]],
+            \])
+
+      " And then ':Gita known a b|'
+      call gita#features#complete('b', 'Gita known a ', [0, 0])
+      Assert Equals(feature._previous_args, [
+            \ ['', 'known ', [0, 0]],
+            \ ['a', 'known ', [0, 0]],
+            \ ['b', 'known a ', [0, 0]],
             \])
     End
   End
