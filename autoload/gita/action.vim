@@ -30,7 +30,7 @@ endfunction " }}}
 function! s:actions.diff(candidates, options, config) abort " {{{
   call call('gita#features#diff#action', [a:candidates, a:options, a:config])
 endfunction " }}}
-function! s:actions.solve(candidates, options, config) abort " {{{
+function! s:actions.conflict(candidates, options, config) abort " {{{
   call call('gita#features#conflict#action', [a:candidates, a:options, a:config])
   call self.update(a:candidates, a:options, a:config)
 endfunction " }}}

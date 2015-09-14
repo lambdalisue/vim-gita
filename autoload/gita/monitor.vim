@@ -190,14 +190,14 @@ function! gita#monitor#define_mappings() abort " {{{
   noremap <silent><buffer> <Plug>(gita-action-discard)
         \ :call gita#action#call('discard')<CR>
 
-  noremap <silent><buffer> <Plug>(gita-action-solve2-h)
-        \ :call gita#action#call('solve', { 'way': 2 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve2-v)
-        \ :call gita#action#call('solve', { 'way': 2, 'vertical': 1 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve3-h)
-        \ :call gita#action#call('solve', { 'way': 3 })<CR>
-  noremap <silent><buffer> <Plug>(gita-action-solve3-v)
-        \ :call gita#action#call('solve', { 'way': 3, 'vertical': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-conflict2-h)
+        \ :call gita#action#call('conflict', { 'way': 2 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-conflict2-v)
+        \ :call gita#action#call('conflict', { 'way': 2, 'vertical': 1 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-conflict3-h)
+        \ :call gita#action#call('conflict', { 'way': 3 })<CR>
+  noremap <silent><buffer> <Plug>(gita-action-conflict3-v)
+        \ :call gita#action#call('conflict', { 'way': 3, 'vertical': 1 })<CR>
 endfunction " }}}
 function! gita#monitor#define_default_mappings() abort " {{{
   nmap <buffer> q     <Plug>(gita-action-quit)

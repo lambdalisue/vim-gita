@@ -51,11 +51,15 @@ function! gita#statusline#get(...) abort " {{{
         \ 'local_branch': meta.local.branch_name,
         \ 'remote_name': meta.remote.name,
         \ 'remote_branch': meta.remote.branch_name,
-        \ 'outgoing': gita.git.count_commits_ahead_of_remote(),
-        \ 'incoming': gita.git.count_commits_behind_remote(),
+        \ 'outgoing': '',
+        \ 'incoming': '',
         \ 'mode': gita.git.get_mode(),
         \ 'timestamp': gita.git.cache.repository.get('timestamp', ''),
         \}
+  if !empty(meta.remote.name)
+    let info.outgoing = gita.git.count_commits_ahead_of_remote()
+    let info.incoming = gita.git.count_commits_behind_remote()
+  endif
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
