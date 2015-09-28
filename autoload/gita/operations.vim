@@ -6,7 +6,14 @@ let s:P = gita#import('Prelude')
 let s:C = gita#import('VCS.Git.Core')
 let s:A = gita#import('ArgumentParser')
 
-
+function! s:prefer_shellescape(val) abort " {{{
+  let val = shellescape(a:val)
+  if val !~# '\s'
+    let val = substitute(val, "^'", '', 'g')
+    let val = substitute(val, "'$", '', 'g')
+  endif
+  return val
+endfunction " }}}
 function! s:translate_option(key, val, scheme) abort " {{{
   if s:P.is_number(a:val)
     if a:val == 0
@@ -35,14 +42,14 @@ function! s:translate_option(key, val, scheme) abort " {{{
         \ 'key': a:key,
         \ 'val': val,
         \ 'escaped_key': substitute(a:key, '_', '-', 'g'),
-        \ 'escaped_val': len(val) ? shellescape(val) : '',
+        \ 'escaped_val': len(val) ? s:prefer_shellescape(val) : '',
         \ 'unixpath_val': gita#utils#ensure_unixpath(val),
         \ 'escaped_unixpath_val': len(val)
-        \   ? shellescape(gita#utils#ensure_unixpath(val))
+        \   ? s:prefer_shellescape(gita#utils#ensure_unixpath(val))
         \   : '',
         \ 'realpath_val': gita#utils#ensure_realpath(val),
         \ 'escaped_realpath_val': len(val)
-        \   ? shellescape(gita#utils#ensure_realpath(val))
+        \   ? s:prefer_shellescape(gita#utils#ensure_realpath(val))
         \   : '',
         \}
   return gita#utils#format_string(format, format_map, data)
