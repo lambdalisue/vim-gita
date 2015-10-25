@@ -95,7 +95,8 @@ Describe gita#features#conflict
             \)
 
       " check the buffer (LOCAL)
-      execute printf('%dwincmd w', bufwinnr(b:_gita_LOCAL_bufnum))
+      "execute printf('%dwincmd w', bufwinnr(b:_gita_LOCAL_bufnum))
+      execute '1wincmd w'
       Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'LOCAL', 'README.md'
             \))
@@ -109,7 +110,8 @@ Describe gita#features#conflict
             \)
 
       " check the buffer (REMOTE)
-      execute printf('%dwincmd w', bufwinnr(b:_gita_REMOTE_bufnum))
+      "execute printf('%dwincmd w', bufwinnr(b:_gita_REMOTE_bufnum))
+      execute '3wincmd w'
       Assert Equals(bufname('%'), gita#utils#buffer#bufname(
             \ 'REMOTE', 'README.md'
             \))
