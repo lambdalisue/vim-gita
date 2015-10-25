@@ -215,8 +215,9 @@ function! s:solve3(...) abort " {{{
   let MERGE_bufnum = bufnr('%')
 
   " LOCAL
+  execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#open(LOCAL_bufname, {
-        \ 'group': 'conflict2_local',
+        \ 'group': 'conflict3_local',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('leftabove %s%s',
         \   get(options, 'vertical') ? 'vertical ' : '',
@@ -231,8 +232,9 @@ function! s:solve3(...) abort " {{{
   let LOCAL_bufnum = bufnr('%')
 
   " REMOTE
+  execute printf('%swincmd w', bufwinnr(MERGE_bufnum))
   call gita#utils#buffer#open(REMOTE_bufname, {
-        \ 'group': 'conflict2_remote',
+        \ 'group': 'conflict3_remote',
         \ 'range': get(options, 'range', 'tabpage'),
         \ 'opener': printf('rightbelow %s%s',
         \   get(options, 'vertical') ? 'vertical ' : '',
@@ -251,7 +253,7 @@ function! s:solve3(...) abort " {{{
   execute printf('%swincmd w', bufwinnr(LOCAL_bufnum))
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
-        \   ':<C-u>diffput %s<BAR>diffupdate<CR>',
+        \   ':diffput %s<BAR>diffupdate<CR>',
         \ ]),
         \ MERGE_bufnum,
         \)
@@ -263,7 +265,7 @@ function! s:solve3(...) abort " {{{
   execute printf('%swincmd w', bufwinnr(REMOTE_bufnum))
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffput)',
-        \   ':<C-u>diffput %s<BAR>diffupdate<CR>',
+        \   ':diffput %s<BAR>diffupdate<CR>',
         \ ]),
         \ MERGE_bufnum,
         \)
@@ -275,13 +277,13 @@ function! s:solve3(...) abort " {{{
   execute printf('%dwincmd w', bufwinnr(MERGE_bufnum))
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffget-LOCAL)',
-        \   ':<C-u>diffget %s<BAR>diffupdate<CR>',
+        \   ':diffget %s<BAR>diffupdate<CR>',
         \ ]),
         \ LOCAL_bufnum,
         \)
   execute printf(join([
         \   'noremap <buffer><silent> <Plug>(gita-action-diffget-REMOTE)',
-        \   ':<C-u>diffget %s<BAR>diffupdate<CR>',
+        \   ':diffget %s<BAR>diffupdate<CR>',
         \ ]),
         \ REMOTE_bufnum,
         \)
