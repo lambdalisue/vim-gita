@@ -5,9 +5,14 @@ Describe gita#operations
 
   Context #_translate_option({key}, {val}, {scheme})
     Context Long format
-      It should return "--key='value'" for ('key', 'value', '')
+      It should return "--key=value" for ('key', 'value', '')
         let ret = gita#operations#_translate_option('key', 'value', '')
-        Assert Equals(ret, '--key=''value''')
+        Assert Equals(ret, '--key=value')
+      End
+
+      It should return "--key='v a l u e'" for ('key', 'v a l u e', '')
+        let ret = gita#operations#_translate_option('key', 'v a l u e', '')
+        Assert Equals(ret, '--key=''v a l u e''')
       End
 
       It should return "--key" for ('key', 1, '')
@@ -60,9 +65,14 @@ Describe gita#operations
         Assert Equals(ret, '')
       End
 
-      It should return "-k='value'" for ('k', 'value', '-%k%V')
+      It should return "-kvalue" for ('k', 'value', '-%k%V')
         let ret = gita#operations#_translate_option('k', 'value', '-%k%V')
-        Assert Equals(ret, '-k''value''')
+        Assert Equals(ret, '-kvalue')
+      End
+
+      It should return "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
+        let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
+        Assert Equals(ret, '-k''v a l u e''')
       End
     End
   End
@@ -80,7 +90,7 @@ Describe gita#operations
       let ret = gita#operations#_translate_options(options, {})
       Assert Equals(sort(ret), sort([
             \ '--foo',
-            \ '--hoge=''hoge''',
+            \ '--hoge=hoge',
             \ '-f',
             \ '-hhoge',
             \]))
