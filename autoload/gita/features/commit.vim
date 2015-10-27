@@ -308,7 +308,7 @@ function! gita#features#commit#update(...) abort " {{{
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
-  for status in statuses.all
+  for status in sort(statuses.all, function('gita#utils#status#sortfn'))
     let status_record = printf('# %s', status.record)
     let statuses_map[status_record] = status
     call add(statuses_lines, status_record)

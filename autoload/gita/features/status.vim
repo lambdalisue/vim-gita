@@ -61,7 +61,7 @@ function! s:get_status_header(gita) abort " {{{
       call add(lines,
             \ printf('# The branch is %d commit(s) ahead and %d commit(s) behind of `%s/%s`',
             \   outgoing, incoming, remote_name, remote_branch,
-            \))
+            \))     
     elseif outgoing > 0
       call add(lines,
             \ printf('# The branch is %d commit(s) ahead of `%s/%s`',
@@ -198,7 +198,7 @@ function! gita#features#status#update(...) abort " {{{
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
-  for status in statuses.all
+  for status in sort(statuses.all, function('gita#utils#status#sortfn'))
     let status_record = status.record
     let statuses_map[status_record] = status
     call add(statuses_lines, status_record)
