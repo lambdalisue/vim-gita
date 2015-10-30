@@ -13,6 +13,8 @@ command! -nargs=? -range -bang
       \ Gita
       \ :call s:Gita(<q-bang>, [<line1>, <line2>], <f-args>)
 
+command! GitaClearCache :call gita#clear_cache()
+
 
 let s:default_config = {
       \ 'debug': 0,
