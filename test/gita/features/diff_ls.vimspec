@@ -49,8 +49,8 @@ Describe gita#features#diff_ls
       let contents = getline(1, '$')
       Assert Match(contents[0], '^# Files difference between')
       Assert Match(contents[1], '^# Press ?m to toggle a help')
-      Assert Match(contents[2], '^foo\.md  | 10 -\+$')
-      Assert Match(contents[3], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[2], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[3], '^foo\.md  | 10 -\+$')
       Assert Match(contents[4], '^hoge\.md | 20 +\+-\+$')
     End
 
@@ -78,8 +78,8 @@ Describe gita#features#diff_ls
       let contents = getline(1, '$')
       Assert Match(contents[0], '^# Files difference between')
       Assert Match(contents[1], '^# Press ?m to toggle a help')
-      Assert Match(contents[2], '^foo\.md  | 10 -\+$')
-      Assert Match(contents[3], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[2], '^bar\.md  | 10 +\+$')
+      Assert Match(contents[3], '^foo\.md  | 10 -\+$')
       Assert Match(contents[4], '^hoge\.md | 20 +\+-\+$')
     End
 

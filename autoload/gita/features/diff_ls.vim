@@ -173,7 +173,7 @@ function! gita#features#diff_ls#update(...) abort " {{{
   " create statuses lines & map
   let statuses_map = {}
   let statuses_lines = []
-  for status in statuses
+  for status in sort(statuses)
     let status_record = status.record
     if has_key(status, 'path')
       let statuses_map[status_record] = status

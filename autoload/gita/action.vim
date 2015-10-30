@@ -32,7 +32,6 @@ function! s:actions.diff(candidates, options, config) abort " {{{
 endfunction " }}}
 function! s:actions.conflict(candidates, options, config) abort " {{{
   call call('gita#features#conflict#action', [a:candidates, a:options, a:config])
-  call self.update(a:candidates, a:options, a:config)
 endfunction " }}}
 function! s:actions.blame(candidates, options, config) abort " {{{
   call call('gita#features#blame#action', [a:candidates, a:options, a:config])
