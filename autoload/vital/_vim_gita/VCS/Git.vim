@@ -41,13 +41,13 @@ function! s:_listalize(val) abort " {{{
   return s:Prelude.is_list(a:val) ? a:val : [a:val]
 endfunction " }}}
 
-function! s:_get_finder() abort " {{{
+function! s:get_finder() abort " {{{
   if !exists('s:finder')
-    let s:finder = s:Finder.new(s:_get_finder_cache())
+    let s:finder = s:Finder.new(s:get_finder_cache())
   endif
   return s:finder
 endfunction " }}}
-function! s:_get_finder_cache() abort " {{{
+function! s:get_finder_cache() abort " {{{
   if !exists('s:finder_cache')
     let config = s:get_config()
     let s:finder_cache = call(
@@ -124,7 +124,7 @@ function! s:new(worktree, repository, ...) abort " {{{
 endfunction " }}}
 function! s:find(path, ...) abort " {{{
   let options = get(a:000, 0, {})
-  let finder = s:_get_finder()
+  let finder = s:get_finder()
   let found = finder.find(a:path, options)
   if empty(found)
     return {}

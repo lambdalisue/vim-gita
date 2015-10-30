@@ -100,13 +100,21 @@ function! gita#force_refresh(...) abort " {{{
   let gita = call('gita#get', a:000)
   let gita.force_expired = 1
 endfunction " }}}
-function! gita#clear_cache(...) abort " {{{
+function! gita#clear_repository_cache(...) abort " {{{
   let gita = call('gita#get', a:000)
   if gita.enabled
     call gita.git.cache.repository.clear()
     " store timestamp of repository cache for debugging
     let gita.git.cache.repository._timestamp = localtime()
   endif
+endfunction " }}}
+function! gita#clear_finder_cache() abort " {{{
+  let gita = call('gita#get', a:000)
+  call s:G.get_finder().clear()
+endfunction " }}}
+function! gita#clear_cache() abort " {{{
+  call gita#clear_finder_cache()
+  silent! unlet! b:_gita
 endfunction " }}}
 
 function! gita#preload(path) abort " {{{
@@ -119,16 +127,16 @@ endfunction " }}}
 
 augroup vim-gita-clear-cache
   autocmd! *
-  autocmd User vim-gita-fetch-post call gita#clear_cache()
-  autocmd User vim-gita-push-post call gita#clear_cache()
-  autocmd User vim-gita-pull-post call gita#clear_cache()
-  autocmd User vim-gita-commit-post call gita#clear_cache()
-  autocmd User vim-gita-add-post call gita#clear_cache()
-  autocmd User vim-gita-rm-post call gita#clear_cache()
-  autocmd User vim-gita-reset-post call gita#clear_cache()
-  autocmd User vim-gita-merge-post call gita#clear_cache()
-  autocmd User vim-gita-rebase-post call gita#clear_cache()
-  autocmd User vim-gita-checkout-post call gita#clear_cache()
+  autocmd User vim-gita-fetch-post call gita#clear_repository_cache()
+  autocmd User vim-gita-push-post call gita#clear_repository_cache()
+  autocmd User vim-gita-pull-post call gita#clear_repository_cache()
+  autocmd User vim-gita-commit-post call gita#clear_repository_cache()
+  autocmd User vim-gita-add-post call gita#clear_repository_cache()
+  autocmd User vim-gita-rm-post call gita#clear_repository_cache()
+  autocmd User vim-gita-reset-post call gita#clear_repository_cache()
+  autocmd User vim-gita-merge-post call gita#clear_repository_cache()
+  autocmd User vim-gita-rebase-post call gita#clear_repository_cache()
+  autocmd User vim-gita-checkout-post call gita#clear_repository_cache()
 augroup END
 
 let &cpo = s:save_cpo
