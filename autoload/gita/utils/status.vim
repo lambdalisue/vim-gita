@@ -43,15 +43,28 @@ function! gita#utils#status#extend_status(status, gita, ...) abort " {{{
         \ 'inplace': 0,
         \}, get(a:000, 0, {}))
   let status = options.inplace ? a:status : deepcopy(a:status)
-  " Note:
-  "   git status return UNIX path even in Windows + noshellslash
-  let status.path = a:gita.git.get_absolute_path(
-        \ gita#utils#path#real_relpath(status.path)
-        \)
+  " Note: First of all, the followings are requirements
+  "
+  "   1. 'git status' return an UNIX path even in Windows with noshellslash
+  "   2. VCS.Git.get_absolute_path require a REAL path to check if the path
+  "      is absolute or not
+  "   3. As much as possible, path should be store as an UNIX path
+  "
+  " Thus follow the following procedures
+  "
+  "   1. Make sure the path is a real path
+  "   2. Make sure the path is an absolute path
+  "   3. Make sure the path is an unix path
+  "
+  let status.path = gita#utils#path#unix_abspath(
+        \ a:gita.git.get_absolute_path(
+        \   gita#utils#path#real_relpath(status.path)
+        \))
   if has_key(status, 'path2')
-    let status.path2 = a:gita.git.get_absolute_path(
-          \ gita#utils#path#real_relpath(status.path2)
-          \)
+    let status.path2 = gita#utils#path#unix_abspath(
+          \ a:gita.git.get_absolute_path(
+          \   gita#utils#path#real_relpath(status.path2)
+          \))
   endif
   let status._gita_extended = 1
   return status
