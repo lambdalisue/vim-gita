@@ -1,9 +1,6 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-let s:P = gita#import('System.Filepath')
-let s:is_windows = has('win16') || has('win32') || has('win64')
-
 function! s:smart_string(value) abort " {{{
   let vtype = type(a:value)
   if vtype == type('')
@@ -59,79 +56,6 @@ function! gita#utils#clip(content) abort " {{{
     call setreg(v:register, a:content)
   endif
 endfunction " }}}
-
-function! gita#utils#expand(expr) abort " {{{
-  if a:expr =~# '^%'
-    let expr = '%'
-    let modi = substitute(a:expr, '^%', '', '')
-    let filename = gita#meta#get('filename', '', expr)
-    return empty(filename)
-          \ ? expand(a:expr)
-          \ : fnamemodify(filename, modi)
-  else
-    return expand(a:expr)
-  endif
-endfunction " }}}
-function! gita#utils#ensure_abspath(path) abort " {{{
-  if s:P.is_absolute(a:path)
-    return a:path
-  endif
-  " Note:
-  "   the behavior of ':p' for non existing file path is not defined
-  return filereadable(a:path)
-        \ ? fnamemodify(a:path, ':p')
-        \ : s:P.join(fnamemodify(getcwd(), ':p'), a:path)
-endfunction " }}}
-function! gita#utils#ensure_relpath(path) abort " {{{
-  if s:P.is_relative(a:path)
-    return a:path
-  endif
-  return fnamemodify(deepcopy(a:path), ':~:.')
-endfunction " }}}
-function! gita#utils#ensure_pathlist(pathlist) abort " {{{
-  return map(deepcopy(a:pathlist),
-        \ 'gita#utils#ensure_abspath(gita#utils#expand(v:val))',
-        \)
-endfunction " }}}
-
-" function! gita#utils#ensure_unixpath(path)/ensure_realpath(path) abort " {{{
-if s:is_windows && exists('&shellslash')
-  function! gita#utils#ensure_unixpath(path) abort " {{{
-    return fnamemodify(a:path, ':gs?\\?/?')
-  endfunction " }}}
-  function! gita#utils#ensure_realpath(path) abort " {{{
-    if &shellslash
-      return a:path
-    else
-      return fnamemodify(a:path, ':gs?/?\\?')
-    endif
-  endfunction " }}}
-  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
-    return map(deepcopy(a:pathlist),
-          \ 'gita#utils#ensure_unixpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
-          \)
-  endfunction " }}}
-  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
-    return map(deepcopy(a:pathlist),
-          \ 'gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand(v:val)))',
-          \)
-  endfunction " }}}
-else
-  function! gita#utils#ensure_unixpath(path) abort " {{{
-    return a:path
-  endfunction " }}}
-  function! gita#utils#ensure_realpath(path) abort " {{{
-    return a:path
-  endfunction " }}}
-  function! gita#utils#ensure_unixpathlist(pathlist) abort " {{{
-    return gita#utils#ensure_pathlist(a:pathlist)
-  endfunction " }}}
-  function! gita#utils#ensure_realpathlist(pathlist) abort " {{{
-    return gita#utils#ensure_pathlist(a:pathlist)
-  endfunction " }}}
-endif
-" }}}
-
 
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

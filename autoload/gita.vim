@@ -49,7 +49,7 @@ function! gita#new(...) abort " {{{
   let bufname = bufname(expr)
   let btype = gita#compat#getbufvar(expr, '&l:buftype')
   let ftype = gita#compat#getbufvar(expr, '&l:filetype')
-  let filename = gita#utils#expand(expr)
+  let filename = gita#utils#path#expand(expr)
   if !empty(g:gita#invalid_buftype_pattern) && btype =~# g:gita#invalid_buftype_pattern
     let git = {}
   elseif !empty(g:gita#invalid_filetype_pattern) && ftype =~# g:gita#invalid_filetype_pattern

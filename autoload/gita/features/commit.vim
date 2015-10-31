@@ -8,8 +8,7 @@ let s:F = gita#import('System.File')
 let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'commit'], s:const.bufname_sep)
+let s:const.bufname = 'gita%scommit'
 let s:const.filetype = 'gita-commit'
 
 let s:parser = s:A.new({
@@ -149,11 +148,11 @@ function! s:commit(expr, options) abort " {{{
   endif
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('<amatch>')),
+  let new_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('<amatch>')),
         \)
-  let old_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('%')),
+  let old_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('%')),
         \)
   call gita#utils#prompt#debug(
         \ 'new_filename:', new_filename,
@@ -213,7 +212,7 @@ function! gita#features#commit#exec(...) abort " {{{
   endif
   if !empty(get(options, '--', []))
     " git understand REAL/UNIX path in working tree
-    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
+    let options['--'] = gita#utils#path#real_abspath(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',
@@ -255,7 +254,10 @@ function! gita#features#commit#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
-  let result = gita#monitor#open(s:const.bufname, get(a:000, 0, {}), {
+  let bufname = gita#utils#buffer#bufname(
+        \ substitute(s:const.bufname, '%s', g:gita#utils#buffer#separator, 'g'),
+        \)
+  let result = gita#monitor#open(bufname, get(a:000, 0, {}), {
         \ 'opener': g:gita#features#commit#monitor_opener,
         \ 'range': g:gita#features#commit#monitor_range,
         \})

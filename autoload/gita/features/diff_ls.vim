@@ -99,7 +99,7 @@ function! s:parse_numstat(stdout, ...) abort " {{{
     " Note:
     "   stat.path is relative path from git root repository
     call add(statuses, {
-          \ 'path': gita#utils#ensure_realpath(
+          \ 'path': gita#utils#path#real_abspath(
           \   gita.git.get_absolute_path(stat.path),
           \ ),
           \ 'record': printf('%s%s %s %s',

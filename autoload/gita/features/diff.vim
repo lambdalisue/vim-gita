@@ -182,12 +182,12 @@ function! s:diff1(...) abort " {{{
   endif
 
   if len(get(options, '--', [])) == 1
-    let abspath = gita#utils#ensure_abspath(
-          \ gita#utils#expand(options['--'][0]),
+    let abspath = gita#utils#path#unix_abspath(
+          \ gita#utils#path#expand(options['--'][0]),
           \)
     let DIFF_bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ printf('%s.diff', gita#utils#ensure_relpath(abspath)),
+          \ printf('%s.diff', gita#utils#path#unix_relpath(abspath)),
           \)
   else
     let abspath = ''
@@ -233,10 +233,10 @@ function! s:diff2(...) abort " {{{
     return
   endif
 
-  let abspath = gita#utils#ensure_abspath(
-        \ gita#utils#expand(options['--'][0]),
+  let abspath = gita#utils#path#unix_abspath(
+        \ gita#utils#path#expand(options['--'][0]),
         \)
-  let relpath = gita#utils#ensure_relpath(abspath)
+  let relpath = gita#utils#path#unix_relpath(abspath)
 
   " find commit1 and commit2
   let [commit1, commit2] = gita#features#diff#split_commit(options.commit)
@@ -374,7 +374,7 @@ function! gita#features#diff#exec(...) abort " {{{
 
   if !empty(get(options, '--', []))
     " git store files with UNIX type path separation (/)
-    let options['--'] = gita#utils#ensure_unixpathlist(options['--'])
+    let options['--'] = gita#utils#path#unix_abspath(options['--'])
   endif
   if has_key(options, 'commit')
     let options.commit = substitute(

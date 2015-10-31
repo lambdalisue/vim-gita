@@ -121,7 +121,7 @@ Describe gita#features#file
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md')
+            \ gita#utils#path#unix_abspath('README.md')
             \)
       Assert Equals(gita#meta#get('commit'), 'INDEX')
     End
@@ -136,7 +136,7 @@ Describe gita#features#file
       Assert Equals(getline(0, '$'), ['CONTENTS'])
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md')
+            \ gita#utils#path#unix_abspath('README.md')
             \)
       Assert Equals(gita#meta#get('commit'), 'commit1...commit2')
     End

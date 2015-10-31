@@ -51,7 +51,7 @@ Describe gita#utils#status
       let status = gita#utils#status#virtual('foo.txt')
       let gita = gita#get()
       let ret = gita#utils#status#extend_status(status, gita)
-      Assert Equals(ret.path, gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(ret.path, gita#utils#path#unix_abspath('foo.txt'))
     End
 
     It should make 'path2' absolute as well
@@ -60,8 +60,8 @@ Describe gita#utils#status
             \})
       let gita = gita#get()
       let ret = gita#utils#status#extend_status(status, gita)
-      Assert Equals(ret.path, gita#utils#ensure_abspath('foo.txt'))
-      Assert Equals(ret.path2, gita#utils#ensure_abspath('bar.txt'))
+      Assert Equals(ret.path, gita#utils#path#unix_abspath('foo.txt'))
+      Assert Equals(ret.path2, gita#utils#path#unix_abspath('bar.txt'))
     End
 
     It should not extend status which has extended
@@ -79,7 +79,7 @@ Describe gita#utils#status
       let status = gita#utils#status#virtual('foo.txt')
       let gita = gita#get()
       call gita#utils#status#extend_status(status, gita, { 'inplace': 1 })
-      Assert Equals(status.path, gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(status.path, gita#utils#path#unix_abspath('foo.txt'))
     End
   End
 
@@ -95,15 +95,15 @@ Describe gita#utils#status
       Assert Equals(len(ret.staged), 2)
       Assert Equals(len(ret.unstaged), 2)
 
-      Assert Equals(ret.all[0].path, gita#utils#ensure_abspath('foo.txt'))
-      Assert Equals(ret.all[1].path, gita#utils#ensure_abspath('bar.txt'))
-      Assert Equals(ret.all[2].path, gita#utils#ensure_abspath('hoge.txt'))
+      Assert Equals(ret.all[0].path, gita#utils#path#unix_abspath('foo.txt'))
+      Assert Equals(ret.all[1].path, gita#utils#path#unix_abspath('bar.txt'))
+      Assert Equals(ret.all[2].path, gita#utils#path#unix_abspath('hoge.txt'))
 
-      Assert Equals(ret.staged[0].path, gita#utils#ensure_abspath('foo.txt'))
-      Assert Equals(ret.staged[1].path, gita#utils#ensure_abspath('hoge.txt'))
+      Assert Equals(ret.staged[0].path, gita#utils#path#unix_abspath('foo.txt'))
+      Assert Equals(ret.staged[1].path, gita#utils#path#unix_abspath('hoge.txt'))
 
-      Assert Equals(ret.unstaged[0].path, gita#utils#ensure_abspath('bar.txt'))
-      Assert Equals(ret.unstaged[1].path, gita#utils#ensure_abspath('hoge.txt'))
+      Assert Equals(ret.unstaged[0].path, gita#utils#path#unix_abspath('bar.txt'))
+      Assert Equals(ret.unstaged[1].path, gita#utils#path#unix_abspath('hoge.txt'))
     End
   End
 
@@ -123,7 +123,7 @@ Describe gita#utils#status
 
     It should retrieve a real status from {path}
       let ret = gita#utils#status#retrieve('foo.txt')
-      Assert Equals(ret.path, gita#utils#ensure_abspath('foo.txt'))
+      Assert Equals(ret.path, gita#utils#path#unix_abspath('foo.txt'))
       Assert Equals(ret.index, 'M')
       Assert Equals(ret.worktree, ' ')
       Assert Equals(ret.is_staged, 1)

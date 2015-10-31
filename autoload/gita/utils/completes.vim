@@ -74,7 +74,7 @@ function! gita#utils#completes#complete_staged_files(arglead, cmdline, cursorpos
     return []
   endif
   let candidates = filter(
-        \ map(statuses.staged, 'gita#utils#ensure_relpath(get(v:val, "path2", v:val.path))'),
+        \ map(statuses.staged, 'gita#utils#path#unix_relpath(get(v:val, "path2", v:val.path))'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -91,7 +91,7 @@ function! gita#utils#completes#complete_unstaged_files(arglead, cmdline, cursorp
     return []
   endif
   let candidates = filter(
-        \ map(statuses.unstaged, 'gita#utils#ensure_relpath(v:val.path)'),
+        \ map(statuses.unstaged, 'gita#utils#path#unix_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -108,7 +108,7 @@ function! gita#utils#completes#complete_conflicted_files(arglead, cmdline, curso
     return []
   endif
   let candidates = filter(
-        \ map(statuses.conflicted, 'gita#utils#ensure_relpath(v:val.path)'),
+        \ map(statuses.conflicted, 'gita#utils#path#unix_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates
@@ -125,7 +125,7 @@ function! gita#utils#completes#complete_untracked_files(arglead, cmdline, cursor
     return []
   endif
   let candidates = filter(
-        \ map(statuses.untracked, 'gita#utils#ensure_relpath(v:val.path)'),
+        \ map(statuses.untracked, 'gita#utils#path#unix_relpath(v:val.path)'),
         \ 'v:val =~# "^" . a:arglead',
         \)
   return candidates

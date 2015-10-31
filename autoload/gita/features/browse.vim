@@ -131,7 +131,7 @@ endfunction " }}}
 function! s:retrieve_url(options) abort "{{{
   let gita = gita#get(a:options.file)
   let commit = a:options.commit
-  let abspath = gita#utils#ensure_abspath(gita#utils#expand(a:options.file))
+  let abspath = gita#utils#path#unix_abspath(a:options.file)
   let relpath = gita.git.get_relative_path(abspath)
 
   " get selected region
@@ -146,7 +146,7 @@ function! s:retrieve_url(options) abort "{{{
 
   " create a URL
   let data = {
-        \ 'path':       gita#utils#ensure_unixpath(gita#utils#ensure_realpath(relpath)),
+        \ 'path':       gita#utils#path#unix_abspath(relpath),
         \ 'commit1':    commit1,
         \ 'commit2':    commit2,
         \ 'revision1':  revision1,

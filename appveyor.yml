@@ -1,0 +1,52 @@
+version: '{build}-{branch}'
+
+# branches to build
+branches:
+  except:
+    - gh-pages
+skip_tags: true
+clone_depth: 1
+
+# environment variables (%TEMP% cannot be used in this section)
+environment:
+  matrix:
+    - VIM_URL: http://files.kaoriya.net/vim/vim74-kaoriya-win64.zip
+# Vim 7.3 in Windows show somehow 'E65 Illegal back reference' so don't support for now
+# https://ci.appveyor.com/project/lambdalisue/vim-gita/build/job/uxym4f2ngao20s84
+#    - VIM_URL: http://files.kaoriya.net/vim/2011/vim73-kaoriya-win64-20110306.zip
+
+# scripts that run after cloning repository
+install:
+  - cd %TEMP%
+
+  # Install vim
+  - appveyor DownloadFile %VIM_URL% -FileName vim.zip
+  - 7z x vim.zip > nul
+  - ps: $env:THEMIS_VIM = (Get-ChildItem . | Select-Object -First 1).FullName + '\vim.exe'
+
+  # Install vim-themis
+  - git -c advice.detachedHead=false clone --single-branch --depth 1 --branch v1.5 ^
+    https://github.com/thinca/vim-themis
+  # Install vital.vim
+  - git -c advice.detachedHead=false clone --single-branch --depth 1 ^
+    https://github.com/vim-jp/vital.vim
+  # Install vimproc.vim
+  - git -c advice.detachedHead=false clone --single-branch --depth 1 --branch ver.9.2 ^
+    https://github.com/Shougo/vimproc.vim
+  - appveyor DownloadFile https://github.com/Shougo/vimproc.vim/releases/download/ver.9.2/vimproc_win64.dll ^
+    -FileName vimproc.vim\lib\vimproc_win64.dll
+
+  - cd %APPVEYOR_BUILD_FOLDER%
+
+# disable building
+build: off
+
+# test
+test_script:
+  - call %THEMIS_VIM% --version
+  - call %TEMP%\vim-themis\bin\themis.bat --reporter dot ^
+    --runtimepath %TEMP%/vimproc.vim ^
+    --runtimepath %TEMP%/vital.vim
+
+# disable deployment
+deploy: off
