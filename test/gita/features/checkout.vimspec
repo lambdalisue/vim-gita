@@ -54,10 +54,11 @@ Describe gita#features#checkout
     It should automatically add unknown options to '--'
       let g:gita#features#checkout#default_options = {}
       call gita#features#checkout#command('', [0, 0], 'foo bar hoge')
+      " Note: git checkout requires UNIX path
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [
-            \   gita#utils#path#real_abspath('bar'),
-            \   gita#utils#path#real_abspath('hoge'),
+            \   gita#utils#path#unix_abspath('bar'),
+            \   gita#utils#path#unix_abspath('hoge'),
             \ ],
             \ 'commit': 'foo',
             \}, { 'echo': 'both' }]])

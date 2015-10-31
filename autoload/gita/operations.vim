@@ -10,12 +10,13 @@ let s:is_windows = has('win16') || has('win32') || has('win64')
 function! s:prefer_shellescape(val) abort " {{{
   let val = shellescape(a:val)
   if val !~# '\s'
-    if s:is_windows
-      let val = substitute(val, '^"', '', 'g')
-      let val = substitute(val, '"$', '', 'g')
-    else
+    if !s:is_windows || (exists('&shellslash') && &shellslash)
       let val = substitute(val, "^'", '', 'g')
       let val = substitute(val, "'$", '', 'g')
+    else
+      " Windows without shellslash enclos value with double quote
+      let val = substitute(val, '^"', '', 'g')
+      let val = substitute(val, '"$', '', 'g')
     endif
   endif
   return val

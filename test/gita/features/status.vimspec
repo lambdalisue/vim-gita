@@ -32,7 +32,7 @@ Describe gita#features#status
             \}])
 
       " the buffer should follow
-      Assert Equals(bufname('%'), g:is_windows ? 'gita-status' : 'gita:status')
+      Assert Equals(bufname('%'), 'gita_status')
       Assert Equals(&modifiable, 0)
       Assert Equals(&readonly, 1)
       Assert Equals(&filetype, 'gita-status')

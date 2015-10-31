@@ -153,8 +153,9 @@ Describe gita#features#diff
             \ 'split': 0,
             \})
       " it should execute gita.operations.diff internally
+      " Note: git diff requires UNIX path
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': gita#utils#path#real_abspath(['README.md']),
+            \ '--': gita#utils#path#unix_abspath(['README.md']),
             \ 'no-color': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])

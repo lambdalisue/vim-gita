@@ -8,8 +8,7 @@ let s:P = gita#import('System.Filepath')
 let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'status'], s:const.bufname_sep)
+let s:const.bufname = 'gita%sstatus'
 let s:const.filetype = 'gita-status'
 
 let s:parser = s:A.new({
@@ -152,8 +151,11 @@ function! gita#features#status#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#status#open(...) abort " {{{
+  let bufname = gita#utils#buffer#bufname(
+        \ substitute(s:const.bufname, '%s', g:gita#utils#buffer#separator, 'g'),
+        \)
   let result = gita#monitor#open(
-        \ s:const.bufname, get(a:000, 0, {}), {
+        \ bufname, get(a:000, 0, {}), {
         \ 'opener': g:gita#features#status#monitor_opener,
         \ 'range': g:gita#features#status#monitor_range,
         \})

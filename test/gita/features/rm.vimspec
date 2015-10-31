@@ -36,24 +36,27 @@ Describe gita#features#rm
     It should automatically specify 'quiet = 1'
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
+      " Note: git rm requires UNIX path
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': gita#utils#path#real_abspath(['%']),
+            \ '--': gita#utils#path#unix_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
     It should automatically expand '%' to absolute path
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
+      " Note: git rm requires UNIX path
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': gita#utils#path#real_abspath(['%']),
+            \ '--': gita#utils#path#unix_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
     It should automatically add the absolute path of the current buffer
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '')
+      " Note: git rm requires UNIX path
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': gita#utils#path#real_abspath(['%']),
+            \ '--': gita#utils#path#unix_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
@@ -64,8 +67,9 @@ Describe gita#features#rm
             \ 'cached': 1,
             \}
       call gita#features#rm#command('', [0, 0])
+      " Note: git rm requires UNIX path
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': gita#utils#path#real_abspath(['%']),
+            \ '--': gita#utils#path#unix_abspath(['%']),
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'cached': 1,

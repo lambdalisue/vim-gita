@@ -10,10 +10,17 @@ Describe gita#operations
         Assert Equals(ret, '--key=value')
       End
 
-      It should return "--key='v a l u e'" for ('key', 'v a l u e', '')
-        let ret = gita#operations#_translate_option('key', 'v a l u e', '')
-        Assert Equals(ret, '--key=''v a l u e''')
-      End
+      if !g:is_windows || (exists('&shellslash') && &shellslash)
+        It should return "--key='v a l u e'" for ('key', 'v a l u e', '')
+          let ret = gita#operations#_translate_option('key', 'v a l u e', '')
+          Assert Equals(ret, '--key=''v a l u e''')
+        End
+      else
+        It should return '--key="v a l u e"' for ('key', 'v a l u e', '')
+          let ret = gita#operations#_translate_option('key', 'v a l u e', '')
+          Assert Equals(ret, '--key="v a l u e"')
+        End
+      endif
 
       It should return "--key" for ('key', 1, '')
         let ret = gita#operations#_translate_option('key', 1, '')
@@ -70,10 +77,17 @@ Describe gita#operations
         Assert Equals(ret, '-kvalue')
       End
 
-      It should return "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
-        let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
-        Assert Equals(ret, '-k''v a l u e''')
-      End
+      if !g:is_windows || (exists('&shellslash') && &shellslash)
+        It should return "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
+          let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
+          Assert Equals(ret, '-k''v a l u e''')
+        End
+      else
+        It should return '-k"v a l u e"' for ('k', 'v a l u e', '-%k%V')
+          let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
+          Assert Equals(ret, '-k"v a l u e"')
+        End
+      endif
     End
   End
 

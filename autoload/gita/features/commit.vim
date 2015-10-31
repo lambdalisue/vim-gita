@@ -8,8 +8,7 @@ let s:F = gita#import('System.File')
 let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
-let s:const.bufname_sep = has('unix') ? ':' : '-'
-let s:const.bufname = join(['gita', 'commit'], s:const.bufname_sep)
+let s:const.bufname = 'gita%scommit'
 let s:const.filetype = 'gita-commit'
 
 let s:parser = s:A.new({
@@ -255,7 +254,10 @@ function! gita#features#commit#exec_cached(...) abort " {{{
   return result
 endfunction " }}}
 function! gita#features#commit#open(...) abort " {{{
-  let result = gita#monitor#open(s:const.bufname, get(a:000, 0, {}), {
+  let bufname = gita#utils#buffer#bufname(
+        \ substitute(s:const.bufname, '%s', g:gita#utils#buffer#separator, 'g'),
+        \)
+  let result = gita#monitor#open(bufname, get(a:000, 0, {}), {
         \ 'opener': g:gita#features#commit#monitor_opener,
         \ 'range': g:gita#features#commit#monitor_range,
         \})

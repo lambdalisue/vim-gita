@@ -37,7 +37,7 @@ Describe gita#features#commit
             \}])
 
       " the buffer should follow
-      Assert Equals(bufname('%'), g:is_windows ? 'gita-commit' : 'gita:commit')
+      Assert Equals(bufname('%'), 'gita_commit')
       Assert Equals(&modifiable, 1)
       Assert Equals(&readonly, 0)
       Assert Equals(&filetype, 'gita-commit')
