@@ -11,7 +11,9 @@ clone_depth: 1
 environment:
   matrix:
     - VIM_URL: http://files.kaoriya.net/vim/vim74-kaoriya-win64.zip
-    - VIM_URL: http://files.kaoriya.net/vim/2011/vim73-kaoriya-win64-20110306.zip
+# Vim 7.3 in Windows show somehow 'E65 Illegal back reference' so don't support for now
+# https://ci.appveyor.com/project/lambdalisue/vim-gita/build/job/uxym4f2ngao20s84
+#    - VIM_URL: http://files.kaoriya.net/vim/2011/vim73-kaoriya-win64-20110306.zip
 
 # scripts that run after cloning repository
 install:
