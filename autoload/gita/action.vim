@@ -142,7 +142,7 @@ function! s:actions.discard(candidates, options, config) abort " {{{
 endfunction " }}}
 
 function! s:default_get_candidates(start, end, ...) abort " {{{
-  let path = gita#utils#expand('%')
+  let path = gita#utils#path#expand('%')
   let commit = gita#meta#get('commit', '')
   let candidate = gita#action#new_candidate(path, commit, {
         \ 'line_start': a:start,
@@ -152,7 +152,7 @@ function! s:default_get_candidates(start, end, ...) abort " {{{
 endfunction " }}}
 function! gita#action#new_candidate(path, commit, ...) abort " {{{
   let candidate = {
-        \ 'path': gita#utils#ensure_abspath(a:path),
+        \ 'path': gita#utils#path#unix_abspath(a:path),
         \ 'commit': a:commit,
         \}
   return extend(candidate, get(a:000, 0, {}))

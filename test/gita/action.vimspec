@@ -17,7 +17,7 @@ Describe gita#action
     It should return candidates based on the current buffer
       let ret = s:sf.default_get_candidates(0, 0)
       let exp = [{
-            \ 'path': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'path': gita#utils#path#unix_abspath('%'),
             \ 'commit': '',
             \ 'line_start': 0,
             \ 'line_end': 0,
@@ -30,7 +30,7 @@ Describe gita#action
     It should return a candidate
       let ret = gita#action#new_candidate('', '')
       let exp = {
-            \ 'path': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'path': gita#utils#path#unix_abspath('%'),
             \ 'commit': '',
             \}
       Assert Equals(ret, exp)
@@ -39,7 +39,7 @@ Describe gita#action
     It should return a candidate with extra fields
       let ret = gita#action#new_candidate('', '', { 'foo': 'bar' })
       let exp = {
-            \ 'path': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'path': gita#utils#path#unix_abspath('%'),
             \ 'commit': '',
             \ 'foo': 'bar',
             \}
@@ -76,7 +76,7 @@ Describe gita#action
     It should return candidates from s:default_get_candidates
       let ret = gita#action#get_candidates()
       let exp = [{
-            \ 'path': gita#utils#ensure_abspath(gita#utils#expand('%')),
+            \ 'path': gita#utils#path#unix_abspath('%'),
             \ 'commit': '',
             \ 'line_start': 0,
             \ 'line_end': -1,

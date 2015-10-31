@@ -24,11 +24,11 @@ call s:parser.add_argument(
       \ })
 
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('<amatch>')),
+  let new_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('<amatch>')),
         \)
-  let old_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('%')),
+  let old_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('%')),
         \)
   if new_filename !=# old_filename
     let cmd = printf('w%s %s',
@@ -58,10 +58,10 @@ function! s:ensure_status_option(options) abort " {{{
 endfunction " }}}
 function! s:solve2(...) abort " {{{
   let options = get(a:000, 0, {})
-  let abspath = gita#utils#ensure_abspath(
-        \ gita#utils#expand(options.file),
+  let abspath = gita#utils#path#unix_abspath(
+        \ gita#utils#path#expand(options.file),
         \)
-  let relpath = gita#utils#ensure_relpath(abspath)
+  let relpath = gita#utils#path#unix_relpath(abspath)
 
   " Create buffer names of LOCAL, REMOTE
   let LOCAL_bufname = gita#utils#buffer#bufname(
@@ -132,10 +132,10 @@ function! s:solve2(...) abort " {{{
 endfunction " }}}
 function! s:solve3(...) abort " {{{
   let options = get(a:000, 0, {})
-  let abspath = gita#utils#ensure_abspath(
-        \ gita#utils#expand(options.file),
+  let abspath = gita#utils#path#unix_abspath(
+        \ gita#utils#path#expand(options.file),
         \)
-  let relpath = gita#utils#ensure_relpath(abspath)
+  let relpath = gita#utils#path#unix_relpath(abspath)
 
   " Create buffer names of LOCAL, MERGE, REMOTE
   let MERGE_bufname = gita#utils#buffer#bufname(

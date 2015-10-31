@@ -90,7 +90,7 @@ endfunction " }}}
 
 function! s:ensure_file_option(options) abort " {{{
   if empty(get(a:options, 'file'))
-    let filename = gita#utils#expand('%')
+    let filename = gita#utils#path#expand('%')
     if empty(filename)
       call gita#utils#prompt#warn(
             \ 'No file is specified and could not automatically be detected.'
@@ -147,7 +147,7 @@ function! s:exec_worktree(gita, options, config) abort " {{{
   else
     let errormsg = printf(
           \ '%s is not readable.',
-          \ gita#utils#ensure_relpath(abspath),
+          \ gita#utils#path#unix_relpath(abspath),
           \)
     if get(a:config, 'echo', 'both') =~# '\%(both\|fail\)'
       call gita#utils#prompt#error(errormsg)
@@ -209,7 +209,7 @@ function! s:exec_commit(gita, options, config) abort " {{{
         \ 'object': printf(
         \   '%s:%s',
         \   commit,
-        \   gita#utils#ensure_unixpath(a:gita.git.get_relative_path(abspath)),
+        \   gita#utils#path#unix_relpath(a:gita.git.get_relative_path(abspath)),
         \ ),
         \}, a:config)
 endfunction " }}}
@@ -231,8 +231,8 @@ function! gita#features#file#exec(...) abort " {{{
   endif
 
   " ensure absolute path
-  let options.file = gita#utils#ensure_abspath(
-        \ gita#utils#expand(options.file),
+  let options.file = gita#utils#path#unix_abspath(
+        \ gita#utils#path#expand(options.file),
         \)
 
   " select a proper function via 'commit'
@@ -294,8 +294,8 @@ function! gita#features#file#show(...) abort " {{{
     return
   endif
 
-  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
-  let relpath = gita#utils#ensure_relpath(abspath)
+  let abspath = gita#utils#path#unix_abspath(options.file)
+  let relpath = gita#utils#path#unix_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
     let bufname = relpath

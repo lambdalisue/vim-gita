@@ -511,7 +511,7 @@ function! gita#features#blame#exec(...) abort " {{{
   let config  = get(a:000, 1, {})
   if has_key(options, 'file')
     let options['--'] = [
-          \ gita#utils#ensure_unixpath(gita#utils#expand(options.file))
+          \ gita#utils#path#unix_abspath(options.file)
           \]
   endif
   if has_key(options, 'commit')
@@ -562,7 +562,7 @@ endfunction " }}}
     return
   endif
   let blamemeta = s:format_chunks(gita, result.stdout, 50 - 2) " 2 columns for signs
-  let abspath = gita#utils#ensure_abspath(gita#utils#expand(options.file))
+  let abspath = gita#utils#path#unix_abspath(options.file)
   let commit  = options.commit
   try
     let saved_eventignore = &eventignore

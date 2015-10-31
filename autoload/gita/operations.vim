@@ -49,13 +49,13 @@ function! s:translate_option(key, val, scheme) abort " {{{
         \ 'val': val,
         \ 'escaped_key': substitute(a:key, '_', '-', 'g'),
         \ 'escaped_val': len(val) ? s:prefer_shellescape(val) : '',
-        \ 'unixpath_val': gita#utils#ensure_unixpath(val),
+        \ 'unixpath_val': gita#utils#path#unix_abspath(val),
         \ 'escaped_unixpath_val': len(val)
-        \   ? s:prefer_shellescape(gita#utils#ensure_unixpath(val))
+        \   ? s:prefer_shellescape(gita#utils#path#unix_abspath(val))
         \   : '',
-        \ 'realpath_val': gita#utils#ensure_realpath(val),
+        \ 'realpath_val': gita#utils#path#real_abspath(val),
         \ 'escaped_realpath_val': len(val)
-        \   ? s:prefer_shellescape(gita#utils#ensure_realpath(val))
+        \   ? s:prefer_shellescape(gita#utils#path#real_abspath(val))
         \   : '',
         \}
   return gita#utils#format_string(format, format_map, data)
@@ -72,7 +72,7 @@ function! s:translate_options(options, schemes) abort " {{{
   if has_key(a:options, '--')
     call add(args, '--')
     for str in a:options['--']
-      call add(args, fnameescape(gita#utils#expand(str)))
+      call add(args, fnameescape(gita#utils#path#expand(str)))
     endfor
   endif
   return args

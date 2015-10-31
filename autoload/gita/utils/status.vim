@@ -46,11 +46,11 @@ function! gita#utils#status#extend_status(status, gita, ...) abort " {{{
   " Note:
   "   git status return UNIX path even in Windows + noshellslash
   let status.path = a:gita.git.get_absolute_path(
-        \ gita#utils#ensure_realpath(status.path)
+        \ gita#utils#path#real_relpath(status.path)
         \)
   if has_key(status, 'path2')
     let status.path2 = a:gita.git.get_absolute_path(
-          \ gita#utils#ensure_realpath(status.path2)
+          \ gita#utils#path#real_relpath(status.path2)
           \)
   endif
   let status._gita_extended = 1
@@ -73,7 +73,7 @@ function! gita#utils#status#parse(stdout, ...) abort " {{{
 endfunction " }}}
 function! gita#utils#status#retrieve(path, ...) abort " {{{
   let gita = gita#get()
-  let abspath = gita#utils#ensure_abspath(a:path)
+  let abspath = gita#utils#path#unix_abspath(a:path)
   let virtual = gita#utils#status#virtual(a:path)
   let options = {
         \ 'porcelain': 1,

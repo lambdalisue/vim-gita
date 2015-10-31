@@ -86,7 +86,7 @@ function! gita#features#command(bang, range, ...) abort " {{{
     elseif opts.__bang__ || !gita#features#is_registered(name)
       " execute git command
       let gita = gita#get()
-      let args = map(opts.__args__, 'gita#utils#expand(v:val)')
+      let args = map(opts.__args__, 'gita#utils#path#expand(v:val)')
       call gita.operations.exec_raw(args, {
             \ 'interactive': s:is_interactive_required(args),
             \})

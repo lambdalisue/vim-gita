@@ -37,7 +37,7 @@ Describe gita#features#rm
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('%')))],
+            \ '--': gita#utils#path#real_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
@@ -45,7 +45,7 @@ Describe gita#features#rm
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '-- %')
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('%')))],
+            \ '--': gita#utils#path#real_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
@@ -53,7 +53,7 @@ Describe gita#features#rm
       let g:gita#features#rm#default_options = {}
       call gita#features#rm#command('', [0, 0], '')
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('%')))],
+            \ '--': gita#utils#path#real_abspath(['%']),
             \ 'quiet': 1,
             \}, { 'echo': 'both' }]])
     End
@@ -65,7 +65,7 @@ Describe gita#features#rm
             \}
       call gita#features#rm#command('', [0, 0])
       Assert Equals(gita.operations._previous_args, [[{
-            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('%')))],
+            \ '--': gita#utils#path#real_abspath(['%']),
             \ 'quiet': 1,
             \ 'force': 1,
             \ 'cached': 1,

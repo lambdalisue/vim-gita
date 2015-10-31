@@ -51,7 +51,7 @@ Describe gita#features#conflict
       Assert Equals(&l:readonly, 0)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
 
       " check the buffer (REMOTE)
@@ -65,7 +65,7 @@ Describe gita#features#conflict
       Assert Equals(&l:readonly, 1)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
     End
 
@@ -91,7 +91,7 @@ Describe gita#features#conflict
       Assert Equals(&l:readonly, 0)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
 
       " check the buffer (LOCAL)
@@ -106,7 +106,7 @@ Describe gita#features#conflict
       Assert Equals(&l:readonly, 1)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
 
       " check the buffer (REMOTE)
@@ -121,7 +121,7 @@ Describe gita#features#conflict
       Assert Equals(&l:readonly, 1)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
     End
   End

@@ -149,11 +149,11 @@ function! s:commit(expr, options) abort " {{{
   endif
 endfunction " }}}
 function! s:ac_BufWriteCmd() abort " {{{
-  let new_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('<amatch>')),
+  let new_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('<amatch>')),
         \)
-  let old_filename = gita#utils#ensure_realpath(
-        \ gita#utils#ensure_abspath(expand('%')),
+  let old_filename = gita#utils#path#real_abspath(
+        \ gita#utils#path#unix_abspath(expand('%')),
         \)
   call gita#utils#prompt#debug(
         \ 'new_filename:', new_filename,
@@ -213,7 +213,7 @@ function! gita#features#commit#exec(...) abort " {{{
   endif
   if !empty(get(options, '--', []))
     " git understand REAL/UNIX path in working tree
-    let options['--'] = gita#utils#ensure_realpathlist(options['--'])
+    let options['--'] = gita#utils#path#real_abspath(options['--'])
   endif
   let options = s:D.pick(options, [
         \ '--',

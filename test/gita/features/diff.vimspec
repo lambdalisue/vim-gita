@@ -154,7 +154,7 @@ Describe gita#features#diff
             \})
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath('README.md'))],
+            \ '--': gita#utils#path#real_abspath(['README.md']),
             \ 'no-color': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
@@ -165,7 +165,7 @@ Describe gita#features#diff
       Assert Equals(&l:modifiable, 0)
       Assert Equals(&l:readonly, 1)
       Assert Equals(&l:filetype, 'diff')
-      Assert Equals(gita#meta#get('filename'), gita#utils#ensure_abspath('README.md'))
+      Assert Equals(gita#meta#get('filename'), gita#utils#path#unix_abspath('README.md'))
       Assert Equals(gita#meta#get('commit'), 'HEAD')
     End
 
@@ -204,7 +204,7 @@ Describe gita#features#diff
       Assert Equals(&l:readonly, 1)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
       Assert Equals(gita#meta#get('commit'), 'HEAD')
     End
@@ -249,7 +249,7 @@ Describe gita#features#diff
       Assert Equals(&l:readonly, 1)
       Assert Equals(
             \ gita#meta#get('filename'),
-            \ gita#utils#ensure_abspath('README.md'),
+            \ gita#utils#path#unix_abspath('README.md'),
             \)
       Assert Equals(gita#meta#get('commit'), 'HEAD')
 

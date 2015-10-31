@@ -56,8 +56,8 @@ Describe gita#features#checkout
       call gita#features#checkout#command('', [0, 0], 'foo bar hoge')
       Assert Equals(gita.operations._previous_args, [[{
             \ '--': [
-            \   gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('bar'))),
-            \   gita#utils#ensure_realpath(gita#utils#ensure_abspath(gita#utils#expand('hoge'))),
+            \   gita#utils#path#real_abspath('bar'),
+            \   gita#utils#path#real_abspath('hoge'),
             \ ],
             \ 'commit': 'foo',
             \}, { 'echo': 'both' }]])
