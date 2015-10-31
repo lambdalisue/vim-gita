@@ -5,30 +5,18 @@ function! Import(...) abort " {{{
   endif
   return call(s:V.import, a:000, s:V)
 endfunction " }}}
-" function! s:wipeout_all() abort " {{{
-if v:version == 703
-  " Vim 7.3 compatible %bufwipeout
-  function! s:wipeout_all() abort
-    let buflist = []
-    for i in range(tabpagenr('$'))
-      call extend(buflist, tabpagebuflist(i + 1))
-    endfor
-    for bufnum in buflist
-      if bufexists(bufnum)
-        silent execute printf('%dbwipeout!', bufnum)
-      endif
-    endfor
-    bwipeout!
-  endfunction
-else
-  function! s:wipeout_all() abort
-    try
-      silent execute '%bwipeout!'
-    catch
-      " fail silently
-    endtry
-  endfunction
-endif " }}}
+function! s:wipeout_all() abort " {{{
+  let buflist = []
+  for i in range(tabpagenr('$'))
+    call extend(buflist, tabpagebuflist(i + 1))
+  endfor
+  for bufnum in buflist
+    if bufexists(bufnum)
+      silent execute printf('%dbwipeout!', bufnum)
+    endif
+  endfor
+  bwipeout!
+endfunction " }}}
 function! s:workon_root() abort " {{{
   silent execute printf('cd %s', fnameescape(g:gita#test#root))
 endfunction  " }}}
@@ -87,6 +75,7 @@ function! s:setup() abort " {{{
   " Make a git repository
   call R.system(printf('git init %s', g:gita#test#inside))
 
+  let g:is_windows = has('win16') || has('win32') || has('win64')
 endfunction " }}}
 call s:setup()
 
