@@ -5,12 +5,18 @@ set cpo&vim
 let s:P = gita#import('Prelude')
 let s:C = gita#import('VCS.Git.Core')
 let s:A = gita#import('ArgumentParser')
+let s:is_windows = has('win16') || has('win32') || has('win64')
 
 function! s:prefer_shellescape(val) abort " {{{
   let val = shellescape(a:val)
   if val !~# '\s'
-    let val = substitute(val, "^'", '', 'g')
-    let val = substitute(val, "'$", '', 'g')
+    if s:is_windows
+      let val = substitute(val, '^"', '', 'g')
+      let val = substitute(val, '"$', '', 'g')
+    else
+      let val = substitute(val, "^'", '', 'g')
+      let val = substitute(val, "'$", '', 'g')
+    endif
   endif
   return val
 endfunction " }}}

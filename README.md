@@ -2,7 +2,7 @@
 <p align="center">vim-gita is under development (alpha version), mean that there would be critical bugs for daily use.<br>
 Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
 
-vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
+vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita) [![Build status](https://ci.appveyor.com/api/projects/status/gorpkslmrod7p6ou?svg=true)](https://ci.appveyor.com/project/lambdalisue/vim-gita)
 ===============================================================================
 ![Screencast (status to commit)](http://fat.gfycat.com/DarlingPopularAnnelid.gif)
 
@@ -30,7 +30,8 @@ Build Status
 
 Name                                 | Description                         | Status
 -------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------
-vim-gita                             | This plugin                         | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
+vim-gita                             | This plugin (Mac OS X or Linux)     | [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita)
+vim-gita                             | This plugin (Windows)               | [![Build status](https://ci.appveyor.com/api/projects/status/gorpkslmrod7p6ou?svg=true)](https://ci.appveyor.com/project/lambdalisue/vim-gita)
 [vim-jp/vital.vim][]                 | A core library                      | [![Build Status](https://travis-ci.org/vim-jp/vital.vim.svg?branch=master)](https://travis-ci.org/vim-jp/vital.vim)
 [lambdalisue/vital-ArgumentParser][] | A command argument library          | [![Build Status](https://travis-ci.org/lambdalisue/vital-ArgumentParser.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-ArgumentParser)
 [lambdalisue/vital-VCS-Git][]        | A core library for git manipulation | [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg?branch=master)](https://travis-ci.org/lambdalisue/vital-VCS-Git)

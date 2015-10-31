@@ -300,8 +300,9 @@ Describe gita#utils
         set shellslash
         let path = 'C:\Foo\Bar\Hoge.txt'
         let ret = gita#utils#ensure_unixpath(path)
-        Assert Equals(ret, path)
-        Assert Same(ret, path)
+        Assert NotEquals(ret, path)
+        Assert NotSame(ret, path)
+        Assert Equals(ret, 'C:/Foo/Bar/Hoge.txt')
       End
 
       It should return a modified instance of {path} in Windows if noshellslash is specified
@@ -379,7 +380,8 @@ Describe gita#utils
               \]
         let ret = gita#utils#ensure_unixpathlist(pathlist)
         let exp = gita#utils#ensure_pathlist(pathlist)
-        Assert Equals(ret, exp)
+        Assert NotEquals(ret, exp)
+        Assert Equals(ret, map(exp, 'fnamemodify(v:val, '':g?\\?/?'')'))
       End
 
       It should return a modified version of gita#utils#ensure_pathlist in Windows if noshellslash is specified

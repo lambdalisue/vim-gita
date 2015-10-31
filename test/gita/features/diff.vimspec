@@ -154,7 +154,7 @@ Describe gita#features#diff
             \})
       " it should execute gita.operations.diff internally
       Assert Equals(gita.operations._previous_args, [{
-            \ '--': [gita#utils#ensure_abspath('README.md')],
+            \ '--': [gita#utils#ensure_realpath(gita#utils#ensure_abspath('README.md'))],
             \ 'no-color': 1,
             \ 'commit': 'HEAD',
             \}, { 'echo': 'fail' }])
