@@ -263,12 +263,6 @@ function! s:operations.blame(...) abort " {{{
 endfunction " }}}
 
 
-function! gita#operations#_translate_option(...) abort " {{{
-  return call('s:translate_option', a:000)
-endfunction " }}}
-function! gita#operations#_translate_options(...) abort " {{{
-  return call('s:translate_options', a:000)
-endfunction " }}}
 function! gita#operations#new(gita) abort " {{{
   let operations = extend(deepcopy(s:operations), {
         \ 'gita': a:gita,

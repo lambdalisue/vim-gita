@@ -1,97 +1,153 @@
+let s:P = Import('System.Filepath')
+let s:S = Import('Vim.ScriptLocal')
+let s:sf = s:S.sfuncs(s:P.join(
+      \ g:gita#test#root, 'autoload', 'gita', 'operations.vim'
+      \))
+
 Describe gita#operations
   Before
     Init
   End
 
-  Context #_translate_option({key}, {val}, {scheme})
+  Context [PRIVATE] s:prefer_shellescape({val})
+    if !g:is_windows
+      It should not enclose {val} with quotes if {val} doesn't contain spaces
+        let ret = s:sf.prefer_shellescape('foobar')
+        let exp = 'foobar'
+        Assert Equals(ret, exp)
+      End
+      It should enclose {val} with single quotes if {val} contains spaces
+        let ret = s:sf.prefer_shellescape('foo bar')
+        let exp = "'foo bar'"
+        Assert Equals(ret, exp)
+      End
+    elseif exists('&shellslash')
+      Before
+        let saved_shellslash = &shellslash
+      End
+      After
+        let &shellslash = saved_shellslash
+      End
+      It should enclose {val} with quotes if {val} doesn't contain spaces
+        let ret = s:sf.prefer_shellescape('foobar')
+        let exp = 'foobar'
+        Assert Equals(ret, exp)
+      End
+      It should enclose {val} with single quotes if {val} contains spaces and &shellslash=1
+        set shellslash
+        let ret = s:sf.prefer_shellescape('foo bar')
+        let exp = "'foo bar'"
+        Assert Equals(ret, exp)
+      End
+      It should enclose {val} with double quotes if {val} contains spaces and &shellslash=0
+        set noshellslash
+        let ret = s:sf.prefer_shellescape('foo bar')
+        let exp = '"foo bar"'
+        Assert Equals(ret, exp)
+      End
+    else
+      It should enclose {val} with quotes if {val} doesn't contain spaces
+        let ret = s:sf.prefer_shellescape('foobar')
+        let exp = 'foobar'
+        Assert Equals(ret, exp)
+      End
+      It should enclose {val} with double quotes if {val} contains spaces and -shellslash
+        let ret = s:sf.prefer_shellescape('foo bar')
+        let exp = '"foo bar"'
+        Assert Equals(ret, exp)
+      End
+    endif
+  End
+
+  Context [PRIVATE] s:translate_option({key}, {val}, {scheme})
     Context Long format
       It should return "--key=value" for ('key', 'value', '')
-        let ret = gita#operations#_translate_option('key', 'value', '')
+        let ret = s:sf.translate_option('key', 'value', '')
         Assert Equals(ret, '--key=value')
       End
 
       if !g:is_windows || (exists('&shellslash') && &shellslash)
         It should return "--key='v a l u e'" for ('key', 'v a l u e', '')
-          let ret = gita#operations#_translate_option('key', 'v a l u e', '')
+          let ret = s:sf.translate_option('key', 'v a l u e', '')
           Assert Equals(ret, '--key=''v a l u e''')
         End
       else
         It should return '--key="v a l u e"' for ('key', 'v a l u e', '')
-          let ret = gita#operations#_translate_option('key', 'v a l u e', '')
+          let ret = s:sf.translate_option('key', 'v a l u e', '')
           Assert Equals(ret, '--key="v a l u e"')
         End
       endif
 
       It should return "--key" for ('key', 1, '')
-        let ret = gita#operations#_translate_option('key', 1, '')
+        let ret = s:sf.translate_option('key', 1, '')
         Assert Equals(ret, '--key')
       End
 
       It should return "" for ('key', 0, '')
-        let ret = gita#operations#_translate_option('key', 0, '')
+        let ret = s:sf.translate_option('key', 0, '')
         Assert Equals(ret, '')
       End
 
       It should return "-key-value-' for ('key', 'value', '-%k-%v-')
-        let ret = gita#operations#_translate_option('key', 'value', '-%k-%v-')
+        let ret = s:sf.translate_option('key', 'value', '-%k-%v-')
         Assert Equals(ret, '-key-value-')
       End
 
       It should return "--h-e-l-l-o' for ('h_e_l_l_o', 1, '')
-        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '')
+        let ret = s:sf.translate_option('h_e_l_l_o', 1, '')
         Assert Equals(ret, '--h-e-l-l-o')
 
-        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '--%K')
+        let ret = s:sf.translate_option('h_e_l_l_o', 1, '--%K')
         Assert Equals(ret, '--h-e-l-l-o')
       End
 
       It should return "--h_e_l_l_o' for ('h_e_l_l_o', 1, '--%k')
-        let ret = gita#operations#_translate_option('h_e_l_l_o', 1, '--%k')
+        let ret = s:sf.translate_option('h_e_l_l_o', 1, '--%k')
         Assert Equals(ret, '--h_e_l_l_o')
       End
 
       It should return "--key=value" for ('key', 'value', '--%K%{=}v')
-        let ret = gita#operations#_translate_option('key', 'value', '--%K%{=}v')
+        let ret = s:sf.translate_option('key', 'value', '--%K%{=}v')
         Assert Equals(ret, '--key=value')
       End
     End
 
     Context Short format
       It should return "-kvalue" for ('k', 'value', '')
-        let ret = gita#operations#_translate_option('k', 'value', '')
+        let ret = s:sf.translate_option('k', 'value', '')
         Assert Equals(ret, '-kvalue')
       End
 
       It should return "-k" for ('k', 1, '')
-        let ret = gita#operations#_translate_option('k', 1, '')
+        let ret = s:sf.translate_option('k', 1, '')
         Assert Equals(ret, '-k')
       End
 
       It should return "" for ('k', 0, '')
-        let ret = gita#operations#_translate_option('k', 0, '')
+        let ret = s:sf.translate_option('k', 0, '')
         Assert Equals(ret, '')
       End
 
       It should return "-kvalue" for ('k', 'value', '-%k%V')
-        let ret = gita#operations#_translate_option('k', 'value', '-%k%V')
+        let ret = s:sf.translate_option('k', 'value', '-%k%V')
         Assert Equals(ret, '-kvalue')
       End
 
       if !g:is_windows || (exists('&shellslash') && &shellslash)
         It should return "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
-          let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
+          let ret = s:sf.translate_option('k', 'v a l u e', '-%k%V')
           Assert Equals(ret, '-k''v a l u e''')
         End
       else
         It should return '-k"v a l u e"' for ('k', 'v a l u e', '-%k%V')
-          let ret = gita#operations#_translate_option('k', 'v a l u e', '-%k%V')
+          let ret = s:sf.translate_option('k', 'v a l u e', '-%k%V')
           Assert Equals(ret, '-k"v a l u e"')
         End
       endif
     End
   End
 
-  Context #_translate_options({options}, {schemes})
+  Context [PRIVATE] s:translate_options({options}, {schemes})
     It should translate options (dict) into arguments (list)
       let options = {
             \ 'foo': 1,
@@ -101,7 +157,7 @@ Describe gita#operations
             \ 'b': 0,
             \ 'h': 'hoge',
             \}
-      let ret = gita#operations#_translate_options(options, {})
+      let ret = s:sf.translate_options(options, {})
       Assert Equals(sort(ret), sort([
             \ '--foo',
             \ '--hoge=hoge',
@@ -120,7 +176,7 @@ Describe gita#operations
             \ 'foo': '---%k',
             \ 'hoge': '%v',
             \}
-      let ret = gita#operations#_translate_options(options, schemes)
+      let ret = s:sf.translate_options(options, schemes)
       Assert Equals(sort(ret), sort([
             \ '---foo',
             \ 'hoge',
