@@ -80,7 +80,6 @@ Describe gita#features#rm
   Context #complete({arglead}, {cmdline}, {cursorpos})
     It should call ArgumentParser.complete function
       Assert True(exists('*gita#features#rm#complete'))
-      Skip It is not possible to access script local variable
     End
   End
 End

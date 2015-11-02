@@ -225,21 +225,18 @@ Describe gita#utils#prompt
   Context #input({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gita#utils#prompt#input'))
-      Skip Behavior test of "input" function is not possible.
     End
   End
 
   Context #ask({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gita#utils#prompt#ask'))
-      Skip Behavior test of "input" function is not possible.
     End
   End
 
   Context #asktf({msg}[, {default}])
     It should show a prompt to user
       Assert True(exists('*gita#utils#prompt#asktf'))
-      Skip Behavior test of "input" function is not possible.
     End
   End
 End
