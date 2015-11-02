@@ -288,6 +288,81 @@ Describe gita#features#browse
     End
   End
 
+  Context [PRIVATE] s:retrieve_url({options})
+    Before
+      let gita = gita#get()
+      let git_saved = deepcopy(gita.git)
+      let base_url = 'https://github.com/lambdalisue/vim-gita/%s'
+      function! gita.git.get_branch_merge(branch) " {{{
+        return printf('refs/heads/%s', a:branch)
+      endfunction " }}}
+      function! gita.git.get_branch_remote(branch) " {{{
+        return 'origin'
+      endfunction " }}}
+      function! gita.git.get_remote_url(remote) " {{{
+        return 'git@github.com:lambdalisue/vim-gita'
+      endfunction " }}}
+    End
+    After
+      let gita.git = git_saved
+    End
+
+    It should be able to retrieve a correct URL
+      let options = {
+            \ 'file': 'autoload/gita.vim',
+            \ 'commit': '',
+            \}
+      let ret = s:sf.retrieve_url(options)
+      let exp = printf(base_url, 'blob/HEAD/autoload/gita.vim')
+      Assert Equals(ret, exp)
+    End
+
+    It should be able to retrieve a correct URL with a line number
+      let options = {
+            \ 'file': 'autoload/gita.vim',
+            \ 'commit': 'master',
+            \ 'line_start': 10,
+            \}
+      let ret = s:sf.retrieve_url(options)
+      let exp = printf(base_url, 'blob/master/autoload/gita.vim#L10')
+      Assert Equals(ret, exp)
+    End
+
+    It should be able to retrieve a correct URL with a line region
+      let options = {
+            \ 'file': 'autoload/gita.vim',
+            \ 'commit': 'master',
+            \ 'line_start': 10,
+            \ 'line_end': 20,
+            \}
+      let ret = s:sf.retrieve_url(options)
+      let exp = printf(base_url, 'blob/master/autoload/gita.vim#L10-L20')
+      Assert Equals(ret, exp)
+    End
+
+    It should be able to retrieve a correct URL with a specified branch
+      let options = {
+            \ 'file': 'autoload/gita.vim',
+            \ 'commit': 'master',
+            \ 'branch': 'develop',
+            \}
+      let ret = s:sf.retrieve_url(options)
+      let exp = printf(base_url, 'blob/develop/autoload/gita.vim')
+      Assert Equals(ret, exp)
+    End
+
+    It should be able to retrieve a correct URL with a specified scheme
+      let options = {
+            \ 'file': 'autoload/gita.vim',
+            \ 'commit': 'master',
+            \ 'scheme': 'blame',
+            \}
+      let ret = s:sf.retrieve_url(options)
+      let exp = printf(base_url, 'blame/master/autoload/gita.vim')
+      Assert Equals(ret, exp)
+    End
+  End
+
   Context #command({bang}, {range}[, {cmdline}])
     It should automatically call a correct method
       Assert True(exists('*gita#features#browse#command'))
@@ -303,4 +378,3 @@ Describe gita#features#browse
   End
 
 End
-

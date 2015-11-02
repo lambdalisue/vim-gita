@@ -31,6 +31,11 @@ call s:parser.add_argument(
       \   'default': '_',
       \ })
 call s:parser.add_argument(
+      \ '--branch', '-b',
+      \ 'Force branch or commit used to retrieve url.', {
+      \   'type': s:A.types.value,
+      \ })
+call s:parser.add_argument(
       \ 'commit', [
       \   'A commit which you want to compare with.',
       \   'If nothing is specified, it will ask which commit you want to compare.',
@@ -130,7 +135,7 @@ function! s:translate_url(url, scheme_name, translation_patterns) abort " {{{
 endfunction " }}}
 function! s:retrieve_url(options) abort "{{{
   let gita = gita#get(a:options.file)
-  let commit = a:options.commit
+  let commit = get(a:options, 'branch', a:options.commit)
   let abspath = gita#utils#path#unix_abspath(a:options.file)
   let relpath = gita.git.get_relative_path(abspath)
 
@@ -146,7 +151,7 @@ function! s:retrieve_url(options) abort "{{{
 
   " create a URL
   let data = {
-        \ 'path':       gita#utils#path#unix_abspath(relpath),
+        \ 'path':       gita#utils#path#unix_relpath(relpath),
         \ 'commit1':    commit1,
         \ 'commit2':    commit2,
         \ 'revision1':  revision1,
