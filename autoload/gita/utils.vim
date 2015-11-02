@@ -57,5 +57,9 @@ function! gita#utils#clip(content) abort " {{{
   endif
 endfunction " }}}
 
+function! gita#utils#remove_ansi_sequences(val) abort " {{{
+  return substitute(a:val, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
+endfunction " }}}
+
 let &cpo = s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
