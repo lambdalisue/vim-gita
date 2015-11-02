@@ -105,6 +105,29 @@ Describe gita#utils#status
       Assert Equals(ret.unstaged[0].path, gita#utils#path#unix_abspath('bar.txt'))
       Assert Equals(ret.unstaged[1].path, gita#utils#path#unix_abspath('hoge.txt'))
     End
+
+    It should parse git status --porcelain stdout as 'fail_silently'
+      let stdout = join([
+            \ 'warning: LF will be replaced by CRLF in vimrc.',
+            \ 'M  foo.txt',
+            \ ' M bar.txt',
+            \ 'MM hoge.txt',
+            \], "\n")
+      let ret = gita#utils#status#parse(stdout)
+      Assert Equals(len(ret.all), 3)
+      Assert Equals(len(ret.staged), 2)
+      Assert Equals(len(ret.unstaged), 2)
+
+      Assert Equals(ret.all[0].path, gita#utils#path#unix_abspath('foo.txt'))
+      Assert Equals(ret.all[1].path, gita#utils#path#unix_abspath('bar.txt'))
+      Assert Equals(ret.all[2].path, gita#utils#path#unix_abspath('hoge.txt'))
+
+      Assert Equals(ret.staged[0].path, gita#utils#path#unix_abspath('foo.txt'))
+      Assert Equals(ret.staged[1].path, gita#utils#path#unix_abspath('hoge.txt'))
+
+      Assert Equals(ret.unstaged[0].path, gita#utils#path#unix_abspath('bar.txt'))
+      Assert Equals(ret.unstaged[1].path, gita#utils#path#unix_abspath('hoge.txt'))
+    End
   End
 
   Context #retrieve({path}[, {config}])

@@ -23,6 +23,8 @@ let s:format_map = {
 let s:preset = {
       \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md',
       \ 'branch_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md',
+      \ 'branch_short': '%{|/}ln%lb%{ <> |}rn',
+      \ 'branch_short_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn',
       \ 'status': '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu',
       \ 'traffic': '%{<| }ic%{>|}og',
       \ 'traffic_fancy': '%{￩| }ic%{￫}og',
