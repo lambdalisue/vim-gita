@@ -70,7 +70,11 @@ function! gita#utils#status#extend_status(status, gita, ...) abort " {{{
   return status
 endfunction " }}}
 function! gita#utils#status#parse(stdout, ...) abort " {{{
-  let statuses = s:S.parse(a:stdout, get(a:000, 0, {}))
+  let options = extend({
+        \ 'fail_silently': 1,
+        \}, get(a:000, 0, {})
+        \)
+  let statuses = s:S.parse(a:stdout, options)
   if get(statuses, 'status')
     return statuses
   endif
