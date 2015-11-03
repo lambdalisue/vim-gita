@@ -111,6 +111,7 @@ endfunction " }}}
 function! gita#clear_cache() abort " {{{
   call gita#clear_finder_cache()
   silent! unlet! b:_gita
+  silent! unlet! w:_gita
 endfunction " }}}
 
 function! gita#preload(path) abort " {{{
