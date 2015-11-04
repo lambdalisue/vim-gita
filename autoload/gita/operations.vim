@@ -68,14 +68,13 @@ function! s:schemes.clone(name, options) abort " {{{
         \ 'configig': '--%K %V',
         \ 'depth': '--%K %V',
         \}
-  let args = s:translate_options(a:options, schemes)
+  let args = s:translate_options(a:options, scheme)
   return extend(args, [
         \ '--',
         \ get(a:options, 'repository', ''),
         \ get(a:options, 'directory', ''),
         \])
 endfunction " }}}
-
 
 function! s:prefer_shellescape(val) abort " {{{
   let val = shellescape(a:val)
@@ -184,13 +183,12 @@ function! s:execute(gita, args, conf) abort " {{{
   return ret
 endfunction " }}}
 
-
 function! gita#operations#exec(gita, name, options, ...) abort " {{{
-  let S = get(s:schemes, a:name, {})
-  if type(S) ==# s:TYPE_FUNC
-    let args = S(a:name, a:options)
+  let l:Scheme = get(s:schemes, a:name, {})
+  if type(l:Scheme) ==# s:TYPE_FUNC
+    let args = l:Scheme(a:name, a:options)
   else
-    let args = s:translate_options(a:options, S)
+    let args = s:translate_options(a:options, l:Scheme)
   endif
   let args = extend([a:name], args)
   let conf = get(a:000, 0, {})
