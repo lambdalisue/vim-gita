@@ -19,7 +19,20 @@ Describe gita#features#blame
     End
     It should return '%d %b' if timedelta is more than 3 months
       let now = s:T.from_date(2000, 8, 1, 0, 0, 0, '+09:00')
-      let timestamp = now.to(s:T.delta(-180, 'day')).unix_time()
+      Assert Equals(now.year(), 2000)
+      Assert Equals(now.month(), 8)
+      Assert Equals(now.day(), 1)
+      Assert Equals(now.hour(), 0)
+      Assert Equals(now.minute(), 0)
+      Assert Equals(now.second(), 0)
+      Assert Equals(now.timezone().w3c(), '+09:00')
+
+      let timedelta = s:T.delta(-180, 'day')
+      Assert Equals(timedelta.days(), -180)
+
+      let timestamp = now.to(timedelta).unix_time()
+      Assert Equals(timestamp, 949417200)
+
       let ret = s:sf.format_timestamp(timestamp, '+09:00', now)
       Assert Equals(ret, 'on 01 Feb')
     End
