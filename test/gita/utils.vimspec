@@ -238,4 +238,12 @@ Describe gita#utils
       End
     endif
   End
+
+  Context #remove_ansi_sequences({val})
+    It should remove ANSI sequences in {val}
+      let val = "\033[47m\033[32mGreen\033[0m"
+      let ret = gita#utils#remove_ansi_sequences(val)
+      Assert Equals(ret, 'Green')
+    End
+  End
 End
