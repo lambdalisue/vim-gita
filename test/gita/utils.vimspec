@@ -170,7 +170,7 @@ Describe gita#utils
     End
   End
 
-  Context #eget({obj}, {name}, {default})
+  Context #eget({obj}, {name}[, {default}])
     It should return {obj}.{name} if {obj} has {name} entry
       let obj = { 'foo': 'foo' }
       let ret = gita#utils#eget(obj, 'foo', 'bar')
@@ -199,6 +199,28 @@ Describe gita#utils
       let obj = { 'foo': 0 }
       let ret = gita#utils#eget(obj, 'foo', 'bar')
       Assert Equals(ret, 'bar')
+    End
+  End
+
+  Context #sget({objs}, {name}[, {default}])
+    It should return {objs}[x].{name} if one of object in {objs} has {name} entry
+      let objs = [
+            \ {'foo': 'foo1'},
+            \ {'foo': 'foo2', 'bar': 'bar1'},
+            \ {'bar': 'bar2'},
+            \]
+      let ret = gita#utils#sget(objs, 'bar')
+      Assert Equals(ret, 'bar1')
+    End
+
+    It should return {default} if non of object in {objs} has {name} entry
+      let objs = [
+            \ {'foo': 'foo1'},
+            \ {'foo': 'foo2', 'bar': 'bar1'},
+            \ {'bar': 'bar2'},
+            \]
+      let ret = gita#utils#sget(objs, 'hoge', 'hoge')
+      Assert Equals(ret, 'hoge')
     End
   End
 
