@@ -238,4 +238,10 @@ Describe gita#utils
       End
     endif
   End
+
+  Context #remove_ansi_sequences({val})
+    It should remove ANSI sequences in {val}
+      TODO Write test!
+    End
+  End
 End
