@@ -134,9 +134,23 @@ endfunction " }}}
 
 " Object =====================================================================
 let s:git = {}
+function! s:git._get_meta_filename(...) abort " {{{
+  let pathspec = s:_listalize(a:000)
+  return s:Path.join(pathspec)
+endfunction " }}}
+function! s:git._is_readable(...) abort " {{{
+  let path = call(self._get_meta_filename, a:000, self)
+  return filereadable(s:Path.join(self.repository, path))
+endfunction " }}}
+function! s:git._is_writable(...) abort " {{{
+  let path = call(self._get_meta_filename, a:000, self)
+  return filewritable(s:Path.join(self.repository, path))
+endfunction " }}}
 function! s:git.is_updated(pathspec, ...) abort " {{{
-  let pathspec = s:_listalize(a:pathspec)
-  let path = s:Path.join(pathspec)
+  let path = call(self._get_meta_filename, s:_listalize(a:pathspec), self)
+  if !self._is_readable(path)
+    return 0
+  endif
   let name = printf('%s%s%s', path, s:SEPARATOR, get(a:000, 0, ''))
   let cached = self.cache.uptime.get(name, -1)
   let actual = getftime(s:Path.join(self.repository, path))
@@ -153,160 +167,43 @@ function! s:git.get_absolute_path(path) abort " {{{
 endfunction " }}}
 
 function! s:git.get_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_head(self.repository)
 endfunction " }}}
 function! s:git.get_fetch_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'FETCH_HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_fetch_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_fetch_head(self.repository)
 endfunction " }}}
 function! s:git.get_orig_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'ORIG_HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_orig_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_orig_head(self.repository)
 endfunction " }}}
 function! s:git.get_merge_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'MERGE_HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_merge_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_merge_head(self.repository)
 endfunction " }}}
 function! s:git.get_cherry_pick_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'CHERRY_PICK_HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_cherry_pick_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_cherry_pick_head(self.repository)
 endfunction " }}}
 function! s:git.get_revert_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'REVERT_HEAD'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_revert_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_revert_head(self.repository)
 endfunction " }}}
 function! s:git.get_bisect_log(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'BISECT_LOG'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_bisect_log(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_bisect_log(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_merge_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-merge', 'head-name')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_merge_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_merge_head(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_merge_step(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-merge', 'msgnum')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_merge_step(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_merge_step(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_merge_total(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-merge', 'end')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_merge_total(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_merge_total(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_apply_head(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-apply', 'head-name')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_apply_head(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_apply_head(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_apply_step(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-apply', 'next')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_apply_step(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_apply_step(self.repository)
 endfunction " }}}
 function! s:git.get_rebase_apply_total(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = s:Path.join('rebase-apply', 'last')
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_rebase_apply_total(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_rebase_apply_total(self.repository)
 endfunction " }}}
 
 function! s:git.is_merging() abort " {{{
@@ -352,28 +249,10 @@ function! s:git.get_mode() abort " {{{
   return s:Core.get_mode(self.repository)
 endfunction " }}}
 function! s:git.get_commit_editmsg(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'COMMIT_EDITMSG'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_commit_editmsg(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_commit_editmsg(self.repository)
 endfunction " }}}
 function! s:git.get_merge_msg(...) abort " {{{
-  let options = extend({
-        \ 'no_cache': 0,
-        \}, get(a:000, 0, {}))
-  let name = 'MERGE_MSG'
-  let cache = self.cache.repository
-  if self.is_updated(name) || options.no_cache || !cache.has(name)
-    let result = s:Core.get_merge_msg(self.repository)
-    call cache.set(name, result)
-  endif
-  return cache.get(name)
+  return s:Core.get_merge_msg(self.repository)
 endfunction " }}}
 function! s:git.get_local_hash(branch, ...) abort " {{{
   let options = extend({
@@ -450,6 +329,9 @@ function! s:git.get_last_commitmsg(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'last_commitmsg',
         \ string(s:Dict.omit(options, ['no_cache'])),
@@ -476,6 +358,9 @@ function! s:git.count_commits_ahead_of_remote(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'commits_ahead_of_remote',
         \ string(s:Dict.omit(options, ['no_cache'])),
@@ -502,6 +387,9 @@ function! s:git.count_commits_behind_remote(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'commits_behind_remote',
         \ string(s:Dict.omit(options, ['no_cache'])),

@@ -5,6 +5,22 @@ function! Import(...) abort " {{{
   endif
   return call(s:V.import, a:000, s:V)
 endfunction " }}}
+function! Mock(obj, name) abort " {{{
+  let orig = get(a:obj, a:name)
+  let mock = deepcopy(orig)
+  let mock._obj = a:obj
+  let mock._name = a:name
+  let mock._orig = orig
+  function! mock.patch() abort
+    let self._obj[self._name] = self
+    return self
+  endfunction
+  function! mock.restore() abort
+    let self._obj[self._name] = self._orig
+    return self
+  endfunction
+  return mock
+endfunction " }}}
 function! s:wipeout_all() abort " {{{
   let buflist = []
   for i in range(tabpagenr('$'))
@@ -82,3 +98,5 @@ call s:setup()
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
+
+"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker ft=vim

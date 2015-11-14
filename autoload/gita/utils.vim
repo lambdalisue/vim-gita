@@ -1,6 +1,8 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:TYPE_FUNCREF = type(function('tr'))
+
 function! s:smart_string(value) abort " {{{
   let vtype = type(a:value)
   if vtype == type('')
@@ -29,11 +31,16 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   endif
   let pattern_base = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
   let str = copy(a:format)
-  for [key, value] in items(a:format_map)
-    let result = s:smart_string(get(a:data, value, ''))
+  for [key, Value] in items(a:format_map)
+    if type(Value) ==# s:TYPE_FUNCREF
+      let result = s:smart_string(call(Value, [a:data], a:format_map))
+    else
+      let result = s:smart_string(get(a:data, Value, ''))
+    endif
     let pattern = printf(pattern_base, key)
     let repl = strlen(result) ? printf('\1%s\2', escape(result, '\')) : ''
     let str = substitute(str, '\C' . pattern, repl, 'g')
+    unlet! Value
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction " }}}
@@ -55,6 +62,10 @@ function! gita#utils#clip(content) abort " {{{
   if has('clipboard')
     call setreg(v:register, a:content)
   endif
+endfunction " }}}
+
+function! gita#utils#remove_ansi_sequences(val) abort " {{{
+  return substitute(a:val, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
 endfunction " }}}
 
 let &cpo = s:save_cpo

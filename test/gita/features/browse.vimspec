@@ -1,7 +1,3 @@
-" preload gita#feature#browse which might not loaded automatically in
-" travis.org because most of tests are skipped
-call gita#preload('gita#features#browse')
-
 let s:P = Import('System.Filepath')
 let s:S = Import('Vim.ScriptLocal')
 let s:sf = s:S.sfuncs(s:P.join(
@@ -366,14 +362,12 @@ Describe gita#features#browse
   Context #command({bang}, {range}[, {cmdline}])
     It should automatically call a correct method
       Assert True(exists('*gita#features#browse#command'))
-      Skip It is difficult to test this behavior
     End
   End
 
   Context #complete({arglead}, {cmdline}, {cursorpos})
     It should call ArgumentParser.complete function
       Assert True(exists('*gita#features#browse#complete'))
-      Skip It is not possible to access script local variable
     End
   End
 

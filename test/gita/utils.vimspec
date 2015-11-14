@@ -1,8 +1,57 @@
 let s:is_windows = has('win16') || has('win32') || has('win64')
+let s:P = Import('System.Filepath')
+let s:S = Import('Vim.ScriptLocal')
+let s:sp = s:P.join(g:gita#test#root, 'autoload', 'gita', 'utils.vim')
+let s:sf = s:S.sfuncs(s:sp)
 
 Describe gita#utils
   Before
     Init
+  End
+
+  Context [PRIVATE] s:smart_string({value})
+    It should return {value} if {value} is string
+      let exp = 'foobar'
+      let ret = s:sf.smart_string(exp)
+      Assert Equals(exp, ret)
+      Assert Same(exp, ret)
+    End
+
+    It should return an empty string if {value} is 0
+      let ret = s:sf.smart_string(0)
+      Assert Equals(ret, '')
+    End
+
+    It should return an empty string if {value} is an empty list
+      let ret = s:sf.smart_string([])
+      Assert Equals(ret, '')
+    End
+
+    It should return an empty string if {value} is an empty dictionary
+      let ret = s:sf.smart_string({})
+      Assert Equals(ret, '')
+    End
+
+    It should return a string({value}) if {value} is number
+      let ret = s:sf.smart_string(1)
+      Assert Equals(ret, string(1))
+    End
+
+    It should return a string({value}) if {value} is list
+      let ret = s:sf.smart_string(['foo'])
+      Assert Equals(ret, string(['foo']))
+    End
+
+    It should return a string({value}) if {value} is dictionary
+      let ret = s:sf.smart_string({'foo': 'bar'})
+      Assert Equals(ret, string({'foo': 'bar'}))
+    End
+
+    It should return a string({value}) if {value} is otherwise (e.g. funcref)
+      let ret = s:sf.smart_string(s:sf.smart_string)
+      let exp = string(s:sf.smart_string)
+      Assert Equals(ret, exp)
+    End
   End
 
   Context #import({name})
@@ -119,9 +168,27 @@ Describe gita#utils
       let ret = gita#utils#format_string(format, format_map, data)
       Assert Equals(ret, '')
     End
+
+    It should call a function specified n {format_map}
+      let format = '%foo %bar'
+      let format_map = {
+            \ 'foo': 'foo_value',
+            \}
+      function! format_map.bar(data) abort
+        let self._bar = 'bar'
+        return toupper(a:data.bar_value)
+      endfunction
+      let data = {
+            \ 'foo_value': 'Hello',
+            \ 'bar_value': 'Goodbye',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Hello GOODBYE')
+      Assert Equals(format_map._bar, 'bar')
+    End
   End
 
-  Context #eget({obj}, {name}, {default})
+  Context #eget({obj}, {name}[, {default}])
     It should return {obj}.{name} if {obj} has {name} entry
       let obj = { 'foo': 'foo' }
       let ret = gita#utils#eget(obj, 'foo', 'bar')
@@ -153,6 +220,28 @@ Describe gita#utils
     End
   End
 
+  Context #sget({objs}, {name}[, {default}])
+    It should return {objs}[x].{name} if one of object in {objs} has {name} entry
+      let objs = [
+            \ {'foo': 'foo1'},
+            \ {'foo': 'foo2', 'bar': 'bar1'},
+            \ {'bar': 'bar2'},
+            \]
+      let ret = gita#utils#sget(objs, 'bar')
+      Assert Equals(ret, 'bar1')
+    End
+
+    It should return {default} if non of object in {objs} has {name} entry
+      let objs = [
+            \ {'foo': 'foo1'},
+            \ {'foo': 'foo2', 'bar': 'bar1'},
+            \ {'bar': 'bar2'},
+            \]
+      let ret = gita#utils#sget(objs, 'hoge', 'hoge')
+      Assert Equals(ret, 'hoge')
+    End
+  End
+
   Context #clip({content})
     It should assign {content} to @" register
       let @" = ""
@@ -166,5 +255,13 @@ Describe gita#utils
         Assert Equals(getreg(v:register), 'foo')
       End
     endif
+  End
+
+  Context #remove_ansi_sequences({val})
+    It should remove ANSI sequences in {val}
+      let val = "\033[47m\033[32mGreen\033[0m"
+      let ret = gita#utils#remove_ansi_sequences(val)
+      Assert Equals(ret, 'Green')
+    End
   End
 End

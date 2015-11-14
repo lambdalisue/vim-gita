@@ -48,7 +48,6 @@ Describe gita#utils#buffer
   Context #clear_undo_history()
     It should clear undo history
       Assert True(exists('*gita#utils#buffer#clear_undo_history'))
-      Skip No behavior test for "undo history" is available
     End
   End
 

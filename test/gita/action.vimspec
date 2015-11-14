@@ -108,14 +108,12 @@ Describe gita#action
   Context #smart_map(lhs, rhs)
     It should return {lhs} when the current line has a candidates
       Assert True(exists('*gita#action#smart_map'))
-      Skip Behavior test of 'range' function is not available?
     End
   End
 
   Context #exec({name}[, {options})
     It should execute {name} action
       Assert True(exists('*gita#action#call'))
-      Skip Behavior test of 'range' function is not available?
     End
   End
 End

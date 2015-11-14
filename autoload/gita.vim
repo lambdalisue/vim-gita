@@ -47,14 +47,8 @@ endfunction " }}}
 function! gita#new(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let bufname = bufname(expr)
-  let btype = gita#compat#getbufvar(expr, '&l:buftype')
-  let ftype = gita#compat#getbufvar(expr, '&l:filetype')
   let filename = gita#utils#path#expand(expr)
-  if !empty(g:gita#invalid_buftype_pattern) && btype =~# g:gita#invalid_buftype_pattern
-    let git = {}
-  elseif !empty(g:gita#invalid_filetype_pattern) && ftype =~# g:gita#invalid_filetype_pattern
-    let git = {}
-  elseif filereadable(filename)
+  if filereadable(filename)
     let git = s:G.find(filename)
     let git = empty(git)
           \ ? s:G.find(resolve(filename))
@@ -75,10 +69,12 @@ function! gita#new(...) abort " {{{
     let git.cache.repository._timestamp =
           \ get(git.cache.repository, '_timestamp', localtime())
   endif
-  if !empty(gita#compat#getwinvar(bufwinnr(expr), '_gita'))
-    call setwinvar(bufwinnr(expr), '_gita', gita)
-  elseif !empty(bufname) || expr ==# '%'
-    call setbufvar(expr, '_gita', gita)
+  if bufexists(bufnr(expr))
+    if empty(bufname)
+      call setbufvar(expr, '_gita', gita)
+    else
+      call setwinvar(bufwinnr(expr), '_gita', gita)
+    endif
   endif
   return gita
 endfunction " }}}
@@ -115,6 +111,7 @@ endfunction " }}}
 function! gita#clear_cache() abort " {{{
   call gita#clear_finder_cache()
   silent! unlet! b:_gita
+  silent! unlet! w:_gita
 endfunction " }}}
 
 function! gita#preload(path) abort " {{{

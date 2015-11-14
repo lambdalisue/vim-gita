@@ -19,8 +19,6 @@ command! GitaClearCache :call gita#clear_cache()
 let s:default_config = {
       \ 'debug': 0,
       \ 'develop': 1,
-      \ 'invalid_buftype_pattern': '^\%(quickfix\|help\)$',
-      \ 'invalid_filetype_pattern': '',
       \ 'monitor#opener': 'topleft 15 split',
       \ 'monitor#range': 'tabpage',
       \ 'utils#anchor#unsuitable_bufname_pattern': '',
