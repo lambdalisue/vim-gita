@@ -117,6 +117,13 @@ endfunction " }}}
 function! s:navi_actions.browse(candidates, options, config) abort " {{{
   let options = deepcopy(a:options)
   let options.scheme = 'blame'
+  let options.commit = gita#meta#get('commit', '')
+  let range = get(options, '__range__', [])
+  let line_start = get(options, 'line_start', get(range, 0, 0))
+  let line_end = get(options, 'line_end', get(range, 1, 0))
+  let offset = line_end - line_start
+  let options.line_start = gita#features#blame#get_pseudo_linenum(line_start)
+  let options.line_end = options.line_start + offset
   call call('gita#features#browse#action', [a:candidates, options, a:config])
 endfunction " }}}
 
