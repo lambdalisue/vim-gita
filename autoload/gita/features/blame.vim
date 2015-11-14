@@ -163,82 +163,7 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
         \])
   return formatted
 endfunction " }}}
-" function! s:format_chunks(gita, stdout, width) abort " {{{
-function! s:_format_chunks(revisions, chunk, namespace) abort " {{{
-  call extend(l:, a:namespace)
-  call extend(a:chunk, a:revisions[a:chunk.revision])
-  let a:chunk.filename = gita.git.get_absolute_path(a:chunk.filename)
-  " get or create a formatted chunk
-  let n_contents  = len(a:chunk.contents)
-  let is_wrapable = n_contents > 2
-  let cache_name  = printf('%s%d', a:chunk.revision, is_wrapable)
-  if !cache.has(cache_name)
-    let formatted_chunk = s:format_chunk(a:chunk, width, is_wrapable, now)
-    call cache.set(cache_name, formatted_chunk)
-  else
-    let formatted_chunk = cache.get(cache_name)
-  endif
-  " apply formatted chunk and contents
-  let n_lines = max([min_chunk_lines, n_contents])
-  for i in range(n_lines)
-    if i < n_contents
-      call add(linerefs, a:namespace.linenum)
-    endif
-    call add(NAVI, get(formatted_chunk, i, ''))
-    call add(VIEW, get(a:chunk.contents, i, ''))
-    call add(lineinfos, {
-          \ 'chunkref': a:chunk.index,
-          \ 'linenum': {
-          \   'original': a:chunk.linenum.original + i,
-          \   'final': a:chunk.linenum.final + i,
-          \ },
-          \})
-    let a:namespace.linenum += 1
-  endfor
-  " Add a pseudo separator line
-  if g:gita#features#blame#enable_pseudo_separator
-    call add(NAVI, '')
-    call add(VIEW, '')
-    call add(lineinfos, {
-          \ 'chunkref': a:chunk.index,
-          \ 'linenum': {
-          \   'original': a:chunk.linenum.original + (n_lines - 1),
-          \   'final': a:chunk.linenum.final + (n_lines - 1),
-          \ },
-          \})
-    call add(separators, a:namespace.linenum)
-    let a:namespace.linenum += 1
-  endif
-endfunction " }}}
-function! s:format_chunks_callback(gita, stdout, width) abort " {{{
-  let namespace = {}
-  let namespace.gita = a:gita
-  let namespace.width = a:width
-  let namespace.now = s:T.now()
-  let namespace.cache = s:C.new()
-  let namespace.min_chunk_lines = g:gita#features#blame#enable_pseudo_separator ? 2 : 1
-  let namespace.NAVI = []
-  let namespace.VIEW = []
-  let namespace.lineinfos = []
-  let namespace.linerefs = []
-  let namespace.separators = []
-  let namespace.linenum = 1
-  let callback = { 'args': [namespace], 'func': function('s:_format_chunks') }
-  let result = s:B.parse_to_chunks(a:stdout, callback)
-  let offset = g:gita#features#blame#enable_pseudo_separator ? -2 : -1
-  let meta = {
-        \ 'contents': {
-        \   'NAVI': namespace.NAVI[:offset],
-        \   'VIEW': namespace.VIEW[:offset],
-        \ },
-        \ 'chunks': result.chunks,
-        \ 'lineinfos': namespace.lineinfos[:offset],
-        \ 'linerefs': namespace.linerefs,
-        \ 'separators': empty(namespace.separators) ? [] : namespace.separators[:offset],
-        \}
-  return meta
-endfunction " }}}
-function! s:format_chunks_forloop(gita, stdout, width) abort " {{{
+function! s:format_chunks(gita, stdout, width) abort " {{{
   let result = s:B.parse_to_chunks(a:stdout)
   let now = s:T.now()
   let cache = s:C.new()
@@ -307,16 +232,6 @@ function! s:format_chunks_forloop(gita, stdout, width) abort " {{{
         \}
   return meta
 endfunction " }}}
-function! s:format_chunks(gita, stdout, width) abort
-  if v:version >= 704 || (v:version == 703 && has('patch1170'))
-    return s:format_chunks_callback(a:gita, a:stdout, a:width)
-  else
-    " Note
-    "   callback-version does not work well so use for-loop version (slower)
-    return s:format_chunks_forloop(a:gita, a:stdout, a:width)
-  endif
-endfunction
-" }}}
 function! s:display_pseudo_separators(blamemeta) abort " {{{
   let bufnum = bufnr('%')
   execute printf('sign unplace * buffer=%d', bufnum)
