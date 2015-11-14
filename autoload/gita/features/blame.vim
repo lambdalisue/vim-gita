@@ -12,6 +12,7 @@ let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
 let s:const.filetype = 'gita-blame-navi'
+let s:const.shortrev = 7
 
 highlight GitaPseudoSeparatorDefault
       \ term=underline
@@ -144,7 +145,7 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
           \ '...',
           \)
   endif
-  let revision = a:chunk.revision[:6]
+  let revision = a:chunk.revision[:(s:const.shortrev - 1)]
   let author = a:chunk.author
   let timestr = s:format_timestamp(
         \ a:chunk.author_time,
@@ -156,7 +157,7 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
         \ summary,
         \ printf('%s%s%s',
         \   author_info,
-        \   repeat(' ', a:width - 8 - len(author_info)),
+        \   repeat(' ', a:width - (s:const.shortrev + 1) - len(author_info)),
         \   revision,
         \ )
         \])
@@ -331,7 +332,10 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   let options = get(a:000, 0, {})
   let gita = gita#get(a:abspath)
   let relpath = gita.git.get_relative_path(a:abspath)
-  let bufname = gita#utils#buffer#bufname('BLAME', a:commit, relpath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME',
+        \ len(a:commit) == 40 ? a:commit[:(s:const.shortrev - 1)] : a:commit,
+        \ relpath)
   silent call gita#utils#buffer#open(bufname, {
         \ 'group': 'blame_view',
         \ 'range': gita#utils#eget(options, 'range', 'tabpage'),
@@ -396,7 +400,10 @@ function! s:navi_show(abspath, commit, blamemeta, ...) abort " {{{
   let options = get(a:000, 0, {})
   let gita = gita#get(a:abspath)
   let relpath = gita.git.get_relative_path(a:abspath)
-  let bufname = gita#utils#buffer#bufname('BLAME', 'NAVI', a:commit, relpath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME', 'NAVI',
+        \ len(a:commit) == 40 ? a:commit[:(s:const.shortrev - 1)] : a:commit,
+        \ relpath)
   silent call gita#utils#buffer#open(bufname, {
         \ 'group': 'blame_navi',
         \ 'range': gita#utils#eget(options, 'range', 'tabpage'),
