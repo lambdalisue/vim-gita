@@ -502,6 +502,7 @@ endfunction " }}}
   let options = get(a:000, 0, {})
   let options.file   = gita#utils#eget(options, 'file', '%')
   let options.commit = gita#utils#eget(options, 'commit', 'HEAD')
+  let options.commit = options.commit ==# 'WORKTREE' ? '' : options.commit
   let options.porcelain = 1
   let result = gita#features#blame#exec_cached(options, {
         \ 'echo': 'fail',
