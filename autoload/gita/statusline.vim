@@ -23,7 +23,6 @@ function! s:format_map.ic(data) abort " {{{
 endfunction " }}}
 function! s:format_map.nc(data) abort " {{{
   " number of conflicted
-  let gita = a:data._gita
   if !has_key(a:data, 'conflicted')
     call s:extend_status_count(a:data)
   endif
@@ -31,7 +30,6 @@ function! s:format_map.nc(data) abort " {{{
 endfunction " }}}
 function! s:format_map.nu(data) abort " {{{
   " number of unstaged
-  let gita = a:data._gita
   if !has_key(a:data, 'unstaged')
     call s:extend_status_count(a:data)
   endif
@@ -39,7 +37,6 @@ function! s:format_map.nu(data) abort " {{{
 endfunction " }}}
 function! s:format_map.ns(data) abort " {{{
   " number of staged
-  let gita = a:data._gita
   if !has_key(a:data, 'staged')
     call s:extend_status_count(a:data)
   endif
@@ -47,7 +44,6 @@ function! s:format_map.ns(data) abort " {{{
 endfunction " }}}
 function! s:format_map.na(data) abort " {{{
   " number of added
-  let gita = a:data._gita
   if !has_key(a:data, 'added')
     call s:extend_status_count(a:data)
   endif
@@ -55,7 +51,6 @@ function! s:format_map.na(data) abort " {{{
 endfunction " }}}
 function! s:format_map.nd(data) abort " {{{
   " number of deleted
-  let gita = a:data._gita
   if !has_key(a:data, 'deleted')
     call s:extend_status_count(a:data)
   endif
@@ -63,7 +58,6 @@ function! s:format_map.nd(data) abort " {{{
 endfunction " }}}
 function! s:format_map.nr(data) abort " {{{
   " number of renamed
-  let gita = a:data._gita
   if !has_key(a:data, 'renamed')
     call s:extend_status_count(a:data)
   endif
@@ -71,7 +65,6 @@ function! s:format_map.nr(data) abort " {{{
 endfunction " }}}
 function! s:format_map.nm(data) abort " {{{
   " number of modified
-  let gita = a:data._gita
   if !has_key(a:data, 'modified')
     call s:extend_status_count(a:data)
   endif
