@@ -184,6 +184,8 @@ function! s:format_chunks(gita, stdout, width) abort " {{{
   let linerefs = []
   let separators = []
   let linenum = 1
+  let max_linenum_digit = len(result.chunks[-1].linenum.final)
+  let linenum_format = printf('%%%ds %%s', max_linenum_digit)
   for chunk in result.chunks
     call extend(chunk, result.revisions[chunk.revision])
     let chunk.filename = a:gita.git.get_absolute_path(chunk.filename)
@@ -192,7 +194,7 @@ function! s:format_chunks(gita, stdout, width) abort " {{{
     let is_wrapable = n_contents > 2
     let cache_name  = printf('%s%d', chunk.revision, is_wrapable)
     if !cache.has(cache_name)
-      let formatted_chunk = s:format_chunk(chunk, a:width, is_wrapable, now, n_contents > 3)
+      let formatted_chunk = s:format_chunk(chunk, a:width - max_linenum_digit - 1, is_wrapable, now, n_contents > 3)
       call cache.set(cache_name, formatted_chunk)
     else
       let formatted_chunk = cache.get(cache_name)
@@ -203,7 +205,10 @@ function! s:format_chunks(gita, stdout, width) abort " {{{
       if i < n_contents
         call add(linerefs, linenum)
       endif
-      call add(NAVI, get(formatted_chunk, i, ''))
+      call add(NAVI, printf(linenum_format,
+            \ i >= n_contents ? '' : chunk.linenum.final + i ,
+            \ get(formatted_chunk, i, ''))
+            \)
       call add(VIEW, get(chunk.contents, i, ''))
       call add(lineinfos, {
             \ 'chunkref': chunk.index,
@@ -274,6 +279,7 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   setlocal nomodifiable
   setlocal nowrap nofoldenable foldcolumn=0
   setlocal scrollbind scrollopt=ver
+  setlocal nonumber
   if exists('&cursorbind')
     setlocal cursorbind
   endif
@@ -316,9 +322,15 @@ function! s:navi_get_candidates(start, end, ...) abort " {{{
   let blamemeta = gita#meta#get('blame#meta')
   let lineinfo = blamemeta.lineinfos[a:start]
   let chunk = blamemeta.chunks[lineinfo.chunkref]
+  let filename = chunk.filename
+  let revision = chunk.revision
+  let previous = get(chunk, 'previous', '')
+  if revision ==# gita#meta#get('commit') && !empty(previous)
+    let [revision, filename] = split(previous, '\s')
+  endif
   let candidate = gita#action#new_candidate(
-        \ chunk.filename,
-        \ chunk.revision, {
+        \ filename,
+        \ revision, {
         \ 'line_start': lineinfo.linenum.original,
         \ 'line_end': lineinfo.linenum.original,
         \ 'chunk': chunk,
@@ -547,14 +559,18 @@ function! gita#features#blame#define_highlights() abort " {{{
   highlight default link GitaAuthor     Identifier
   highlight default link GitaTimeDelta  Comment
   highlight default link GitaRevision   String
+  highlight default link GitaPrevious   Special
+  highlight default link GitaLineNr     LineNr
   highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
 endfunction " }}}
 function! gita#features#blame#define_syntax() abort " {{{
-  syntax match GitaSummary   /.*/
-  syntax match GitaMetaInfo  /\v^.*\sauthored\s.*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
-  syntax match GitaAuthor    /\v^.*\ze\sauthored/ contained
-  syntax match GitaTimeDelta /\vauthored\s\zs.*\ze\s+[0-9a-fA-F]{8}$/ contained
+  syntax match GitaSummary   /\v.*/ contains=GitaLineNr,GitaMetaInfo,GitaPrevious
+  syntax match GitaLineNr    /\v^\s*[0-9]+/
+  syntax match GitaMetaInfo  /\v\w+ authored .*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
+  syntax match GitaAuthor    /\v\w+\ze authored/ contained
+  syntax match GitaTimeDelta /\vauthored \zs.*\ze\s+[0-9a-fA-F]{7}$/ contained
   syntax match GitaRevision  /\v[0-9a-fA-F]{7}$/ contained
+  syntax match GitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
 endfunction " }}}
 function! gita#features#blame#action(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
