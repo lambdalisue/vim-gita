@@ -168,6 +168,24 @@ Describe gita#utils
       let ret = gita#utils#format_string(format, format_map, data)
       Assert Equals(ret, '')
     End
+
+    It should call a function specified n {format_map}
+      let format = '%foo %bar'
+      let format_map = {
+            \ 'foo': 'foo_value',
+            \}
+      function! format_map.bar(data) abort
+        let self._bar = 'bar'
+        return toupper(a:data.bar_value)
+      endfunction
+      let data = {
+            \ 'foo_value': 'Hello',
+            \ 'bar_value': 'Goodbye',
+            \}
+      let ret = gita#utils#format_string(format, format_map, data)
+      Assert Equals(ret, 'Hello GOODBYE')
+      Assert Equals(format_map._bar, 'bar')
+    End
   End
 
   Context #eget({obj}, {name}[, {default}])
