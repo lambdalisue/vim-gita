@@ -9,59 +9,148 @@ let s:format_map = {
       \ 'lb': 'local_branch',
       \ 'rn': 'remote_name',
       \ 'rb': 'remote_branch',
-      \ 'og': 'outgoing',
-      \ 'ic': 'incoming',
       \ 'md': 'mode',
-      \ 'nc': 'conflicted',
-      \ 'nu': 'unstaged',
-      \ 'ns': 'staged',
-      \ 'na': 'added',
-      \ 'nd': 'deleted',
-      \ 'nr': 'renamed',
-      \ 'nm': 'modified',
       \}
-let s:preset = {
-      \ 'branch': '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md',
-      \ 'branch_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md',
-      \ 'branch_short': '%{|/}ln%lb%{ <> |}rn',
-      \ 'branch_short_fancy': '⭠ %{|/}ln%lb%{ ⇄ |}rn',
-      \ 'status': '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu',
-      \ 'traffic': '%{<| }ic%{>|}og',
-      \ 'traffic_fancy': '%{￩| }ic%{￫}og',
-      \}
-
-function! s:is_updated(gita) abort " {{{
-  let watched = [
-        \ 'index',
-        \ 'MERGE_HEAD',
-        \ 'CHERRY_PICK_HEAD',
-        \ 'REVERT_HEAD',
-        \ 'BISECT_LOG',
-        \]
-  return !empty(filter(map(watched, 'a:gita.git.is_updated(v:val)'), 'v:val'))
+function! s:format_map.og(data) abort " {{{
+  " outgoing
+  let gita = a:data._gita
+  return gita.git.count_commits_ahead_of_remote()
+endfunction " }}}
+function! s:format_map.ic(data) abort " {{{
+  " outgoing
+  let gita = a:data._gita
+  return gita.git.count_commits_behind_remote()
+endfunction " }}}
+function! s:format_map.nc(data) abort " {{{
+  " number of conflicted
+  let gita = a:data._gita
+  if !has_key(a:data, 'conflicted')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.conflicted
+endfunction " }}}
+function! s:format_map.nu(data) abort " {{{
+  " number of unstaged
+  let gita = a:data._gita
+  if !has_key(a:data, 'unstaged')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.unstaged
+endfunction " }}}
+function! s:format_map.ns(data) abort " {{{
+  " number of staged
+  let gita = a:data._gita
+  if !has_key(a:data, 'staged')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.staged
+endfunction " }}}
+function! s:format_map.na(data) abort " {{{
+  " number of added
+  let gita = a:data._gita
+  if !has_key(a:data, 'added')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.added
+endfunction " }}}
+function! s:format_map.nd(data) abort " {{{
+  " number of deleted
+  let gita = a:data._gita
+  if !has_key(a:data, 'deleted')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.deleted
+endfunction " }}}
+function! s:format_map.nr(data) abort " {{{
+  " number of renamed
+  let gita = a:data._gita
+  if !has_key(a:data, 'renamed')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.renamed
+endfunction " }}}
+function! s:format_map.nm(data) abort " {{{
+  " number of modified
+  let gita = a:data._gita
+  if !has_key(a:data, 'modified')
+    call s:extend_status_count(a:data)
+  endif
+  return a:data.modified
 endfunction " }}}
 
-function! gita#statusline#get(...) abort " {{{
+let s:preset = {}
+function! s:preset.branch(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = gita#get(expr)
-  if !gita.enabled
-    return {}
+  let cache = gita.git.cache.repository
+  if !cache.has('branch') || s:is_updated(gita, ['HEAD', 'config'])
+    let format = '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md'
+    call cache.set('branch', gita#statusline#format(format, expr))
   endif
-  let meta = gita.git.get_meta()
-  let info = {
-        \ 'local_name': meta.local.name,
-        \ 'local_branch': meta.local.branch_name,
-        \ 'remote_name': meta.remote.name,
-        \ 'remote_branch': meta.remote.branch_name,
-        \ 'outgoing': '',
-        \ 'incoming': '',
-        \ 'mode': gita.git.get_mode(),
-        \ 'timestamp': gita.git.cache.repository.get('timestamp', ''),
-        \}
-  if !empty(meta.remote.name)
-    let info.outgoing = gita.git.count_commits_ahead_of_remote()
-    let info.incoming = gita.git.count_commits_behind_remote()
+  return cache.get('branch')
+endfunction " }}}
+function! s:preset.branch_fancy(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('branch_fancy') || s:is_updated(gita, ['HEAD', 'config'])
+    let format = '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md'
+    call cache.set('branch_fancy', gita#statusline#format(format, expr))
   endif
+  return cache.get('branch_fancy')
+endfunction " }}}
+function! s:preset.branch_short(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('branch_short') || s:is_updated(gita, ['HEAD', 'config'])
+    let format = '%{|/}ln%lb%{ <> |}rn'
+    call cache.set('branch_short', gita#statusline#format(format, expr))
+  endif
+  return cache.get('branch_short')
+endfunction " }}}
+function! s:preset.branch_short_fancy(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('branch_short_fancy') || s:is_updated(gita, ['HEAD', 'config'])
+    let format = '⭠ %{|/}ln%lb%{ ⇄ |}rn'
+    call cache.set('branch_short_fancy', gita#statusline#format(format, expr))
+  endif
+  return cache.get('branch_short_fancy')
+endfunction " }}}
+function! s:preset.status(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('status') || s:is_updated(gita, ['index'])
+    let format = '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu'
+    call cache.set('status', gita#statusline#format(format, expr))
+  endif
+  return cache.get('status')
+endfunction " }}}
+function! s:preset.traffic(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('traffic') || s:is_updated(gita, ['index', 'config', 'HEAD'])
+    let format = '%{<| }ic%{>|}og'
+    call cache.set('traffic', gita#statusline#format(format, expr))
+  endif
+  return cache.get('traffic')
+endfunction " }}}
+function! s:preset.traffic_fancy(...) abort " {{{
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  let cache = gita.git.cache.repository
+  if !cache.has('traffic') || s:is_updated(gita, ['index', 'config', 'HEAD'])
+    let format = '%{￩| }ic%{￫}og'
+    call cache.set('traffic', gita#statusline#format(format, expr))
+  endif
+  return cache.get('traffic')
+endfunction " }}}
+
+function! s:extend_status_count(data) abort " {{{
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
@@ -94,27 +183,54 @@ function! gita#statusline#get(...) abort " {{{
       endif
     endfor
   endif
-  let info = extend(info, status_count)
-  return info
+  call extend(a:data, status_count)
 endfunction " }}}
+function! s:is_updated(gita, ...) abort " {{{
+  let watched = get(a:000, 0, [
+        \ 'index',
+        \ 'MERGE_HEAD',
+        \ 'CHERRY_PICK_HEAD',
+        \ 'REVERT_HEAD',
+        \ 'BISECT_LOG',
+        \])
+  for name in watched
+    if a:gita.git.is_updated(name)
+      return 1
+    endif
+  endfor
+  return 0
+endfunction " }}}
+
 function! gita#statusline#format(format, ...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = gita#get(expr)
   if !gita.enabled
     return ''
   endif
-  let cache = gita.git.cache.repository
-  if cache.has(a:format) && !s:is_updated(gita)
-    return cache.get(a:format)
-  endif
-  let info = get(a:000, 1, gita#statusline#get(expr))
+  let meta = gita.git.get_meta()
+  let info = {
+        \ 'local_name': meta.local.name,
+        \ 'local_branch': meta.local.branch_name,
+        \ 'remote_name': meta.remote.name,
+        \ 'remote_branch': meta.remote.branch_name,
+        \ 'mode': gita.git.get_mode(),
+        \ 'timestamp': gita.git.cache.repository.get('timestamp', ''),
+        \ '_gita': gita,
+        \}
   let formatted = gita#utils#format_string(a:format, s:format_map, info)
-  call cache.set(a:format, formatted)
   return formatted
 endfunction " }}}
 function! gita#statusline#preset(preset_name, ...) abort " {{{
-  let format = get(s:preset, a:preset_name, 'Wrong preset name is specified')
-  return call('gita#statusline#format', extend([format], a:000))
+  let expr = get(a:000, 0, '%')
+  let gita = gita#get(expr)
+  if !gita.enabled
+    return ''
+  endif
+  if !has_key(s:preset, a:preset_name)
+    call gita#utils#prompt#error(printf('A preset "%s" is not found.', a:preset_name))
+    return ''
+  endif
+  return call(s:preset[a:preset_name], a:000, s:preset)
 endfunction " }}}
 function! gita#statusline#debug(...) abort " {{{
   if !g:gita#debug
@@ -128,7 +244,6 @@ function! gita#statusline#debug(...) abort " {{{
   let cache = gita.git.cache.repository
   return printf('gita.cache: %s', get(cache, '_timestamp', ''))
 endfunction " }}}
-
 
 function! s:ac_BufWritePre() abort
   let b:_gita_clear_cache = &modified

@@ -33,7 +33,7 @@ function! gita#utils#format_string(format, format_map, data) abort " {{{
   let str = copy(a:format)
   for [key, Value] in items(a:format_map)
     if type(Value) ==# s:TYPE_FUNCREF
-      let result = call(Value, [a:data], a:format_map)
+      let result = s:smart_string(call(Value, [a:data], a:format_map))
     else
       let result = s:smart_string(get(a:data, Value, ''))
     endif
