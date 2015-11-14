@@ -261,6 +261,15 @@ function! s:get_history() abort " {{{
   let w:_gita_blame_history = get(w:, '_gita_blame_history', gita#utils#history#new())
   return w:_gita_blame_history
 endfunction " }}}
+function! s:pseudo_command(...) abort " {{{
+  let ret = input(':', get(a:000, 0, ''))
+  if ret =~# '\v^[0-9]+$'
+    call gita#features#blame#goto(ret)
+  else
+    redraw
+    execute ret
+  endif
+endfunction " }}}
 
 function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   let options = get(a:000, 0, {})
@@ -301,8 +310,11 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   doautocmd BufReadPost
 endfunction " }}}
 function! s:view_define_mappings() abort " {{{
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
+        \ :<C-u>call <SID>pseudo_command()<CR>
 endfunction " }}}
 function! s:view_define_default_mappings() abort " {{{
+  nmap <buffer> : <Plug>(gita-action-blame-command)
 endfunction " }}}
 function! s:view_ac_BufWinEnter() abort " {{{
   let abspath   = gita#meta#get('filename')
@@ -393,6 +405,9 @@ function! s:navi_define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('blame_prev_chunk')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-next-chunk)
         \ :<C-u>call gita#action#call('blame_next_chunk')<CR>
+
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
+        \ :<C-u>call <SID>pseudo_command()<CR>
 endfunction " }}}
 function! s:navi_define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
@@ -405,6 +420,8 @@ function! s:navi_define_default_mappings() abort " {{{
 
   nmap <buffer> ]c <Plug>(gita-action-blame-next-chunk)
   nmap <buffer> [c <Plug>(gita-action-blame-prev-chunk)
+
+  nmap <buffer> : <Plug>(gita-action-blame-command)
 endfunction " }}}
 function! s:navi_ac_BufWinEnter() abort " {{{
   let abspath   = gita#meta#get('filename')
