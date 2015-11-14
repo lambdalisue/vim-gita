@@ -134,9 +134,23 @@ endfunction " }}}
 
 " Object =====================================================================
 let s:git = {}
+function! s:git._get_meta_filename(...) abort " {{{
+  let pathspec = s:_listalize(a:000)
+  return s:Path.join(pathspec)
+endfunction " }}}
+function! s:git._is_readable(...) abort " {{{
+  let path = call(self._get_meta_filename, a:000, self)
+  return filereadable(s:Path.join(self.repository, path))
+endfunction " }}}
+function! s:git._is_writable(...) abort " {{{
+  let path = call(self._get_meta_filename, a:000, self)
+  return filewritable(s:Path.join(self.repository, path))
+endfunction " }}}
 function! s:git.is_updated(pathspec, ...) abort " {{{
-  let pathspec = s:_listalize(a:pathspec)
-  let path = s:Path.join(pathspec)
+  let path = call(self._get_meta_filename, s:_listalize(a:pathspec), self)
+  if !self._is_readable(path)
+    return 0
+  endif
   let name = printf('%s%s%s', path, s:SEPARATOR, get(a:000, 0, ''))
   let cached = self.cache.uptime.get(name, -1)
   let actual = getftime(s:Path.join(self.repository, path))
@@ -315,6 +329,9 @@ function! s:git.get_last_commitmsg(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'last_commitmsg',
         \ string(s:Dict.omit(options, ['no_cache'])),
@@ -341,6 +358,9 @@ function! s:git.count_commits_ahead_of_remote(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'commits_ahead_of_remote',
         \ string(s:Dict.omit(options, ['no_cache'])),
@@ -367,6 +387,9 @@ function! s:git.count_commits_behind_remote(...) abort " {{{
   let options = extend({
         \ 'no_cache': 0,
         \}, get(a:000, 0, {}))
+  if !self._is_readable('index')
+    return ''
+  endif
   let cname = s:Path.join(
         \ 'index', 'commits_behind_remote',
         \ string(s:Dict.omit(options, ['no_cache'])),

@@ -86,6 +86,7 @@ function! s:preset.branch(...) abort " {{{
   if !cache.has('branch') || s:is_updated(gita, ['HEAD', 'config'])
     let format = '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md'
     call cache.set('branch', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "branch" cache is updated')
   endif
   return cache.get('branch')
 endfunction " }}}
@@ -96,6 +97,7 @@ function! s:preset.branch_fancy(...) abort " {{{
   if !cache.has('branch_fancy') || s:is_updated(gita, ['HEAD', 'config'])
     let format = '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md'
     call cache.set('branch_fancy', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "branch_fancy" cache is updated')
   endif
   return cache.get('branch_fancy')
 endfunction " }}}
@@ -106,6 +108,7 @@ function! s:preset.branch_short(...) abort " {{{
   if !cache.has('branch_short') || s:is_updated(gita, ['HEAD', 'config'])
     let format = '%{|/}ln%lb%{ <> |}rn'
     call cache.set('branch_short', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "branch_short" cache is updated')
   endif
   return cache.get('branch_short')
 endfunction " }}}
@@ -116,6 +119,7 @@ function! s:preset.branch_short_fancy(...) abort " {{{
   if !cache.has('branch_short_fancy') || s:is_updated(gita, ['HEAD', 'config'])
     let format = '⭠ %{|/}ln%lb%{ ⇄ |}rn'
     call cache.set('branch_short_fancy', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "branch_short_fancy" cache is updated')
   endif
   return cache.get('branch_short_fancy')
 endfunction " }}}
@@ -126,6 +130,7 @@ function! s:preset.status(...) abort " {{{
   if !cache.has('status') || s:is_updated(gita, ['index'])
     let format = '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu'
     call cache.set('status', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "status" cache is updated')
   endif
   return cache.get('status')
 endfunction " }}}
@@ -136,6 +141,7 @@ function! s:preset.traffic(...) abort " {{{
   if !cache.has('traffic') || s:is_updated(gita, ['index', 'config', 'HEAD'])
     let format = '%{<| }ic%{>|}og'
     call cache.set('traffic', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "traffic" cache is updated')
   endif
   return cache.get('traffic')
 endfunction " }}}
@@ -143,14 +149,16 @@ function! s:preset.traffic_fancy(...) abort " {{{
   let expr = get(a:000, 0, '%')
   let gita = gita#get(expr)
   let cache = gita.git.cache.repository
-  if !cache.has('traffic') || s:is_updated(gita, ['index', 'config', 'HEAD'])
+  if !cache.has('traffic_fancy') || s:is_updated(gita, ['index', 'config', 'HEAD'])
     let format = '%{￩| }ic%{￫}og'
-    call cache.set('traffic', gita#statusline#format(format, expr))
+    call cache.set('traffic_fancy', gita#statusline#format(format, expr))
+    call gita#utils#prompt#debug('statusline "traffic_fancy" cache is updated')
   endif
-  return cache.get('traffic')
+  return cache.get('traffic_fancy')
 endfunction " }}}
 
 function! s:extend_status_count(data) abort " {{{
+  let gita = a:data._gita
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
@@ -160,28 +168,30 @@ function! s:extend_status_count(data) abort " {{{
         \ 'renamed': 0,
         \ 'modified': 0,
         \}
-  let result = gita#features#status#exec_cached({
-        \ 'porcelain': 1,
-        \ 'ignore_submodules': 1,
-        \}, {
-        \ 'echo': '',
-        \})
-  let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
-  if get(status, 'status', 0) == 0
-    let status_count.conflicted = len(status.conflicted)
-    let status_count.unstaged = len(status.unstaged)
-    let status_count.staged = len(status.staged)
-    for ss in status.staged
-      if ss.index ==# 'A'
-        let status_count.added += 1
-      elseif ss.index ==# 'D'
-        let status_count.deleted += 1
-      elseif ss.index ==# 'R'
-        let status_count.renamed += 1
-      else
-        let status_count.modified += 1
-      endif
-    endfor
+  if gita.git._is_readable('index')
+    let result = gita#features#status#exec_cached({
+          \ 'porcelain': 1,
+          \ 'ignore_submodules': 1,
+          \}, {
+          \ 'echo': '',
+          \})
+    let status = s:S.parse(result.stdout, { 'fail_silently': 1 })
+    if get(status, 'status', 0) == 0
+      let status_count.conflicted = len(status.conflicted)
+      let status_count.unstaged = len(status.unstaged)
+      let status_count.staged = len(status.staged)
+      for ss in status.staged
+        if ss.index ==# 'A'
+          let status_count.added += 1
+        elseif ss.index ==# 'D'
+          let status_count.deleted += 1
+        elseif ss.index ==# 'R'
+          let status_count.renamed += 1
+        else
+          let status_count.modified += 1
+        endif
+      endfor
+    endif
   endif
   call extend(a:data, status_count)
 endfunction " }}}
