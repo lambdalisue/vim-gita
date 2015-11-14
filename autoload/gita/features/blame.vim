@@ -131,7 +131,7 @@ function! s:format_timestamp(timestamp, timezone, now) abort " {{{
     return 'on ' . datetime.format('%d %b, %Y')
   endif
 endfunction " }}}
-function! s:format_chunk(chunk, width, wrap, now) abort " {{{
+function! s:format_chunk(chunk, width, wrap, now, is_detail) abort " {{{
   if a:wrap
     let summary = map(
           \ s:S.wrap(a:chunk.summary, a:width - 1),
@@ -161,6 +161,16 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
         \   revision,
         \ )
         \])
+  if a:is_detail && has_key(a:chunk, 'previous')
+    let prefix = 'Prev: '
+    call add(formatted,
+          \ printf('%s%s%s',
+          \   repeat(' ', a:width - (s:const.shortrev + 1) - len(prefix)),
+          \   prefix,
+          \   a:chunk.previous[:(s:const.shortrev - 1)],
+          \ )
+          \)
+  endif
   return formatted
 endfunction " }}}
 function! s:format_chunks(gita, stdout, width) abort " {{{
@@ -182,7 +192,7 @@ function! s:format_chunks(gita, stdout, width) abort " {{{
     let is_wrapable = n_contents > 2
     let cache_name  = printf('%s%d', chunk.revision, is_wrapable)
     if !cache.has(cache_name)
-      let formatted_chunk = s:format_chunk(chunk, a:width, is_wrapable, now)
+      let formatted_chunk = s:format_chunk(chunk, a:width, is_wrapable, now, n_contents > 3)
       call cache.set(cache_name, formatted_chunk)
     else
       let formatted_chunk = cache.get(cache_name)
