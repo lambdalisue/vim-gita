@@ -314,7 +314,6 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer> call s:view_ac_BufWinEnter()
   augroup END
-  doautocmd BufReadPost
 endfunction " }}}
 function! s:view_define_mappings() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
