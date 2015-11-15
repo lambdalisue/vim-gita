@@ -83,7 +83,7 @@ function! s:navi_actions.blame_info(candidates, options, config) abort " {{{
   if empty(candidate)
     return
   endif
-  let formatted_chunk = s:format_chunk(candidate.chunk, 80, 1, s:T.now())
+  let formatted_chunk = s:format_chunk(candidate.chunk, 80, 1, s:T.now(), 1)
   echo join(formatted_chunk, "\n")
 endfunction " }}}
 function! s:navi_actions.blame_enter(candidates, options, config) abort " {{{
@@ -94,6 +94,10 @@ function! s:navi_actions.blame_enter(candidates, options, config) abort " {{{
   let abspath = gita#utils#sget([a:options, candidate], 'path')
   let relpath = s:P.relpath(abspath)
   let commit = gita#utils#sget([a:options, candidate], 'commit')
+  if commit ==# gita#meta#get('commit')
+    call gita#utils#prompt#info('This is a boundary commit')
+    return
+  endif
   call gita#utils#prompt#info(printf(
         \ 'Entering %s of %s...',
         \ commit, relpath,
@@ -130,6 +134,25 @@ function! s:navi_actions.blame_leave(candidates, options, config) abort " {{{
   call setbufvar(VIEW_bufnr, '_gita_blame_partner_bufnr', NAVI_bufnr)
   call setbufvar(NAVI_bufnr, '_gita_blame_partner_bufnr', VIEW_bufnr)
   keepjumps call setpos('.', [0, info.lnum, info.col, 0])
+  normal z.
+  syncbind
+  redraw | echo
+endfunction " }}}
+function! s:navi_actions.blame_refresh(candidates, options, config) abort " {{{
+  let abspath   = gita#meta#get('filename')
+  let commit    = gita#meta#get('commit')
+  let blamemeta = gita#meta#get('blame#meta')
+  let lnum      = line('.')
+  let col       = col('.')
+  let NAVI_bufnr = bufnr('%')
+  call s:view_show(abspath, commit, blamemeta)
+  let VIEW_bufnr = bufnr('%')
+  " set partner bufnr
+  call setbufvar(VIEW_bufnr, '_gita_blame_partner_bufnr', NAVI_bufnr)
+  call setbufvar(NAVI_bufnr, '_gita_blame_partner_bufnr', VIEW_bufnr)
+  keepjumps wincmd p
+  vertical resize 50
+  keepjumps call setpos('.', [0, lnum, col, 0])
   normal z.
   syncbind
   redraw | echo
@@ -229,8 +252,8 @@ function! s:format_chunk(chunk, width, wrap, now, is_detail) abort " {{{
           \)
   elseif a:is_detail && get(a:chunk, 'boundary')
     call add(formatted,
-          \ printf('%s%s%s',
-          \   repeat(' ', a:width - (s:const.shortrev + 1) - 8),
+          \ printf('%s%s',
+          \   repeat(' ', a:width - 9),
           \   'BOUNDARY',
           \ )
           \)
@@ -379,7 +402,7 @@ function! s:view_define_default_mappings() abort " {{{
 endfunction " }}}
 function! s:navi_get_candidates(start, end, ...) abort " {{{
   let blamemeta = gita#meta#get('blame#meta')
-  let lineinfo = blamemeta.lineinfos[a:start]
+  let lineinfo = blamemeta.lineinfos[a:start - 1]
   let chunk = blamemeta.chunks[lineinfo.chunkref]
   let filename = chunk.filename
   let revision = chunk.revision
@@ -442,6 +465,8 @@ function! s:navi_define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('blame_enter')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-leave)
         \ :<C-u>call gita#action#call('blame_leave')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-refresh)
+        \ :<C-u>call gita#action#call('blame_refresh')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-prev-chunk)
         \ :<C-u>call gita#action#call('blame_prev_chunk')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-next-chunk)
@@ -457,7 +482,8 @@ function! s:navi_define_default_mappings() abort " {{{
 
   nmap <buffer> g<C-g> <Plug>(gita-action-blame-info)
   nmap <buffer> <CR>  <Plug>(gita-action-blame-enter)
-  nmap <buffer> <C-h> <Plug>(gita-action-blame-leave)
+  nmap <buffer> <BS> <Plug>(gita-action-blame-leave)
+  nmap <buffer> <C-l> <Plug>(gita-action-blame-refresh)
 
   nmap <buffer> ]c <Plug>(gita-action-blame-next-chunk)
   nmap <buffer> [c <Plug>(gita-action-blame-prev-chunk)
