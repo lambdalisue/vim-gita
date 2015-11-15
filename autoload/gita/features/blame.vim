@@ -133,9 +133,9 @@ function! s:format_timestamp(timestamp, timezone, now) abort " {{{
   if timedelta.duration().months() < 3
     return timedelta.about()
   elseif datetime.year() == a:now.year()
-    return 'on ' . datetime.format('%d %b')
+    return 'on ' . datetime.strftime('%d %b')
   else
-    return 'on ' . datetime.format('%d %b, %Y')
+    return 'on ' . datetime.strftime('%d %b, %Y')
   endif
 endfunction " }}}
 function! s:format_chunk(chunk, width, wrap, now, is_detail) abort " {{{
