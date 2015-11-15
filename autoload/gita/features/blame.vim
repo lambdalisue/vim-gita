@@ -54,6 +54,29 @@ call s:parser.add_argument(
       \ ],
       \)
 
+let s:blame_history = { 'history': [] }
+function! s:blame_history.add() abort " {{{
+  let abspath   = gita#meta#get('filename')
+  let commit    = gita#meta#get('commit')
+  let blamemeta = gita#meta#get('blame#meta')
+  let lnum      = line('.')
+  let col       = col('.')
+  let info = {
+        \ 'path': abspath,
+        \ 'commit': commit,
+        \ 'blamemeta': blamemeta,
+        \ 'lnum': lnum,
+        \ 'col': col,
+        \}
+  call s:L.push(self.history, info)
+endfunction " }}}
+function! s:blame_history.pop() abort " {{{
+  if len(self.history) == 0
+    return {}
+  endif
+  return s:L.pop(self.history)
+endfunction " }}}
+
 let s:navi_actions = {}
 function! s:navi_actions.blame_info(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
@@ -68,21 +91,48 @@ function! s:navi_actions.blame_enter(candidates, options, config) abort " {{{
   if empty(candidate)
     return
   endif
+  let abspath = gita#utils#sget([a:options, candidate], 'path')
+  let relpath = s:P.relpath(abspath)
+  let commit = gita#utils#sget([a:options, candidate], 'commit')
+  call gita#utils#prompt#info(printf(
+        \ 'Entering %s of %s...',
+        \ commit, relpath,
+        \))
   call s:get_history().add()
   call gita#utils#anchor#focus()
   call gita#features#blame#show({
-        \ 'file': gita#utils#sget([a:options, candidate], 'path'),
-        \ 'commit': gita#utils#sget([a:options, candidate], 'commit'),
+        \ 'file': abspath,
+        \ 'commit': commit,
         \ 'line_start': gita#utils#sget([a:options, candidate], 'line_start'),
         \ 'line_end': gita#utils#sget([a:options, candidate], 'line_end'),
         \ 'range': get(a:options, 'range', 'tabpage'),
         \})
+  redraw | echo
 endfunction " }}}
-function! s:navi_actions.blame_history_prev(candidates, options, config) abort " {{{
-  call s:get_history().previous()
-endfunction " }}}
-function! s:navi_actions.blame_history_next(candidates, options, config) abort " {{{
-  call s:get_history().next()
+function! s:navi_actions.blame_leave(candidates, options, config) abort " {{{
+  let info = s:get_history().pop()
+  if empty(info)
+    call gita#utils#prompt#info('No blame navigation history exists')
+    return
+  endif
+  let abspath = gita#meta#get('filename')
+  let relpath = s:P.relpath(abspath)
+  let commit = gita#meta#get('commit')
+  call gita#utils#prompt#info(printf(
+        \ 'Leaving %s of %s...',
+        \ commit, relpath,
+        \))
+  call s:view_show(info.path, info.commit, info.blamemeta)
+  let VIEW_bufnr = bufnr('%')
+  call s:navi_show(info.path, info.commit, info.blamemeta)
+  let NAVI_bufnr = bufnr('%')
+  " set partner bufnr
+  call setbufvar(VIEW_bufnr, '_gita_blame_partner_bufnr', NAVI_bufnr)
+  call setbufvar(NAVI_bufnr, '_gita_blame_partner_bufnr', VIEW_bufnr)
+  keepjumps call setpos('.', [0, info.lnum, info.col, 0])
+  normal z.
+  syncbind
+  redraw | echo
 endfunction " }}}
 function! s:navi_actions.blame_prev_chunk(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
@@ -177,6 +227,13 @@ function! s:format_chunk(chunk, width, wrap, now, is_detail) abort " {{{
           \   a:chunk.previous[:(s:const.shortrev - 1)],
           \ )
           \)
+  elseif a:is_detail && get(a:chunk, 'boundary')
+    call add(formatted,
+          \ printf('%s%s%s',
+          \   repeat(' ', a:width - (s:const.shortrev + 1) - 8),
+          \   'BOUNDARY',
+          \ )
+          \)
   endif
   return formatted
 endfunction " }}}
@@ -265,13 +322,15 @@ function! s:display_pseudo_separators(blamemeta) abort " {{{
   endfor
 endfunction " }}}
 function! s:get_history() abort " {{{
-  let w:_gita_blame_history = get(w:, '_gita_blame_history', gita#utils#history#new())
+  let w:_gita_blame_history = get(w:, '_gita_blame_history', deepcopy(s:blame_history))
   return w:_gita_blame_history
 endfunction " }}}
 function! s:pseudo_command(...) abort " {{{
   let ret = input(':', get(a:000, 0, ''))
   if ret =~# '\v^[0-9]+$'
     call gita#features#blame#goto(ret)
+  elseif ret =~# '^q$'
+    call gita#features#blame#quit()
   else
     redraw
     execute ret
@@ -310,10 +369,6 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   if g:gita#features#blame#enable_default_mappings || g:gita#features#blame#enable_default_view_mappings
     call s:view_define_default_mappings()
   endif
-  augroup vim-gita-blame-view
-    autocmd! * <buffer>
-    autocmd BufWinEnter <buffer> call s:view_ac_BufWinEnter()
-  augroup END
 endfunction " }}}
 function! s:view_define_mappings() abort " {{{
   nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
@@ -321,20 +376,6 @@ function! s:view_define_mappings() abort " {{{
 endfunction " }}}
 function! s:view_define_default_mappings() abort " {{{
   nmap <buffer> : <Plug>(gita-action-blame-command)
-endfunction " }}}
-function! s:view_ac_BufWinEnter() abort " {{{
-  let abspath   = gita#meta#get('filename')
-  let commit    = gita#meta#get('commit')
-  let blamemeta = gita#meta#get('blame#meta')
-  try
-    let saved_eventignore = &eventignore
-    set eventignore=BufWinEnter
-    call s:navi_show(abspath, commit, blamemeta)
-  finally
-    let &eventignore = saved_eventignore
-  endtry
-  keepjumps wincmd p
-  call gita#features#blame#goto(gita#features#blame#get_actual_linenum(line('.')))
 endfunction " }}}
 function! s:navi_get_candidates(start, end, ...) abort " {{{
   let blamemeta = gita#meta#get('blame#meta')
@@ -390,10 +431,6 @@ function! s:navi_show(abspath, commit, blamemeta, ...) abort " {{{
   if g:gita#features#blame#enable_default_mappings || g:gita#features#blame#enable_default_navi_mappings
     call s:navi_define_default_mappings()
   endif
-  augroup vim-gita-blame-navi
-    autocmd! * <buffer>
-    autocmd BufWinEnter <buffer> call s:view_ac_BufWinEnter()
-  augroup END
 endfunction " }}}
 function! s:navi_define_mappings() abort " {{{
   call gita#monitor#define_mappings()
@@ -403,10 +440,8 @@ function! s:navi_define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('blame_info')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-enter)
         \ :<C-u>call gita#action#call('blame_enter')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-blame-history-prev)
-        \ :<C-u>call gita#action#call('blame_history_prev')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-action-blame-history-next)
-        \ :<C-u>call gita#action#call('blame_history_next')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-leave)
+        \ :<C-u>call gita#action#call('blame_leave')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-prev-chunk)
         \ :<C-u>call gita#action#call('blame_prev_chunk')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-next-chunk)
@@ -418,30 +453,16 @@ endfunction " }}}
 function! s:navi_define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
   unmap <buffer> ?s
+  unmap <buffer> q
 
   nmap <buffer> g<C-g> <Plug>(gita-action-blame-info)
-  nmap <buffer> <CR> <Plug>(gita-action-blame-enter)
-  nmap <buffer> <C-p> <Plug>(gita-action-blame-history-prev)
-  nmap <buffer> <C-n> <Plug>(gita-action-blame-history-next)
+  nmap <buffer> <CR>  <Plug>(gita-action-blame-enter)
+  nmap <buffer> <C-h> <Plug>(gita-action-blame-leave)
 
   nmap <buffer> ]c <Plug>(gita-action-blame-next-chunk)
   nmap <buffer> [c <Plug>(gita-action-blame-prev-chunk)
 
   nmap <buffer> : <Plug>(gita-action-blame-command)
-endfunction " }}}
-function! s:navi_ac_BufWinEnter() abort " {{{
-  let abspath   = gita#meta#get('filename')
-  let commit    = gita#meta#get('commit')
-  let blamemeta = gita#meta#get('blame#meta')
-  try
-    let saved_eventignore = &eventignore
-    set eventignore=BufWinEnter
-    call s:view_show(abspath, commit, blamemeta)
-  finally
-    let &eventignore = saved_eventignore
-  endtry
-  keepjumps wincmd p
-  call gita#features#blame#goto(gita#features#blame#get_actual_linenum(line('.')))
 endfunction " }}}
 
 function! gita#features#blame#get_pseudo_linenum(linenum) abort  "{{{
@@ -472,6 +493,15 @@ function! gita#features#blame#goto(linenum) abort  "{{{
   keepjumps call setpos('.', [0, pseudo_linenum, 0, 0])
   normal z.
   syncbind
+endfunction " }}}
+function! gita#features#blame#quit() abort  "{{{
+  let partner_bufnr = get(b:, '_gita_blame_partner_bufnr', -1)
+  if partner_bufnr == -1
+    call gita#utils#prompt#error('gita#feature#blame#quit() required to be called on Gita blame navi or view buffer.')
+    return
+  endif
+  execute printf('%dbdelete', partner_bufnr)
+  execute 'bdelete'
 endfunction " }}}
 function! gita#features#blame#exec(...) abort " {{{
   let gita = gita#get()
@@ -536,24 +566,23 @@ endfunction " }}}
   let blamemeta = s:format_chunks(gita, result.stdout, 50 - 2) " 2 columns for signs
   let abspath = gita#utils#path#unix_abspath(options.file)
   let commit  = options.commit
-  try
-    let saved_eventignore = &eventignore
-    set eventignore=BufWinEnter
-    call s:view_show(
-          \ abspath, commit, blamemeta, extend(deepcopy(options), {
-          \  'range':  get(options, 'range'),
-          \  'opener': gita#utils#eget(options, 'opener', 'tabedit'),
-          \ }),
-          \)
-    call s:navi_show(
-          \ abspath, commit, blamemeta, extend(deepcopy(options), {
-          \  'range':  get(options, 'range'),
-          \  'opener': get(options, 'opener2'),
-          \ }),
-          \)
-  finally
-    let &eventignore = saved_eventignore
-  endtry
+  call s:view_show(
+        \ abspath, commit, blamemeta, extend(deepcopy(options), {
+        \  'range':  get(options, 'range'),
+        \  'opener': gita#utils#eget(options, 'opener', 'tabedit'),
+        \ }),
+        \)
+  let VIEW_bufnr = bufnr('%')
+  call s:navi_show(
+        \ abspath, commit, blamemeta, extend(deepcopy(options), {
+        \  'range':  get(options, 'range'),
+        \  'opener': get(options, 'opener2'),
+        \ }),
+        \)
+  let NAVI_bufnr = bufnr('%')
+  " set partner bufnr
+  call setbufvar(VIEW_bufnr, '_gita_blame_partner_bufnr', NAVI_bufnr)
+  call setbufvar(NAVI_bufnr, '_gita_blame_partner_bufnr', VIEW_bufnr)
   call gita#features#blame#goto(
         \ get(
         \   options, 'line_start',
