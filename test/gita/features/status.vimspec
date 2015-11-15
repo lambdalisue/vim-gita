@@ -44,9 +44,9 @@ Describe gita#features#status
       let contents = getline(1, '$')
       Assert Match(contents[0], '^# Press ?m and/or ?s to toggle a help')
       Assert Match(contents[1], '^# Index and working tree status on a branch')
-      Assert Match(contents[2], '^UU hoge\.md$')
-      Assert Match(contents[3], '^ M bar\.md$')
-      Assert Match(contents[4], '^M  foo\.md$')
+      Assert Match(contents[2], '^ M bar\.md$')
+      Assert Match(contents[3], '^M  foo\.md$')
+      Assert Match(contents[4], '^UU hoge\.md$')
     End
 
     It should open a window with correct gita actions
@@ -79,9 +79,9 @@ Describe gita#features#status
       let contents = getline(1, '$')
       Assert Match(contents[0], '^# Press ?m and/or ?s to toggle a help')
       Assert Match(contents[1], '^# Index and working tree status on a branch')
-      Assert Match(contents[2], '^UU hoge\.md$')
-      Assert Match(contents[3], '^ M bar\.md$')
-      Assert Match(contents[4], '^M  foo\.md$')
+      Assert Match(contents[2], '^ M bar\.md$')
+      Assert Match(contents[3], '^M  foo\.md$')
+      Assert Match(contents[4], '^UU hoge\.md$')
     End
 
     It should update w:_gita_statuses_map
