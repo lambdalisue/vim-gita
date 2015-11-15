@@ -26,7 +26,7 @@ Describe gita#features#blame
     End
   End
 
-  Context [PRIVATE] s:format_chunk({chunk}, {width}, {wrap}, {now})
+  Context [PRIVATE] s:format_chunk({chunk}, {width}, {wrap}, {now}, {is_detail})
     let chunk = {
           \ 'revision': 'rev1***--------------',
           \ 'linenum': {
@@ -46,7 +46,7 @@ Describe gita#features#blame
           \}
     It should return formatted text
       let now = s:T.now()
-      let ret = s:sf.format_chunk(chunk, 50, 1, now)
+      let ret = s:sf.format_chunk(chunk, 50, 1, now, 0)
       Assert Equals(ret, [
             \ 'this is a summary',
             \ 'lambdalisue authored on 01 Jan, 1970      rev1***',
@@ -55,14 +55,14 @@ Describe gita#features#blame
     It should return formatted text even with very long summary
       let chunk.summary = repeat('*', 80)
       let now = s:T.now()
-      let ret = s:sf.format_chunk(chunk, 50, 1, now)
+      let ret = s:sf.format_chunk(chunk, 50, 1, now, 0)
       Assert Equals(ret, [
             \ '************************************************',
             \ '********************************',
             \ 'lambdalisue authored on 01 Jan, 1970      rev1***',
             \])
 
-      let ret = s:sf.format_chunk(chunk, 50, 0, now)
+      let ret = s:sf.format_chunk(chunk, 50, 0, now, 0)
       Assert Equals(ret, [
             \ '******************************************...***',
             \ 'lambdalisue authored on 01 Jan, 1970      rev1***',

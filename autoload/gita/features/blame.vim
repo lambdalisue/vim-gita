@@ -12,6 +12,7 @@ let s:A = gita#import('ArgumentParser')
 
 let s:const = {}
 let s:const.filetype = 'gita-blame-navi'
+let s:const.shortrev = 7
 
 highlight GitaPseudoSeparatorDefault
       \ term=underline
@@ -116,6 +117,13 @@ endfunction " }}}
 function! s:navi_actions.browse(candidates, options, config) abort " {{{
   let options = deepcopy(a:options)
   let options.scheme = 'blame'
+  let options.commit = gita#meta#get('commit', '')
+  let range = get(options, '__range__', [])
+  let line_start = get(options, 'line_start', get(range, 0, 0))
+  let line_end = get(options, 'line_end', get(range, 1, 0))
+  let offset = line_end - line_start
+  let options.line_start = gita#features#blame#get_pseudo_linenum(line_start)
+  let options.line_end = options.line_start + offset
   call call('gita#features#browse#action', [a:candidates, options, a:config])
 endfunction " }}}
 
@@ -130,7 +138,7 @@ function! s:format_timestamp(timestamp, timezone, now) abort " {{{
     return 'on ' . datetime.format('%d %b, %Y')
   endif
 endfunction " }}}
-function! s:format_chunk(chunk, width, wrap, now) abort " {{{
+function! s:format_chunk(chunk, width, wrap, now, is_detail) abort " {{{
   if a:wrap
     let summary = map(
           \ s:S.wrap(a:chunk.summary, a:width - 1),
@@ -144,7 +152,7 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
           \ '...',
           \)
   endif
-  let revision = a:chunk.revision[:6]
+  let revision = a:chunk.revision[:(s:const.shortrev - 1)]
   let author = a:chunk.author
   let timestr = s:format_timestamp(
         \ a:chunk.author_time,
@@ -156,24 +164,44 @@ function! s:format_chunk(chunk, width, wrap, now) abort " {{{
         \ summary,
         \ printf('%s%s%s',
         \   author_info,
-        \   repeat(' ', a:width - 8 - len(author_info)),
+        \   repeat(' ', a:width - (s:const.shortrev + 1) - len(author_info)),
         \   revision,
         \ )
         \])
+  if a:is_detail && has_key(a:chunk, 'previous')
+    let prefix = 'Prev: '
+    call add(formatted,
+          \ printf('%s%s%s',
+          \   repeat(' ', a:width - (s:const.shortrev + 1) - len(prefix)),
+          \   prefix,
+          \   a:chunk.previous[:(s:const.shortrev - 1)],
+          \ )
+          \)
+  endif
   return formatted
 endfunction " }}}
-" function! s:format_chunks(gita, stdout, width) abort " {{{
-if v:version >= 704 || (v:version == 703 && has('patch1170'))
-  function! s:_format_chunks(revisions, chunk, namespace) abort " {{{
-    call extend(l:, a:namespace)
-    call extend(a:chunk, a:revisions[a:chunk.revision])
-    let a:chunk.filename = gita.git.get_absolute_path(a:chunk.filename)
+function! s:format_chunks(gita, stdout, width) abort " {{{
+  let result = s:B.parse_to_chunks(a:stdout)
+  let now = s:T.now()
+  let cache = s:C.new()
+  let min_chunk_lines = g:gita#features#blame#enable_pseudo_separator ? 2 : 1
+  let NAVI = []
+  let VIEW = []
+  let lineinfos = []
+  let linerefs = []
+  let separators = []
+  let linenum = 1
+  let max_linenum_digit = len(result.chunks[-1].linenum.final)
+  let linenum_format = printf('%%%ds %%s', max_linenum_digit)
+  for chunk in result.chunks
+    call extend(chunk, result.revisions[chunk.revision])
+    let chunk.filename = a:gita.git.get_absolute_path(chunk.filename)
     " get or create a formatted chunk
-    let n_contents  = len(a:chunk.contents)
+    let n_contents  = len(chunk.contents)
     let is_wrapable = n_contents > 2
-    let cache_name  = printf('%s%d', a:chunk.revision, is_wrapable)
+    let cache_name  = printf('%s%d', chunk.revision, is_wrapable)
     if !cache.has(cache_name)
-      let formatted_chunk = s:format_chunk(a:chunk, width, is_wrapable, now)
+      let formatted_chunk = s:format_chunk(chunk, a:width - max_linenum_digit - 1, is_wrapable, now, n_contents > 3)
       call cache.set(cache_name, formatted_chunk)
     else
       let formatted_chunk = cache.get(cache_name)
@@ -182,136 +210,50 @@ if v:version >= 704 || (v:version == 703 && has('patch1170'))
     let n_lines = max([min_chunk_lines, n_contents])
     for i in range(n_lines)
       if i < n_contents
-        call add(linerefs, a:namespace.linenum)
+        call add(linerefs, linenum)
       endif
-      call add(NAVI, get(formatted_chunk, i, ''))
-      call add(VIEW, get(a:chunk.contents, i, ''))
+      call add(NAVI, printf(linenum_format,
+            \ i >= n_contents ? '' : chunk.linenum.final + i ,
+            \ get(formatted_chunk, i, ''))
+            \)
+      call add(VIEW, get(chunk.contents, i, ''))
       call add(lineinfos, {
-            \ 'chunkref': a:chunk.index,
+            \ 'chunkref': chunk.index,
             \ 'linenum': {
-            \   'original': a:chunk.linenum.original + i,
-            \   'final': a:chunk.linenum.final + i,
+            \   'original': chunk.linenum.original + i,
+            \   'final': chunk.linenum.final + i,
             \ },
             \})
-      let a:namespace.linenum += 1
+      let linenum += 1
     endfor
     " Add a pseudo separator line
     if g:gita#features#blame#enable_pseudo_separator
       call add(NAVI, '')
       call add(VIEW, '')
       call add(lineinfos, {
-            \ 'chunkref': a:chunk.index,
+            \ 'chunkref': chunk.index,
             \ 'linenum': {
-            \   'original': a:chunk.linenum.original + (n_lines - 1),
-            \   'final': a:chunk.linenum.final + (n_lines - 1),
+            \   'original': chunk.linenum.original + (n_lines - 1),
+            \   'final': chunk.linenum.final + (n_lines - 1),
             \ },
             \})
-      call add(separators, a:namespace.linenum)
-      let a:namespace.linenum += 1
+      call add(separators, linenum)
+      let linenum += 1
     endif
-  endfunction " }}}
-  function! s:format_chunks(gita, stdout, width) abort " {{{
-    let namespace = {}
-    let namespace.gita = a:gita
-    let namespace.width = a:width
-    let namespace.now = s:T.now()
-    let namespace.cache = s:C.new()
-    let namespace.min_chunk_lines = g:gita#features#blame#enable_pseudo_separator ? 2 : 1
-    let namespace.NAVI = []
-    let namespace.VIEW = []
-    let namespace.lineinfos = []
-    let namespace.linerefs = []
-    let namespace.separators = []
-    let namespace.linenum = 1
-    let callback = { 'args': [namespace], 'func': function('s:_format_chunks') }
-    let result = s:B.parse_to_chunks(a:stdout, callback)
-    let offset = g:gita#features#blame#enable_pseudo_separator ? -2 : -1
-    let meta = {
-          \ 'contents': {
-          \   'NAVI': namespace.NAVI[:offset],
-          \   'VIEW': namespace.VIEW[:offset],
-          \ },
-          \ 'chunks': result.chunks,
-          \ 'lineinfos': namespace.lineinfos[:offset],
-          \ 'linerefs': namespace.linerefs,
-          \ 'separators': empty(namespace.separators) ? [] : namespace.separators[:offset],
-          \}
-    return meta
-  endfunction " }}}
-else
-  " Note
-  "   callback-version does not work well so use for-loop version (slower)
-  function! s:format_chunks(gita, stdout, width) abort " {{{
-    let result = s:B.parse_to_chunks(a:stdout)
-    let now = s:T.now()
-    let cache = s:C.new()
-    let min_chunk_lines = g:gita#features#blame#enable_pseudo_separator ? 2 : 1
-    let NAVI = []
-    let VIEW = []
-    let lineinfos = []
-    let linerefs = []
-    let separators = []
-    let linenum = 1
-    for chunk in result.chunks
-      call extend(chunk, result.revisions[chunk.revision])
-      let chunk.filename = a:gita.git.get_absolute_path(chunk.filename)
-      " get or create a formatted chunk
-      let n_contents  = len(chunk.contents)
-      let is_wrapable = n_contents > 2
-      let cache_name  = printf('%s%d', chunk.revision, is_wrapable)
-      if !cache.has(cache_name)
-        let formatted_chunk = s:format_chunk(chunk, a:width, is_wrapable, now)
-        call cache.set(cache_name, formatted_chunk)
-      else
-        let formatted_chunk = cache.get(cache_name)
-      endif
-      " apply formatted chunk and contents
-      let n_lines = max([min_chunk_lines, n_contents])
-      for i in range(n_lines)
-        if i < n_contents
-          call add(linerefs, linenum)
-        endif
-        call add(NAVI, get(formatted_chunk, i, ''))
-        call add(VIEW, get(chunk.contents, i, ''))
-        call add(lineinfos, {
-              \ 'chunkref': chunk.index,
-              \ 'linenum': {
-              \   'original': chunk.linenum.original + i,
-              \   'final': chunk.linenum.final + i,
-              \ },
-              \})
-        let linenum += 1
-      endfor
-      " Add a pseudo separator line
-      if g:gita#features#blame#enable_pseudo_separator
-        call add(NAVI, '')
-        call add(VIEW, '')
-        call add(lineinfos, {
-              \ 'chunkref': chunk.index,
-              \ 'linenum': {
-              \   'original': chunk.linenum.original + (n_lines - 1),
-              \   'final': chunk.linenum.final + (n_lines - 1),
-              \ },
-              \})
-        call add(separators, linenum)
-        let linenum += 1
-      endif
-    endfor
-    let offset = g:gita#features#blame#enable_pseudo_separator ? -2 : -1
-    let meta = {
-          \ 'contents': {
-          \   'NAVI': NAVI[:offset],
-          \   'VIEW': VIEW[:offset],
-          \ },
-          \ 'chunks': result.chunks,
-          \ 'lineinfos': lineinfos[:offset],
-          \ 'linerefs': linerefs,
-          \ 'separators': empty(separators) ? [] : separators[:offset],
-          \}
-    return meta
-  endfunction " }}}
-endif
-" }}}
+  endfor
+  let offset = g:gita#features#blame#enable_pseudo_separator ? -2 : -1
+  let meta = {
+        \ 'contents': {
+        \   'NAVI': NAVI[:offset],
+        \   'VIEW': VIEW[:offset],
+        \ },
+        \ 'chunks': result.chunks,
+        \ 'lineinfos': lineinfos[:offset],
+        \ 'linerefs': linerefs,
+        \ 'separators': empty(separators) ? [] : separators[:offset],
+        \}
+  return meta
+endfunction " }}}
 function! s:display_pseudo_separators(blamemeta) abort " {{{
   let bufnum = bufnr('%')
   execute printf('sign unplace * buffer=%d', bufnum)
@@ -326,12 +268,24 @@ function! s:get_history() abort " {{{
   let w:_gita_blame_history = get(w:, '_gita_blame_history', gita#utils#history#new())
   return w:_gita_blame_history
 endfunction " }}}
+function! s:pseudo_command(...) abort " {{{
+  let ret = input(':', get(a:000, 0, ''))
+  if ret =~# '\v^[0-9]+$'
+    call gita#features#blame#goto(ret)
+  else
+    redraw
+    execute ret
+  endif
+endfunction " }}}
 
 function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   let options = get(a:000, 0, {})
   let gita = gita#get(a:abspath)
   let relpath = gita.git.get_relative_path(a:abspath)
-  let bufname = gita#utils#buffer#bufname('BLAME', a:commit, relpath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME',
+        \ len(a:commit) == 40 ? a:commit[:(s:const.shortrev - 1)] : a:commit,
+        \ relpath)
   silent call gita#utils#buffer#open(bufname, {
         \ 'group': 'blame_view',
         \ 'range': gita#utils#eget(options, 'range', 'tabpage'),
@@ -341,6 +295,7 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   setlocal nomodifiable
   setlocal nowrap nofoldenable foldcolumn=0
   setlocal scrollbind scrollopt=ver
+  setlocal nonumber
   if exists('&cursorbind')
     setlocal cursorbind
   endif
@@ -362,8 +317,11 @@ function! s:view_show(abspath, commit, blamemeta, ...) abort " {{{
   doautocmd BufReadPost
 endfunction " }}}
 function! s:view_define_mappings() abort " {{{
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
+        \ :<C-u>call <SID>pseudo_command()<CR>
 endfunction " }}}
 function! s:view_define_default_mappings() abort " {{{
+  nmap <buffer> : <Plug>(gita-action-blame-command)
 endfunction " }}}
 function! s:view_ac_BufWinEnter() abort " {{{
   let abspath   = gita#meta#get('filename')
@@ -383,9 +341,15 @@ function! s:navi_get_candidates(start, end, ...) abort " {{{
   let blamemeta = gita#meta#get('blame#meta')
   let lineinfo = blamemeta.lineinfos[a:start]
   let chunk = blamemeta.chunks[lineinfo.chunkref]
+  let filename = chunk.filename
+  let revision = chunk.revision
+  let previous = get(chunk, 'previous', '')
+  if revision ==# gita#meta#get('commit') && !empty(previous)
+    let [revision, filename] = split(previous, '\s')
+  endif
   let candidate = gita#action#new_candidate(
-        \ chunk.filename,
-        \ chunk.revision, {
+        \ filename,
+        \ revision, {
         \ 'line_start': lineinfo.linenum.original,
         \ 'line_end': lineinfo.linenum.original,
         \ 'chunk': chunk,
@@ -396,7 +360,10 @@ function! s:navi_show(abspath, commit, blamemeta, ...) abort " {{{
   let options = get(a:000, 0, {})
   let gita = gita#get(a:abspath)
   let relpath = gita.git.get_relative_path(a:abspath)
-  let bufname = gita#utils#buffer#bufname('BLAME', 'NAVI', a:commit, relpath)
+  let bufname = gita#utils#buffer#bufname(
+        \ 'BLAME', 'NAVI',
+        \ len(a:commit) == 40 ? a:commit[:(s:const.shortrev - 1)] : a:commit,
+        \ relpath)
   silent call gita#utils#buffer#open(bufname, {
         \ 'group': 'blame_navi',
         \ 'range': gita#utils#eget(options, 'range', 'tabpage'),
@@ -445,6 +412,9 @@ function! s:navi_define_mappings() abort " {{{
         \ :<C-u>call gita#action#call('blame_prev_chunk')<CR>
   nnoremap <silent><buffer> <Plug>(gita-action-blame-next-chunk)
         \ :<C-u>call gita#action#call('blame_next_chunk')<CR>
+
+  nnoremap <silent><buffer> <Plug>(gita-action-blame-command)
+        \ :<C-u>call <SID>pseudo_command()<CR>
 endfunction " }}}
 function! s:navi_define_default_mappings() abort " {{{
   call gita#monitor#define_default_mappings()
@@ -457,6 +427,8 @@ function! s:navi_define_default_mappings() abort " {{{
 
   nmap <buffer> ]c <Plug>(gita-action-blame-next-chunk)
   nmap <buffer> [c <Plug>(gita-action-blame-prev-chunk)
+
+  nmap <buffer> : <Plug>(gita-action-blame-command)
 endfunction " }}}
 function! s:navi_ac_BufWinEnter() abort " {{{
   let abspath   = gita#meta#get('filename')
@@ -554,6 +526,7 @@ endfunction " }}}
   let options = get(a:000, 0, {})
   let options.file   = gita#utils#eget(options, 'file', '%')
   let options.commit = gita#utils#eget(options, 'commit', 'HEAD')
+  let options.commit = options.commit ==# 'WORKTREE' ? '' : options.commit
   let options.porcelain = 1
   let result = gita#features#blame#exec_cached(options, {
         \ 'echo': 'fail',
@@ -611,14 +584,18 @@ function! gita#features#blame#define_highlights() abort " {{{
   highlight default link GitaAuthor     Identifier
   highlight default link GitaTimeDelta  Comment
   highlight default link GitaRevision   String
+  highlight default link GitaPrevious   Special
+  highlight default link GitaLineNr     LineNr
   highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
 endfunction " }}}
 function! gita#features#blame#define_syntax() abort " {{{
-  syntax match GitaSummary   /.*/
-  syntax match GitaMetaInfo  /\v^.*\sauthored\s.*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
-  syntax match GitaAuthor    /\v^.*\ze\sauthored/ contained
-  syntax match GitaTimeDelta /\vauthored\s\zs.*\ze\s+[0-9a-fA-F]{8}$/ contained
+  syntax match GitaSummary   /\v.*/ contains=GitaLineNr,GitaMetaInfo,GitaPrevious
+  syntax match GitaLineNr    /\v^\s*[0-9]+/
+  syntax match GitaMetaInfo  /\v\w+ authored .*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
+  syntax match GitaAuthor    /\v\w+\ze authored/ contained
+  syntax match GitaTimeDelta /\vauthored \zs.*\ze\s+[0-9a-fA-F]{7}$/ contained
   syntax match GitaRevision  /\v[0-9a-fA-F]{7}$/ contained
+  syntax match GitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
 endfunction " }}}
 function! gita#features#blame#action(candidates, options, config) abort " {{{
   let candidate = get(a:candidates, 0, {})
