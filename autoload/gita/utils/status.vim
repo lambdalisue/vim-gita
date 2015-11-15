@@ -2,20 +2,6 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 let s:S = gita#import('VCS.Git.StatusParser')
-let s:PRIORITIES = {
-      \ '\%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)': 2,
-      \ '\%(??\|.M\|.D\)': 1,
-      \}
-
-function! s:get_priority(status) abort " {{{
-  let sign = a:status.sign
-  for [key, value] in items(s:PRIORITIES)
-    if sign =~# key
-      return value
-    endif
-  endfor
-  return 0
-endfunction " }}}
 
 function! gita#utils#status#virtual(path, ...) abort " {{{
   let virtual = extend({
@@ -122,22 +108,12 @@ function! gita#utils#status#extend_candidate(candidate, ...) abort "{{{
   let a:candidate.status = status
 endfunction " }}}
 function! gita#utils#status#sortfn(lhs, rhs) abort " {{{
-  let lp = s:get_priority(a:lhs)
-  let rp = s:get_priority(a:rhs)
-  if lp == rp
-    if a:lhs.record == a:rhs.record
-      return 0
-    elseif a:lhs.record > a:rhs.record
-      return 1
-    else
-      return -1
-    endif
+  if a:lhs.path == a:rhs.path
+    return 0
+  elseif a:lhs.path > a:rhs.path
+    return 1
   else
-    if lp < rp
-      return 1
-    else
-      return -1
-    endif
+    return -1
   endif
 endfunction " }}}
 
