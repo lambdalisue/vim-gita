@@ -298,11 +298,11 @@ function! gita#features#file#show(...) abort " {{{
   let relpath = gita#utils#path#unix_relpath(abspath)
 
   if options.commit ==# 'WORKTREE'
-    let bufname = relpath
+    let bufname = expand(relpath)
   else
     let bufname = gita#utils#buffer#bufname(
           \ options.commit,
-          \ relpath,
+          \ expand(relpath),
           \)
   endif
   call gita#utils#buffer#open(bufname, {
