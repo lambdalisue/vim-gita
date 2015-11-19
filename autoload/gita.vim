@@ -89,6 +89,18 @@ function! gita#get(...) abort " {{{
   endif
   return gita#new(expr)
 endfunction " }}}
+function! gita#expand(expr) abort " {{{
+  if a:expr =~# '^%'
+    let expr = '%'
+    let modi = substitute(a:expr, '^%', '', '')
+    let filename = gita#meta#get_filename('', expr)
+    return empty(filename)
+          \ ? expand(a:expr)
+          \ : fnamemodify(filename, modi)
+  else
+    return expand(a:expr)
+  endif
+endfunction " }}}
 function! gita#is_enabled(...) abort " {{{
   return call('gita#get', a:000).enabled
 endfunction " }}}

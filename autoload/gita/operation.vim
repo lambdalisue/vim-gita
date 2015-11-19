@@ -2,6 +2,7 @@ let s:save_cpo = &cpoptions
 set cpoptions&vim
 
 
+let s:P = gita#import('System.Filepath')
 let s:C = gita#import('VCS.Git.Core')
 let s:A = gita#import('ArgumentParser')
 let s:is_windows = has('win16') || has('win32') || has('win64')
@@ -114,18 +115,19 @@ function! s:translate_option(key, val, pattern) abort " {{{
         \ 'r': 'realpath_val',
         \ 'R': 'escaped_realpath_val',
         \}
+  let abspath = s:P.abspath(val)
   let data = {
         \ 'key': a:key,
         \ 'val': val,
         \ 'escaped_key': substitute(a:key, '_', '-', 'g'),
         \ 'escaped_val': len(val) ? s:prefer_shellescape(val) : '',
-        \ 'unixpath_val': gita#utils#path#unix_abspath(val),
+        \ 'unixpath_val': s:P.unixpath(abspath),
         \ 'escaped_unixpath_val': len(val)
-        \   ? s:prefer_shellescape(gita#utils#path#unix_abspath(val))
+        \   ? s:prefer_shellescape(s:P.unixpath(abspath))
         \   : '',
-        \ 'realpath_val': gita#utils#path#real_abspath(val),
+        \ 'realpath_val': s:P.realpath(abspath),
         \ 'escaped_realpath_val': len(val)
-        \   ? s:prefer_shellescape(gita#utils#path#real_abspath(val))
+        \   ? s:prefer_shellescape(s:P.realpath(abspath))
         \   : '',
         \}
   return gita#utils#format_string(format, format_map, data)
