@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:T = gita#import('DateTime')
 let s:L = gita#import('Data.List')
@@ -189,7 +189,7 @@ function! s:navi_actions.blame_next_chunk(candidates, options, config) abort " {
 endfunction " }}}
 function! s:navi_actions.browse(candidates, options, config) abort " {{{
   let options = deepcopy(a:options)
-  let options.scheme = 'blame'
+  let options.scheme = get(options, 'scheme', 'blame')
   let options.commit = gita#meta#get('commit', '')
   let range = get(options, '__range__', [])
   let line_start = get(options, 'line_start', get(range, 0, 0))
@@ -198,6 +198,23 @@ function! s:navi_actions.browse(candidates, options, config) abort " {{{
   let options.line_start = gita#features#blame#get_pseudo_linenum(line_start)
   let options.line_end = options.line_start + offset
   call call('gita#features#browse#action', [a:candidates, options, a:config])
+endfunction " }}}
+function! s:navi_actions.open(candidates, options, config) abort " {{{
+  let options = deepcopy(a:options)
+  let options.opener = get(options, 'opener', printf('topleft %d split', &previewheight))
+  call call('gita#features#file#action', [a:candidates, options, a:config])
+endfunction " }}}
+function! s:navi_actions.edit(candidates, options, config) abort " {{{
+  let options = extend(a:options, {
+        \ 'commit': 'WORKTREE',
+        \})
+  let options.opener = get(options, 'opener', printf('topleft %d split', &previewheight))
+  call call('gita#features#file#action', [a:candidates, options, a:config])
+endfunction " }}}
+function! s:navi_actions.diff(candidates, options, config) abort " {{{
+  let options = deepcopy(a:options)
+  let options.opener = get(options, 'opener', printf('topleft %d split', &previewheight))
+  call call('gita#features#diff#action', [a:candidates, options, a:config])
 endfunction " }}}
 
 function! s:format_timestamp(timestamp, timezone, now) abort " {{{
@@ -666,5 +683,5 @@ function! gita#features#blame#action(candidates, options, config) abort " {{{
         \})
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

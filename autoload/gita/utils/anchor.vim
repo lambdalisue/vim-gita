@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 function! gita#utils#anchor#is_suitable(winnum) abort " {{{
   let bufnum = winbufnr(a:winnum)
@@ -40,5 +40,5 @@ function! gita#utils#anchor#focus() abort " {{{
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

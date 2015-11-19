@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 function! s:ensure_string(x) abort " {{{
   return type(a:x) == type('')
@@ -134,5 +134,5 @@ function! gita#utils#prompt#_asktf_complete_yes_or_no(arglead, cmdline, cursorpo
   return filter(['yes', 'no'], 'v:val =~# "^" . a:arglead')
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

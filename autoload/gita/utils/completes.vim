@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 
 function! gita#utils#completes#complete_branch(arglead, cmdline, cursorpos, ...) abort " {{{
@@ -132,5 +132,5 @@ function! gita#utils#completes#complete_untracked_files(arglead, cmdline, cursor
 endfunction " }}}
 
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

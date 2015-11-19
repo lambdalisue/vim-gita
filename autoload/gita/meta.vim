@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 function! s:get_meta(expr) abort " {{{
   let meta = gita#compat#getwinvar(bufwinnr(a:expr), '_gita_meta', {})
@@ -30,5 +30,5 @@ function! gita#meta#extend(meta, ...) abort " {{{
   call extend(meta, a:meta)
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

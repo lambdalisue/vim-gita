@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 
 let s:hooks = {}
@@ -31,5 +31,5 @@ function! gita#utils#hooks#register(name, fn) abort " {{{
 endfunction " }}}
 
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

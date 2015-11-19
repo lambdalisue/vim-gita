@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:P = gita#import('Prelude')
 let s:C = gita#import('VCS.Git.Conflict')
@@ -344,5 +344,5 @@ function! gita#features#conflict#action(candidates, options, config) abort " {{{
         \}, a:options))
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
