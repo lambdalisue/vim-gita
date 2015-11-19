@@ -1,10 +1,10 @@
 let s:P = Import('System.Filepath')
 let s:S = Import('Vim.ScriptLocal')
-let s:sp = s:P.join(g:gita#test#root, 'autoload', 'gita', 'operations.vim')
+let s:sp = s:P.join(g:gita#test#root, 'autoload', 'gita', 'operation.vim')
 let s:sv = s:S.svars(s:sp)
 let s:sf = s:S.sfuncs(s:sp)
 
-Describe gita#operations
+Describe gita#operation
   Before
     Init
   End
@@ -231,7 +231,7 @@ Describe gita#operations
 
   Context #exec({gita}, {name}, {options}[, {conf}])
     It should be executable
-      Assert True(exists('*gita#operations#exec'))
+      Assert True(exists('*gita#operation#exec'))
     End
   End
 End

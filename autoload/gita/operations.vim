@@ -1,3 +1,8 @@
+"*****************************************************************************
+"
+" OBSOLUTE
+"
+"*****************************************************************************
 let s:save_cpoptions = &cpoptions
 set cpoptions&vim
 
@@ -7,74 +12,6 @@ let s:A = gita#import('ArgumentParser')
 let s:is_windows = has('win16') || has('win32') || has('win64')
 let s:TYPE_NUMBER = type(0)
 let s:TYPE_FUNC   = type(function('type'))
-
-let s:schemes = {}
-let s:schemes.reset = {
-      \ 'commit': '%v',
-      \}
-let s:schemes.show = {
-      \ 'object': '%v',
-      \}
-let s:schemes.diff = {
-      \ 'commit': '%v',
-      \}
-let s:schemes.commit = {
-      \ 'C': '-%k %v',
-      \ 'c': '-%k %v',
-      \ 'F': '-%k %v',
-      \ 'm': '-%k %v',
-      \ 't': '-%k %v',
-      \}
-let s:schemes.branch = {
-      \ 'u': '-%k %v',
-      \ 'contains': '--%k %v',
-      \ 'merged': '--%k %v',
-      \ 'no-merged': '--%k %v',
-      \}
-let s:schemes.checkout = {
-      \ 'b': '-%k %v',
-      \ 'B': '-%k %v',
-      \ 'commit': '%v',
-      \}
-let s:schemes.merge_base = {
-      \ 'fork_point': '--%K %v',
-      \ 'commit': '%v',
-      \ 'commit1': '%v',
-      \ 'commit2': '%v',
-      \}
-let s:schemes.rev_parse = {
-      \ 'default': '--%K %V',
-      \ 'prefix': '--%K %V',
-      \ 'resolve_git_dir': '--%K %V',
-      \ 'args': '%v',
-      \}
-let s:schemes.blame = {
-      \ 'L': '--%k %v',
-      \ 'S': '--%k %v',
-      \ 'contents': '--%k %V',
-      \ 'date': '--%k %V',
-      \ 'commit': '%v',
-      \}
-function! s:schemes.clone(name, options) abort " {{{
-  let scheme = {
-        \ 'reference': '--%K %V',
-        \ 'o': '-%K %V',
-        \ 'origin': '--%K %V',
-        \ 'b': '-%K %V',
-        \ 'branch': '--%K %V',
-        \ 'u': '-%K %V',
-        \ 'upload-pack': '--%K %V',
-        \ 'c': '-%K %V',
-        \ 'configig': '--%K %V',
-        \ 'depth': '--%K %V',
-        \}
-  let args = s:translate_options(a:options, scheme)
-  return extend(args, [
-        \ '--',
-        \ get(a:options, 'repository', ''),
-        \ get(a:options, 'directory', ''),
-        \])
-endfunction " }}}
 
 function! s:prefer_shellescape(val) abort " {{{
   let val = shellescape(a:val)
@@ -147,56 +84,6 @@ function! s:translate_options(options, scheme) abort " {{{
   endif
   return args
 endfunction " }}}
-function! s:execute(gita, args, conf) abort " {{{
-  let args = filter(deepcopy(a:args), 'len(v:val)')
-  let conf = extend({
-        \ 'echo_success':   1,
-        \ 'echo_fail':      1,
-        \ 'doautocmd':      1,
-        \ 'success_status': 0,
-        \ 'interactive':    0,
-        \}, a:conf,
-        \)
-  if a:gita.enabled
-    let ret = a:gita.git.exec(args, {
-          \ 'interactive': conf.interactive
-          \})
-  else
-    let ret = s:C.exec(args, {
-          \ 'interactive': conf.interactive
-          \})
-  endif
-  let ret.stdout = gita#utils#remove_ansi_sequences(ret.stdout)
-  let ret.is_success = ret.status == conf.success_status
-  if !conf.interactive
-    if conf.echo_success && ret.is_success
-      call gita#utils#prompt#info(printf('Ok: %s', join(ret.args)))
-      call gita#utils#prompt#echo(ret.stdout)
-    elseif conf.echo_fail && !ret.is_success
-      call gita#utils#prompt#warn(printf('Fail: %s', join(ret.args)))
-      call gita#utils#prompt#echo(ret.stdout)
-    endif
-  endif
-  if conf.doautocmd && ret.is_success
-    call gita#compat#doautocmd(printf('vim-gita-%s-post', args[0]))
-  endif
-  return ret
-endfunction " }}}
-
-function! gita#operations#exec(gita, name, options, ...) abort " {{{
-  let l:Scheme = get(s:schemes, a:name, {})
-  if type(l:Scheme) ==# s:TYPE_FUNC
-    let args = l:Scheme(a:name, a:options)
-  else
-    let args = s:translate_options(a:options, l:Scheme)
-  endif
-  let args = extend([a:name], args)
-  let conf = get(a:000, 0, {})
-  return s:execute(a:gita, args, conf)
-endfunction " }}}
-
-
-" OBSOLUTE ===================================================================
 
 let s:operations = {}
 function! s:operations.exec_raw(args, ...) abort " {{{
