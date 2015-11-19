@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:TYPE_FUNCREF = type(function('tr'))
 
@@ -68,5 +68,5 @@ function! gita#utils#remove_ansi_sequences(val) abort " {{{
   return substitute(a:val, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

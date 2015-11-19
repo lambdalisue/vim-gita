@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 function! s:smart_map(...) abort " {{{
   return call('gita#action#smart_map', a:000)
@@ -246,5 +246,5 @@ augroup vim-gita-update-monitor
   autocmd BufWritePost * call gita#action#call('update')
 augroup END
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

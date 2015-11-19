@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:V = vital#of('vim_gita')
 function! gita#import(name) abort
@@ -136,5 +136,5 @@ augroup vim-gita-clear-cache
   autocmd User vim-gita-checkout-post call gita#clear_repository_cache()
 augroup END
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

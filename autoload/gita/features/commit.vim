@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:L = gita#import('Data.List')
 let s:D = gita#import('Data.Dict')
@@ -422,5 +422,5 @@ function! gita#features#commit#define_syntax() abort " {{{
 endfunction " }}}
 
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

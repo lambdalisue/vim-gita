@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 " getcurpos
 " https://github.com/vim-jp/vim/commit/0ea3beb7e39b21e2c6e6fd4f9a3121747bebe09f
@@ -45,5 +45,5 @@ else
   endfunction " }}}
 endif
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

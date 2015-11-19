@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:INNER_COUNT = 10
 let s:OUTER_COUNT = 5
@@ -32,5 +32,5 @@ function! gita#develop#benchmark#statusline#run() abort
   call s:outer_test('traffic')
 endfunction
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

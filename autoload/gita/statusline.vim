@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 scriptencoding utf8
 
 let s:P = gita#import('System.Filepath')
@@ -264,5 +264,5 @@ augroup vim-gita-statusline-clear-cache
   autocmd BufWritePost * call s:ac_BufWritePost()
 augroup END
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

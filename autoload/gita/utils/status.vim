@@ -1,5 +1,5 @@
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpoptions = &cpoptions
+set cpoptions&vim
 
 let s:S = gita#import('VCS.Git.StatusParser')
 
@@ -117,5 +117,5 @@ function! gita#utils#status#sortfn(lhs, rhs) abort " {{{
   endif
 endfunction " }}}
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpoptions
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
