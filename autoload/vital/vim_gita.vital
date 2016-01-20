@@ -1,5 +1,5 @@
 vim_gita
-02eefba
+bac20329a51ce23e512cbf3b2a7494a2e2bea1cf
 
 Prelude
 Data.List
@@ -15,3 +15,7 @@ VCS.Git.Core
 DateTime
 Data.String
 VCS.Git.BlameParser
+Vim.Compat
+Vim.Prompt
+Vim.Validate
+Vim.Buffer.Anchor
