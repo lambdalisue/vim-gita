@@ -1,10 +1,23 @@
+<div align="center" style="text-align: center">
+    <p><img align="center" src="./res/vim-gita.256x256.png" alt="vim-gita"></p>
+
+    <p>
+    <a href="https://travis-ci.org/lambdalisue/vim-gita">
+        <img src="https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master">
+    </a>
+    <a href="https://ci.appveyor.com/project/lambdalisue/vim-gita/branch/master)">
+        <img src="https://ci.appveyor.com/api/projects/status/gorpkslmrod7p6ou/branch/master?svg=true">
+    </a>
+    </p>
+</div>
+
+---
+
 <p align="center"><strong align="center">WARNING</strong></p>
 <p align="center">vim-gita is under development (alpha version), mean that there would be critical bugs for daily use.<br>
 Any features, options, mechanisms, etc. might be replaced/removed without any announcements, mean that you should wait to contribute.</p>
 
-vim-gita  [![Build Status](https://travis-ci.org/lambdalisue/vim-gita.svg?branch=master)](https://travis-ci.org/lambdalisue/vim-gita) [![Build status](https://ci.appveyor.com/api/projects/status/gorpkslmrod7p6ou/branch/master?svg=true)](https://ci.appveyor.com/project/lambdalisue/vim-gita/branch/master)
-===============================================================================
-![Screencast (status to commit)](http://fat.gfycat.com/DarlingPopularAnnelid.gif)
+---
 
 *vim-gita* is a git manipulation plugin which was strongly inspired by [tpope/vim-fugitive][], [thinca/vim-vcs][], [Shougo/vim-vcs][], and [lambdalisue/vim-gista][].
 
@@ -24,6 +37,12 @@ the statusline.
 [lambdalisue/vital-ArgumentParser]: https://github.com/lambdalisue/vital-ArgumentParser
 [lambdalisue/vital-VCS-Git]:        https://github.com/lambdalisue/vital-VCS-Git
 
+Screen cast
+-------------------------------------------------------------------------------
+
+<div align="center" style="text-align: center">
+<img align="center" src="http://fat.gfycat.com/DarlingPopularAnnelid.gif" alt="screen cast">
+</div>
 
 Build Status
 -------------------------------------------------------------------------------

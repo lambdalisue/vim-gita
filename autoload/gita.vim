@@ -28,7 +28,7 @@ function! s:gita.is_expired() abort " {{{
     return 1
   elseif empty(buftype) && bufname !=# self.bufname
     return 1
-  elseif !empty(buftype) && getcwd() !=# self.cwd
+  elseif (!empty(buftype) || empty(bufname)) && getcwd() !=# self.cwd
     return 1
   else
     return 0
