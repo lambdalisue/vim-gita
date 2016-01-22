@@ -10,7 +10,7 @@ let s:A = gita#import('ArgumentParser')
 let s:parser = s:A.new({
       \ 'name': 'Gita[!] diff',
       \ 'description': 'Show changes between commits, commit and working tree, etc',
-      \ 'description_unknown': '[{file1}, {file2}, ...]',
+      \ 'unknown_description': '[{file1}, {file2}, ...]',
       \})
 call s:parser.add_argument(
       \ 'commit', [
