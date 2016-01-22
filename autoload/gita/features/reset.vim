@@ -26,14 +26,14 @@ call s:parser.add_argument(
       \   'Does not touch the index file or the working tree at all (but resets the head to <commit>, just like all modes do).',
       \   'This leaves all your changed files "Changes to be committed", as git status would put it.',
       \], {
-      \   'configlicts': ['mixed', 'hard', 'merge', 'keep'],
+      \   'conflicts': ['mixed', 'hard', 'merge', 'keep'],
       \})
 call s:parser.add_argument(
       \ '--mixed', [
       \   'Resets the index but not the working tree (i.e., the changed files are preserved but not marked for commit) and reports',
       \   'what has not been updated. This is the default action.',
       \], {
-      \   'configlicts': ['soft', 'hard', 'merge', 'keep'],
+      \   'conflicts': ['soft', 'hard', 'merge', 'keep'],
       \})
 call s:parser.add_argument(
       \ '-N', [
@@ -45,7 +45,7 @@ call s:parser.add_argument(
       \ '--hard', [
       \   'Resets the index and working tree. Any changes to tracked files in the working tree since <commit> are discarded.',
       \], {
-      \   'configlicts': ['soft', 'mixed', 'merge', 'keep'],
+      \   'conflicts': ['soft', 'mixed', 'merge', 'keep'],
       \})
 call s:parser.add_argument(
       \ '--merge', [
@@ -53,14 +53,14 @@ call s:parser.add_argument(
       \   'different between the index and working tree (i.e. which have changes which have not been added). If a file that is different',
       \   'between <commit> and the index has unstaged changes, reset is aborted.',
       \], {
-      \   'configlicts': ['soft', 'mixed', 'hard', 'keep'],
+      \   'conflicts': ['soft', 'mixed', 'hard', 'keep'],
       \})
 call s:parser.add_argument(
       \ '--keep', [
       \   'Resets index entries and updates files in the working tree that are different between <commit> and HEAD.',
       \   'If a file that is different between <commit> and HEAD has local changes, reset is aborted.',
       \], {
-      \   'configlicts': ['soft', 'mixed', 'hard', 'merge'],
+      \   'conflicts': ['soft', 'mixed', 'hard', 'merge'],
       \})
 call s:parser.add_argument(
       \ 'commit', [

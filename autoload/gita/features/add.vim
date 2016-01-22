@@ -37,7 +37,7 @@ call s:parser.add_argument(
       \   'tree are updated.',
       \ ], {
       \   'deniable': 1,
-      \   'configlicts': ['ignore-removal'],
+      \   'conflicts': ['ignore-removal'],
       \})
 call s:parser.add_argument(
       \ '--ignore-removal', [
@@ -46,7 +46,7 @@ call s:parser.add_argument(
       \   'This option is a no0op when no <pathspec> is used.',
       \ ], {
       \   'deniable': 1,
-      \   'configlicts': ['all'],
+      \   'conflicts': ['all'],
       \})
 call s:parser.add_argument(
       \ '--ignore-errors', [
