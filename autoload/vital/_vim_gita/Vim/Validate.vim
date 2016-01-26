@@ -3,10 +3,15 @@ set cpo&vim
 
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
+  let s:Dict = a:V.import('Data.Dict')
+  let s:config = {
+        \ 'prefix': 'vital: Vim.Validate: ',
+        \}
 endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
+        \ 'Data.Dict',
         \]
 endfunction
 function! s:_translate(text, table) abort
@@ -21,8 +26,17 @@ function! s:_translate(text, table) abort
   return text
 endfunction
 
+function! s:get_config() abort
+  return deepcopy(s:config)
+endfunction
+function! s:set_config(config) abort
+  let s:config = extend(s:config, s:Dict.pick(a:config, [
+        \ 'prefix',
+        \]))
+endfunction
+
 function! s:throw(msg) abort
-  throw printf('vital: Vim.Validate: ValidationError: %s', a:msg)
+  throw printf('%sValidationError: %s', s:config.prefix, a:msg)
 endfunction
 
 function! s:true(value, ...) abort
@@ -124,8 +138,12 @@ function! s:call_silently(fn, ...) abort
     else
       return call(a:fn, args, dict)
     endif
-  catch /^vital: Vim.Validate: ValidationError:/
-    return default
+  catch /ValidationError:/
+    if v:exception =~# printf('^%sValidationError:', s:config.prefix)
+      return default
+    else
+      throw v:exception
+    endif
   endtry
 endfunction
 

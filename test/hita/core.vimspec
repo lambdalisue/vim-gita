@@ -1,0 +1,220 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:Guard = s:V.import('Vim.Guard')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+let s:file = s:Path.realpath('autoload/hita/core.vim')
+
+Describe hita#core
+  Before
+    Init
+    let guard = s:Guard.store(
+          \ 'b:_hita',
+          \ 'b:_hita_meta',
+          \)
+    let sf = s:ScriptLocal.sfuncs(s:file)
+  End
+  After
+    call guard.restore()
+  End
+  Describe s:core({expr})
+    Context A file buffer in a git repository
+      Before
+        WorkonInside
+        let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It returns a gita instance
+        let gita = sf.core(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a different gita instance
+        let gita1 = sf.core(bufname)
+        let gita2 = sf.core(bufname)
+        Assert NotSame(gita1, gita2)
+      End
+    End
+
+    Context A file buffer in a non git repository
+      Before
+        WorkonInside
+        let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It returns a gita instance while cwd is in a git repository
+        let gita = sf.core(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = sf.core(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a different gita instance always
+        let gita1 = sf.core(bufname)
+        let gita2 = sf.core(bufname)
+        Assert NotSame(gita1, gita2)
+      End
+    End
+
+    Context A non file buffer
+      Before
+        WorkonInside
+        let bufname = 'non-file'
+        silent execute printf('new %s', bufname)
+        setlocal buftype=nofile
+      End
+      It returns a gita instance while cwd is in a git repository
+        let gita = sf.core(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a gita instance obut not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = sf.core(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+    End
+  End
+  Describe #get([{expr}])
+    Context A file buffer in a git repository
+      Before
+        WorkonInside
+        let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It returns a gita instance
+        let gita = hita#core#get(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a same gita instance
+        let gita1 = hita#core#get(bufname)
+        let gita2 = hita#core#get(bufname)
+        Assert Same(gita1, gita2)
+      End
+      It does not return a same gita instance if bufname has changed
+        let gita1 = hita#core#get(bufname)
+        silent execute printf('file %s', bufname . '.mod')
+        let gita2 = hita#core#get(bufname . '.mod')
+        Assert NotSame(gita1, gita2)
+        Assert Equals(gita1.bufnum, gita2.bufnum)
+      End
+    End
+
+    Context A file buffer in a non git repository
+      Before
+        WorkonInside
+        let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
+        silent execute printf('new %s', bufname)
+      End
+      It returns a gita instance while cwd is in a git repository
+        let gita = hita#core#get(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = hita#core#get(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a same gita instance
+        let gita1 = hita#core#get(bufname)
+        let gita2 = hita#core#get(bufname)
+        Assert Same(gita1, gita2)
+      End
+      It does not return a same gita instance if bufname has changed
+        let gita1 = hita#core#get(bufname)
+        silent execute printf('file %s', bufname . '.mod')
+        let gita2 = hita#core#get(bufname . '.mod')
+        Assert NotSame(gita1, gita2)
+        Assert Equals(gita1.bufnum, gita2.bufnum)
+      End
+    End
+
+    Context A non file buffer
+      Before
+        WorkonInside
+        let bufname = 'non-file'
+        silent execute printf('new %s', bufname)
+        setlocal buftype=nofile
+      End
+      It returns a gita instance while cwd is in a git repository
+        let gita = hita#core#get(bufname)
+        Assert Equals(gita.enabled, 1)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a gita instance but not enabled if cwd is not in a git repository
+        WorkonOutside
+        let gita = hita#core#get(bufname)
+        Assert Equals(gita.enabled, 0)
+        Assert Equals(gita.bufname, bufname(bufname))
+        Assert Equals(gita.bufnum, bufnr(bufname))
+        Assert Equals(gita.cwd, getcwd())
+      End
+      It returns a same gita instance
+        let gita1 = hita#core#get(bufname)
+        let gita2 = hita#core#get(bufname)
+        Assert Same(gita1, gita2)
+      End
+      It does not return a same gita instance if a current working directory has changed
+        let gita1 = hita#core#get(bufname)
+        WorkonOutside
+        let gita2 = hita#core#get(bufname)
+        Assert NotSame(gita1, gita2)
+      End
+    End
+  End
+  Describe #get_meta({name}[, {default}, {expr}])
+    It returns a value of {name} is a buffer variable
+      let b:_hita_meta = { 'foo': 'foo', 'bar': 'bar' }
+      Assert Equals(hita#core#get_meta('foo'), 'foo')
+      Assert Equals(hita#core#get_meta('bar'), 'bar')
+    End
+    It returns {default} if {name} is missing is a buffer variable
+      Assert Equals(hita#core#get_meta('foo', 'bar'), 'bar')
+      Assert Equals(hita#core#get_meta('bar', 'foo'), 'foo')
+    End
+  End
+  Describe #set_meta({name}, {value}[, {expr}])
+    It set {value} to {name} in a buffer variable
+      call hita#core#set_meta('foo', 'bar')
+      call hita#core#set_meta('bar', 'foo')
+      Assert Equals(b:_hita_meta, { 'foo': 'bar', 'bar': 'foo' })
+    End
+  End
+  Describe #expand({expr})
+    It expand {expr}
+      file foobar
+      Assert Equals(hita#core#expand('%'), 'foobar')
+    End
+    It expand b:_gita_meta.filename if available
+      file foobar
+      call hita#core#set_meta('filename', 'hogehoge')
+      Assert Equals(hita#core#expand('%'), 'hogehoge')
+    End
+  End
+End
+

@@ -1,24 +1,64 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:GitCore = s:V.import('VCS.Git.Core')
-let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:splitargs = s:V.import('ArgumentParser').splitargs
 let s:is_windows = s:Prelude.is_windows()
 
 let s:schemes = {}
-let s:schemes.show = {
-      \ 'object': '%v',
+let s:schemes.apply = {
+      \ 'include': '--%k %v',
+      \ 'exclude': '--%k %v',
+      \ 'p': '-%k %v',
+      \ 'build-fake-ancestor': '--%k %v',
+      \ 'C': '-%k %v',
+      \ 'whitespace': '--%k %v',
+      \ 'directory': '--%k %v',
       \}
-let s:schemes.merge_base = {
-      \ 'fork_point': '--%K %v',
+let s:schemes.branch = {
+      \ 'merged': '--%k %v',
+      \ 'no-merged': '--%k %v',
+      \ '-u': '-%k %v',
+      \ '--set-upstream-to': '--%k %v',
+      \ '--contains': '--%k %v',
+      \}
+let s:schemes.diff = {
+      \ 'commit': '%v',
+      \}
+let s:schemes.log = {}
+let s:schemes['ls-files'] = {
+      \ 'x': '-%k %v',
+      \ 'X': '-%k %v',
+      \ 'exclude': '--%k %v',
+      \ 'exclude-from': '--%k %v',
+      \ 'exclude-per-directory': '--%k %v',
+      \ 'with-tree': '--%k %v',
+      \}
+let s:schemes['merge-base'] = {
       \ 'commit': '%v',
       \ 'commit1': '%v',
       \ 'commit2': '%v',
       \}
+let s:schemes.show = {
+      \ 'object': '%v',
+      \}
+let s:schemes.tag = {
+      \ 'n': '-%k%v',
+      \ 'm': '-%k %v',
+      \ 'message': '--%k %v',
+      \ 'F': '-%k %v',
+      \ 'file': '--%k %v',
+      \ 'cleanup': '--%k %v',
+      \ 'u': '-%k %v',
+      \ 'local-user': '--%k %v',
+      \ 'sort': '--%k %v',
+      \ 'contains': '--%k %v',
+      \ 'points-at': '--%k %v',
+      \}
 
+function! s:remove_ansi_sequences(val) abort
+  return substitute(a:val, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
+endfunction
 function! s:prefer_shellescape(val) abort " {{{
   let val = shellescape(a:val)
   if val !~# '\s'
@@ -52,10 +92,6 @@ function! s:translate_option(key, val, pattern) abort " {{{
         \ 'v': 'val',
         \ 'K': 'escaped_key',
         \ 'V': 'escaped_val',
-        \ 'u': 'unixpath_val',
-        \ 'U': 'escaped_unixpath_val',
-        \ 'r': 'realpath_val',
-        \ 'R': 'escaped_realpath_val',
         \}
   let abspath = s:Path.abspath(val)
   let data = {
@@ -71,7 +107,7 @@ function! s:translate_options(options, scheme) abort " {{{
   for [key, val]  in items(a:options)
     if key !~# '^__.\+__$' && key !=# '--'
       let pattern = get(a:scheme, key, '')
-      call extend(args, s:ArgumentParser.splitargs(
+      call extend(args, s:splitargs(
             \ s:translate_option(key, val, pattern)
             \))
     endif
@@ -85,19 +121,20 @@ function! s:translate_options(options, scheme) abort " {{{
   endif
   return args
 endfunction
-function! s:execute(hita, args) abort
+function! s:execute(hita, args, config) abort
   let args = filter(copy(a:args), '!empty(v:val)')
   if a:hita.enabled
-    let result = a:hita.git.exec(args)
+    let result = a:hita.git.exec(args, a:config)
   else
-    let result = s:GitCore.exec(args)
+    let result = s:GitCore.exec(args, a:config)
   endif
-  let result.stdout = hita#util#string#remove_ansi_sequences(result.stdout)
+  let result.stdout = s:remove_ansi_sequences(result.stdout)
   return result
 endfunction
 
 function! hita#operation#exec(hita, name, ...) abort
   let options = get(a:000, 0, {})
+  let config = get(a:000, 1, {})
   let l:Scheme = get(s:schemes, a:name, {})
   if s:Prelude.is_funcref(l:Scheme)
     let args = l:Scheme(a:name, options)
@@ -105,9 +142,5 @@ function! hita#operation#exec(hita, name, ...) abort
     let args = s:translate_options(options, l:Scheme)
   endif
   let args = extend([a:name], args)
-  return s:execute(a:hita, args)
+  return s:execute(a:hita, args, config)
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 
@@ -46,9 +43,6 @@ function! hita#util#string#format(format, format_map, data) abort
   endfor
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction
-function! hita#util#string#remove_ansi_sequences(val) abort
-  return substitute(a:val, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
-endfunction
 function! hita#util#string#clip(content) abort
   let @" = a:content
   if has('clipboard')
@@ -61,8 +55,3 @@ endfunction
 function! hita#util#string#capitalize(text) abort
   return substitute(a:text, '\w\+', '\u\0', "")
 endfunction
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

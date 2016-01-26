@@ -118,9 +118,7 @@ function! s:actions.discard(candidates, options, config) abort " {{{
           \ 'revert the operation.',
           \]))
     if !gita#utils#prompt#asktf('Are you sure you want to discard the changes?')
-      call gita#utils#prompt#echo(
-            \ 'The operation has canceled by user.'
-            \)
+      echo 'The operation has canceled by user.'
       return
     endif
   endif

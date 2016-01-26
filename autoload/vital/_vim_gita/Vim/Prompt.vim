@@ -68,6 +68,7 @@ function! s:input(hl, msg, ...) abort
     return ''
   endif
   execute 'echohl' a:hl
+  call inputsave()
   try
     if empty(get(a:000, 1, ''))
       return input(a:msg, get(a:000, 0, ''))
@@ -76,6 +77,7 @@ function! s:input(hl, msg, ...) abort
     endif
   finally
     echohl None
+    call inputrestore()
   endtry
 endfunction
 function! s:inputlist(hl, textlist) abort
@@ -83,10 +85,12 @@ function! s:inputlist(hl, textlist) abort
     return 0
   endif
   execute 'echohl' a:hl
+  call inputsave()
   try
     return inputlist(a:textlist)
   finally
     echohl None
+    call inputrestore()
   endtry
 endfunction
 

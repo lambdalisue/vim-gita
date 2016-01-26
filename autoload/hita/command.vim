@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
@@ -25,7 +22,7 @@ function! hita#command#register(name, command, complete, ...) abort
           \   ? function(a:complete)
           \   : a:complete,
           \}
-  catch /^vim-hita: ValidationError/
+  catch /^vim-hita:/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -36,7 +33,7 @@ function! hita#command#unregister(name) abort
           \ 'A command "%value" has not been registered yet',
           \)
     unlet s:registry[a:name]
-  catch /^vim-hita: ValidationError/
+  catch /^vim-hita:/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -52,12 +49,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'action', [
           \   'An action name of vim-hita. The following actions are available:',
-          \   '- open   : Get and open a file of a gist',
           \ ], {
           \   'required': 1,
           \   'terminal': 1,
           \   'complete': function('s:complete_action'),
           \})
+    " TODO: Write available actions
   endif
   return s:parser
 endfunction
@@ -96,15 +93,15 @@ function! hita#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
-call hita#command#register('open',
-      \ 'hita#command#open#command',
-      \ 'hita#command#open#complete',
+call hita#command#register('apply',
+      \ 'hita#command#apply#command',
+      \ 'hita#command#apply#complete',
       \)
-call hita#command#register('status',
-      \ 'hita#command#status#command',
-      \ 'hita#command#status#complete',
+call hita#command#register('diff',
+      \ 'hita#command#diff#command',
+      \ 'hita#command#diff#complete',
       \)
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
+call hita#command#register('show',
+      \ 'hita#command#show#command',
+      \ 'hita#command#show#complete',
+      \)

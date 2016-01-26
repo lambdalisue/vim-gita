@@ -1,6 +1,3 @@
-let s:save_cpoptions = &cpoptions
-set cpoptions&vim
-
 let s:V = hita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:StatusParser = s:V.import('VCS.Git.StatusParser')
@@ -80,7 +77,7 @@ function! hita#util#status#retrieve(path, ...) abort " {{{
   let hita = hita#core#get()
   let abspath = s:Path.unixpath(s:Path.abspath(a:path))
   let virtual = hita#util#status#virtual(a:path)
-  let result = hita#operation#exec('status', {
+  let result = hita#operation#exec(hita, 'status', {
         \ 'porcelain': 1,
         \ 'ignore_submodules': 1,
         \ '--': [abspath],
@@ -115,6 +112,3 @@ function! hita#util#status#sortfn(lhs, rhs) abort " {{{
     return -1
   endif
 endfunction " }}}
-
-let &cpoptions = s:save_cpoptions
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

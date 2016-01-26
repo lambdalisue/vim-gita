@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 function! s:parse_mapping(raw) abort
   " Note:
   " :help map-listing
@@ -60,7 +57,3 @@ function! hita#util#mapping#help(table) abort
 endfunction
 " @vimlint(EVL102, 0, l:mode)
 " @vimlint(EVL102, 0, l:flag)
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

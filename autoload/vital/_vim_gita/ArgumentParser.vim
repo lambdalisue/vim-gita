@@ -64,6 +64,7 @@ function! s:new(...) abort " {{{
         \ 'enable_positional_assign': 0,
         \ 'complete_unknown': function('s:complete_dummy'),
         \ 'unknown_description': '',
+        \ 'complete_threshold': 0,
         \}, get(a:000, 0, {}))
   " validate unknown options
   let available_settings = [
@@ -79,6 +80,7 @@ function! s:new(...) abort " {{{
         \ 'enable_positional_assign',
         \ 'complete_unknown',
         \ 'unknown_description',
+        \ 'complete_threshold',
         \]
   for key in keys(settings)
     if key !~# '^__\w' && index(available_settings, key) == -1
@@ -99,6 +101,7 @@ function! s:new(...) abort " {{{
         \ 'validate_pattern',
         \ 'enable_positional_assign',
         \ 'unknown_description',
+        \ 'complete_threshold',
         \]))
   let parser.description = s:P.is_list(settings.description)
         \ ? join(settings.description, "\n")
@@ -709,16 +712,22 @@ function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort " {{{
           \)
   endif
   call self.hooks.post_complete(candidates, options)
-  return candidates
+  if !empty(self.complete_threshold) && len(candidates) >= self.complete_threshold
+    return candidates[ : (self.complete_threshold - 1)]
+  else
+    return candidates
+  endif
 endfunction " }}}
 function! s:parser._complete_optional_argument_value(arglead, cmdline, cursorpos, options) abort " {{{
-  let m = matchlist(a:arglead, '\v^\-\-?([^=]+)\=(.*)')
-  let name = m[1]
-  let value = m[2]
+  let m = matchlist(a:arglead, '\v^(\-\-?([^=]+)\=)(.*)')
+  let prefix = m[1]
+  let name = m[2]
+  let value = m[3]
   if has_key(self.arguments, name)
     let candidates = self.arguments[name].complete(
           \ value, a:cmdline, a:cursorpos, a:options,
           \)
+    call map(candidates, 'prefix . v:val')
   else
     let candidates = []
   endif

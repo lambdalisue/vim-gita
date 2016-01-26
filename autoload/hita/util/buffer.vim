@@ -1,6 +1,3 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
 let s:V = gista#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Buffer = s:V.import('Vim.Buffer')
@@ -37,7 +34,3 @@ endfunction
 function! hita#util#buffer#edit_content(...) abort
   call call(s:Buffer.edit_content, a:000, s:Buffer)
 endfunction
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
