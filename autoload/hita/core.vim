@@ -102,3 +102,8 @@ function! s:hita.get_relative_path(path) abort
     return s:Path.relpath(path)
   endif
 endfunction
+function! s:hita.get_repository_name() abort
+  return self.is_enabled()
+        \ ? fnamemodify(self.git.repository, ':h:t')
+        \ : 'not-in-repository'
+endfunction

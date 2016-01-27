@@ -79,9 +79,8 @@ function! hita#autocmd#bufname(hita, options) abort
         \ 'extra_options': [],
         \ 'treeish': '',
         \}, a:options)
-  let meta = a:hita.git.get_meta()
   let bits = [
-        \ meta.local.name,
+        \ a:hita.get_repository_name(),
         \ options.content_type ==# 'show' ? '' : options.content_type,
         \ join(filter(options.extra_options, '!empty(v:val)'), ':'),
         \]

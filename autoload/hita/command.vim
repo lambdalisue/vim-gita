@@ -105,3 +105,7 @@ call hita#command#register('show',
       \ 'hita#command#show#command',
       \ 'hita#command#show#complete',
       \)
+call hita#command#register('status',
+      \ 'hita#command#status#command',
+      \ 'hita#command#status#complete',
+      \)
