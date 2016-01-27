@@ -15,6 +15,9 @@ let s:schemes.apply = {
       \ 'whitespace': '--%k %v',
       \ 'directory': '--%k %v',
       \}
+let s:schemes.blame = {
+      \ 'commit': '%v',
+      \}
 let s:schemes.branch = {
       \ 'merged': '--%k %v',
       \ 'no-merged': '--%k %v',
