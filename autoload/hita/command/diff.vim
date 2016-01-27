@@ -219,6 +219,102 @@ function! hita#command#diff#edit(...) abort
   endif
   silent doautocmd BufReadPost
 endfunction
+function! hita#command#diff#open2(...) abort
+  let options = extend({
+        \ 'cached': 0,
+        \ 'reverse': 0,
+        \ 'commit': '',
+        \ 'filenames': [],
+        \ 'opener': '',
+        \ 'split': '',
+        \}, get(a:000, 0, {}))
+  if len(options.filenames) > 1
+    call hita#util#prompt#warn(
+          \ 'Hita diff --split cannot handle multiple filenames',
+          \)
+    return
+  endif
+  let hita = hita#core#get()
+  try
+    call hita.fail_on_disabled()
+    let commit = hita#variable#get_valid_range(options.commit, {
+          \ '_allow_empty': 1,
+          \})
+    let filename = empty(options.filenames) ? '%' : options.filenames[0]
+    let filename = hita#variable#get_valid_filename(filename)
+    let WORKTREE = '@'  " @ is not valid commit thus
+    if empty(commit)
+      " git diff          : INDEX vs TREE
+      " git diff --cached :  HEAD vs INDEX
+      let lhs = options.cached ? 'HEAD' : ''
+      let rhs = options.cached ? '' : WORKTREE
+    elseif commit =~# '^.\{-}\.\.\..*$'
+      " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
+      let [lhs, rhs] = hita#variable#split_range(commit)
+      let lhs = commit
+      let rhs = empty(rhs) ? 'HEAD' : rhs
+    elseif commit =~# '^.\{-}\.\.\..*$'
+      " git diff <lhs>..<rhs> : <lhs> vs <rhs>
+      let [lhs, rhs] = hita#variable#split_range(commit)
+      let lhs = empty(lhs) ? 'HEAD' : lhs
+      let rhs = empty(rhs) ? 'HEAD' : rhs
+    else
+      " git diff <ref>          : <ref> vs TREE
+      " git diff --cached <ref> : <ref> vs INDEX
+      let lhs = commit
+      let rhs = options.cached ? '' : WORKTREE
+    endif
+    let lbufname = lhs ==# WORKTREE
+          \ ? s:Path.realpath(filename)
+          \ : hita#command#show#bufname({'commit': lhs, 'filename': filename})
+    let rbufname = rhs ==# WORKTREE
+          \ ? s:Path.realpath(filename)
+          \ : hita#command#show#bufname({'commit': rhs, 'filename': filename})
+    let opener = empty(options.opener)
+          \ ? g:hita#command#diff#default_opener
+          \ : options.opener
+    let split = empty(options.split)
+          \ ? g:hita#command#diff#default_split
+          \ : options.split
+    " NOTE:
+    " Place main contant to visually rightbelow and focus
+    if !options.reverse
+      let rresult = hita#util#buffer#open(rbufname, {
+            \ 'opener': opener,
+            \})
+      diffthis
+      let lresult = hita#util#buffer#open(lbufname, {
+            \ 'opener': split ==# 'vertical'
+            \   ? 'leftabove vertical split'
+            \   : 'leftabove split',
+            \})
+      diffthis
+      diffupdate
+      execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
+      keepjump normal zM
+      execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
+      keepjump normal zM
+    else
+      let rresult = hita#util#buffer#open(rbufname, {
+            \ 'opener': opener,
+            \})
+      diffthis
+      let lresult = hita#util#buffer#open(lbufname, {
+            \ 'opener': split ==# 'vertical'
+            \   ? 'rightbelow vertical split'
+            \   : 'rightbelow split',
+            \})
+      diffthis
+      diffupdate
+      execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
+      keepjump normal zM
+      execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
+      keepjump normal zM
+    endif
+  catch /^vim-hita:/
+    call hita#util#handle_exception(v:exception)
+  endtry
+endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:hita#develop
@@ -241,6 +337,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--reverse',
           \ 'reverse', {
+          \})
+    call s:parser.add_argument(
+          \ '--split',
+          \ 'Open two buffer to compare rather than to open a diff file', {
+          \   'on_default': g:hita#command#diff#default_split,
+          \   'choices': ['vertical', 'horizontal'],
           \})
     call s:parser.add_argument(
           \ 'commit',
@@ -266,7 +368,11 @@ function! hita#command#diff#command(...) abort
         \ deepcopy(g:hita#command#diff#default_options),
         \ options,
         \)
-  call hita#command#diff#open(options)
+  if empty(get(options, 'split', ''))
+    call hita#command#diff#open(options)
+  else
+    call hita#command#diff#open2(options)
+  endif
 endfunction
 function! hita#command#diff#complete(...) abort
   let parser = s:get_parser()
@@ -276,4 +382,5 @@ endfunction
 call hita#define_variables('command#diff', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
+      \ 'default_split': 'vertical',
       \})
