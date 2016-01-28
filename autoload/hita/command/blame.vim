@@ -118,8 +118,10 @@ function! s:parse_blame(hita, content, options) abort
   let whitespaces = repeat(' ', navi_width)
   let revisions = result.revisions
   let linenum = 1
-  redraw | echo 'Constructing blame chunks...'
-  let progressbar = s:ProgressBar.new(len(result.chunks))
+  let progressbar = s:ProgressBar.new(len(result.chunks), {
+        \ 'prefix': 'Constructing chunks: ',
+        \ 'statusline': 1,
+        \})
   try
     for chunk in result.chunks
       call extend(chunk, revisions[chunk.revision])

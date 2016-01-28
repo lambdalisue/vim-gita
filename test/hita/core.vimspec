@@ -7,14 +7,32 @@ let s:file = s:Path.realpath('autoload/hita/core.vim')
 Describe hita#core
   Before
     Init
+    let sf = s:ScriptLocal.sfuncs(s:file)
+    let sv = s:ScriptLocal.svars(s:file)
     let guard = s:Guard.store(
           \ 'b:_hita',
           \ 'b:_hita_meta',
+          \ ['repository_cache', sv],
           \)
-    let sf = s:ScriptLocal.sfuncs(s:file)
   End
   After
     call guard.restore()
+  End
+  Describe s:get_repository_cache()
+    It returns a cache instance [singleton]
+      let result = sf.get_repository_cache()
+      Assert KeyExists(result, 'has')
+      Assert KeyExists(result, 'get')
+      Assert KeyExists(result, 'set')
+      let result2 = sf.get_repository_cache()
+      Assert Same(result, result2)
+    End
+  End
+  Describe s:get_git_instance({expr})
+    Context A hita buffer of known repository in a git repository
+      Before
+      End
+    End
   End
   Describe s:core({expr})
     Context A file buffer in a git repository

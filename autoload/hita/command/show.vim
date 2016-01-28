@@ -64,11 +64,11 @@ function! s:get_diff_content(hita, content, filename, options) abort
     let raw_content = join(result.content, "\n")
     let raw_content = substitute(
           \ raw_content, escape(tempfile1, '^$~.*[]\'),
-          \ (tempfile1 =~# '^/' ? '/' : '') . a:filename, 'g'
+          \ (tempfile1 =~# '^/' ? '/' : '') . a:hita.get_relative_path(a:filename), 'g'
           \)
     let raw_content = substitute(
           \ raw_content, escape(tempfile2, '^$~.*[]\'),
-          \ (tempfile2 =~# '^/' ? '/' : '') . a:filename, 'g'
+          \ (tempfile2 =~# '^/' ? '/' : '') . a:hita.get_relative_path(a:filename), 'g'
           \)
     return split(raw_content, '\r\?\n')
   finally
@@ -142,11 +142,10 @@ function! hita#command#show#bufname(...) abort
         \})
 endfunction
 function! hita#command#show#call(...) abort
-  let options = extend({
+  let options = hita#option#init('show', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'show')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
