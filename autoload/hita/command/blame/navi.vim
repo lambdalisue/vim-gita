@@ -32,11 +32,10 @@ function! s:action_redraw(candidates, ...) abort
 endfunction
 
 function! hita#command#blame#navi#bufname(...) abort
-  let options = extend({
+  let options = hita#option#init('blame-navi', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'blame-navi')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -54,11 +53,10 @@ function! hita#command#blame#navi#bufname(...) abort
         \)
 endfunction
 function! hita#command#blame#navi#call(...) abort
-  let options = extend({
+  let options = hita#option#init('blame-navi', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'blame-navi')
+        \})
   let bufname = hita#command#blame#bufname(options)
   if empty(bufname)
     return

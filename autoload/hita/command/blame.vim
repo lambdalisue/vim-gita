@@ -98,6 +98,8 @@ function! s:parse_blame(hita, content, options) abort
   let short_revision_length = options.short_revision_length == -1
         \ ? g:hita#command#blame#short_revision_length
         \ : options.short_revision_length
+  " subtract columns for signs
+  let navigation_winwidth -= 2
   let _start = reltime()
   let result = s:BlameParser.parse_to_chunks(join(a:content, "\n"))
   call hita#util#prompt#debug(printf(
@@ -201,11 +203,10 @@ function! s:display_pseudo_separators(separators, expr) abort
 endfunction
 
 function! hita#command#blame#bufname(...) abort
-  let options = extend({
+  let options = hita#option#init('blame', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'blame')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -224,14 +225,13 @@ function! hita#command#blame#bufname(...) abort
         \})
 endfunction
 function! hita#command#blame#call(...) abort
-  let options = extend({
+  let options = hita#option#init('blame', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \ '_enable_pseudo_separator': -1,
         \ '_navigation_winwidth': -1,
         \ '_short_revision_length': -1,
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'blame')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()

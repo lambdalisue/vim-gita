@@ -51,10 +51,10 @@ function! s:apply_patches(hita, filenames, options) abort
 endfunction
 
 function! hita#command#apply#call(...) abort
-  let options = extend({
+  let options = hita#option#init('', get(a:000, 0, {}), {
         \ 'diff_content': [],
         \ 'filenames': [],
-        \}, get(a:000, 0, {}))
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()

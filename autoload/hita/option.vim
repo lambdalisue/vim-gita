@@ -27,7 +27,8 @@ function! hita#option#assign_options(options, content_type) abort
 endfunction
 function! hita#option#init(content_type, options, ...) abort
   let options = deepcopy(a:options)
-  if hita#core#get_meta('content_type', '') ==# a:content_type
+  if !empty(a:content_type)
+        \ && hita#core#get_meta('content_type', '') ==# a:content_type
     call extend(options, hita#core#get_meta('options', {}), 'keep')
   endif
   call extend(options, get(a:000, 0, {}), 'keep')

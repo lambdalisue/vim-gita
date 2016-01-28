@@ -81,13 +81,12 @@ function! s:on_BufWriteCmd() abort
 endfunction
 
 function! hita#command#diff#bufname(...) abort
-  let options = extend({
+  let options = hita#option#init('diff', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'diff')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -127,13 +126,12 @@ function! hita#command#diff#bufname(...) abort
   endif
 endfunction
 function! hita#command#diff#call(...) abort
-  let options = extend({
+  let options = hita#option#init('diff', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'diff')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()

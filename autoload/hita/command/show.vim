@@ -113,11 +113,10 @@ function! s:on_BufWriteCmd() abort
 endfunction
 
 function! hita#command#show#bufname(...) abort
-  let options = extend({
+  let options = hita#option#init('show', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'show')
+        \})
   if options.commit ==# s:WORKTREE
     return hita#variable#get_valid_filename(options.filename)
   endif

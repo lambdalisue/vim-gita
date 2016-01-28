@@ -223,10 +223,9 @@ function! s:on_WinEnter() abort
 endfunction
 
 function! hita#command#status#bufname(...) abort
-  let options = extend({
+  let options = hita#option#init('status', get(a:000, 0, {}), {
         \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'status')
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -244,10 +243,9 @@ function! hita#command#status#bufname(...) abort
         \)
 endfunction
 function! hita#command#status#call(...) abort
-  let options = extend({
-        \ 'filenames': '',
-        \}, get(a:000, 0, {}))
-  call hita#option#assign_options(options, 'status')
+  let options = hita#option#init('status', get(a:000, 0, {}), {
+        \ 'filenames': [],
+        \})
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
