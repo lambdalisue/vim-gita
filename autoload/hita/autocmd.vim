@@ -11,12 +11,13 @@ function! s:on_SourceCmd(info) abort
   endtry
 endfunction
 function! s:on_BufReadCmd(info) abort
+  silent doautocmd BufReadPre
   let content_type = get(a:info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#edit({
           \ 'commit': a:info.commit,
           \ 'filename': a:info.filename,
-          \ 'force': v:cmdbang,
+          \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
     call hita#command#diff#edit({
@@ -24,21 +25,29 @@ function! s:on_BufReadCmd(info) abort
           \ 'filenames': empty(a:info.filename) ? [] : [a:info.filename],
           \ 'cached': index(a:info.extra_options, 'cached') >= 0,
           \ 'reverse': index(a:info.extra_options, 'reverse') >= 0,
-          \ 'force': v:cmdbang,
+          \ 'force': v:cmdbang && !&modified,
+          \})
+  elseif content_type ==# 'blame'
+    call hita#command#blame#edit({
+          \ 'commit': a:info.commit,
+          \ 'filename': a:info.filename,
+          \ 'force': v:cmdbang && !&modified,
           \})
   else
     call hita#throw(printf(
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
+  silent doautocmd BufReadPost
 endfunction
 function! s:on_FileReadCmd(info) abort
+  silent doautocmd FileReadPre
   let content_type = get(a:info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#read({
           \ 'commit': a:info.commit,
           \ 'filename': a:info.filename,
-          \ 'force': v:cmdbang,
+          \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
     call hita#command#diff#read({
@@ -46,13 +55,20 @@ function! s:on_FileReadCmd(info) abort
           \ 'filenames': empty(a:info.filename) ? [] : [a:info.filename],
           \ 'cached': index(a:info.extra_options, 'cached') >= 0,
           \ 'reverse': index(a:info.extra_options, 'reverse') >= 0,
-          \ 'force': v:cmdbang,
+          \ 'force': v:cmdbang && !&modified,
+          \})
+  elseif content_type ==# 'blame'
+    call hita#command#blame#read({
+          \ 'commit': a:info.commit,
+          \ 'filename': a:info.filename,
+          \ 'force': v:cmdbang && !&modified,
           \})
   else
     call hita#throw(printf(
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
+  silent doautocmd FileReadPost
 endfunction
 
 function! hita#autocmd#call(name) abort

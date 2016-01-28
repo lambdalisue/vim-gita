@@ -64,6 +64,7 @@ function! s:on_BufWriteCmd() abort
           \]))
     return
   endif
+  silent doautocmd BufWritePre
   let hita = hita#core#get()
   try
     let result = hita#command#apply#call({
@@ -75,13 +76,8 @@ function! s:on_BufWriteCmd() abort
     if empty(result)
       return
     endif
-    redraw | echo printf('The changes are %s INDEX',
-          \ get(options, 'cached', 0)
-          \   ? 'unstaged from'
-          \   : 'staged to',
-          \)
-    " force to reload the content
-    silent doautocmd BufReadCmd
+    call hita#command#diff#edit({'force': 1})
+    silent doautocmd BufWritePost
   catch /^vim-hita:/
     call hita#util#handle_exception(v:exception)
   endtry
@@ -94,6 +90,7 @@ function! hita#command#diff#bufname(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'diff')
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -139,6 +136,7 @@ function! hita#command#diff#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'diff')
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -181,43 +179,46 @@ function! hita#command#diff#open(...) abort
   endif
 endfunction
 function! hita#command#diff#read(...) abort
-  silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
   let result = hita#command#diff#call(options)
   if empty(result)
     return
   endif
   call hita#util#buffer#read_content(result.content)
-  silent doautocmd FileReadPost
 endfunction
 function! hita#command#diff#edit(...) abort
-  silent doautocmd BufReadPre
-  let options = extend({}, get(a:000, 0, {}))
-  if hita#core#get_meta('content_type', '') ==# 'diff'
-    let options = extend(options, hita#core#get_meta('options', {}))
+  let options = extend({
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  if options.force || hita#core#get_meta('content_type', '') !=# 'diff'
+    let result = hita#command#diff#call(options)
+    if empty(result)
+      return
+    endif
+    call hita#core#set_meta('content_type', 'diff')
+    call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
+    call hita#core#set_meta('commit', result.commit)
+    call hita#core#set_meta('filename', get(result.filenames, 0, ''))
+    call hita#core#set_meta('filenames', result.filenames)
+    call hita#core#set_meta('content', result.content)
+    let commit = result.commit
+    let content = result.content
+  else
+    let commit = hita#core#get_meta('commit')
+    let content = hita#core#get_meta('content')
   endif
-  let result = hita#command#diff#call(options)
-  if empty(result)
-    return
-  endif
-  call hita#core#set_meta('content_type', 'diff')
-  call hita#core#set_meta('options', options)
-  call hita#core#set_meta('commit', result.commit)
-  call hita#core#set_meta('filename', get(result.filenames, 0, ''))
-  call hita#core#set_meta('filenames', result.filenames)
-  call hita#util#buffer#edit_content(result.content)
+  call hita#util#buffer#edit_content(content)
   setfiletype diff
   setlocal buftype=acwrite
   augroup vim_gita_internal_diff_apply_diff
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
   augroup END
-  if s:is_patchable(result.commit, options)
+  if s:is_patchable(commit, options)
     setlocal noreadonly
   else
     setlocal readonly
   endif
-  silent doautocmd BufReadPost
 endfunction
 function! hita#command#diff#open2(...) abort
   let options = extend({

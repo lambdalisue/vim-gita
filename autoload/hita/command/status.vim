@@ -220,6 +220,7 @@ function! hita#command#status#bufname(...) abort
   let options = extend({
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'status')
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -236,6 +237,7 @@ function! hita#command#status#call(...) abort
   let options = extend({
         \ 'filenames': '',
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'status')
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -252,6 +254,12 @@ function! hita#command#status#call(...) abort
           \ 'filenames': filenames,
           \ 'content': content,
           \}
+    if get(options, 'porcelain')
+      let result.statuses = sort(
+            \ s:parse_statuses(hita, content, options),
+            \ function('s:compare_statuses'),
+            \)
+    endif
     return result
   catch /^vim-hita:/
     call hita#util#handle_exception(v:exception)
@@ -262,19 +270,11 @@ function! hita#command#status#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  if hita#core#get_meta('content_type', '') ==# 'status'
-    let options = extend(options, hita#core#get_meta('options', {}))
-  endif
   let options['porcelain'] = 1
   let result = hita#command#status#call(options)
   if empty(result)
     return
   endif
-  let hita = hita#core#get()
-  let statuses = sort(
-        \ s:parse_statuses(hita, result.content, options),
-        \ function('s:compare_statuses'),
-        \)
   let opener = empty(options.opener)
         \ ? g:hita#command#status#default_opener
         \ : options.opener
@@ -284,8 +284,8 @@ function! hita#command#status#open(...) abort
         \ 'group': 'manipulation_panel',
         \})
   call hita#core#set_meta('content_type', 'status')
-  call hita#core#set_meta('options', options)
-  call hita#core#set_meta('statuses', statuses)
+  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#core#set_meta('statuses', result.statuses)
   call hita#core#set_meta('filenames', result.filenames)
   call hita#core#set_meta('winwidth', winwidth(0))
   call s:define_plugin_mappings()
@@ -294,6 +294,9 @@ function! hita#command#status#open(...) abort
   endif
   augroup vim_hita_status
     autocmd! * <buffer>
+    autocmd BufReadCmd <buffer>
+          \ call hita#command#status#update() |
+          \ setlocal filetype=hita-status
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
@@ -312,15 +315,13 @@ function! hita#command#status#update(...) abort
           \)
   endif
   let options = get(a:000, 0, {})
-  if hita#core#get_meta('content_type', '') ==# 'status'
-    let options = extend(options, hita#core#get_meta('options', {}))
-  endif
+  let options['porcelain'] = 1
   let result = hita#command#status#call(options)
   if empty(result)
     return
   endif
   call hita#core#set_meta('content_type', 'status')
-  call hita#core#set_meta('options', options)
+  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#core#set_meta('statuses', result.statuses)
   call hita#core#set_meta('filenames', result.filenames)
   call hita#core#set_meta('winwidth', winwidth(0))
@@ -333,7 +334,6 @@ function! hita#command#status#redraw() abort
           \)
   endif
   let hita = hita#core#get()
-  let options = hita#core#get_meta('options', {})
   let prologue = s:List.flatten([
         \ g:hita#command#status#show_status_string_in_prologue
         \   ? [s:get_statusline_string(hita) . ' | Press ? to toggle a mapping help']

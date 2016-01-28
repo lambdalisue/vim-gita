@@ -97,6 +97,10 @@ call hita#command#register('apply',
       \ 'hita#command#apply#command',
       \ 'hita#command#apply#complete',
       \)
+call hita#command#register('blame',
+      \ 'hita#command#blame#command',
+      \ 'hita#command#blame#complete',
+      \)
 call hita#command#register('diff',
       \ 'hita#command#diff#command',
       \ 'hita#command#diff#complete',

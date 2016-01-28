@@ -18,3 +18,8 @@ function! hita#option#assign_filename(options) abort
     let a:options.filename = filename
   endif
 endfunction
+function! hita#option#assign_options(options, content_type) abort
+  if hita#core#get_meta('content_type', '') ==# a:content_type
+    call extend(a:options, hita#core#get_meta('options', {}), 'keep')
+  endif
+endfunction

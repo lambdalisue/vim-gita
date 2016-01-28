@@ -2,6 +2,7 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:WORKTREE = '@'
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
@@ -87,8 +88,8 @@ function! s:on_BufWriteCmd() abort
           \]))
     return
   endif
+  silent doautocmd BufWritePre
   let hita = hita#core#get()
-  let current_content = getline(1, '$')
   try
     let content = s:get_diff_content(hita, getline(1, '$'), filename, options)
     if empty(content)
@@ -103,9 +104,9 @@ function! s:on_BufWriteCmd() abort
     if empty(result)
       return
     endif
-    redraw | echo 'The changes are staged to INDEX'
-    silent doautocmd BufReadCmd
+    call hita#command#show#edit({'force': 1})
     silent diffupdate
+    silent doautocmd BufWritePost
   catch /^vim-hita:/
     call hita#util#handle_exception(v:exception)
   endtry
@@ -116,6 +117,11 @@ function! hita#command#show#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'show')
+  if options.commit ==# s:WORKTREE
+    return hita#variable#get_valid_filename(options.filename)
+  endif
+
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -140,6 +146,7 @@ function! hita#command#show#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
+  call hita#option#assign_options(options, 'show')
   let hita = hita#core#get()
   try
     call hita.fail_on_disabled()
@@ -187,31 +194,38 @@ function! hita#command#show#open(...) abort
   endif
 endfunction
 function! hita#command#show#read(...) abort
-  silent doautocmd FileReadPre
   let options = extend({}, get(a:000, 0, {}))
   let result = hita#command#show#call(options)
   if empty(result)
     return
   endif
   call hita#util#buffer#read_content(result.content)
-  silent doautocmd FileReadPost
 endfunction
 function! hita#command#show#edit(...) abort
-  silent doautocmd BufReadPre
-  let options = extend({}, get(a:000, 0, {}))
-  if hita#core#get_meta('content_type', '') ==# 'show'
-    let options = extend(options, hita#core#get_meta('options', {}))
+  let options = extend({
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  if options.force || hita#core#get_meta('content_type', '') !=# 'show'
+    " Reload content only when 1) no content exists yet, 2) ! applied to non modified buffer
+    let result = hita#command#show#call(options)
+    if empty(result)
+      return
+    endif
+    call hita#core#set_meta('content_type', 'show')
+    call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
+    call hita#core#set_meta('commit', result.commit)
+    call hita#core#set_meta('filename', result.filename)
+    call hita#core#set_meta('content', result.content)
+    let commit = result.commit
+    let filename = result.filename
+    let content = result.content
+  else
+    let commit = hita#core#get_meta('commit')
+    let filename = hita#core#get_meta('filename')
+    let content = hita#core#get_meta('content')
   endif
-  let result = hita#command#show#call(options)
-  if empty(result)
-    return
-  endif
-  call hita#core#set_meta('content_type', 'show')
-  call hita#core#set_meta('options', options)
-  call hita#core#set_meta('commit', result.commit)
-  call hita#core#set_meta('filename', result.filename)
-  call hita#util#buffer#edit_content(result.content)
-  if empty(result.filename)
+  call hita#util#buffer#edit_content(content)
+  if empty(filename)
     setfiletype git
     setlocal buftype=nowrite
     setlocal readonly
@@ -221,13 +235,12 @@ function! hita#command#show#edit(...) abort
       autocmd! * <buffer>
       autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
     augroup END
-    if empty(result.commit)
+    if empty(commit)
       setlocal noreadonly
     else
       setlocal readonly
     endif
   endif
-  silent doautocmd BufReadPost
 endfunction
 
 function! s:get_parser() abort
@@ -254,6 +267,11 @@ function! s:get_parser() abort
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
+          \ '--worktree',
+          \ 'Open a content of a file in working tree', {
+          \   'conflicts': ['summary'],
+          \})
+    call s:parser.add_argument(
           \ 'commit',
           \ 'A commit', {
           \   'complete': function('hita#variable#complete_commit'),
@@ -262,6 +280,10 @@ function! s:get_parser() abort
       if has_key(a:options, 'summary')
         let a:options.filename = ''
         unlet a:options.summary
+      endif
+      if has_key(a:options, 'worktree')
+        let a:options.commit = s:WORKTREE
+        unlet a:options.worktree
       endif
     endfunction
     call s:parser.hooks.validate()
