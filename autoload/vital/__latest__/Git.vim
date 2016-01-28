@@ -10,6 +10,7 @@ function! s:_vital_loaded(V) abort
   let s:StringExt = a:V.import('Data.String.Extra')
   let s:Finder = a:V.import('Git.Finder')
   let s:Util = a:V.import('Git.Util')
+  let s:Operation = a:V.import('Git.Operation')
   let s:config = {
         \ 'executable': 'git',
         \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
@@ -41,6 +42,7 @@ function! s:_vital_depends() abort
         \ 'Data.String.Extra',
         \ 'Git.Finer',
         \ 'Git.Util',
+        \ 'Git.Operation',
         \]
 endfunction
 function! s:_vital_created(module) abort
@@ -80,8 +82,12 @@ function! s:get_relative_path(git, path) abort
   if s:Path.is_relative(path)
     return path
   endif
-  let prefix = s:StringExt.escape_regex(a:git.worktree . s:SEPARATOR)
-  return substitute(path, '^' . prefix, '', '')
+  let prefix = s:StringExt.escape_regex(
+        \ a:git.worktree[-1] ==# s:SEPARATOR
+        \   ? expand(a:git.worktree)
+        \   : expand(a:git.worktree) . s:SEPARATOR
+        \)
+  return substitute(expand(path), '^' . prefix, '', '')
 endfunction
 function! s:get_absolute_path(git, path) abort
   let path = s:Path.realpath(a:path)
@@ -218,7 +224,7 @@ endfunction
 function! s:get_cached_content(git, path, slug, ...) abort
   let slug = get(a:000, 0, '')
   let path = s:Path.realpath(a:path)
-  let uptime = s:getftime(a:git.repository, path)
+  let uptime = s:getftime(a:git, path)
   let cached = a:git.repository_cache.get(a:slug . ':' . path, {})
   return empty(cached) || uptime == -1 || uptime > cached.uptime
         \ ? get(a:000, 0, '')
@@ -318,7 +324,7 @@ function! s:resolve_ref(git, ref) abort
 endfunction
 function! s:get_local_hash(git, branch) abort
   if a:branch =~# 'HEAD'
-    let HEAD = s:get_head(a:git.repository)
+    let HEAD = s:get_head(a:git)
     let ref = s:Path.join(
           \ a:git.repository,
           \ substitute(HEAD, '^ref:\s', '', ''),
@@ -330,7 +336,7 @@ function! s:get_local_hash(git, branch) abort
 endfunction
 function! s:get_remote_hash(git, remote, branch) abort
   let ref = s:Path.join('refs', 'remotes', a:remote, a:branch)
-  return s:resolve_ref(a:git.repository, ref)
+  return s:resolve_ref(a:git, ref)
 endfunction
 
 function! s:get_local_branch(git) abort
@@ -352,12 +358,13 @@ function! s:get_remote_branch(git) abort
   let local = s:get_local_branch(a:git)
   let merge = s:get_branch_merge(config, local.name)
   let remote = s:get_branch_remote(config, local.name)
-  let remote_url = s:get_remote_url(remote)
+  let remote_url = s:get_remote_url(config, remote)
   let branch_name = merge =~# 'refs/heads/'
         \ ? matchstr(merge, 'refs/heads/\zs.\+$')
         \ : merge[:7]
   let branch_hash = s:get_remote_hash(a:git, remote, branch_name)
   return {
+        \ 'remote': remote,
         \ 'name': branch_name,
         \ 'hash': branch_hash,
         \ 'url': remote_url,
@@ -371,12 +378,12 @@ function! s:system(args, ...) abort
         \ 'timeout': 0,
         \ 'content': 1,
         \ 'remove_ansi_sequences': 0,
-        \ 'remove_trailing_emptyline': 1,
+        \ 'remove_trailing_emptyline': 0,
         \}, get(a:000, 0, {}))
   if empty(options.input)
     unlet options.input
   else
-    let options.input = s:StringExt.ensure_eol(options.input)
+    let options.input = options.input
   endif
   let args = [s:config.executable] + s:config.arguments + a:args
   let stdout = s:Process.system(args, options)
@@ -411,7 +418,7 @@ function! s:get_last_commitmsg(git) abort
   let content = s:get_cached_content(a:git, 'index', slug, [])
   if empty(content)
     let args = ['log', '-1', '--pretty=%B']
-    let result = s:system(args)
+    let result = s:Operation.system(a:git, args)
     if result.status
       call s:_throw(result.stdout)
     endif
@@ -428,7 +435,7 @@ function! s:count_commits_ahead_of_remote(git) abort
   let content = s:get_cached_content(a:git, 'index', slug, -1)
   if content == -1
     let args = ['log', '--oneline', '@{upstream}..']
-    let result = s:system(args)
+    let result = s:Operation.system(a:git, args)
     if result.status
       call s:_throw(result.stdout)
     endif
@@ -445,7 +452,7 @@ function! s:count_commits_behind_remote(git) abort
   let content = s:get_cached_content(a:git, 'index', slug, -1)
   if content == -1
     let args = ['log', '--oneline', '..@{upstream}']
-    let result = s:system(args)
+    let result = s:Operation.system(a:git, args)
     if result.status
       call s:_throw(result.stdout)
     endif
@@ -454,6 +461,7 @@ function! s:count_commits_behind_remote(git) abort
   endif
   return content
 endfunction
+
 
 " *** Git instance ***********************************************************
 let s:git = {}
@@ -509,4 +517,8 @@ function! s:get(path, ...) abort
     let git = cached.git
   endif
   return git
+endfunction
+function! s:clear_instance_cache() abort
+  let instance_cache = s:_get_instance_cache()
+  call instance_cache.clear()
 endfunction

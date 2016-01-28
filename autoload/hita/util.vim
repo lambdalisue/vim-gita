@@ -24,17 +24,28 @@ function! hita#util#doautocmd(name, ...) abort
 endfunction
 
 function! hita#util#handle_exception(exception) abort
-  redraw
-  let known_exception_patterns = [
-        \ '^vim-hita: Cancel',
-        \ '^vim-hita: Login canceled',
-        \ '^vim-hita: ValidationError:',
+  let known_warning_patterns = [
+        \ '^vim-hita: Cancel:',
+        \ '^vim-hita: Warning:',
         \]
-  for pattern in known_exception_patterns
+  for pattern in known_warning_patterns
     if a:exception =~# pattern
-      call hita#util#prompt#warn(matchstr(a:exception, '^vim-hita: \zs.*'))
+      redraw
+      call hita#util#prompt#warn(substitute(a:exception, pattern, '', ''))
       return
     endif
   endfor
-  call hita#util#prompt#error(a:exception)
+  let known_exception_patterns = [
+        \ '^vim-hita:',
+        \ '^vital: Git[:.]',
+        \ 'ValidationError:',
+        \]
+  for pattern in known_exception_patterns
+    if a:exception =~# pattern
+      redraw
+      call hita#util#prompt#error(a:exception)
+      return
+    endif
+  endfor
+  throw a:exception
 endfunction

@@ -29,25 +29,25 @@ function! s:pick_available_options(options) abort
 endfunction
 function! s:apply_content(hita, content, options) abort
   let options = s:pick_available_options(a:options)
-  let stdin = hita#util#string#ensure_eol(join(a:content, "\n"))
-  let result = hita#operation#exec(
-        \ a:hita, 'apply', options, { 'stdin': stdin }
-        \)
+  let stdin = join(a:content, "\n")
+  let result = hita#execute(a:hita, 'apply', options, {
+        \  'input': hita#util#string#ensure_eol(stdin),
+        \})
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n')
+  return split(result.stdout, '\r\?\n', 1)
 endfunction
 function! s:apply_patches(hita, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
-  let result = hita#operation#exec(
+  let result = hita#execute(
         \ a:hita, 'apply', options,
         \)
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n')
+  return split(result.stdout, '\r\?\n', 1)
 endfunction
 
 function! hita#command#apply#call(...) abort
@@ -55,9 +55,8 @@ function! hita#command#apply#call(...) abort
         \ 'diff_content': [],
         \ 'filenames': [],
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     if empty(options.filenames)
       let filenames = []
       let diff_content = empty(options.diff_content)
@@ -77,7 +76,7 @@ function! hita#command#apply#call(...) abort
           \ 'filenames': filenames,
           \ 'content': content,
           \}
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry

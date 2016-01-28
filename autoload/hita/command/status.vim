@@ -3,9 +3,9 @@ let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:GitCore = s:V.import('VCS.Git.Core')
-let s:StatusParser = s:V.import('VCS.Git.StatusParser')
 let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:Git = s:V.import('Git')
+let s:StatusParser = s:V.import('Git.StatusParser')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-quit)': 'Close the buffer',
       \ '<Plug>(hita-redraw)': 'Redraw the buffer',
@@ -22,7 +22,7 @@ let s:entry_offset = 0
 
 function! s:get_git_version() abort
   if !exists('s:git_version')
-    let s:git_version = s:GitCore.get_version()
+    let s:git_version = s:Git.get_git_version()
   endif
   return s:git_version
 endfunction
@@ -44,22 +44,24 @@ function! s:get_status_content(hita, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#operation#exec(a:hita, 'status', options)
+  let result = hita#execute(a:hita, 'status', options)
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n')
+  return split(result.stdout, '\r\?\n', 1)
 endfunction
 
 function! s:extend_status(hita, status) abort
   " NOTE:
   " git -C <rep> status --porcelain returns paths from the repository root
   " so convert it to a real absolute path
-  let a:status.path = a:hita.git.get_absolute_path(
+  let a:status.path = s:Git.get_absolute_path(
+        \ a:hita,
         \ s:Path.realpath(a:status.path)
         \)
   if has_key(a:status, 'path2')
-    let a:status.path2 = a:hita.git.get_absolute_path(
+    let a:status.path2 = s:Git.get_absolute_path(
+          \ a:hita,
           \ s:Path.realpath(a:status.path2)
           \)
   endif
@@ -78,37 +80,31 @@ function! s:parse_statuses(hita, content, options) abort
   let statuses = s:StatusParser.parse(join(a:content, "\n"), {
         \ 'fail_silently': 1,
         \})
-  if get(statuses, 'status')
-    call hita#throw(statuses.stdout)
-  endif
-  call map(statuses.all, 's:extend_status(a:hita, v:val)')
-  return statuses.all
+  call map(statuses, 's:extend_status(a:hita, v:val)')
+  return statuses
 endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let statuses = hita#core#get_meta('statuses', [])
+  let statuses = hita#get_meta('statuses', [])
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:format_entry(entry) abort
   return a:entry.record
 endfunction
 function! s:get_statusline_string(hita) abort
-  let meta = a:hita.git.get_meta()
-  let name = meta.local.name
-  let branch = meta.local.branch_name
-  let remote_name = meta.remote.name
-  let remote_branch = meta.remote.branch_name
-  let mode = a:hita.git.get_mode()
-  let is_connected = !(empty(remote_name) || empty(remote_branch))
+  let local = s:Git.get_local_branch(a:hita)
+  let remote = s:Git.get_remote_branch(a:hita)
+  let mode = s:Git.get_current_mode(a:hita)
+  let is_connected = !empty(remote.name)
 
   let branchinfo = is_connected
-        \ ? printf('%s/%s <> %s/%s', name, branch, remote_name, remote_branch)
-        \ : printf('%s/%s', name, branch)
+        \ ? printf('%s/%s <> %s/%s', a:hita.repository_name, local.name, remote.remote, remote.name)
+        \ : printf('%s/%s', a:hita.repository_name, local.name)
   let connection = ''
   if is_connected
-    let outgoing = a:hita.git.count_commits_ahead_of_remote()
-    let incoming = a:hita.git.count_commits_behind_remote()
+    let outgoing = s:Git.count_commits_ahead_of_remote(a:hita)
+    let incoming = s:Git.count_commits_behind_remote(a:hita)
     if outgoing > 0 && incoming > 0
       let connection = printf(
             \ '%d commit(s) ahead and %d commit(s) behind of remote',
@@ -217,7 +213,7 @@ function! s:on_VimResized() abort
   call hita#command#status#redraw()
 endfunction
 function! s:on_WinEnter() abort
-  if hita#core#get_meta('winwidth', winwidth(0)) != winwidth(0)
+  if hita#get_meta('winwidth', winwidth(0)) != winwidth(0)
     call hita#command#status#redraw()
   endif
 endfunction
@@ -226,19 +222,18 @@ function! hita#command#status#bufname(...) abort
   let options = hita#option#init('status', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
-  catch /^vim-hita:/
+    let hita = hita#get_or_fail()
+  catch /^\%(vital:\|vim-hita\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
   return printf('hita-status:%s%s',
-        \ hita.get_repository_name(),
+        \ hita.repository_name,
         \ empty(options.filenames)
         \   ? ''
         \   : len(options.filenames) == 1
-        \     ? hita.get_relative_path(options.filenames[0])
+        \     ? hita#get_relative_path(hita, options.filenames[0])
         \     : ':partial'
         \)
 endfunction
@@ -246,9 +241,8 @@ function! hita#command#status#call(...) abort
   let options = hita#option#init('status', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     if !empty(options.filenames)
       let filenames = map(
             \ copy(options.filenames),
@@ -269,7 +263,7 @@ function! hita#command#status#call(...) abort
             \)
     endif
     return result
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -291,13 +285,13 @@ function! hita#command#status#open(...) abort
         \ 'opener': opener,
         \ 'group': 'manipulation_panel',
         \})
-  call hita#core#set_meta('content_type', 'status')
-  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#core#set_meta('statuses', result.statuses)
-  call hita#core#set_meta('filename',
+  call hita#set_meta('content_type', 'status')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('statuses', result.statuses)
+  call hita#set_meta('filename',
         \ len(result.filenames) == 1 ? result.filenames[0] : '')
-  call hita#core#set_meta('filenames', result.filenames)
-  call hita#core#set_meta('winwidth', winwidth(0))
+  call hita#set_meta('filenames', result.filenames)
+  call hita#set_meta('winwidth', winwidth(0))
   call s:define_plugin_mappings()
   if g:hita#command#status#enable_default_mappings
     call s:define_default_mappings()
@@ -330,13 +324,13 @@ function! hita#command#status#update(...) abort
   if empty(result)
     return
   endif
-  call hita#core#set_meta('content_type', 'status')
-  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#core#set_meta('statuses', result.statuses)
-  call hita#core#set_meta('filename',
+  call hita#set_meta('content_type', 'status')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('statuses', result.statuses)
+  call hita#set_meta('filename',
         \ len(result.filenames) == 1 ? result.filenames[0] : '')
-  call hita#core#set_meta('filenames', result.filenames)
-  call hita#core#set_meta('winwidth', winwidth(0))
+  call hita#set_meta('filenames', result.filenames)
+  call hita#set_meta('winwidth', winwidth(0))
   call hita#command#status#redraw()
 endfunction
 function! hita#command#status#redraw() abort
@@ -345,7 +339,7 @@ function! hita#command#status#redraw() abort
           \ 'redraw() requires to be called in a hita-status buffer'
           \)
   endif
-  let hita = hita#core#get()
+  let hita = hita#get_or_fail()
   let prologue = s:List.flatten([
         \ g:hita#command#status#show_status_string_in_prologue
         \   ? [s:get_statusline_string(hita) . ' | Press ? to toggle a mapping help']
@@ -355,7 +349,7 @@ function! hita#command#status#redraw() abort
         \   : []
         \])
   redraw
-  let statuses = hita#core#get_meta('statuses', [])
+  let statuses = hita#get_meta('statuses', [])
   let contents = map(
         \ copy(statuses),
         \ 's:format_entry(v:val)'
@@ -427,8 +421,8 @@ function! hita#command#status#define_syntax() abort
 endfunction
 
 function! hita#command#status#get_statusline_string() abort
-  let hita = hita#core#get()
-  if hita.is_enabled()
+  let hita = hita#get()
+  if hita.is_enabled
     return s:get_statusline_string(hita)
   else
     return ''

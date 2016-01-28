@@ -136,6 +136,12 @@ Describe Git.Term
             \ ['', 'autoload/gita/core.vim'],
             \)
     End
+    It splits {treeish} of :
+      Assert Equals(
+            \ Term.split_treeish(':', {}),
+            \ ['', ''],
+            \)
+    End
     It throws an exception when failed to split
       Throws /no space, tilde \~, caret \^, or colon : are allowed/
             \ Term.split_treeish('H E A D:README.md', {})

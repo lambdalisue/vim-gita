@@ -36,20 +36,19 @@ function! hita#command#blame#navi#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
     let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
   return printf('hita-blame-navi:%s:%s:%s',
-        \ hita.get_repository_name(),
-        \ commit, hita.get_relative_path(filename),
+        \ hita.repository_name,
+        \ commit, hita#get_relative_path(hita, filename),
         \)
 endfunction
 function! hita#command#blame#navi#call(...) abort
@@ -63,17 +62,17 @@ function! hita#command#blame#navi#call(...) abort
   endif
   try
     let bufnum = bufnr(bufname)
-    let content_type = hita#core#get_meta('content_type', '', bufnum)
+    let content_type = hita#get_meta('content_type', '', bufnum)
     if bufnum == 0 || content_type !=# 'blame'
       call hita#throw(
             \ 'hita-blame-navi window requires a corresponding hita-blame buffer.',
             \)
       return
     endif
-    let commit = hita#core#get_meta('commit', '', bufnum)
-    let filename = hita#core#get_meta('filename', '', bufnum)
-    let content = hita#core#get_meta('content', [], bufnum)
-    let blame = hita#core#get_meta('blame', {}, bufnum)
+    let commit = hita#get_meta('commit', '', bufnum)
+    let filename = hita#get_meta('filename', '', bufnum)
+    let content = hita#get_meta('content', [], bufnum)
+    let blame = hita#get_meta('blame', {}, bufnum)
     if empty(blame)
       call hita#throw(printf('No blame information has found on %s', bufname))
     endif
@@ -107,13 +106,13 @@ function! hita#command#blame#navi#open(...) abort
         \ 'opener': opener,
         \ 'group': 'blame_navigation_panel',
         \})
-  call hita#core#set_meta('content_type', 'blame-navi')
-  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#core#set_meta('commit', result.commit)
-  call hita#core#set_meta('filename', result.filename)
-  call hita#core#set_meta('content', result.content)
-  call hita#core#set_meta('blame', result.blame)
-  call hita#core#set_meta('winwidth', winwidth(0))
+  call hita#set_meta('content_type', 'blame-navi')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('commit', result.commit)
+  call hita#set_meta('filename', result.filename)
+  call hita#set_meta('content', result.content)
+  call hita#set_meta('blame', result.blame)
+  call hita#set_meta('winwidth', winwidth(0))
   call s:define_plugin_mappings()
   if g:hita#command#blame#navi#enable_default_mappings
     call s:define_default_mappings()
@@ -145,13 +144,13 @@ function! hita#command#blame#navi#update(...) abort
   if empty(result)
     return
   endif
-  call hita#core#set_meta('content_type', 'blame-navi')
-  call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#core#set_meta('commit', result.commit)
-  call hita#core#set_meta('filename', result.filename)
-  call hita#core#set_meta('content', result.content)
-  call hita#core#set_meta('blame', result.blame)
-  call hita#core#set_meta('winwidth', winwidth(0))
+  call hita#set_meta('content_type', 'blame-navi')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('commit', result.commit)
+  call hita#set_meta('filename', result.filename)
+  call hita#set_meta('content', result.content)
+  call hita#set_meta('blame', result.blame)
+  call hita#set_meta('winwidth', winwidth(0))
   call hita#command#blame#navi#redraw()
 endfunction
 function! hita#command#blame#navi#redraw() abort
@@ -160,7 +159,7 @@ function! hita#command#blame#navi#redraw() abort
           \ 'redraw() requires to be called in a hita-status buffer'
           \)
   endif
-  let blame = hita#core#get_meta('blame')
+  let blame = hita#get_meta('blame')
   call hita#util#buffer#edit_content(blame.navi_content)
   call hita#command#blame#display_pseudo_separators(blame.separators)
 endfunction

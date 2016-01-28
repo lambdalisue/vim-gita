@@ -19,12 +19,7 @@ function! s:_vital_created(module) abort
         \ 'schemes': s:schemes,
         \})
 endfunction
-
-function! s:_throw(msg) abort
-  throw 'vital: ' . a:msg
-endfunction
-
-function! s:splitargs(str) abort
+function! s:_splitargs(str) abort
   let single_quote = '\v''\zs[^'']+\ze'''
   let double_quote = '\v"\zs[^"]+\ze"'
   let bare_strings = '\v[^ \t''"]+'
@@ -71,7 +66,7 @@ function! s:translate_options(options, scheme) abort
   for key  in sort(keys(a:options))
     if key !~# '^__.\+__$' && key !=# '--'
       let pattern = get(a:scheme, key, '')
-      call extend(args, s:splitargs(
+      call extend(args, s:_splitargs(
             \ s:translate_option(key, a:options[key], pattern)
             \))
     endif
@@ -84,7 +79,11 @@ function! s:translate_options(options, scheme) abort
   endif
   return args
 endfunction
-
+function! s:system(git, args, ...) abort
+  let config = get(a:000, 0, {})
+  let args = ['-C', a:git.worktree] + a:args
+  return s:Git.system(args, config)
+endfunction
 function! s:execute(git, name, ...) abort
   let options = get(a:000, 0, {})
   let config = get(a:000, 1, {})
@@ -95,7 +94,7 @@ function! s:execute(git, name, ...) abort
     let args = s:translate_options(options, l:Scheme)
   endif
   let args = filter(extend([a:name], args), '!empty(v:val)')
-  return s:Git.system(a:git, args, config)
+  return s:system(a:git, args, config)
 endfunction
 
 let s:schemes = {}
@@ -197,4 +196,3 @@ function! s:schemes.clone(name, options) abort
         \ get(a:options, 'directory', ''),
         \])
 endfunction
-

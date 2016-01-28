@@ -23,17 +23,17 @@ function! s:get_diff_content(hita, commit, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#operation#exec(a:hita, 'diff', options)
+  let result = hita#execute(a:hita, 'diff', options)
   if get(options, 'no-index') || get(options, 'exit-code')
     " NOTE:
     " --no-index force --exit-code option.
     " --exit-code mean that the program exits with 1 if there were differences
     " and 0 means no differences
-    return split(result.stdout, '\r\?\n')
+    return split(result.stdout, '\r\?\n', 1)
   elseif result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n')
+  return split(result.stdout, '\r\?\n', 1)
 endfunction
 function! s:is_patchable(commit, options) abort
   let options = extend({
@@ -51,8 +51,8 @@ function! s:is_patchable(commit, options) abort
 endfunction
 
 function! s:on_BufWriteCmd() abort
-  let commit = hita#core#get_meta('commit', '')
-  let options = hita#core#get_meta('options', {})
+  let commit = hita#get_meta('commit', '')
+  let options = hita#get_meta('options', {})
   if !s:is_patchable(commit, options)
     call hita#util#prompt#warn(join([
           \ 'Patching diff is only available when diff was produced',
@@ -62,20 +62,21 @@ function! s:on_BufWriteCmd() abort
     return
   endif
   silent doautocmd BufWritePre
-  let hita = hita#core#get()
   try
+    let hita = hita#get_or_fail()
     let result = hita#command#apply#call({
           \ 'diff_content': getline(1, '$'),
           \ 'cached': 1,
-          \ 'reverse': 0,
-          \ 'unidiff-zero': get(options, 'unified', '') == '0',
+          \ 'verbose': 1,
+          \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
+          \ 'whitespace': 'fix',
           \})
     if empty(result)
       return
     endif
     call hita#command#diff#edit({'force': 1})
     silent doautocmd BufWritePost
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -87,9 +88,8 @@ function! hita#command#diff#bufname(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
@@ -101,7 +101,7 @@ function! hita#command#diff#bufname(...) abort
     else
       let filenames = []
     endif
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
@@ -112,7 +112,7 @@ function! hita#command#diff#bufname(...) abort
           \   options.cached ? 'cached' : '',
           \   options.reverse ? 'reverse' : '',
           \ ],
-          \ 'treeish': commit . ':' . hita.get_relative_path(filenames[0]),
+          \ 'treeish': commit . ':' . hita#get_relative_path(hita, filenames[0]),
           \})
   else
     return hita#autocmd#bufname(hita, {
@@ -132,9 +132,8 @@ function! hita#command#diff#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
@@ -153,7 +152,7 @@ function! hita#command#diff#call(...) abort
           \ 'content': content,
           \}
     return result
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -185,23 +184,23 @@ function! hita#command#diff#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  if options.force || hita#core#get_meta('content_type', '') !=# 'diff'
+  if options.force || hita#get_meta('content_type', '') !=# 'diff'
     let result = hita#command#diff#call(options)
     if empty(result)
       return
     endif
-    call hita#core#set_meta('content_type', 'diff')
-    call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-    call hita#core#set_meta('commit', result.commit)
-    call hita#core#set_meta('filename',
+    call hita#set_meta('content_type', 'diff')
+    call hita#set_meta('options', s:Dict.omit(options, ['force']))
+    call hita#set_meta('commit', result.commit)
+    call hita#set_meta('filename',
           \ len(result.filenames) == 1 ? result.filenames[0] : '')
-    call hita#core#set_meta('filenames', result.filenames)
-    call hita#core#set_meta('content', result.content)
+    call hita#set_meta('filenames', result.filenames)
+    call hita#set_meta('content', result.content)
     let commit = result.commit
     let content = result.content
   else
-    let commit = hita#core#get_meta('commit')
-    let content = hita#core#get_meta('content')
+    let commit = hita#get_meta('commit')
+    let content = hita#get_meta('content')
   endif
   call hita#util#buffer#edit_content(content)
   setfiletype diff
@@ -231,9 +230,8 @@ function! hita#command#diff#open2(...) abort
           \)
     return
   endif
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
@@ -308,7 +306,7 @@ function! hita#command#diff#open2(...) abort
       execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
       keepjump normal zM
     endif
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction

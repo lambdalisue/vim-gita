@@ -20,11 +20,11 @@ function! s:get_blame_content(hita, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
   let options['--'] = [a:filename]
-  let result = hita#operation#exec(a:hita, 'blame', options)
+  let result = hita#execute(a:hita, 'blame', options)
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n')
+  return split(result.stdout, '\r\?\n', 1)
 endfunction
 
 function! s:get_chunk_cache() abort
@@ -207,21 +207,20 @@ function! hita#command#blame#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
     let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
   return hita#autocmd#bufname(hita, {
         \ 'content_type': 'blame',
         \ 'extra_options': [],
-        \ 'treeish': commit . ':' . hita.get_relative_path(filename),
+        \ 'treeish': commit . ':' . hita#get_relative_path(hita, filename),
         \})
 endfunction
 function! hita#command#blame#call(...) abort
@@ -232,9 +231,8 @@ function! hita#command#blame#call(...) abort
         \ '_navigation_winwidth': -1,
         \ '_short_revision_length': -1,
         \})
-  let hita = hita#core#get()
   try
-    call hita.fail_on_disabled()
+    let hita = hita#get_or_fail()
     let commit = hita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
           \})
@@ -261,7 +259,7 @@ function! hita#command#blame#call(...) abort
             \))
     endif
     return result
-  catch /^vim-hita:/
+  catch /^\%(vital:\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -303,21 +301,21 @@ function! hita#command#blame#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  if options.force || hita#core#get_meta('content_type') !=# 'blame'
+  if options.force || hita#get_meta('content_type') !=# 'blame'
     let options['porcelain'] = 1
     let result = hita#command#blame#call(options)
     if empty(result)
       return
     endif
-    call hita#core#set_meta('content_type', 'blame')
-    call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
-    call hita#core#set_meta('commit', result.commit)
-    call hita#core#set_meta('filename', result.filename)
-    call hita#core#set_meta('content', result.content)
-    call hita#core#set_meta('blame', result.blame)
+    call hita#set_meta('content_type', 'blame')
+    call hita#set_meta('options', s:Dict.omit(options, ['force']))
+    call hita#set_meta('commit', result.commit)
+    call hita#set_meta('filename', result.filename)
+    call hita#set_meta('content', result.content)
+    call hita#set_meta('blame', result.blame)
     let blame = result.blame
   else
-    let blame = hita#core#get_meta('blame')
+    let blame = hita#get_meta('blame')
   endif
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nowrap nofoldenable foldcolumn=0
