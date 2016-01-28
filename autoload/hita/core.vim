@@ -18,9 +18,10 @@ function! s:get_git_instance(expr) abort
   if bufname =~# '^hita://' || bufname =~# '^hita[^:]\+:'
     " hita buffer
     let repository_name = matchstr(
-          \ bufname, '^hita:\%(//\)\?\zs[^:/]\+\ze'
+          \ bufname, '^hita[^:]*:\%(//\)\?\zs[^:/]\+\ze'
           \)
     let git = repository_cache.get(repository_name, {})
+    return git
   elseif buftype =~# '^\|nowrite\|acwrite$'
     " file buffer
     let filename = hita#core#expand(a:expr)
