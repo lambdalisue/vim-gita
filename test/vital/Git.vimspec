@@ -1,0 +1,26 @@
+let s:V = vital#of('vital')
+let s:File = s:V.import('System.File')
+let s:Pathath = s:V.import('System.Filepath')
+
+Describe Git
+  Before all
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = s:Path.join(root, 'inside')
+    let repository = s:Path.join(worktree, '.git')
+    let inside = s:Path.join(worktree, 'foo', 'bar')
+    let outside = s:Path.join(root, 'outside', 'foo', 'bar')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    lockvar inside
+    lockvar outside
+    call mkdir(repository, 'p')
+    call mkdir(inside, 'p')
+    call mkdir(outside, 'p')
+  End
+  After all
+    " remote a temp directory
+    call s:File.rmdir(root, 'r')
+  End
+End

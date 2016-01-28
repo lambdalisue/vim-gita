@@ -1,0 +1,156 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:Guard = s:V.import('Vim.Guard')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+let s:file = s:Path.realpath('autoload/vital/__latest__/Git/Operation.vim')
+
+Describe Git.Operation
+  Before
+    let Operation = s:V.import('Git.Operation')
+  End
+
+  Describe .translate_option({key}, {val}, {pattern})
+    Context Long format
+      It returns "--key=value" for ('key', 'value', '')
+        let ret = Operation.translate_option('key', 'value', '')
+        Assert Equals(ret, '--key=value')
+      End
+      if !g:is_windows || (exists('&shellslash') && &shellslash)
+        It returns "--key='v a l u e'" for ('key', 'v a l u e', '')
+          let ret = Operation.translate_option('key', 'v a l u e', '')
+          Assert Equals(ret, '--key=''v a l u e''')
+        End
+      else
+        It returns '--key="v a l u e"' for ('key', 'v a l u e', '')
+          let ret = Operation.translate_option('key', 'v a l u e', '')
+          Assert Equals(ret, '--key="v a l u e"')
+        End
+      endif
+      It returns "--key" for ('key', 1, '')
+        let ret = Operation.translate_option('key', 1, '')
+        Assert Equals(ret, '--key')
+      End
+      It returns "" for ('key', 0, '')
+        let ret = Operation.translate_option('key', 0, '')
+        Assert Equals(ret, '')
+      End
+      It returns "-key-value-' for ('key', 'value', '-%k-%v-')
+        let ret = Operation.translate_option('key', 'value', '-%k-%v-')
+        Assert Equals(ret, '-key-value-')
+      End
+      It returns "--h-e-l-l-o' for ('h_e_l_l_o', 1, '')
+        let ret = Operation.translate_option('h_e_l_l_o', 1, '')
+        Assert Equals(ret, '--h-e-l-l-o')
+
+        let ret = Operation.translate_option('h_e_l_l_o', 1, '--%K')
+        Assert Equals(ret, '--h-e-l-l-o')
+      End
+      It returns "--h_e_l_l_o' for ('h_e_l_l_o', 1, '--%k')
+        let ret = Operation.translate_option('h_e_l_l_o', 1, '--%k')
+        Assert Equals(ret, '--h_e_l_l_o')
+      End
+      It returns "--key=value" for ('key', 'value', '--%K%{=}v')
+        let ret = Operation.translate_option('key', 'value', '--%K%{=}v')
+        Assert Equals(ret, '--key=value')
+      End
+    End
+    Context Short format
+      It returns "-kvalue" for ('k', 'value', '')
+        let ret = Operation.translate_option('k', 'value', '')
+        Assert Equals(ret, '-kvalue')
+      End
+      It returns "-k" for ('k', 1, '')
+        let ret = Operation.translate_option('k', 1, '')
+        Assert Equals(ret, '-k')
+      End
+      It returns "" for ('k', 0, '')
+        let ret = Operation.translate_option('k', 0, '')
+        Assert Equals(ret, '')
+      End
+      It returns "-kvalue" for ('k', 'value', '-%k%V')
+        let ret = Operation.translate_option('k', 'value', '-%k%V')
+        Assert Equals(ret, '-kvalue')
+      End
+      if !g:is_windows || (exists('&shellslash') && &shellslash)
+        It returns "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
+          let ret = Operation.translate_option('k', 'v a l u e', '-%k%V')
+          Assert Equals(ret, '-k''v a l u e''')
+        End
+      else
+        It returns '-k"v a l u e"' for ('k', 'v a l u e', '-%k%V')
+          let ret = Operation.translate_option('k', 'v a l u e', '-%k%V')
+          Assert Equals(ret, '-k"v a l u e"')
+        End
+      endif
+    End
+  End
+
+  Describe .translate_options({options}, {scheme})
+    It translates options (dict) into arguments (list)
+      let options = {
+            \ 'foo': 1,
+            \ 'bar': 0,
+            \ 'hoge': 'hoge',
+            \ 'f': 1,
+            \ 'b': 0,
+            \ 'h': 'hoge',
+            \}
+      let ret = Operation.translate_options(options, {})
+      Assert Equals(sort(ret), sort([
+            \ '--foo',
+            \ '--hoge=hoge',
+            \ '-f',
+            \ '-hhoge',
+            \]))
+    End
+    It applies specified schemes of each option
+      let options = {
+            \ 'foo': 1,
+            \ 'bar': 0,
+            \ 'hoge': 'hoge',
+            \}
+      let scheme = {
+            \ 'foo': '---%k',
+            \ 'hoge': '%v',
+            \}
+      let ret = Operation.translate_options(options, scheme)
+      Assert Equals(sort(ret), sort([
+            \ '---foo',
+            \ 'hoge',
+            \]))
+    End
+  End
+
+  Describe .execute({gita}, {args}, {config})
+    Before
+      let sv = s:ScriptLocal.svars(s:file)
+      let guard = s:Guard.store(
+            \ ['Git', sv],
+            \)
+      function! sv.Git.system(...) abort
+        let self._system_called_with = a:000
+      endfunction
+    End
+    After
+      call guard.restore()
+    End
+
+    It calls s:Git.system() with translated options
+      let git = {}
+      let config = {}
+      call Operation.execute(git, 'ls-files', {
+            \ 'cached': 1,
+            \ 'abbrev': '2',
+            \ 'exclude': 'foo',
+            \}, config)
+      let called_with = sv.Git._system_called_with
+      Assert Same(called_with[0], git)
+      " NOTE:
+      " args are sorted by key
+      Assert Equals(called_with[1], [
+            \ 'ls-files', '--abbrev=2', '--cached', '--exclude', 'foo',
+            \])
+      Assert Same(called_with[2], config)
+    End
+  End
+End

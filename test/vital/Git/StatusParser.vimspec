@@ -1,0 +1,301 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+
+Describe Git.StatusParser
+  Before
+    let StatusParser = s:V.import('Git.StatusParser')
+  End
+
+  Context .parse_record({line})
+    It should be able to parse '## master'
+      let record = '## master'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': '',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master'
+      let record = '## master...origin/master'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [ahead 2]'
+      let record = '## master...origin/master [ahead 2]'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [behind 2]'
+      let record = '## master...origin/master [behind 2]'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse 'M  foo/bar/hoge.vim'
+      let record = 'M  foo/bar/hoge.vim'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'M',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'M ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse ' M foo/bar/hoge.vim'
+      let record = ' M foo/bar/hoge.vim'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': ' ',
+            \ 'worktree': 'M',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': ' M',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 1,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU foo/bar/hoge.vim'
+      let record = 'UU foo/bar/hoge.vim'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU "f o o/bar/hoge.vim"'
+      let record = 'UU "f o o/bar/hoge.vim"'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU test file'
+      let record = 'UU test file'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'test file',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let record = 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'path2': 'foo/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let record = 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let result = StatusParser.parse_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'path2': 'f o o/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+  End
+
+  Context .parse({status})
+    It should parse formatted status text ('git status --porcelain')
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = StatusParser.parse(status, { 'flatten': 0 })
+      let expected = {
+            \ 'statuses': [
+            \   {
+            \     'index': ' ',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge1.vim',
+            \     'record': ' M foo/bar/hoge1.vim',
+            \     'sign': ' M',
+            \     'is_conflicted': 0,
+            \     'is_staged': 0,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'M',
+            \     'worktree': ' ',
+            \     'path': 'foo/bar/hoge2.vim',
+            \     'record': 'M  foo/bar/hoge2.vim',
+            \     'sign': 'M ',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'U',
+            \     'worktree': 'U',
+            \     'path': 'foo/bar/hoge3.vim',
+            \     'record': 'UU foo/bar/hoge3.vim',
+            \     'sign': 'UU',
+            \     'is_conflicted': 1,
+            \     'is_staged': 0,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'R',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge4.vim',
+            \     'path2': 'foo/bar/hoge5.vim',
+            \     'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \     'sign': 'RM',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should parse formatted status text ('git status --porcelain') and return flatten list
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = StatusParser.parse(status, { 'flatten': 1 })
+      let expected = [
+            \ {
+            \   'index': ' ',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge1.vim',
+            \   'record': ' M foo/bar/hoge1.vim',
+            \   'sign': ' M',
+            \   'is_conflicted': 0,
+            \   'is_staged': 0,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'M',
+            \   'worktree': ' ',
+            \   'path': 'foo/bar/hoge2.vim',
+            \   'record': 'M  foo/bar/hoge2.vim',
+            \   'sign': 'M ',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'U',
+            \   'worktree': 'U',
+            \   'path': 'foo/bar/hoge3.vim',
+            \   'record': 'UU foo/bar/hoge3.vim',
+            \   'sign': 'UU',
+            \   'is_conflicted': 1,
+            \   'is_staged': 0,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'R',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge4.vim',
+            \   'path2': 'foo/bar/hoge5.vim',
+            \   'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \   'sign': 'RM',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \]
+      Assert Equals(result, expected)
+    End
+  End
+End
+

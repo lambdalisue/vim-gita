@@ -1,0 +1,83 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:File = s:V.import('System.File')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+let s:file = s:Path.realpath('autoload/vital/__latest__/Git/Finder.vim')
+
+Describe Git.Finder
+  Before all
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = s:Path.join(root, 'inside')
+    let repository = s:Path.join(worktree, '.git')
+    let inside = s:Path.join(worktree, 'foo', 'bar')
+    let outside = s:Path.join(root, 'outside', 'foo', 'bar')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    lockvar inside
+    lockvar outside
+    call mkdir(repository, 'p')
+    call mkdir(inside, 'p')
+    call mkdir(outside, 'p')
+  End
+
+  After all
+    " remote a temp directory
+    call s:File.rmdir(root, 'r')
+  End
+
+  Before
+    let Finder = s:V.import('Git.Finder')
+    let sf = s:ScriptLocal.sfuncs(s:file)
+  End
+
+  Describe s:_find_worktree({path})
+    It should return a top directory path of the working directory
+      Assert Equals(sf._find_worktree(inside), worktree)
+    End
+    It should return an empty string for a non git working directory
+      Assert Equals(sf._find_worktree(outside), '')
+    End
+  End
+
+  Describe s:_find_repository({worktree})
+    It should return a '.git' directory path of the working directory
+      Assert Equals(sf._find_repository(worktree), repository)
+    End
+
+    It should return an empty string for a non git working directory
+      Assert Equals(sf._find_repository(outside), '')
+    End
+
+  End
+
+
+  Describe .find({path})
+    It should return a dictionary which contains 'worktree' and 'repository'
+      let path = inside
+      let ret = Finder.find(path)
+      let exp = {
+            \ 'worktree': worktree,
+            \ 'repository': repository,
+            \}
+      Assert IsDict(ret)
+      Assert HasKey(ret, 'worktree')
+      Assert HasKey(ret, 'repository')
+      Assert Equals(ret, exp)
+    End
+
+    It should return an empty dictionary for a non git working tree
+      let path = outside
+      let ret = Finder.find(path)
+      let exp = {
+            \ 'worktree': '',
+            \ 'repository': '',
+            \}
+      Assert IsDict(ret)
+      Assert HasKey(ret, 'worktree')
+      Assert HasKey(ret, 'repository')
+      Assert Equals(ret, exp)
+    End
+  End
+End
