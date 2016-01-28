@@ -119,7 +119,7 @@ function! s:translate_options(options, scheme) abort " {{{
   if has_key(a:options, '--')
     call add(args, '--')
     for str in a:options['--']
-      call add(args, fnameescape(hita#expand(str)))
+      call add(args, fnameescape(hita#core#expand(str)))
     endfor
   endif
   return args

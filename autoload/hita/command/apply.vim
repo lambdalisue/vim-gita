@@ -40,7 +40,7 @@ function! s:apply_content(hita, content, options) abort
 endfunction
 function! s:apply_patches(hita, filenames, options) abort
   let options = s:pick_available_options(a:options)
-  let options['--'] = map(copy(a:filenames), 's:Path.realpath(v:val)')
+  let options['--'] = a:filenames
   let result = hita#operation#exec(
         \ a:hita, 'apply', options,
         \)

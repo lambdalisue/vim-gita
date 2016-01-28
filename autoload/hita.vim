@@ -10,10 +10,6 @@ function! hita#throw(msg) abort
   throw printf('vim-hita: %s', a:msg)
 endfunction
 
-function! hita#expand(expr) abort
-  return gita#meta#get('filename', expand(a:expr), a:expr)
-endfunction
-
 function! hita#define_variables(prefix, defaults) abort
   " Note:
   "   Funcref is not supported while the variable must start with a capital

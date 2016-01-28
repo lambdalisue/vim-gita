@@ -31,7 +31,7 @@ function! s:get_revision_content(hita, commit, filename, options) abort
   else
     let options['object'] = printf('%s:%s',
           \ a:commit,
-          \ s:Path.unixpath(a:hita.get_relative_path(a:filename))
+          \ a:hita.get_relative_path(a:filename),
           \)
   endif
   let result = hita#operation#exec(a:hita, 'show', options)

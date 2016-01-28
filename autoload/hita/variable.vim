@@ -176,6 +176,10 @@ function! hita#variable#validate_filename(filename, ...) abort
         \ a:filename,
         \ 'A filename cannot be empty',
         \)
+  call hita#util#validate#true(
+        \ s:Path.is_absolute(a:filename),
+        \ 'A filename requires to be a real absolute path before validation',
+        \)
 endfunction
 
 function! hita#variable#get_valid_commit(commit, ...) abort
@@ -284,7 +288,7 @@ function! hita#variable#get_valid_filename(filename, ...) abort
     let guard = s:Guard.store(['_complete_options', s:])
     let s:_complete_options = options
     try
-      call histadd('input', hita#expand('%'))
+      call histadd('input', s:Path.relpath(hita#core#expand('%')))
       let filename = hita#util#prompt#ask(
             \ 'Please input a filename: ', '',
             \ 'customlist,hita#variable#complete_filename'
@@ -298,6 +302,9 @@ function! hita#variable#get_valid_filename(filename, ...) abort
   else
     let filename = hita#core#expand(a:filename)
   endif
+  " NOTE:
+  " Alwasy return a real absolute path
+  let filename = s:Path.abspath(s:Path.realpath(filename))
   call hita#variable#validate_filename(filename, options)
   return filename
 endfunction
@@ -375,13 +382,20 @@ function! hita#variable#get_available_filenames(hita, ...) abort
         \ 'with-tree',
         \ 'abbrev',
         \])
+  " NOTE:
+  " git -C <rep> ls-files returns unix relative paths from the repository
   let result = hita#operation#exec(a:hita, 'ls-files', options)
   if result.status
     " fail silently
     call hita#util#prompt#debug(result.stdout)
     return []
   endif
-  return split(result.stdout, '\r\?\n')
+  " return real absolute paths
+  let prefix = expand(a:hita.git.worktree) . s:Path.separator()
+  return map(
+        \ split(result.stdout, '\r\?\n'),
+        \ 's:Path.realpath(prefix . v:val')
+        \)
 endfunction
 
 function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
@@ -414,6 +428,14 @@ function! hita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abor
   let hita = hita#core#get()
   if hita.is_enabled()
     let filenames = hita#variable#get_available_filenames(hita, options)
+    " NOTE:
+    " Filter filenames exists under the current working directory
+    " and return filenames relative from the current working directory
+    let pattern = "^" . escape(getcwd(), '^$\.~[]') . s:Path.separator()
+    let filenames = map(
+          \ filter(filenames, 'v:val =~# pattern'),
+          \ 'fnamemodify(v:val, ":.")',
+          \)
   else
     let filenames = []
   endif

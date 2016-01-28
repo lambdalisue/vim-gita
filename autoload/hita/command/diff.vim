@@ -21,10 +21,7 @@ function! s:get_diff_content(hita, commit, filenames, options) abort
     let options['R'] = get(a:options, 'reverse', 0)
   endif
   if !empty(a:filenames)
-    let options['--'] = map(
-          \ copy(a:filenames),
-          \ 'a:hita.get_absolute_path(v:val)',
-          \)
+    let options['--'] = a:filenames
   endif
   let result = hita#operation#exec(a:hita, 'diff', options)
   if get(options, 'no-index') || get(options, 'exit-code')
@@ -198,7 +195,8 @@ function! hita#command#diff#edit(...) abort
     call hita#core#set_meta('content_type', 'diff')
     call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
     call hita#core#set_meta('commit', result.commit)
-    call hita#core#set_meta('filename', get(result.filenames, 0, ''))
+    call hita#core#set_meta('filename',
+          \ len(result.filenames) == 1 ? result.filenames[0] : '')
     call hita#core#set_meta('filenames', result.filenames)
     call hita#core#set_meta('content', result.content)
     let commit = result.commit
@@ -266,10 +264,10 @@ function! hita#command#diff#open2(...) abort
       let rhs = options.cached ? '' : WORKTREE
     endif
     let lbufname = lhs ==# WORKTREE
-          \ ? s:Path.realpath(filename)
+          \ ? filename
           \ : hita#command#show#bufname({'commit': lhs, 'filename': filename})
     let rbufname = rhs ==# WORKTREE
-          \ ? s:Path.realpath(filename)
+          \ ? filename
           \ : hita#command#show#bufname({'commit': rhs, 'filename': filename})
     let opener = empty(options.opener)
           \ ? g:hita#command#diff#default_opener

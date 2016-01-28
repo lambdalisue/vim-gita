@@ -13,6 +13,8 @@ function! hita#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
   endif
+  " NOTE:
+  " hita#core#expand() always return a real absolute path or ''
   let filename = hita#core#expand('%')
   if !empty(filename)
     let a:options.filename = filename

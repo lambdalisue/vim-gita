@@ -1,3 +1,6 @@
+let s:V = hita#vital()
+let s:Path = s:V.import('System.Filepath')
+
 function! s:on_SourceCmd(info) abort
   let content = getbufline(expand('<afile>'), 1, '$')
   try
@@ -78,11 +81,18 @@ function! hita#autocmd#call(name) abort
           \ 'No autocmd function "%s" is found.', fname
           \))
   endif
+  let hita = hita#core#get()
   try
+    call hita.fail_on_disabled()
     let result = hita#autocmd#parse_filename(expand('<afile>'))
     let [commit, filename] = hita#variable#split_treeish(result.treeish)
     let result.commit = commit
-    let result.filename = filename
+    " NOTE:
+    " filename is always a relative path from the repository root so convert
+    " it to a real absolute path
+    let result.filename = s:Path.realpath(
+          \ hita.git.get_absolute_path(filename)
+          \)
     let result.extra_options = split(result.extra_option, ':')
     call call(fname, [result])
   catch /^vim-hita/

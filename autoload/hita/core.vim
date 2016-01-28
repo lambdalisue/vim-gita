@@ -52,7 +52,15 @@ function! hita#core#set_meta(name, value, ...) abort
   let meta[a:name] = a:value
 endfunction
 function! hita#core#expand(expr) abort
-  return hita#core#get_meta('filename', expand(a:expr), a:expr)
+  if empty(a:expr)
+    return ''
+  endif
+  let meta_filename = hita#core#get_meta('filename', '', a:expr)
+  let real_filename = expand(a:expr)
+  let filename = empty(meta_filename) ? real_filename : meta_filename
+  " NOTE:
+  " Always return a real absolute path
+  return s:Path.abspath(s:Path.realpath(filename))
 endfunction
 
 let s:hita = {}
@@ -76,34 +84,19 @@ function! s:hita.fail_on_disabled() abort
     call hita#throw('Disabled: Hita is not available on the buffer')
   endif
 endfunction
-function! s:hita.get_absolute_path(path) abort
-  if empty(a:path)
-    return ''
-  endif
-  let path = s:Path.realpath(a:path)
-  if self.is_enabled()
-    return s:Path.is_relative(path)
-          \ ? self.git.get_absolute_path(path)
-          \ : path
-  else
-    return s:Path.abspath(path)
-  endif
-endfunction
-function! s:hita.get_relative_path(path) abort
-  if empty(a:path)
-    return ''
-  endif
-  let path = s:Path.realpath(a:path)
-  if self.is_enabled()
-    return s:Path.is_absolute(path)
-          \ ? self.git.get_relative_path(path)
-          \ : path
-  else
-    return s:Path.relpath(path)
-  endif
-endfunction
 function! s:hita.get_repository_name() abort
   return self.is_enabled()
         \ ? fnamemodify(self.git.repository, ':h:t')
         \ : 'not-in-repository'
+endfunction
+function! s:hita.get_relative_path(path) abort
+  " NOTE:
+  " Return a unix relative path from the repository for git command
+  " {path} requires to be a (real) absolute paht
+  if empty(a:path)
+    return ''
+  endif
+  let realpath = s:Path.realpath(a:path)
+  let relpath = self.git.get_relative_path(realpath)
+  return s:Path.unixpath(relpath)
 endfunction

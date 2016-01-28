@@ -19,7 +19,7 @@ endfunction
 function! s:get_blame_content(hita, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
-  let options['--'] = [a:hita.get_absolute_path(a:filename)]
+  let options['--'] = [a:filename]
   let result = hita#operation#exec(a:hita, 'blame', options)
   if result.status
     call hita#throw(result.stdout)

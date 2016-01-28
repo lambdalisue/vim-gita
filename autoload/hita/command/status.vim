@@ -42,10 +42,7 @@ endfunction
 function! s:get_status_content(hita, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
-    let options['--'] = map(
-          \ copy(a:filenames),
-          \ 'a:hita.get_relative_path(v:val)'
-          \)
+    let options['--'] = a:filenames
   endif
   let result = hita#operation#exec(a:hita, 'status', options)
   if result.status
@@ -55,14 +52,21 @@ function! s:get_status_content(hita, filenames, options) abort
 endfunction
 
 function! s:extend_status(hita, status) abort
-  let a:status.path = a:hita.get_absolute_path(a:status.path)
+  " NOTE:
+  " git -C <rep> status --porcelain returns paths from the repository root
+  " so convert it to a real absolute path
+  let a:status.path = a:hita.git.get_absolute_path(
+        \ s:Path.realpath(a:status.path)
+        \)
   if has_key(a:status, 'path2')
-    let a:status.path2 = a:hita.get_absolute_path(a:status.path2)
+    let a:status.path2 = a:hita.git.get_absolute_path(
+          \ s:Path.realpath(a:status.path2)
+          \)
   endif
   return a:status
 endfunction
 function! s:compare_statuses(lhs, rhs) abort
-  if a:lhs.path == a:rhs.path
+  if a:lhs.path ==# a:rhs.path
     return 0
   elseif a:lhs.path > a:rhs.path
     return 1
@@ -192,7 +196,9 @@ function! s:action_edit(candidates, ...) abort
     call s:Anchor.focus()
   endif
   for entry in a:candidates
-    let bufname = s:Path.realpath(get(entry, 'path2', entry.path))
+    " NOTE:
+    " 'path' or 'path2' is a real absolute path
+    let bufname = get(entry, 'path2', entry.path)
     let bufname = s:Path.relpath(bufname)
     call hita#util#buffer#open(bufname, {
           \ 'opener': opener,
@@ -230,7 +236,11 @@ function! hita#command#status#bufname(...) abort
   endtry
   return printf('hita-status:%s%s',
         \ hita.get_repository_name(),
-        \ empty(options.filenames) ? '' : ':partial'
+        \ empty(options.filenames)
+        \   ? ''
+        \   : len(options.filenames) == 1
+        \     ? hita.get_relative_path(options.filenames[0])
+        \     : ':partial'
         \)
 endfunction
 function! hita#command#status#call(...) abort
@@ -286,6 +296,8 @@ function! hita#command#status#open(...) abort
   call hita#core#set_meta('content_type', 'status')
   call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#core#set_meta('statuses', result.statuses)
+  call hita#core#set_meta('filename',
+        \ len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#core#set_meta('filenames', result.filenames)
   call hita#core#set_meta('winwidth', winwidth(0))
   call s:define_plugin_mappings()
@@ -323,6 +335,8 @@ function! hita#command#status#update(...) abort
   call hita#core#set_meta('content_type', 'status')
   call hita#core#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#core#set_meta('statuses', result.statuses)
+  call hita#core#set_meta('filename',
+        \ len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#core#set_meta('filenames', result.filenames)
   call hita#core#set_meta('winwidth', winwidth(0))
   call hita#command#status#redraw()
