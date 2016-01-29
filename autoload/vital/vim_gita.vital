@@ -16,7 +16,6 @@ DateTime
 Data.String
 VCS.Git.BlameParser
 Vim.Compat
-Vim.Prompt
 Vim.Validate
 Vim.Buffer.Anchor
 System.Cache.Dummy
