@@ -1,22 +1,22 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! s:_vital_loaded(V) abort " {{{
+function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
   let s:config = {
         \ 'debug': 0,
         \ 'batch': 0,
         \}
-endfunction " }}}
-function! s:_vital_depends() abort " {{{
+endfunction
+function! s:_vital_depends() abort
   return [
         \ 'Prelude',
         \ 'Data.Dict',
         \]
-endfunction " }}}
+endfunction
 function! s:_ensure_string(x) abort
-  return type(a:x) == type('') ? a:x : string(a:x)
+  return s:Prelude.is_string(a:x) ? a:x : string(a:x)
 endfunction
 
 function! s:get_config() abort
@@ -101,6 +101,19 @@ function! s:clear() abort
   endfor
 endfunction
 " @vimlint(EVL102, 0, l:i)
+
+function! s:title(...) abort
+  call s:echo(
+        \ 'Title',
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \)
+endfunction
+function! s:attention(...) abort
+  call s:echo(
+        \ 'WarningMsg',
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \)
+endfunction
 
 function! s:debug(...) abort
   if !s:is_debug()
