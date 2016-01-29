@@ -77,7 +77,9 @@ function! s:commit_commitmsg() abort
   let options['dry-run'] = 0
   try
     call writefile(commitmsg, options.file)
-    call s:get_commit_content(hita, [], options)
+    let content = s:get_commit_content(hita, [], options)
+    call s:Prompt.title('The changes has commited')
+    call s:Prompt.echo('None', join(content, "\n"))
     call hita#set_meta('commitmsg_saved', '')
     call hita#set_meta('amend', 0)
   finally
