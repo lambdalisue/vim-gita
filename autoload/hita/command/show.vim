@@ -2,11 +2,21 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
+let s:MAPPING_TABLE = {
+      \ '<Plug>(hita-show)': 'Show an INDEX content',
+      \ '<Plug>(hita-show-above)': 'Show an INDEX content in an above window',
+      \ '<Plug>(hita-show-below)': 'Show an INDEX content in a below window',
+      \ '<Plug>(hita-show-left)': 'Show an INDEX content in a left window',
+      \ '<Plug>(hita-show-right)': 'Show an INDEX content in a right window',
+      \ '<Plug>(hita-show-tabnew)': 'Show an INDEX content in a new tab',
+      \ '<Plug>(hita-show-pedit)': 'Show an INDEX content in a preview window',
+      \}
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
@@ -322,6 +332,50 @@ endfunction
 function! hita#command#show#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
+endfunction
+
+function! hita#command#show#action(candidates, ...) abort
+  let options = extend({
+        \ 'opener': '',
+        \ 'anchor': 1,
+        \}, get(a:000, 0, {}))
+  if !empty(a:candidates) && options.anchor
+    call s:Anchor.focus()
+  endif
+  for candidate in a:candidates
+    if has_key(candidate, 'path')
+      call hita#command#show#open({
+            \ 'opener': options.opener,
+            \ 'commit': get(options, 'commit', ''),
+            \ 'filename': candidate.path,
+            \})
+    endif
+  endfor
+endfunction
+function! hita#command#show#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(hita-show)
+        \ :call hita#action#call('show')<CR>
+  noremap <buffer><silent> <Plug>(hita-show-above)
+        \ :call hita#action#call('show', {'opener': 'leftabove new'})<CR>
+  noremap <buffer><silent> <Plug>(hita-show-below)
+        \ :call hita#action#call('show', {'opener': 'rightbelow new'})<CR>
+  noremap <buffer><silent> <Plug>(hita-show-left)
+        \ :call hita#action#call('show', {'opener': 'leftabove vnew'})<CR>
+  noremap <buffer><silent> <Plug>(hita-show-right)
+        \ :call hita#action#call('show', {'opener': 'rightbelow vnew'})<CR>
+  noremap <buffer><silent> <Plug>(hita-show-tabnew)
+        \ :call hita#action#call('show', {'opener': 'tabnew', 'anchor': 0})<CR>
+  noremap <buffer><silent> <Plug>(hita-show-pedit)
+        \ :call hita#action#call('show', {'opener': 'pedit', 'anchor': 0})<CR>
+endfunction
+function! hita#command#show#define_default_mappings() abort
+  map <buffer> oo <Plug>(hita-show)
+  map <buffer> OO <Plug>(hita-show-right)
+  map <buffer> ot <Plug>(hita-show-tabnew)
+  map <buffer> op <Plug>(hita-show-pedit)
+endfunction
+function! hita#command#show#get_mapping_table() abort
+  return s:MAPPING_TABLE
 endfunction
 
 call hita#util#define_variables('command#show', {
