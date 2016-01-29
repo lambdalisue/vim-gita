@@ -111,6 +111,7 @@ function! s:define_actions() abort
         \   'add', 'rm', 'reset', 'checkout',
         \   'stage', 'unstage', 'toggle', 'discard',
         \   'edit', 'show', 'diff', 'blame', 'browse',
+        \   'commit',
         \])
 
   if g:hita#command#status#enable_default_mappings

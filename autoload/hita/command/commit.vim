@@ -78,7 +78,10 @@ function! s:commit_commitmsg() abort
   try
     call writefile(commitmsg, options.file)
     let content = s:get_commit_content(hita, [], options)
-    call s:Prompt.title('The changes has commited')
+    call s:Prompt.title(printf(
+          \ 'OK: the changes on %d files have committed',
+          \ len(staged_statuses),
+          \))
     call s:Prompt.echo('None', join(content, "\n"))
     call hita#set_meta('commitmsg_saved', '')
     call hita#set_meta('amend', 0)
@@ -105,7 +108,6 @@ function! s:get_entry(index) abort
 endfunction
 function! s:define_actions() abort
   let action = hita#action#define(function('s:get_entry'))
-  " Override 'redraw' action
   function! action.actions.redraw(candidates, ...) abort
     call hita#command#commit#update()
   endfunction
@@ -114,6 +116,7 @@ function! s:define_actions() abort
         \ g:hita#command#commit#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
         \   'edit', 'show', 'diff', 'blame', 'browse',
+        \   'status',
         \])
 
   if g:hita#command#commit#enable_default_mappings

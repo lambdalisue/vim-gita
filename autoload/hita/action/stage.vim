@@ -23,7 +23,7 @@ function! hita#action#stage#action(candidates, ...) abort
   for candidate in candidates
     if candidate.is_unstaged && candidate.worktree ==# 'D'
       call add(rm_candidates, candidate)
-    elseif candidate.is_staged || candidate.is_unstaged
+    else
       call add(add_candidates, candidate)
     endif
   endfor
