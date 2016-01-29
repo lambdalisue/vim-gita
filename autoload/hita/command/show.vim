@@ -1,8 +1,10 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
 
@@ -43,8 +45,9 @@ function! s:get_revision_content(hita, commit, filename, options) abort
   return result.content
 endfunction
 function! s:get_diff_content(hita, content, filename, options) abort
-  let tempfile1 = tempname()
-  let tempfile2 = tempname()
+  let tempfile = tempname()
+  let tempfile1 = tempfile . '.index'
+  let tempfile2 = tempfile . '.buffer'
   try
     " save contents to temporary files
     call writefile(
@@ -57,23 +60,27 @@ function! s:get_diff_content(hita, content, filename, options) abort
           \ 'no-index': 1,
           \ 'filenames': [tempfile1, tempfile2],
           \})
-    if empty(result) || empty(result.content)
+    if empty(result) || empty(result.content) || len(result.content) < 4
       " fail or no differences
-      return ''
+      return []
     endif
-    " replace tempfile1/tempfile2 to a:filename
-    let relpath = s:Git.get_relative_path(a:hita, a:filename)
-    let unixpath = s:Path.unixpath(relpath)
-    let raw_content = join(result.content, "\n")
-    let raw_content = substitute(
-          \ raw_content, escape(tempfile1, '^$~.*[]\'),
-          \ (tempfile1 =~# '^/' ? '/' : '') . unixpath, 'g'
+    " replace tempfile1/tempfile2 in HEADER to a:filename
+    "
+    "   diff --git a/<tempfile1> b/<tempfile2>
+    "   index XXXXXXX..XXXXXXX XXXXXX
+    "   --- a/<tempfile1>
+    "   +++ b/<tempfile2>
+    "
+    let src1 = s:StringExt.escape_regex(tempfile1)
+    let src2 = s:StringExt.escape_regex(tempfile2)
+    let repl = (tempfile =~# '^/' ? '/' : '') . s:Path.unixpath(
+          \ s:Git.get_relative_path(a:hita, a:filename)
           \)
-    let raw_content = substitute(
-          \ raw_content, escape(tempfile2, '^$~.*[]\'),
-          \ (tempfile2 =~# '^/' ? '/' : '') . unixpath, 'g'
-          \)
-    let content = split(raw_content, '\r\?\n', 1)
+    let content = result.content
+    let content[0] = substitute(content[0], src1, repl, '')
+    let content[0] = substitute(content[0], src2, repl, '')
+    let content[2] = substitute(content[2], src1, repl, '')
+    let content[3] = substitute(content[3], src2, repl, '')
     return content
   finally
     call delete(tempfile1)
@@ -100,12 +107,17 @@ function! s:on_BufWriteCmd() abort
       " fail or no difference
       return
     endif
-    let result = hita#command#apply#call({
-          \ 'diff': content,
-          \ 'cached': 1,
-          \ 'verbose': 1,
-          \ 'whitespace': 'fix',
-          \})
+    let tempfile = tempname()
+    try
+      call writefile(content, tempfile)
+      let result = hita#command#apply#call({
+            \ 'filenames': [tempfile],
+            \ 'cached': 1,
+            \ 'verbose': 1,
+            \})
+    finally
+      call delete(tempfile)
+    endtry
     if empty(result)
       return
     endif

@@ -59,7 +59,7 @@ function! s:readfile(git, path) abort
   return filereadable(path) ? readfile(path) : []
 endfunction
 function! s:readline(git, path) abort
-  return get(s:readfile(a:path), 0, '')
+  return get(s:readfile(a:git, a:path), 0, '')
 endfunction
 function! s:filereadable(git, path) abort
   let path = s:Path.join(

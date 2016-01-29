@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
+let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -30,10 +31,9 @@ function! s:pick_available_options(options) abort
 endfunction
 function! s:apply_content(hita, content, options) abort
   let options = s:pick_available_options(a:options)
+  let options['--'] = ['-']
   let result = hita#execute(a:hita, 'apply', options, {
-        \  'input': s:Prelude.is_list(a:content)
-        \     ? join(a:content, "\n")
-        \     : a:content,
+        \ 'input': a:content,
         \})
   if result.status
     call hita#throw(result.stdout)

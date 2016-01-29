@@ -184,7 +184,7 @@ function! s:resolve_ref(git, ref) abort
   let slug = expand('<sfile>')
   let content = s:Git.get_cache_content(a:git, a:ref, slug, '')
   if empty(content)
-    let content = s:Git.readline(a:ref)
+    let content = s:Git.readline(a:git, a:ref)
     if content =~# '^ref:\s'
       " recursively resolve ref
       return s:resolve_ref(a:git, substitute(content, '^ref:\s', '', ''))

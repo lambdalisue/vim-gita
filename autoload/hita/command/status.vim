@@ -28,7 +28,7 @@ function! s:pick_available_options(options) abort
         \ 'ignore-submodules',
         \ 'u', 'untracked-files',
         \])
-  if s:GitInfo.get_version() =~# '^-\|^1\.[1-3]\.'
+  if s:GitInfo.get_git_version() =~# '^-\|^1\.[1-3]\.'
     " remove -u/--untracked-files which requires Git >= 1.4
     let options = s:Dict.omit(options, ['u', 'untracked-files'])
   endif
@@ -130,10 +130,10 @@ endfunction
 function! s:define_plugin_mappings() abort
   nnoremap <buffer><silent> <Plug>(hita-quit)
         \ :<C-u>q<CR>
-  nnoremap <buffer><silent> <Plug>(hita-redraw)
-        \ :call <SID>action('redraw')<CR>
-  nnoremap <buffer><silent> <Plug>(hita-toggle-mapping-visibility)
-        \ :call <SID>action('toggle_mapping_visibility')<CR>
+  nnoremap <buffer><silent> <Plug>(hita-update)
+        \ :call <SID>action('update')<CR>
+  nnoremap <buffer><silent> <Plug>(hita-mapping)
+        \ :call <SID>action('mapping')<CR>
 
   noremap <buffer><silent> <Plug>(hita-edit)
         \ :call <SID>action('edit')<CR>
@@ -149,16 +149,66 @@ function! s:define_plugin_mappings() abort
         \ :call <SID>action('edit', 'tab')<CR>
   noremap <buffer><silent> <Plug>(hita-edit-preview)
         \ :call <SID>action('edit', 'preview')<CR>
+
+  noremap <buffer><silent> <Plug>(hita-open)
+        \ :call <SID>action('open')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-above)
+        \ :call <SID>action('open', 'above')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-below)
+        \ :call <SID>action('open', 'below')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-left)
+        \ :call <SID>action('open', 'left')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-right)
+        \ :call <SID>action('open', 'right')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-tab)
+        \ :call <SID>action('open', 'tab')<CR>
+  noremap <buffer><silent> <Plug>(hita-open-preview)
+        \ :call <SID>action('open', 'preview')<CR>
+
+  noremap <buffer><silent> <Plug>(hita-diff)
+        \ :call <SID>action('diff')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-above)
+        \ :call <SID>action('diff', 'above')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-below)
+        \ :call <SID>action('diff', 'below')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-left)
+        \ :call <SID>action('diff', 'left')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-right)
+        \ :call <SID>action('diff', 'right')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-tab)
+        \ :call <SID>action('diff', 'tab')<CR>
+  noremap <buffer><silent> <Plug>(hita-diff-preview)
+        \ :call <SID>action('diff', 'preview')<CR>
+
+  noremap <buffer><silent> <Plug>(hita-splitdiff-ver)
+        \ :call <SID>action('splitdiff', 'vertical')<CR>
+  noremap <buffer><silent> <Plug>(hita-splitdiff-hor)
+        \ :call <SID>action('splitdiff', 'horizontal')<CR>
 endfunction
 function! s:define_default_mappings() abort
   nmap <buffer> q <Plug>(hita-quit)
-  nmap <buffer> ? <Plug>(hita-toggle-mapping-visibility)
-  nmap <buffer> <C-l> <Plug>(hita-redraw)
+  nmap <buffer> ? <Plug>(hita-mapping)
+  nmap <buffer> <C-l> <Plug>(hita-update)
+
   map <buffer> <Return> <Plug>(hita-edit)
+
   map <buffer> ee <Plug>(hita-edit)
   map <buffer> EE <Plug>(hita-edit-right)
   map <buffer> tt <Plug>(hita-edit-tab)
   map <buffer> pp <Plug>(hita-edit-preview)
+
+  map <buffer> oo <Plug>(hita-open)
+  map <buffer> OO <Plug>(hita-open-right)
+  map <buffer> ot <Plug>(hita-open-tab)
+  map <buffer> op <Plug>(hita-open-preview)
+
+  map <buffer> dd <Plug>(hita-diff)
+  map <buffer> DD <Plug>(hita-diff-right)
+  map <buffer> dt <Plug>(hita-diff-tab)
+  map <buffer> dp <Plug>(hita-diff-preview)
+
+  map <buffer> ss <Plug>(hita-splitdiff-ver)
+  map <buffer> SS <Plug>(hita-splitdiff-hor)
 endfunction
 
 function! s:action(name, ...) range abort
@@ -167,8 +217,8 @@ function! s:action(name, ...) range abort
     call hita#throw(printf('Unknown action name "%s" is called.', a:name))
   endif
   let entries = []
-  for n in range(a:firstline, a:lastline)
-    call add(entries, s:get_entry(n - 1))
+  for lineno in range(a:firstline, a:lastline)
+    call add(entries, s:get_entry(lineno - 1))
   endfor
   call filter(entries, '!empty(v:val)')
   call call(fname, extend([entries], a:000))
@@ -189,16 +239,72 @@ function! s:action_edit(candidates, ...) abort
     " NOTE:
     " 'path' or 'path2' is a real absolute path
     let bufname = get(entry, 'path2', entry.path)
-    let bufname = s:Path.relpath(bufname)
+    let bufname = expand(s:Path.relpath(bufname))
     call hita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})
   endfor
 endfunction
-function! s:action_redraw(candidates, ...) abort
-  call hita#command#status#redraw()
+function! s:action_open(candidates, ...) abort
+  let opener = get(a:000, 0, '')
+  let opener = empty(opener)
+        \ ? g:hita#command#status#default_entry_opener
+        \ : opener
+  let [opener, anchor] = get(
+        \ g:hita#command#status#entry_openers,
+        \ opener, ['edit', 1],
+        \)
+  if !empty(a:candidates) && anchor
+    call s:Anchor.focus()
+  endif
+  for entry in a:candidates
+    call hita#command#show#open({
+          \ 'opener': opener,
+          \ 'commit': '',
+          \ 'filename': entry.path,
+          \})
+  endfor
 endfunction
-function! s:action_toggle_mapping_visibility(candidates, ...) abort
+function! s:action_diff(candidates, ...) abort
+  let opener = get(a:000, 0, '')
+  let opener = empty(opener)
+        \ ? g:hita#command#status#default_entry_opener
+        \ : opener
+  let [opener, anchor] = get(
+        \ g:hita#command#status#entry_openers,
+        \ opener, ['edit', 1],
+        \)
+  if !empty(a:candidates) && anchor
+    call s:Anchor.focus()
+  endif
+  for entry in a:candidates
+    call hita#command#diff#open({
+          \ 'opener': opener,
+          \ 'commit': '',
+          \ 'filename': entry.path,
+          \ 'cached': entry.is_staged,
+          \})
+  endfor
+endfunction
+function! s:action_splitdiff(candidates, ...) abort
+  let split = get(a:000, 0, 'vertical')
+  if !empty(a:candidates)
+    call s:Anchor.focus()
+  endif
+  for entry in a:candidates
+    call hita#command#diff#open2({
+          \ 'opener': 'edit',
+          \ 'split': split,
+          \ 'commit': '',
+          \ 'filename': entry.path,
+          \ 'cached': entry.is_staged,
+          \})
+  endfor
+endfunction
+function! s:action_update(candidates, ...) abort
+  call hita#command#status#update()
+endfunction
+function! s:action_mapping(candidates, ...) abort
   call s:set_current_mapping_visibility(!s:get_current_mapping_visibility())
   call hita#command#status#redraw()
 endfunction

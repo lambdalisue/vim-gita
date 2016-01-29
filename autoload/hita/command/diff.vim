@@ -278,14 +278,18 @@ function! hita#command#diff#open2(...) abort
     " Place main contant to visually rightbelow and focus
     if !options.reverse
       let rresult = hita#util#buffer#open(rbufname, {
+            \ 'group': 'diff_rhs',
             \ 'opener': opener,
             \})
+      silent execute 'file ' . rbufname
       diffthis
       let lresult = hita#util#buffer#open(lbufname, {
+            \ 'group': 'diff_lhs',
             \ 'opener': split ==# 'vertical'
             \   ? 'leftabove vertical split'
             \   : 'leftabove split',
             \})
+      silent execute 'file ' . lbufname
       diffthis
       diffupdate
       execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
@@ -294,14 +298,18 @@ function! hita#command#diff#open2(...) abort
       keepjump normal zM
     else
       let rresult = hita#util#buffer#open(rbufname, {
+            \ 'group': 'diff_rhs',
             \ 'opener': opener,
             \})
+      silent execute 'file ' . rbufname
       diffthis
       let lresult = hita#util#buffer#open(lbufname, {
+            \ 'group': 'diff_lhs',
             \ 'opener': split ==# 'vertical'
             \   ? 'rightbelow vertical split'
             \   : 'rightbelow split',
             \})
+      silent execute 'file ' . lbufname
       diffthis
       diffupdate
       execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))

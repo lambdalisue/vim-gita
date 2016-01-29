@@ -96,7 +96,7 @@ function! s:translate_options(options, scheme) abort
   if has_key(a:options, '--')
     call add(args, '--')
     for str in a:options['--']
-      call add(args, fnameescape(expand(str)))
+      call add(args, str ==# '-' ? '-' : fnameescape(expand(str)))
     endfor
   endif
   return args
@@ -135,34 +135,73 @@ function! s:system(args, ...) abort
         \ 'input': '',
         \ 'timeout': 0,
         \ 'content': 1,
+        \ 'correct': 1,
         \}, get(a:000, 0, {}))
   if empty(config.input)
     unlet config.input
+  elseif s:Prelude.is_string(config.input) && config.correct
+    let config.input = s:correct_stdin(config.input)
   endif
   let args = [s:config.executable] + s:config.arguments + a:args
-  let stdout = s:Process.system(args, config)
+  let stdout = s:Process.system(args, s:Dict.pick(config, [
+        \ 'input',
+        \ 'timeout',
+        \ 'use_vimproc',
+        \ 'background',
+        \]))
   let result = {
         \ 'args': args,
         \ 'stdout': stdout,
         \ 'status': s:Process.get_last_status(),
         \}
   if config.content
-    let result['content'] = split(stdout, '\r\?\n', 1)
+    let result['content'] = s:split_stdout(stdout)
   endif
   return result
 endfunction
 
+function! s:correct_stdin(stdin) abort
+  " NOTE:
+  " A definition of a TEXT file is "A file that contains characters organized
+  " into one or more lines."
+  " A definition of a LINE is "A sequence of zero ore more non- <newline>s
+  " plus a terminating <newline>"
+  " That's why {stdin} always end with <newline> ideally. However, there are
+  " some program which does not follow the POSIX rule and a Vim's way to join
+  " List into TEXT; join({text}, "\n"); does not add <newline> to the end of
+  " the last line.
+  " That's why add a trailing <newline> if it does not exist.
+  " REF:
+  " http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap03.html#tag_03_392
+  " http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap03.html#tag_03_205
+  " :help split()
+  return a:stdin =~# '\r\?\n$' ? a:stdin : a:stdin . "\n"
+endfunction
+
+function! s:split_stdout(stdout) abort
+  " NOTE:
+  " A definition of a TEXT file is "A file that contains characters organized
+  " into one or more lines."
+  " A definition of a LINE is "A sequence of zero ore more non- <newline>s
+  " plus a terminating <newline>"
+  " That's why {stdout} always end with <newline> ideally. However, there are
+  " some program which does not follow the POSIX rule and a Vim's way to split
+  " TEXT into List; split({text}, '\r\?\n', 1); add an extra empty line at the
+  " end of List because the end of TEXT ends with <newline> and keepempty=1 is
+  " specified. (btw. keepempty=0 cannot be used because it will remove
+  " emptylines in head and tail).
+  " That's why remove a trailing <newline> before proceeding to 'split'
+  " REF:
+  " http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap03.html#tag_03_392
+  " http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap03.html#tag_03_205
+  " :help split()
+  let stdout = substitute(a:stdout, '\r\?\n$', '', '')
+  return split(stdout, '\r\?\n', 1)
+endfunction
+
 
 let s:schemes = {}
-let s:schemes.apply = {
-      \ 'include': '--%k %v',
-      \ 'exclude': '--%k %v',
-      \ 'p': '-%k %v',
-      \ 'build-fake-ancestor': '--%k %v',
-      \ 'C': '-%k %v',
-      \ 'whitespace': '--%k %v',
-      \ 'directory': '--%k %v',
-      \}
+let s:schemes.apply = {}
 let s:schemes.blame = {
       \ 'L': '--%k %v',
       \ 'S': '--%k %v',
