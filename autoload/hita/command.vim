@@ -105,6 +105,14 @@ call hita#command#register('blame',
       \ 'hita#command#blame#command',
       \ 'hita#command#blame#complete',
       \)
+call hita#command#register('browse',
+      \ 'hita#command#browse#command',
+      \ 'hita#command#browse#complete',
+      \)
+call hita#command#register('checkout',
+      \ 'hita#command#checkout#command',
+      \ 'hita#command#checkout#complete',
+      \)
 call hita#command#register('diff',
       \ 'hita#command#diff#command',
       \ 'hita#command#diff#complete',
@@ -112,6 +120,10 @@ call hita#command#register('diff',
 call hita#command#register('reset',
       \ 'hita#command#reset#command',
       \ 'hita#command#reset#complete',
+      \)
+call hita#command#register('rm',
+      \ 'hita#command#rm#command',
+      \ 'hita#command#rm#complete',
       \)
 call hita#command#register('show',
       \ 'hita#command#show#command',

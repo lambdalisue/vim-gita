@@ -54,7 +54,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:hita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Hita add',
-          \ 'description': 'Add changes into index',
+          \ 'description': 'Add changes into the index',
           \ 'complete_unknown': function('hita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
           \ 'complete_threshold': g:hita#complete_threshold,
@@ -63,7 +63,40 @@ function! s:get_parser() abort
           \ '--force', '-f',
           \ 'Allow adding otherwise ignored files.',
           \)
-    " TODO: Add more arguments
+    call s:parser.add_argument(
+          \ '--update', '-u', [
+          \   'Update the index just where it already has an entry matching <pathspec>.',
+          \   'This removes as well as modifies index entries to match the working tree,',
+          \   'but adds no new files.',
+          \   'If no <pathspec> is given when -u option is used, all tracked files in the',
+          \   'entire working tree are updated.',
+          \ ]
+          \)
+    call s:parser.add_argument(
+          \ '--all', '-A', [
+          \   'Update the index not only where the working tree has a file matching <pathspec>',
+          \   'but also where the index already has an entry. This adds, modifies, and removes',
+          \   'index entries to match the working tree.',
+          \   'If no <pathspec> is given when -A option is used, all files in the entire working',
+          \   'tree are updated.',
+          \ ], {
+          \   'deniable': 1,
+          \   'conflicts': ['ignore-removal'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-removal', [
+          \   'Update the index by adding new files that are unknown to the index and files modified',
+          \   'in the working tree, but ignore files that have been removed from the working tree.',
+          \   'This option is a no0op when no <pathspec> is used.',
+          \ ], {
+          \   'deniable': 1,
+          \   'conflicts': ['all'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-errors', [
+          \ 'If some files could not be added because of errors indexing them, do not abort the operation,',
+          \ 'but continue adding the others. The command shall still exit with non-zero status.',
+          \])
   endif
   return s:parser
 endfunction

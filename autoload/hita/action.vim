@@ -82,12 +82,16 @@ endfunction
 
 function! hita#action#call(name, ...) abort range
   let action = hita#action#get()
-  let candidates = map(
-        \ copy(range(a:firstline, a:lastline)),
-        \ 'action.get_entry(v:val - 1)'
-        \)
-  call filter(candidates, '!empty(v:val)')
-  call call('hita#action#do', [a:name, candidates] + a:000)
+  try
+    let candidates = map(
+          \ copy(range(a:firstline, a:lastline)),
+          \ 'action.get_entry(v:val - 1)'
+          \)
+    call filter(candidates, '!empty(v:val)')
+    call call('hita#action#do', [a:name, candidates] + a:000)
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception(v:exception)
+  endtry
 endfunction
 
 function! hita#action#define(fn) abort

@@ -113,9 +113,9 @@ function! s:define_actions() abort
   call hita#action#includes(
         \ g:hita#command#status#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
-        \   'add', 'reset',
-        \   'edit', 'show', 'diff',
-        \   'blame',
+        \   'add', 'rm', 'reset', 'checkout',
+        \   'stage', 'unstage', 'toggle', 'discard',
+        \   'edit', 'show', 'diff', 'blame', 'browse',
         \])
 
   if g:hita#command#status#enable_default_mappings

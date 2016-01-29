@@ -462,3 +462,29 @@ function! s:get_available_filenames(git, ...) abort
   endif
   return content
 endfunction
+
+function! s:find_common_ancestor(git, commit1, commit2, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  let slug = expand('<sfile>')
+  let content = s:Git.get_cache_content(a:git, 'index', slug, '')
+  if options.force || empty(content)
+    let lhs = empty(a:commit1) ? 'HEAD' : a:commit1
+    let rhs = empty(a:commit2) ? 'HEAD' : a:commit2
+    let result = s:GitProcess.execute(a:git, 'merge-base', {
+          \ 'commit1': lhs,
+          \ 'commit2': rhs,
+          \})
+    if result.status
+      if options.fail_silently
+        return ''
+      endif
+      call s:GitProcess.throw(result.stdout)
+    endif
+    let content = result.stdout
+    call s:Git.set_cache_content(a:git, 'index', slug, content)
+  endif
+  return content
+endfunction

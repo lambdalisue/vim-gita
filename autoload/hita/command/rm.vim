@@ -4,71 +4,42 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
-        \ 'include', 'exclude',
-        \ 'p',
-        \ 'no-add',
-        \ 'stat', 'numstat',
-        \ 'summary', 'check',
-        \ 'index', 'cached',
-        \ 'unsafe-paths',
-        \ 'build-fake-ancestor',
-        \ 'C',
-        \ 'whitespace',
-        \ 'ignore-space-change', 'ignore-whitespace',
-        \ 'R', 'reverse',
-        \ 'unidiff-zero',
-        \ 'reject',
-        \ 'allow-overlap',
-        \ 'v', 'verbose',
-        \ 'inaccurate-eof',
-        \ 'recount',
-        \ 'directory',
+        \ 'q', 'quiet',
+        \ 'f', 'force',
+        \ 'r', 'recursive',
+        \ 'cached',
         \])
   return options
 endfunction
-function! s:apply_content(hita, content, options) abort
+function! s:apply_command(hita, filenames, options) abort
   let options = s:pick_available_options(a:options)
-  let options['--'] = ['-']
-  let result = hita#execute(a:hita, 'apply', options, {
-        \ 'input': a:content,
-        \})
-  if result.status
-    call hita#throw(result.stdout)
+  if !empty(a:filenames)
+    let options['--'] = a:filenames
   endif
-  return result.content
-endfunction
-function! s:apply_patches(hita, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['--'] = a:filenames
-  let result = hita#execute(a:hita, 'apply', options)
+  let result = hita#execute(a:hita, 'rm', options)
   if result.status
     call hita#throw(result.stdout)
   endif
   return result.content
 endfunction
 
-function! hita#command#apply#call(...) abort
+function! hita#command#rm#call(...) abort
   let options = hita#option#init('', get(a:000, 0, {}), {
-        \ 'diff': [],
         \ 'filenames': [],
         \})
   try
     let hita = hita#get_or_fail()
     if empty(options.filenames)
       let filenames = []
-      let diff = empty(options.diff) ? getline(1, '$') : options.diff
-      let content = s:apply_content(hita, diff, options)
     else
       let filenames = map(
             \ copy(options.filenames),
             \ 'hita#variable#get_valid_filename(v:val)',
             \)
-      let diff = []
-      let content = s:apply_patches(hita, filenames, options)
     endif
+    let content = s:apply_command(hita, filenames, options)
     silent call hita#util#doautocmd('StatusModified')
     return {
-          \ 'diff': diff,
           \ 'filenames': filenames,
           \ 'content': content,
           \}
@@ -81,21 +52,35 @@ endfunction
 function! s:get_parser() abort
   if !exists('s:parser') || g:hita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita apply',
-          \ 'description': 'Apply patch(es) to the repository',
+          \ 'name': 'Hita rm',
+          \ 'description': 'Remove files from the working tree and from the index',
           \ 'complete_unknown': function('hita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
           \ 'complete_threshold': g:hita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--cached',
-          \ 'Directory apply the pathc(es) to INDEX', {
-          \})
+          \ '--quiet', '-q', [
+          \   'Gita rm normally outputs one line (in the form of an rm command) for each file removed.',
+          \   'This option suppresses that output.',
+          \])
+    call s:parser.add_argument(
+          \ '--force', '-f',
+          \ 'Override the up-to-date check.',
+          \)
+    call s:parser.add_argument(
+          \ '--recursive', '-r',
+          \ 'Allow recursive removal when a leading directory name is given.',
+          \)
+    call s:parser.add_argument(
+          \ '--cached', [
+          \   'Use this option to unstage and remove path only from the index.',
+          \   'Working tree files, whether modified or not, will be left alone.',
+          \])
     " TODO: Add more arguments
   endif
   return s:parser
 endfunction
-function! hita#command#apply#command(...) abort
+function! hita#command#rm#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -106,15 +91,16 @@ function! hita#command#apply#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#apply#default_options),
+        \ deepcopy(g:hita#command#rm#default_options),
         \ options,
         \)
-  call hita#command#apply#call(options)
+  call hita#command#rm#call(options)
 endfunction
-function! hita#command#apply#complete(...) abort
+function! hita#command#rm#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#apply', {
+call hita#util#define_variables('command#rm', {
       \})
+

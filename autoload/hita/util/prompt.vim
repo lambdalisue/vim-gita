@@ -9,6 +9,10 @@ function! s:is_batch() abort
   return g:hita#test
 endfunction
 
+function! hita#util#prompt#echo(...) abort
+  call call(s:Prompt.echo, a:000, s:Prompt)
+endfunction
+
 function! hita#util#prompt#debug(...) abort
   call call(s:Prompt.debug, a:000, s:Prompt)
 endfunction

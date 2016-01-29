@@ -285,8 +285,13 @@ function! s:get_parser() abort
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
-          \ 'commit',
-          \ 'A commit', {
+          \ 'commit', [
+          \   'A commit which you want to see.',
+          \   'If nothing is specified, it show a content of the index.',
+          \   'If <commit> is specified, it show a content of the named <commit>.',
+          \   'If <commit1>..<commit2> is specified, it show a content of the named <commit1>',
+          \   'If <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
+          \], {
           \   'complete': function('hita#variable#complete_commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort

@@ -334,9 +334,23 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:hita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Hita blame',
-          \ 'description': 'Blame history',
+          \ 'description': 'Show what revision and author last modified each line of a file',
           \ 'complete_threshold': g:hita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ 'commit', [
+          \   'A commit which you want to blame.',
+          \   'If nothing is specified, it show a blame of HEAD.',
+          \   'If <commit> is specified, it show a blame of the named <commit>.',
+          \ ], {
+          \   'complete': function('s:complete_commit'),
+          \ })
+    call s:parser.add_argument(
+          \ 'filename', [
+          \   'A filename which you want to blame.',
+          \   'A filename of the current buffer is used when omited.',
+          \ ],
+          \)
     " TODO: Add more arguments
   endif
   return s:parser
