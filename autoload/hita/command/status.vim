@@ -2,6 +2,7 @@ let s:V = hita#vital()
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
@@ -225,6 +226,7 @@ function! hita#command#status#open(...) abort
   call hita#set_meta('filenames', result.filenames)
   call hita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
+  call s:Anchor.register()
   augroup vim_hita_status
     autocmd! * <buffer>
     autocmd BufReadCmd <buffer> call s:on_BufReadCmd()

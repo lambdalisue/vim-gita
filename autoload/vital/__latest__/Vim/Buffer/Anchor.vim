@@ -79,6 +79,42 @@ function! s:focus() abort
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
 endfunction
 
+function! s:register() abort
+  augroup vital_Vim_Buffer_Anchor
+    autocmd! * <buffer>
+    if exists('#QuitPre')
+      autocmd QuitPre  <buffer> call s:_ac_QuitPre()
+      autocmd WinLeave <buffer> call s:_ac_WinLeave()
+    else
+      " Note:
+      "
+      " QuitPre was introduced since Vim 7.3.544
+      " https://github.com/vim-jp/vim/commit/4e7db56d
+      "
+      " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+      " :q        : QuitPre > WinLeave > BufWinLeave
+      " :e        : BufWinLeave
+      " :wincmd w : WinLeave
+      "
+      autocmd WinLeave <buffer> call s:_ac_WinLeaveVim703()
+    endif
+  augroup END
+endfunction
+function! s:_ac_QuitPre() abort
+  let w:_vital_Vim_Buffer_Anchor_QuitPre = 1
+endfunction
+function! s:_ac_WinLeave() abort
+  if get(w:, '_vital_Vim_Buffer_Anchor_QuitPre')
+    call s:focus()
+  endif
+  silent! unlet w:_vital_Vim_Buffer_Anchor_QuitPre
+endfunction
+function! s:_ac_WinLeaveVim703() abort
+  if histget('cmd') =~# '\v^%(q|quit|wq)$'
+    call s:focus()
+  endif
+endfunction
+
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
