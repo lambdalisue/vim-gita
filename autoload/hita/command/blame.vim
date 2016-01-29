@@ -2,13 +2,15 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:DateTime = s:V.import('DateTime')
 let s:String = s:V.import('Data.String')
-let s:Cache = s:V.import('System.Cache.Memory')
-let s:BlameParser = s:V.import('VCS.Git.BlameParser')
+let s:MemoryCache = s:V.import('System.Cache.Memory')
+let s:GitParser = s:V.import('Git.Parser')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:ProgressBar = s:V.import('ProgressBar')
 
-highlight HitaPseudoSeparatorDefault term=underline cterm=underline ctermfg=8 gui=underline guifg=#363636
-sign define HitaPseudoSeparatorSign texthl=SignColumn linehl=HitaPseudoSeparator
+highlight HitaPseudoSeparatorDefault
+      \ term=underline cterm=underline ctermfg=8 gui=underline guifg=#363636
+sign define HitaPseudoSeparatorSign
+      \ texthl=SignColumn linehl=HitaPseudoSeparator
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
@@ -24,12 +26,12 @@ function! s:get_blame_content(hita, commit, filename, options) abort
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n', 1)
+  return result.content
 endfunction
 
 function! s:get_chunk_cache() abort
   if !exists('s:_chunk_cache')
-    let s:_chunk_cache = s:Cache.new()
+    let s:_chunk_cache = s:MemoryCache.new()
   endif
   return s:_chunk_cache
 endfunction
@@ -100,11 +102,7 @@ function! s:parse_blame(hita, content, options) abort
         \ : options.short_revision_length
   " subtract columns for signs
   let navigation_winwidth -= 2
-  let _start = reltime()
-  let result = s:BlameParser.parse_to_chunks(join(a:content, "\n"))
-  call hita#util#prompt#debug(printf(
-        \ 's:BlameParser.parse_to_chunks: %s s', reltimestr(reltime(_start))
-        \))
+  let result = s:GitParser.parse_blame_to_chunks(a:content)
   let now = s:DateTime.now()
   let chunk_cache = s:get_chunk_cache()
   let min_chunk_lines = enable_pseudo_separator ? 2 : 1
@@ -213,14 +211,15 @@ function! hita#command#blame#bufname(...) abort
           \ '_allow_empty': 1,
           \})
     let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
   return hita#autocmd#bufname(hita, {
         \ 'content_type': 'blame',
         \ 'extra_options': [],
-        \ 'treeish': commit . ':' . hita#get_relative_path(hita, filename),
+        \ 'commitish': commit,
+        \ 'path': filename,
         \})
 endfunction
 function! hita#command#blame#call(...) abort
@@ -230,6 +229,7 @@ function! hita#command#blame#call(...) abort
         \ '_enable_pseudo_separator': -1,
         \ '_navigation_winwidth': -1,
         \ '_short_revision_length': -1,
+        \ '_verbose': 1,
         \})
   try
     let hita = hita#get_or_fail()
@@ -237,29 +237,27 @@ function! hita#command#blame#call(...) abort
           \ '_allow_empty': 1,
           \})
     let filename = hita#variable#get_valid_filename(options.filename)
-    let _start = reltime()
+    if options._verbose
+      redraw | echo 'Retrieving a blame content. It may take some time ...'
+    endif
     let content = s:get_blame_content(hita, commit, filename, options)
-    call hita#util#prompt#debug(printf(
-          \ 's:get_blame_content: %s s', reltimestr(reltime(_start))
-          \))
+    if options._verbose
+      redraw | echo
+    endif
     let result = {
           \ 'commit': commit,
           \ 'filename': filename,
           \ 'content': content,
           \}
     if get(options, 'porcelain')
-      let _start = reltime()
       let result.blame = s:parse_blame(hita, content, {
             \ 'enable_pseudo_separator': options._enable_pseudo_separator,
             \ 'navigation_winwidth': options._navigation_winwidth,
             \ 'short_revision_length': options._short_revision_length,
             \})
-      call hita#util#prompt#debug(printf(
-            \ 's:parse_blame: %s s', reltimestr(reltime(_start))
-            \))
     endif
     return result
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -370,7 +368,7 @@ function! hita#command#blame#display_pseudo_separators(separators, ...) abort
   call s:display_pseudo_separators(a:separators, expr)
 endfunction
 
-call hita#define_variables('command#blame', {
+call hita#util#define_variables('command#blame', {
       \ 'default_options': {},
       \ 'default_opener': 'tabnew',
       \ 'enable_pseudo_separator': 1,

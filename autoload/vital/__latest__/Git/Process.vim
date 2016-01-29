@@ -1,17 +1,20 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
-  let s:Path = a:V.import('System.Filepath')
-  let s:StringExt = a:V.import('Data.String.Extra')
-  let s:Git = a:V.import('Git')
+  let s:Process = a:V.import('Process')
+  let s:Dict = a:V.import('Data.Dict')
+  let s:StringExt = a:V.import('Data.StringExt')
+  let s:config = {
+        \ 'executable': 'git',
+        \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
+        \}
   let s:is_windows = s:Prelude.is_windows()
 endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
-        \ 'System.Filepath',
-        \ 'Data.String.Extra',
-        \ 'Git',
-        \ 'ArgumentParser',
+        \ 'Process',
+        \ 'Data.Dict',
+        \ 'Data.StringExt',
         \]
 endfunction
 function! s:_vital_created(module) abort
@@ -19,16 +22,35 @@ function! s:_vital_created(module) abort
         \ 'schemes': s:schemes,
         \})
 endfunction
-function! s:_splitargs(str) abort
-  let single_quote = '\v''\zs[^'']+\ze'''
-  let double_quote = '\v"\zs[^"]+\ze"'
-  let bare_strings = '\v[^ \t''"]+'
-  let pattern = printf('\v%%(%s|%s|%s)',
-        \ single_quote,
-        \ double_quote,
-        \ bare_strings,
-        \)
-  return split(a:str, printf('\v%s*\zs%%(\s+|$)\ze', pattern))
+
+function! s:_shellescape(val) abort
+  let val = shellescape(a:val)
+  if val !~# '\s'
+    if !s:is_windows || (exists('&shellslash') && &shellslash)
+      let val = substitute(val, "^'", '', 'g')
+      let val = substitute(val, "'$", '', 'g')
+    else
+      " Windows without shellslash enclose value with double quote
+      let val = substitute(val, '^"', '', 'g')
+      let val = substitute(val, '"$', '', 'g')
+    endif
+  endif
+  return val
+endfunction
+
+function! s:get_config() abort
+  return copy(s:config)
+endfunction
+function! s:set_config(config) abort
+  let config = s:Dict.pick(a:config, [
+        \ 'executable',
+        \ 'arguments',
+        \])
+  call extend(s:config, config)
+endfunction
+
+function! s:throw(msg) abort
+  throw 'vital: Git.Process: ' . a:msg
 endfunction
 
 function! s:translate_option(key, val, pattern) abort
@@ -56,7 +78,7 @@ function! s:translate_option(key, val, pattern) abort
         \ 'val': val,
         \ 'escaped_key': substitute(a:key, '_', '-', 'g'),
         \ 'escaped_val': len(val)
-        \   ? s:StringExt.shellescape_when_required(val)
+        \   ? s:_shellescape(val)
         \   : '',
         \}
   return s:StringExt.format(format, format_map, data)
@@ -66,7 +88,7 @@ function! s:translate_options(options, scheme) abort
   for key  in sort(keys(a:options))
     if key !~# '^__.\+__$' && key !=# '--'
       let pattern = get(a:scheme, key, '')
-      call extend(args, s:_splitargs(
+      call extend(args, s:StringExt.splitargs(
             \ s:translate_option(key, a:options[key], pattern)
             \))
     endif
@@ -79,23 +101,57 @@ function! s:translate_options(options, scheme) abort
   endif
   return args
 endfunction
-function! s:system(git, args, ...) abort
-  let config = get(a:000, 0, {})
-  let args = ['-C', a:git.worktree] + a:args
-  return s:Git.system(args, config)
-endfunction
-function! s:execute(git, name, ...) abort
+
+" s:build_args({name}[, {options}])
+function! s:build_args(name, ...) abort
   let options = get(a:000, 0, {})
-  let config = get(a:000, 1, {})
   let l:Scheme = get(s:schemes, a:name, {})
   if s:Prelude.is_funcref(l:Scheme)
     let args = l:Scheme(a:name, options)
   else
     let args = s:translate_options(options, l:Scheme)
   endif
-  let args = filter(extend([a:name], args), '!empty(v:val)')
-  return s:system(a:git, args, config)
+  return filter(extend([a:name], args), '!empty(v:val)')
 endfunction
+
+" s:execute({git}, {name}[, {options}, {config}])
+" s:execute({name}[, {options}, {config}])
+function! s:execute(...) abort
+  if s:Prelude.is_dict(a:1)
+    let worktree = get(a:1, 'worktree', '')
+    let args = s:build_args(a:2, get(a:000, 2, {}))
+    let args = (empty(worktree) ? [] : ['-C', worktree]) + args
+    let config = get(a:000, 4, {})
+  else
+    let args = s:build_args(a:1, get(a:000, 3, {}))
+    let config = get(a:000, 3, {})
+  endif
+  return s:system(args, config)
+endfunction
+
+" s:system({args}[, {config}])
+function! s:system(args, ...) abort
+  let config = extend({
+        \ 'input': '',
+        \ 'timeout': 0,
+        \ 'content': 1,
+        \}, get(a:000, 0, {}))
+  if empty(config.input)
+    unlet config.input
+  endif
+  let args = [s:config.executable] + s:config.arguments + a:args
+  let stdout = s:Process.system(args, config)
+  let result = {
+        \ 'args': args,
+        \ 'stdout': stdout,
+        \ 'status': s:Process.get_last_status(),
+        \}
+  if config.content
+    let result['content'] = split(stdout, '\r\?\n', 1)
+  endif
+  return result
+endfunction
+
 
 let s:schemes = {}
 let s:schemes.apply = {
@@ -129,7 +185,9 @@ let s:schemes.branch = {
 let s:schemes.diff = {
       \ 'commit': '%v',
       \}
-let s:schemes.log = {}
+let s:schemes.log = {
+      \ 'revision-range': '%v',
+      \}
 let s:schemes['ls-files'] = {
       \ 'x': '-%k %v',
       \ 'X': '-%k %v',

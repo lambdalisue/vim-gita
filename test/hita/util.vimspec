@@ -1,0 +1,60 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:Guard = s:V.import('Vim.Guard')
+
+Describe hita#util
+  Describe #define_variables({prefix}, {defaults})
+    Before
+      let guard = s:Guard.store(
+            \ 'g:hita#foo',
+            \ 'g:hita#bar',
+            \ 'g:hita#hello#foo',
+            \ 'g:hita#hello#bar',
+            \)
+    End
+    After
+      call guard.restore()
+    End
+
+    It define 'g:hita#{key}' variables when {prefix} is empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = hita#util#define_variables('', defaults)
+      Assert exists('g:hita#foo')
+      Assert exists('g:hita#bar')
+
+      Assert Equals(g:hita#foo, defaults.foo)
+      Assert Equals(g:hita#bar, defaults.bar)
+    End
+
+    It define 'g:hita#{prefix}#{key}' variables when {prefix} is NOT empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = hita#util#define_variables('hello', defaults)
+      Assert exists('g:hita#hello#foo')
+      Assert exists('g:hita#hello#bar')
+
+      Assert Equals(g:hita#hello#foo, defaults.foo)
+      Assert Equals(g:hita#hello#bar, defaults.bar)
+    End
+
+    It won't overwrite the existing variables
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let g:hita#foo = 'hello'
+      let g:hita#bar = 1
+      let ret = hita#util#define_variables('', defaults)
+      Assert exists('g:hita#foo')
+      Assert exists('g:hita#bar')
+
+      Assert Equals(g:hita#foo, 'hello')
+      Assert Equals(g:hita#bar, 1)
+    End
+  End
+End

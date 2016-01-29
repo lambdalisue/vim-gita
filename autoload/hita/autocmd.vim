@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
+let s:GitTerm = s:V.import('Git.Term')
 
 function! s:on_SourceCmd(info) abort
   let content = getbufline(expand('<afile>'), 1, '$')
@@ -85,33 +86,68 @@ function! hita#autocmd#call(name) abort
   try
     let hita = hita#get_or_fail()
     let result = hita#autocmd#parse_filename(expand('<afile>'))
-    let [commit, filename] = hita#variable#split_treeish(result.treeish)
+    let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
     let result.commit = commit
     " NOTE:
     " filename is always a relative path from the repository root so convert
-    " it to a real absolute path
-    let result.filename = empty(filename)
+    " it to a real absolute path (s:Git.get_absolute_path returns a real path)
+    let result.filename = empty(unixpath)
           \ ? ''
-          \ : s:Git.get_absolute_path(hita, filename)
+          \ : s:Git.get_absolute_path(hita, unixpath)
     let result.extra_options = split(result.extra_option, ':')
     call call(fname, [result])
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
 function! hita#autocmd#bufname(hita, options) abort
   let options = extend({
+        \ 'filebase': 1,
         \ 'content_type': 'show',
         \ 'extra_options': [],
-        \ 'treeish': '',
+        \ 'commitish': '',
+        \ 'path': '',
         \}, a:options)
+  let realpath = s:Path.realpath(options.path)
+  let unixpath = s:Path.unixpath(
+        \ s:Path.is_absolute(realpath)
+        \   ? s:Git.get_relative_path(a:hita, realpath)
+        \   : realpath
+        \)
+  let treeish = printf('%s:%s', options.commitish, unixpath)
   let bits = [
         \ a:hita.repository_name,
         \ options.content_type ==# 'show' ? '' : options.content_type,
         \ join(filter(options.extra_options, '!empty(v:val)'), ':'),
         \]
   let domain = join(filter(bits, '!empty(v:val)'), ':')
-  return printf('hita://%s/%s', domain, options.treeish)
+  if options.filebase
+    return printf('hita://%s/%s', domain, treeish)
+  else
+    return printf('hita:%s:%s', domain, treeish)
+  endif
+endfunction
+function! hita#autocmd#parse_filename(filename) abort
+  for scheme in s:schemes
+    if a:filename !~# scheme[0]
+      continue
+    endif
+    let m = matchlist(a:filename, scheme[0])
+    let o = {}
+    for [key, value] in items(scheme[1])
+      if type(value) == type(0)
+        let o[key] = m[value]
+      else
+        let o[key] = value
+      endif
+      unlet value
+    endfor
+    return o
+  endfor
+  call hita#throw(printf(
+        \ '"%s" does not have required component(s).',
+        \ a:filename
+        \))
 endfunction
 
 " gita://<repository>/<treeish>
@@ -148,25 +184,3 @@ let s:schemes = [
       \   'treeish': 2,
       \ }],
       \]
-function! hita#autocmd#parse_filename(filename) abort
-  for scheme in s:schemes
-    if a:filename !~# scheme[0]
-      continue
-    endif
-    let m = matchlist(a:filename, scheme[0])
-    let o = {}
-    for [key, value] in items(scheme[1])
-      if type(value) == type(0)
-        let o[key] = m[value]
-      else
-        let o[key] = value
-      endif
-      unlet value
-    endfor
-    return o
-  endfor
-  call hita#throw(printf(
-        \ '"%s" does not have required component(s).',
-        \ a:filename
-        \))
-endfunction

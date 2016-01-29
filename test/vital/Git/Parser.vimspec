@@ -1,0 +1,666 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:filename = s:Path.realpath('test/vital/_testdata/Git/Parser/blame.txt')
+
+Describe Git.Parser
+  Before
+    let GitParser = s:V.import('Git.Parser')
+    let blame = readfile(s:filename)
+
+    let g:VitalGitParserCalledWith = []
+    function! VitalGitParserCallback(...) abort
+      call add(g:VitalGitParserCalledWith, a:000)
+    endfunction
+  End
+  After
+    unlet g:VitalGitParserCalledWith
+    delfunction VitalGitParserCallback
+  End
+
+  Describe .parse_status_record({line})
+    It should be able to parse '## master'
+      let record = '## master'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': '',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master'
+      let record = '## master...origin/master'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [ahead 2]'
+      let record = '## master...origin/master [ahead 2]'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [behind 2]'
+      let record = '## master...origin/master [behind 2]'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse 'M  foo/bar/hoge.vim'
+      let record = 'M  foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'M',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'M ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse ' M foo/bar/hoge.vim'
+      let record = ' M foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': ' ',
+            \ 'worktree': 'M',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': ' M',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 1,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU foo/bar/hoge.vim'
+      let record = 'UU foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU "f o o/bar/hoge.vim"'
+      let record = 'UU "f o o/bar/hoge.vim"'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU test file'
+      let record = 'UU test file'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'test file',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let record = 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'path2': 'foo/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let record = 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'path2': 'f o o/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+  End
+
+  Describe .parse_status({status})
+    It should parse formatted status text ('git status --porcelain')
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = GitParser.parse_status(status, { 'flatten': 0 })
+      let expected = {
+            \ 'statuses': [
+            \   {
+            \     'index': ' ',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge1.vim',
+            \     'record': ' M foo/bar/hoge1.vim',
+            \     'sign': ' M',
+            \     'is_conflicted': 0,
+            \     'is_staged': 0,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'M',
+            \     'worktree': ' ',
+            \     'path': 'foo/bar/hoge2.vim',
+            \     'record': 'M  foo/bar/hoge2.vim',
+            \     'sign': 'M ',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'U',
+            \     'worktree': 'U',
+            \     'path': 'foo/bar/hoge3.vim',
+            \     'record': 'UU foo/bar/hoge3.vim',
+            \     'sign': 'UU',
+            \     'is_conflicted': 1,
+            \     'is_staged': 0,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'R',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge4.vim',
+            \     'path2': 'foo/bar/hoge5.vim',
+            \     'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \     'sign': 'RM',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should parse formatted status text ('git status --porcelain') and return flatten list
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = GitParser.parse_status(status, { 'flatten': 1 })
+      let expected = [
+            \ {
+            \   'index': ' ',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge1.vim',
+            \   'record': ' M foo/bar/hoge1.vim',
+            \   'sign': ' M',
+            \   'is_conflicted': 0,
+            \   'is_staged': 0,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'M',
+            \   'worktree': ' ',
+            \   'path': 'foo/bar/hoge2.vim',
+            \   'record': 'M  foo/bar/hoge2.vim',
+            \   'sign': 'M ',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'U',
+            \   'worktree': 'U',
+            \   'path': 'foo/bar/hoge3.vim',
+            \   'record': 'UU foo/bar/hoge3.vim',
+            \   'sign': 'UU',
+            \   'is_conflicted': 1,
+            \   'is_staged': 0,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'R',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge4.vim',
+            \   'path2': 'foo/bar/hoge5.vim',
+            \   'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \   'sign': 'RM',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \]
+      Assert Equals(result, expected)
+    End
+  End
+
+  Describe .parse_blame({blame}[, {callback}])
+    It should parse a blame output and return lineinfos
+      let blameobj = GitParser.parse_blame(blame)
+      Assert KeyExists(blameobj, 'revisions')
+      Assert KeyExists(blameobj, 'lineinfos')
+      Assert Equals(len(blameobj.revisions), 6)
+      Assert Equals(blameobj.revisions['b6046d9340852c570b9cad13bbdddd2dd5bac8f8'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426159163',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426159163',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'travis-ci use Vim 7.3.',
+            \ 'previous': '8eacdabdd0765e910b59662c36d73401e3fda9e8 README.md',
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(blameobj.revisions['8a7be73ccc36d10526ec3d31a4fde1043815a784'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1419974246',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1419974356',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Initial',
+            \ 'boundary': 1,
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(blameobj.revisions['d0af4b00b66f56a4a560e41968f3e362df3c1a0e'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426159219',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426159219',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Fix Markdown',
+            \ 'previous': 'b6046d9340852c570b9cad13bbdddd2dd5bac8f8 README.md',
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(len(blameobj.lineinfos), 135)
+      Assert Equals(blameobj.lineinfos[0], {
+            \ 'revision': 'b6046d9340852c570b9cad13bbdddd2dd5bac8f8',
+            \ 'linenum': {
+            \   'original': 1,
+            \   'final': 1,
+            \ },
+            \ 'nlines': 1,
+            \ 'contents': 'vital-VCS-Git [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg)](https://travis-ci.org/lambdalisue/vital-VCS-Git)',
+            \})
+      Assert Equals(blameobj.lineinfos[1], {
+            \ 'revision': '8a7be73ccc36d10526ec3d31a4fde1043815a784',
+            \ 'linenum': {
+            \   'original': 2,
+            \   'final': 2,
+            \ },
+            \ 'nlines': 1,
+            \ 'contents': '==============================================================================',
+            \})
+    End
+
+    It should call {callback} with [{revisions}, {lineinfo}] each after parsing lineinfo
+      let result = GitParser.parse_blame(blame, function('VitalGitParserCallback'))
+      Assert Equals(len(g:VitalGitParserCalledWith), 134)
+      Assert Equals(g:VitalGitParserCalledWith[0], [
+            \ result.revisions,
+            \ result.lineinfos[0],
+            \])
+      Assert Equals(g:VitalGitParserCalledWith[1], [
+            \ result.revisions,
+            \ result.lineinfos[1],
+            \])
+    End
+  End
+
+  Describe .parse_blame_to_chunks({blame}[, {callback}])
+    It should parse a blame output and return chunks
+      let blameobj = GitParser.parse_blame_to_chunks(blame)
+      Assert KeyExists(blameobj, 'revisions')
+      Assert KeyExists(blameobj, 'chunks')
+      Assert Equals(len(blameobj.revisions), 6)
+      Assert Equals(blameobj.revisions['b6046d9340852c570b9cad13bbdddd2dd5bac8f8'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426159163',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426159163',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'travis-ci use Vim 7.3.',
+            \ 'previous': '8eacdabdd0765e910b59662c36d73401e3fda9e8 README.md',
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(blameobj.revisions['8a7be73ccc36d10526ec3d31a4fde1043815a784'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1419974246',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1419974356',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Initial',
+            \ 'boundary': 1,
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(blameobj.revisions['d0af4b00b66f56a4a560e41968f3e362df3c1a0e'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426159219',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426159219',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Fix Markdown',
+            \ 'previous': 'b6046d9340852c570b9cad13bbdddd2dd5bac8f8 README.md',
+            \ 'filename': 'README.md',
+            \})
+      Assert Equals(len(blameobj.chunks), 19)
+      Assert Equals(blameobj.chunks[0], {
+            \ 'revision': 'b6046d9340852c570b9cad13bbdddd2dd5bac8f8',
+            \ 'linenum': {
+            \   'original': 1,
+            \   'final': 1,
+            \ },
+            \ 'nlines': 1,
+            \ 'index': 0,
+            \ 'contents': [
+            \   'vital-VCS-Git [![Build Status](https://travis-ci.org/lambdalisue/vital-VCS-Git.svg)](https://travis-ci.org/lambdalisue/vital-VCS-Git)',
+            \ ]
+            \})
+      Assert Equals(blameobj.chunks[1], {
+            \ 'revision': '8a7be73ccc36d10526ec3d31a4fde1043815a784',
+            \ 'linenum': {
+            \   'original': 2,
+            \   'final': 2,
+            \ },
+            \ 'nlines': 1,
+            \ 'index': 1,
+            \ 'contents': [
+            \   '==============================================================================',
+            \ ]
+            \})
+      Assert Equals(blameobj.chunks[2], {
+            \ 'revision': '8a7be73ccc36d10526ec3d31a4fde1043815a784',
+            \ 'linenum': {
+            \   'original': 4,
+            \   'final': 3,
+            \ },
+            \ 'nlines': 5,
+            \ 'index': 2,
+            \ 'contents': [
+            \   '',
+            \   'A fundamental git manipulation library.',
+            \   '',
+            \   '- Version:  0.1.0',
+            \   '- Author:   Alisue <lambdalisue@hashnote.net>',
+            \ ]
+            \})
+    End
+
+    It should call {callback} with [{revisions}, {lineinfo}] each after parsing lineinfo
+      let result = GitParser.parse_blame_to_chunks(blame, function('VitalGitParserCallback'))
+      Assert Equals(len(g:VitalGitParserCalledWith), 19)
+      Assert Equals(g:VitalGitParserCalledWith[0], [
+            \ result.revisions,
+            \ result.chunks[0],
+            \])
+      Assert Equals(g:VitalGitParserCalledWith[1], [
+            \ result.revisions,
+            \ result.chunks[1],
+            \])
+    End
+  End
+
+  Describe .has_ours_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ 'Bar',
+            \ '>>>>>>> This looks like Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_ours_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_ours_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .has_theirs_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< This looks like Ours marker',
+            \ 'Foo',
+            \ 'World',
+            \]
+      let ret = GitParser.has_theirs_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_theirs_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .has_conflict_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx nor >>>>>>> xxxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '======= Separator?',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx and >>>>>>> xxxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx, in case if user forgot to remove the marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+
+    It should return 1 if the {buflines} does contain >>>>>>> xxxxxxx, in case if user forgot to remove the marker
+      let buflines = [
+            \ 'Hello',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .strip_ours({buflines})
+    It should strip a region specified by Ours marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'Bar',
+            \ 'World',
+            \]
+      let ret = GitParser.strip_ours(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .strip_theirs({buflines})
+    It should strip a region specified by Theirs marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'Foo',
+            \ 'World',
+            \]
+      let ret = GitParser.strip_theirs(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .strip_conflict({buflines})
+    It should strip a region specified by Ours/Theirs marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ 'Hoge',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'World',
+            \ '',
+            \]
+      let ret = GitParser.strip_conflict(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+End

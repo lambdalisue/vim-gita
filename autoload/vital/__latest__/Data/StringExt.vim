@@ -1,9 +1,20 @@
-function! s:_vital_loaded(V) abort
+function! s:_vital_loaded(V) abort dict
   let s:Prelude = a:V.import('Prelude')
-  let s:is_windows = s:Prelude.is_windows()
 endfunction
 function! s:_vital_depends() abort
   return ['Prelude']
+endfunction
+
+function! s:splitargs(str) abort
+  let single_quote = '\v''\zs[^'']+\ze'''
+  let double_quote = '\v"\zs[^"]+\ze"'
+  let bare_strings = '\v[^ \t''"]+'
+  let pattern = printf('\v%%(%s|%s|%s)',
+        \ single_quote,
+        \ double_quote,
+        \ bare_strings,
+        \)
+  return split(a:str, printf('\v%s*\zs%%(\s+|$)\ze', pattern))
 endfunction
 
 function! s:smart_string(value) abort
@@ -49,38 +60,15 @@ function! s:format(format, format_map, data) abort
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction
 
-function! s:ensure_eol(text) abort
-  return a:text =~# '\r\?\n$' ? a:text : a:text . "\n"
-endfunction
-
 function! s:escape_regex(regex) abort
   " escape characters for no-magic
   return escape(a:regex, '^$~.*[]\')
 endfunction
 
+function! s:ensure_eol(text) abort
+  return a:text =~# '\r\?\n$' ? a:text : a:text . "\n"
+endfunction
+
 function! s:remove_ansi_sequences(text) abort
   return substitute(a:text, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
-endfunction
-
-function! s:remove_trailing_emptyline(text) abort
-  return substitute(a:text, '\r\?\n\r\?\n$', "\n", '')
-endfunction
-
-function! s:shellescape_when_required(val) abort
-  let val = shellescape(a:val)
-  if val !~# '\s'
-    if !s:is_windows || (exists('&shellslash') && &shellslash)
-      let val = substitute(val, "^'", '', 'g')
-      let val = substitute(val, "'$", '', 'g')
-    else
-      " Windows without shellslash enclose value with double quote
-      let val = substitute(val, '^"', '', 'g')
-      let val = substitute(val, '"$', '', 'g')
-    endif
-  endif
-  return val
-endfunction
-
-function! s:capitalize(text) abort
-  return substitute(a:text, '\w\+', '\u\0', '')
 endfunction

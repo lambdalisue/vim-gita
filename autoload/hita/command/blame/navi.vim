@@ -42,14 +42,17 @@ function! hita#command#blame#navi#bufname(...) abort
           \ '_allow_empty': 1,
           \})
     let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
-  return printf('hita-blame-navi:%s:%s:%s',
-        \ hita.repository_name,
-        \ commit, hita#get_relative_path(hita, filename),
-        \)
+  return hita#autocmd#bufname(hita, {
+        \ 'filebase': 0,
+        \ 'content_type': 'blame-navi',
+        \ 'extra_options': [],
+        \ 'commitish': commit,
+        \ 'path': filename,
+        \})
 endfunction
 function! hita#command#blame#navi#call(...) abort
   let options = hita#option#init('blame-navi', get(a:000, 0, {}), {
@@ -85,7 +88,7 @@ function! hita#command#blame#navi#call(...) abort
           \ 'blame': blame,
           \}
     return result
-  catch /^vim-hita:/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -185,7 +188,7 @@ function! hita#command#blame#navi#define_syntax() abort
   syntax match HitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
 endfunction
 
-call hita#define_variables('command#blame#navi', {
+call hita#util#define_variables('command#blame#navi', {
       \ 'default_entry_opener': 'edit',
       \ 'entry_openers': {
       \   'edit':    ['edit', 1],

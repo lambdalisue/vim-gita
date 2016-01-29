@@ -2,9 +2,9 @@ let s:V = vital#of('vital')
 let s:Prelude = s:V.import('Prelude')
 let s:is_windows = s:Prelude.is_windows()
 
-Describe Data.String.Extra
+Describe Data.StringExt
   Before
-    let StringExt = s:V.import('Data.String.Extra')
+    let StringExt = s:V.import('Data.StringExt')
   End
 
   Context .smart_string({value})
@@ -173,53 +173,5 @@ Describe Data.String.Extra
     End
   End
 
-  Context .prefer_shellescape({val})
-    if !s:is_windows
-      It should not enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = StringExt.shellescape_when_required('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with single quotes if {val} contains spaces
-        let ret = StringExt.shellescape_when_required('foo bar')
-        let exp = "'foo bar'"
-        Assert Equals(ret, exp)
-      End
-    elseif exists('&shellslash')
-      Before
-        let saved_shellslash = &shellslash
-      End
-      After
-        let &shellslash = saved_shellslash
-      End
-      It should enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = StringExt.shellescape_when_required('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with single quotes if {val} contains spaces and &shellslash=1
-        set shellslash
-        let ret = StringExt.shellescape_when_required('foo bar')
-        let exp = "'foo bar'"
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with double quotes if {val} contains spaces and &shellslash=0
-        set noshellslash
-        let ret = StringExt.shellescape_when_required('foo bar')
-        let exp = '"foo bar"'
-        Assert Equals(ret, exp)
-      End
-    else
-      It should enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = StringExt.shellescape_when_required('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with double quotes if {val} contains spaces and -shellslash
-        let ret = StringExt.shellescape_when_required('foo bar')
-        let exp = '"foo bar"'
-        Assert Equals(ret, exp)
-      End
-    endif
-  End
 End
+

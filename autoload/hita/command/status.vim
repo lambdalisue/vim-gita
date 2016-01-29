@@ -5,7 +5,8 @@ let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Git = s:V.import('Git')
-let s:StatusParser = s:V.import('Git.StatusParser')
+let s:GitInfo = s:V.import('Git.Info')
+let s:GitParser = s:V.import('Git.Parser')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-quit)': 'Close the buffer',
       \ '<Plug>(hita-redraw)': 'Redraw the buffer',
@@ -20,12 +21,6 @@ let s:MAPPING_TABLE = {
       \}
 let s:entry_offset = 0
 
-function! s:get_git_version() abort
-  if !exists('s:git_version')
-    let s:git_version = s:Git.get_git_version()
-  endif
-  return s:git_version
-endfunction
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
         \ 'porcelain',
@@ -33,7 +28,7 @@ function! s:pick_available_options(options) abort
         \ 'ignore-submodules',
         \ 'u', 'untracked-files',
         \])
-  if s:get_git_version() =~# '^-\|^1\.[1-3]\.'
+  if s:GitInfo.get_version() =~# '^-\|^1\.[1-3]\.'
     " remove -u/--untracked-files which requires Git >= 1.4
     let options = s:Dict.omit(options, ['u', 'untracked-files'])
   endif
@@ -48,7 +43,7 @@ function! s:get_status_content(hita, filenames, options) abort
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n', 1)
+  return result.content
 endfunction
 
 function! s:extend_status(hita, status) abort
@@ -56,13 +51,11 @@ function! s:extend_status(hita, status) abort
   " git -C <rep> status --porcelain returns paths from the repository root
   " so convert it to a real absolute path
   let a:status.path = s:Git.get_absolute_path(
-        \ a:hita,
-        \ s:Path.realpath(a:status.path)
+        \ a:hita, s:Path.realpath(a:status.path),
         \)
   if has_key(a:status, 'path2')
     let a:status.path2 = s:Git.get_absolute_path(
-          \ a:hita,
-          \ s:Path.realpath(a:status.path2)
+          \ a:hita, s:Path.realpath(a:status.path2),
           \)
   endif
   return a:status
@@ -77,7 +70,7 @@ function! s:compare_statuses(lhs, rhs) abort
   endif
 endfunction
 function! s:parse_statuses(hita, content, options) abort
-  let statuses = s:StatusParser.parse(join(a:content, "\n"), {
+  let statuses = s:GitParser.parse_status(a:content, {
         \ 'fail_silently': 1,
         \})
   call map(statuses, 's:extend_status(a:hita, v:val)')
@@ -93,18 +86,19 @@ function! s:format_entry(entry) abort
   return a:entry.record
 endfunction
 function! s:get_statusline_string(hita) abort
-  let local = s:Git.get_local_branch(a:hita)
-  let remote = s:Git.get_remote_branch(a:hita)
-  let mode = s:Git.get_current_mode(a:hita)
+  let local = s:GitInfo.get_local_branch(a:hita)
+  let remote = s:GitInfo.get_remote_branch(a:hita)
+  let mode = s:GitInfo.get_current_mode(a:hita)
   let is_connected = !empty(remote.name)
 
+  let name = a:hita.repository_name
   let branchinfo = is_connected
-        \ ? printf('%s/%s <> %s/%s', a:hita.repository_name, local.name, remote.remote, remote.name)
-        \ : printf('%s/%s', a:hita.repository_name, local.name)
+        \ ? printf('%s/%s <> %s/%s', name, local.name, remote.remote, remote.name)
+        \ : printf('%s/%s', name, local.name)
   let connection = ''
   if is_connected
-    let outgoing = s:Git.count_commits_ahead_of_remote(a:hita)
-    let incoming = s:Git.count_commits_behind_remote(a:hita)
+    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:hita)
+    let incoming = s:GitInfo.count_commits_behind_remote(a:hita)
     if outgoing > 0 && incoming > 0
       let connection = printf(
             \ '%d commit(s) ahead and %d commit(s) behind of remote',
@@ -224,18 +218,19 @@ function! hita#command#status#bufname(...) abort
         \})
   try
     let hita = hita#get_or_fail()
-  catch /^\%(vital:\|vim-hita\)/
+  catch /^\%(vital: Git[:.]\|vim-hita\)/
     call hita#util#handle_exception(v:exception)
     return
   endtry
-  return printf('hita-status:%s%s',
-        \ hita.repository_name,
-        \ empty(options.filenames)
-        \   ? ''
-        \   : len(options.filenames) == 1
-        \     ? hita#get_relative_path(hita, options.filenames[0])
-        \     : ':partial'
-        \)
+  return hita#autocmd#bufname(hita, {
+        \ 'filebase': 0,
+        \ 'content_type': 'status',
+        \ 'extra_options': [
+        \   empty(options.filenames) ? '' : 'partial',
+        \ ],
+        \ 'commitish': '',
+        \ 'path': '',
+        \})
 endfunction
 function! hita#command#status#call(...) abort
   let options = hita#option#init('status', get(a:000, 0, {}), {
@@ -263,7 +258,7 @@ function! hita#command#status#call(...) abort
             \)
     endif
     return result
-  catch /^\%(vital:\|vim-hita\)/
+  catch /^\%(vital: Git[:.]\|vim-hita\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -429,7 +424,7 @@ function! hita#command#status#get_statusline_string() abort
   endif
 endfunction
 
-call hita#define_variables('command#status', {
+call hita#util#define_variables('command#status', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'topleft 15 split',
       \ 'default_entry_opener': 'edit',

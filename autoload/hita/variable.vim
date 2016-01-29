@@ -1,46 +1,10 @@
 let s:V = hita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Guard = s:V.import('Vim.Guard')
-let s:Term = s:V.import('Git.Term')
-let s:Candidate = s:V.import('Git.Candidate')
+let s:GitTerm = s:V.import('Git.Term')
+let s:GitInfo = s:V.import('Git.Info')
 
-function! hita#variable#split_commitish(commitish, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Term.split_commitish(a:commitish, options)
-endfunction
-
-function! hita#variable#split_treeish(treeish, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Term.split_treeish(a:treeish, options)
-endfunction
-
-function! hita#variable#split_range(range, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Term.split_range(a:range, options)
-endfunction
-
-
-function! hita#variable#validate_commit(commit, ...) abort
-  let options = get(a:000, 0, {})
-  call s:Term.validate_commit(a:commit, options)
-endfunction
-
-function! hita#variable#validate_commitish(commitish, ...) abort
-  let options = get(a:000, 0, {})
-  call s:Term.validate_commitish(a:commitish, options)
-endfunction
-
-function! hita#variable#validate_treeish(treeish, ...) abort
-  let options = get(a:000, 0, {})
-  call s:Term.validate_treeish(a:treeish, options)
-endfunction
-
-function! hita#variable#validate_range(range, ...) abort
-  let options = get(a:000, 0, {})
-  call s:Term.validate_treeish(a:range, options)
-endfunction
-
-function! hita#variable#validate_filename(filename, ...) abort
+function! s:validate_filename(filename, ...) abort
   let options = get(a:000, 0, {})
   call hita#util#validate#not_empty(
         \ a:filename,
@@ -51,7 +15,6 @@ function! hita#variable#validate_filename(filename, ...) abort
         \ 'A filename requires to be a real absolute path before validation',
         \)
 endfunction
-
 
 function! hita#variable#get_valid_commit(commit, ...) abort
   let options = extend({
@@ -75,10 +38,9 @@ function! hita#variable#get_valid_commit(commit, ...) abort
   else
     let commit = a:commit
   endif
-  call hita#variable#validate_commit(commit, options)
+  call s:GitTerm.validate_commit(commit, options)
   return commit
 endfunction
-
 function! hita#variable#get_valid_commitish(commitish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
@@ -101,10 +63,9 @@ function! hita#variable#get_valid_commitish(commitish, ...) abort
   else
     let commitish = a:commitish
   endif
-  call hita#variable#validate_commitish(commitish, options)
+  call s:GitTerm.validate_commitish(commitish, options)
   return commitish
 endfunction
-
 function! hita#variable#get_valid_treeish(treeish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
@@ -127,10 +88,9 @@ function! hita#variable#get_valid_treeish(treeish, ...) abort
   else
     let treeish = a:treeish
   endif
-  call hita#variable#validate_treeish(treeish, options)
+  call s:GitTerm.validate_treeish(treeish, options)
   return treeish
 endfunction
-
 function! hita#variable#get_valid_range(range, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
@@ -153,10 +113,9 @@ function! hita#variable#get_valid_range(range, ...) abort
   else
     let range = a:range
   endif
-  call hita#variable#validate_range(range, options)
+  call s:GitTerm.validate_range(range, options)
   return range
 endfunction
-
 function! hita#variable#get_valid_filename(filename, ...) abort
   let options = get(a:000, 0, {})
   if empty(a:filename)
@@ -180,41 +139,19 @@ function! hita#variable#get_valid_filename(filename, ...) abort
   " NOTE:
   " Alwasy return a real absolute path
   let filename = s:Path.abspath(s:Path.realpath(filename))
-  call hita#variable#validate_filename(filename, options)
+  call s:validate_filename(filename, options)
   return filename
 endfunction
-
-
-function! hita#variable#get_available_tags(hita, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Candidate.get_available_tags(a:hita, options)
-endfunction
-
-function! hita#variable#get_available_branches(hita, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Candidate.get_available_branches(a:hita, options)
-endfunction
-
-function! hita#variable#get_available_commits(hita, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Candidate.get_available_commits(a:hita, options)
-endfunction
-
-function! hita#variable#get_available_filenames(hita, ...) abort
-  let options = get(a:000, 0, {})
-  return s:Candidate.get_available_filenames(a:hita, options)
-endfunction
-
 
 function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
     let hita = hita#get_or_fail()
-    let complete_branches = hita#variable#get_available_branches(hita, options)
-    let complete_tags = hita#variable#get_available_tags(hita, options)
+    let complete_branches = s:GitInfo.get_available_branches(hita, options)
+    let complete_tags = s:GitInfo.get_available_tags(hita, options)
     if !empty(a:arglead)
-      let complete_commits = hita#variable#get_available_commits(hita, options)
+      let complete_commits = s:GitInfo.get_available_commits(hita, options)
       let commits = complete_branches + complete_tags + complete_commits
     else
       let commits = complete_branches + complete_tags
@@ -224,13 +161,12 @@ function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
     return []
   endtry
 endfunction
-
 function! hita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abort
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
     let hita = hita#get_or_fail()
-    let filenames = hita#variable#get_available_filenames(hita, options)
+    let filenames = s:GitInfo.get_available_filenames(hita, options)
     " NOTE:
     " Filter filenames exists under the current working directory
     " and return filenames relative from the current working directory

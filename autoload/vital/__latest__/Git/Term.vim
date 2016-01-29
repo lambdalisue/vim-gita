@@ -4,8 +4,6 @@ endfunction
 function! s:_vital_depends() abort
   return ['Prelude']
 endfunction
-function! s:_vital_created(module) abort
-endfunction
 
 function! s:_throw(msg) abort
   throw 'vital: Git.Term: ' . a:msg

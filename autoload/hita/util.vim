@@ -49,3 +49,18 @@ function! hita#util#handle_exception(exception) abort
   endfor
   throw a:exception
 endfunction
+
+function! hita#util#define_variables(prefix, defaults) abort
+  " Note:
+  "   Funcref is not supported while the variable must start with a capital
+  let prefix = empty(a:prefix)
+        \ ? 'g:hita'
+        \ : printf('g:hita#%s', a:prefix)
+  for [key, value] in items(a:defaults)
+    let name = printf('%s#%s', prefix, key)
+    if !exists(name)
+      silent execute printf('let %s = %s', name, string(value))
+    endif
+    unlet value
+  endfor
+endfunction

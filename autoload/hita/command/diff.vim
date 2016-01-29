@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
+let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -29,11 +30,11 @@ function! s:get_diff_content(hita, commit, filenames, options) abort
     " --no-index force --exit-code option.
     " --exit-code mean that the program exits with 1 if there were differences
     " and 0 means no differences
-    return split(result.stdout, '\r\?\n', 1)
+    return result.content
   elseif result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n', 1)
+  return result.content
 endfunction
 function! s:is_patchable(commit, options) abort
   let options = extend({
@@ -65,7 +66,7 @@ function! s:on_BufWriteCmd() abort
   try
     let hita = hita#get_or_fail()
     let result = hita#command#apply#call({
-          \ 'diff_content': getline(1, '$'),
+          \ 'diff': getline(1, '$'),
           \ 'cached': 1,
           \ 'verbose': 1,
           \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
@@ -76,7 +77,7 @@ function! s:on_BufWriteCmd() abort
     endif
     call hita#command#diff#edit({'force': 1})
     silent doautocmd BufWritePost
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -112,7 +113,8 @@ function! hita#command#diff#bufname(...) abort
           \   options.cached ? 'cached' : '',
           \   options.reverse ? 'reverse' : '',
           \ ],
-          \ 'treeish': commit . ':' . hita#get_relative_path(hita, filenames[0]),
+          \ 'commitish': commit,
+          \ 'path': filenames[0],
           \})
   else
     return hita#autocmd#bufname(hita, {
@@ -121,7 +123,8 @@ function! hita#command#diff#bufname(...) abort
           \   options.cached ? 'cached' : '',
           \   options.reverse ? 'reverse' : '',
           \ ],
-          \ 'treeish': commit . ':',
+          \ 'commitish': commit,
+          \ 'path': '',
           \})
   endif
 endfunction
@@ -152,7 +155,7 @@ function! hita#command#diff#call(...) abort
           \ 'content': content,
           \}
     return result
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
     return {}
   endtry
@@ -245,12 +248,12 @@ function! hita#command#diff#open2(...) abort
       let rhs = options.cached ? '' : WORKTREE
     elseif commit =~# '^.\{-}\.\.\..*$'
       " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-      let [lhs, rhs] = hita#variable#split_range(commit)
+      let [lhs, rhs] = s:GitTerm.split_range(commit)
       let lhs = commit
       let rhs = empty(rhs) ? 'HEAD' : rhs
     elseif commit =~# '^.\{-}\.\.\..*$'
       " git diff <lhs>..<rhs> : <lhs> vs <rhs>
-      let [lhs, rhs] = hita#variable#split_range(commit)
+      let [lhs, rhs] = s:GitTerm.split_range(commit)
       let lhs = empty(lhs) ? 'HEAD' : lhs
       let rhs = empty(rhs) ? 'HEAD' : rhs
     else
@@ -306,7 +309,7 @@ function! hita#command#diff#open2(...) abort
       execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
       keepjump normal zM
     endif
-  catch /^\%(vital:\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -366,6 +369,7 @@ function! hita#command#diff#command(...) abort
   if empty(get(options, 'split', ''))
     call hita#command#diff#open(options)
   else
+    call hita#option#assign_filename(options)
     call hita#command#diff#open2(options)
   endif
 endfunction
@@ -374,7 +378,7 @@ function! hita#command#diff#complete(...) abort
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#define_variables('command#diff', {
+call hita#util#define_variables('command#diff', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \ 'default_split': 'vertical',

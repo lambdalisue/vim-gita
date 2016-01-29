@@ -1,6 +1,8 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
+let s:Git = s:V.import('Git')
+let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
 
@@ -9,7 +11,7 @@ function! s:pick_available_options(options) abort
   return options
 endfunction
 function! s:get_ancestor_content(hita, commit, filename, options) abort
-  let [lhs, rhs] = hita#variable#split_range(a:commit)
+  let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
   let rhs = empty(rhs) ? 'HEAD' : rhs
   let result = hita#execute(a:hita, 'merge-base', {
@@ -38,7 +40,7 @@ function! s:get_revision_content(hita, commit, filename, options) abort
   if result.status
     call hita#throw(result.stdout)
   endif
-  return split(result.stdout, '\r\?\n', 1)
+  return result.content
 endfunction
 function! s:get_diff_content(hita, content, filename, options) abort
   let tempfile1 = tempname()
@@ -60,15 +62,16 @@ function! s:get_diff_content(hita, content, filename, options) abort
       return ''
     endif
     " replace tempfile1/tempfile2 to a:filename
-    let relpath = hita#get_relative_path(a:hita, a:filename)
+    let relpath = s:Git.get_relative_path(a:hita, a:filename)
+    let unixpath = s:Path.unixpath(relpath)
     let raw_content = join(result.content, "\n")
     let raw_content = substitute(
           \ raw_content, escape(tempfile1, '^$~.*[]\'),
-          \ (tempfile1 =~# '^/' ? '/' : '') . relpath, 'g'
+          \ (tempfile1 =~# '^/' ? '/' : '') . unixpath, 'g'
           \)
     let raw_content = substitute(
           \ raw_content, escape(tempfile2, '^$~.*[]\'),
-          \ (tempfile2 =~# '^/' ? '/' : '') . relpath, 'g'
+          \ (tempfile2 =~# '^/' ? '/' : '') . unixpath, 'g'
           \)
     let content = split(raw_content, '\r\?\n', 1)
     return content
@@ -98,7 +101,7 @@ function! s:on_BufWriteCmd() abort
       return
     endif
     let result = hita#command#apply#call({
-          \ 'diff_content': content,
+          \ 'diff': content,
           \ 'cached': 1,
           \ 'verbose': 1,
           \ 'whitespace': 'fix',
@@ -107,9 +110,9 @@ function! s:on_BufWriteCmd() abort
       return
     endif
     call hita#command#show#edit({'force': 1})
-    silent diffupdate
     silent doautocmd BufWritePost
-  catch /^\%(vital:\|vim-hita\)/
+    silent diffupdate
+  catch /^\%(vital: Git[:.]\|vim-hita\)/
     call hita#util#handle_exception(v:exception)
   endtry
 endfunction
@@ -138,7 +141,8 @@ function! hita#command#show#bufname(...) abort
   return hita#autocmd#bufname(hita, {
         \ 'content_type': 'show',
         \ 'extra_options': [],
-        \ 'treeish': commit . ':' . hita#get_relative_path(hita, filename),
+        \ 'commitish': commit,
+        \ 'path': filename,
         \})
 endfunction
 function! hita#command#show#call(...) abort
@@ -159,7 +163,7 @@ function! hita#command#show#call(...) abort
       if commit =~# '^.\{-}\.\.\..*$'
         let content = s:get_ancestor_content(hita, commit, filename, options)
       elseif commit =~# '^.\{-}\.\..*$'
-        let commit  = hita#variable#split_range(commit)[0]
+        let commit  = s:GitTerm.split_range(commit)[0]
         let content = s:get_revision_content(hita, commit, filename, options)
       else
         let content = s:get_revision_content(hita, commit, filename, options)
@@ -308,7 +312,7 @@ function! hita#command#show#complete(...) abort
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#define_variables('command#show', {
+call hita#util#define_variables('command#show', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \})

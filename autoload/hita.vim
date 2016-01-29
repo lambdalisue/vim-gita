@@ -3,14 +3,7 @@ let s:Path = s:V.import('System.Filepath')
 let s:Compat = s:V.import('Vim.Compat')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Git = s:V.import('Git')
-let s:Operation = s:V.import('Git.Operation')
-
-function! s:get_repository_cache() abort
-  if !exists('s:repository_cache')
-    let s:repository_cache = s:MemoryCache.new()
-  endif
-  return s:repository_cache
-endfunction
+let s:GitProcess = s:V.import('Git.Process')
 
 function! s:is_hita_expired(hita) abort
   let bufname = bufname(a:hita.bufnum)
@@ -70,6 +63,12 @@ function! s:get_meta_instance(bufnum) abort
   endif
   return meta
 endfunction
+function! s:get_repository_cache() abort
+  if !exists('s:repository_cache')
+    let s:repository_cache = s:MemoryCache.new()
+  endif
+  return s:repository_cache
+endfunction
 
 function! hita#get(...) abort
   let expr = get(a:000, 0, '%')
@@ -90,16 +89,36 @@ function! hita#get_or_fail(...) abort
         \ 'Cancel: vim-hita is not available on %s', bufname(expr)
         \))
 endfunction
-function! hita#clear_cache() abort
+function! hita#clear() abort
   let repository_cache = s:get_repository_cache()
   call repository_cache.clear()
-  call s:Git.clear_instance_cache()
+  call s:Git.clear()
+  silent bufdo silent unlet! b:_gita
 endfunction
 
 function! hita#execute(hita, name, ...) abort
   let options = get(a:000, 0, {})
   let config  = get(a:000, 1, {})
-  return s:Operation.execute(a:hita, a:name, options, config)
+  if !g:hita#debug
+    return s:GitProcess.execute(a:hita, a:name, options, config)
+  else
+    let result = s:GitProcess.execute(a:hita, a:name, options, config)
+    call hita#util#prompt#debug(printf(
+          \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
+          \))
+    if g:hita#debug >= 2
+      call hita#util#prompt#debug(printf(
+            \ '| status: %d', result.status,
+            \))
+      call hita#util#prompt#debug('| --- content ---')
+      for line in result.content
+        call hita#util#prompt#debug(line)
+      endfor
+      call hita#util#prompt#debug('| ----- end -----')
+    endif
+    call hita#util#prompt#debug('')
+    return result
+  endif
 endfunction
 function! hita#get_relative_path(hita, path) abort
   " NOTE:
@@ -126,6 +145,10 @@ function! hita#set_meta(name, value, ...) abort
   let meta = s:get_meta_instance(bufnr(expr))
   let meta[a:name] = a:value
 endfunction
+
+function! hita#vital() abort
+  return s:V
+endfunction
 function! hita#expand(expr) abort
   " WARNING:
   " DO NOT USE 'hita' instance in this method.
@@ -140,29 +163,11 @@ function! hita#expand(expr) abort
   " Always return a real absolute path
   return s:Path.abspath(s:Path.realpath(filename))
 endfunction
-
-function! hita#vital() abort
-  return s:V
-endfunction
 function! hita#throw(msg) abort
   throw printf('vim-hita: %s', a:msg)
 endfunction
-function! hita#define_variables(prefix, defaults) abort
-  " Note:
-  "   Funcref is not supported while the variable must start with a capital
-  let prefix = empty(a:prefix)
-        \ ? 'g:hita'
-        \ : printf('g:hita#%s', a:prefix)
-  for [key, value] in items(a:defaults)
-    let name = printf('%s#%s', prefix, key)
-    if !exists(name)
-      silent execute printf('let %s = %s', name, string(value))
-    endif
-    unlet value
-  endfor
-endfunction
 
-call hita#define_variables('', {
+call hita#util#define_variables('', {
       \ 'test': 0,
       \ 'debug': 0,
       \ 'develop': 1,
