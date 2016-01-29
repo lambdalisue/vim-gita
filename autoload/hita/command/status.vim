@@ -225,9 +225,7 @@ function! hita#command#status#open(...) abort
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
-  setlocal nonumber nolist nowrap nospell nofoldenable textwidth=0
-  setlocal foldcolumn=0 colorcolumn=0
-  setlocal cursorline
+  " the following options are required so overwrite everytime
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   setlocal filetype=hita-status
