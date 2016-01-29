@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-discard)': 'Discard changes on the working tree',
       \ '<Plug>(hita-DISCARD)': 'Discard changes on the working tree (force)',
@@ -29,7 +30,7 @@ function! hita#action#discard#action(candidates, ...) abort
   let candidates = filter(copy(a:candidates), 's:is_available(v:val)')
   for candidate in candidates
     if candidate.is_conflicted
-      call hita#util#prompt#warn(printf(
+      call s:Prompt.warn(printf(
             \ 'A conflicted file "%s" cannot be discarded. Resolve conflict first.',
             \ s:Path.relpath(candidate.path),
             \))
@@ -41,16 +42,16 @@ function! hita#action#discard#action(candidates, ...) abort
     endif
   endfor
   if !options.force
-    call hita#util#prompt#echo('WarningMsg', join([
+    call s:Prompt.attention(
           \ 'A discard action will discard all local changes on the working tree',
           \ 'and the operation is irreversible, mean that you have no chance to',
           \ 'revert the operation.',
-          \]))
+          \)
     echo 'This operation will be performed to the following candidates:'
     for candidate in extend(copy(delete_candidates), checkout_candidates)
       echo '- ' . s:Path.relpath(candidate.path)
     endfor
-    if !hita#util#prompt#confirm('Are you sure to discard the changes?')
+    if !s:Prompt.confirm('Are you sure to discard the changes?')
       call hita#throw('Cancel: The operation has canceled by user')
     endif
   endif

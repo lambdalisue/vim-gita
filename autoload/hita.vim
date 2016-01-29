@@ -1,6 +1,7 @@
 let s:V = vital#of('vim_gita')
 let s:Path = s:V.import('System.Filepath')
 let s:Compat = s:V.import('Vim.Compat')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
@@ -70,6 +71,13 @@ function! s:get_repository_cache() abort
   return s:repository_cache
 endfunction
 
+function! s:is_debug() abort
+  return g:hita#debug
+endfunction
+function! s:is_batch() abort
+  return g:hita#test
+endfunction
+
 function! hita#get(...) abort
   let expr = get(a:000, 0, '%')
   let bufnum = bufnr(expr)
@@ -103,20 +111,20 @@ function! hita#execute(hita, name, ...) abort
     return s:GitProcess.execute(a:hita, a:name, options, config)
   else
     let result = s:GitProcess.execute(a:hita, a:name, options, config)
-    call hita#util#prompt#debug(printf(
+    call s:Prompt.debug(printf(
           \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
           \))
     if g:hita#debug >= 2
-      call hita#util#prompt#debug(printf(
+      call s:Prompt.debug(printf(
             \ '| status: %d', result.status,
             \))
-      call hita#util#prompt#debug('| --- content ---')
+      call s:Prompt.debug('| --- content ---')
       for line in result.content
-        call hita#util#prompt#debug(line)
+        call s:Prompt.debug(line)
       endfor
-      call hita#util#prompt#debug('| ----- end -----')
+      call s:Prompt.debug('| ----- end -----')
     endif
-    call hita#util#prompt#debug('')
+    call s:Prompt.debug('')
     return result
   endif
 endfunction
@@ -167,6 +175,10 @@ function! hita#throw(msg) abort
   throw printf('vim-hita: %s', a:msg)
 endfunction
 
+call s:Prompt.set_config({
+      \ 'debug': function('s:is_debug'),
+      \ 'batch': function('s:is_batch'),
+      \})
 call hita#util#define_variables('', {
       \ 'test': 0,
       \ 'debug': 0,

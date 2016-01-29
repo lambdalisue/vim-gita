@@ -1,19 +1,23 @@
 let s:V = hita#vital()
 let s:Path = s:V.import('System.Filepath')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitInfo = s:V.import('Git.Info')
 
 function! s:validate_filename(filename, ...) abort
   let options = get(a:000, 0, {})
-  call hita#util#validate#not_empty(
-        \ a:filename,
-        \ 'A filename cannot be empty',
-        \)
-  call hita#util#validate#true(
-        \ s:Path.is_absolute(a:filename),
-        \ 'A filename requires to be a real absolute path before validation',
-        \)
+  if empty(a:filename)
+    call hita#throw(
+          \ 'ValidationError: A filename cannot be empty'
+          \)
+  endif
+  if s:Path.is_relative(a:filename)
+    call hita#throw(printf(
+          \ 'A filename "%s" requires to be a real absolute path before validation',
+          \ a:filename,
+          \))
+  endif
 endfunction
 
 function! hita#variable#get_valid_commit(commit, ...) abort
@@ -25,7 +29,7 @@ function! hita#variable#get_valid_commit(commit, ...) abort
     let s:_complete_options = options
     try
       call histadd('input', 'origin/HEAD')
-      let commit = hita#util#prompt#ask(
+      let commit = s:Prompt.ask(
             \ 'Please input a commit: ', '',
             \ 'customlist,hita#variable#complete_commit',
             \)
@@ -50,7 +54,7 @@ function! hita#variable#get_valid_commitish(commitish, ...) abort
     let s:_complete_options = options
     try
       call histadd('input', 'origin/HEAD')
-      let commitish = hita#util#prompt#ask(
+      let commitish = s:Prompt.ask(
             \ 'Please input a commitish: ', '',
             \ 'customlist,hita#variable#complete_commit',
             \)
@@ -75,7 +79,7 @@ function! hita#variable#get_valid_treeish(treeish, ...) abort
     let s:_complete_options = options
     try
       call histadd('input', 'origin/HEAD')
-      let treeish = hita#util#prompt#ask(
+      let treeish = s:Prompt.ask(
             \ 'Please input a treeish: ', '',
             \ 'customlist,hita#variable#complete_commit',
             \)
@@ -100,7 +104,7 @@ function! hita#variable#get_valid_range(range, ...) abort
     let s:_complete_options = options
     try
       call histadd('input', 'origin/HEAD...')
-      let range = hita#util#prompt#ask(
+      let range = s:Prompt.ask(
             \ 'Please input a commitish or commitish range: ', '',
             \ 'customlist,hita#variable#complete_commit',
             \)
@@ -123,7 +127,7 @@ function! hita#variable#get_valid_filename(filename, ...) abort
     let s:_complete_options = options
     try
       call histadd('input', s:Path.relpath(hita#expand('%')))
-      let filename = hita#util#prompt#ask(
+      let filename = s:Prompt.ask(
             \ 'Please input a filename: ', '',
             \ 'customlist,hita#variable#complete_filename'
             \)

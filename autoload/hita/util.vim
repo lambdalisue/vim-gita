@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
+let s:Prompt = s:V.import('Vim.Prompt')
 
 function! hita#util#clip(content) abort
   let @" = a:content
@@ -24,30 +25,28 @@ function! hita#util#doautocmd(name, ...) abort
 endfunction
 
 function! hita#util#handle_exception(exception) abort
+  let known_attention_patterns = [
+        \ '^\%(vital: Git[:.]\|vim-hita:\) Cancel:',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) Attention:',
+        \]
+  for pattern in known_attention_patterns
+    if a:exception =~# pattern
+      call s:Prompt.attention(substitute(a:exception, pattern, '', ''))
+      return
+    endif
+  endfor
   let known_warning_patterns = [
-        \ '^vim-hita: Cancel:',
-        \ '^vim-hita: Warning:',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeWarning:',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeValidationError:',
         \]
   for pattern in known_warning_patterns
     if a:exception =~# pattern
-      redraw
-      call hita#util#prompt#warn(substitute(a:exception, pattern, '', ''))
+      call s:Prompt.warn(substitute(a:exception, pattern, '', ''))
       return
     endif
   endfor
-  let known_exception_patterns = [
-        \ '^vim-hita:',
-        \ '^vital: Git[:.]',
-        \ 'ValidationError:',
-        \]
-  for pattern in known_exception_patterns
-    if a:exception =~# pattern
-      redraw
-      call hita#util#prompt#error(a:exception)
-      return
-    endif
-  endfor
-  throw a:exception
+  call s:Prompt.error(v:exception)
+  call s:Prompt.debug(v:throwpoint)
 endfunction
 
 function! hita#util#define_variables(prefix, defaults) abort

@@ -2,6 +2,7 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -92,10 +93,10 @@ function! s:on_BufWriteCmd() abort
   let options = hita#get_meta('options', {})
   let filename = hita#get_meta('filename', '')
   if !empty(commit) || empty(filename)
-    call hita#util#prompt#warn(join([
+    call s:Prompt.attention(
           \ 'Partial patching is only available in a INDEX file, namely',
           \ 'a file opened by ":Hita show [--filename={filename}]"',
-          \]))
+          \)
     return
   endif
   silent doautocmd BufWritePre

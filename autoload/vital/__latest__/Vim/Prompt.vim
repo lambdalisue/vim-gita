@@ -105,13 +105,13 @@ endfunction
 function! s:title(...) abort
   call s:echo(
         \ 'Title',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 function! s:attention(...) abort
   call s:echo(
         \ 'WarningMsg',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 
@@ -121,25 +121,25 @@ function! s:debug(...) abort
   endif
   call s:echomsg(
         \ 'Comment',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 function! s:info(...) abort
   call s:echomsg(
         \ 'Title',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 function! s:warn(...) abort
   call s:echomsg(
         \ 'WarningMsg',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 function! s:error(...) abort
   call s:echomsg(
         \ 'Error',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'), "\n")
+        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
         \)
 endfunction
 

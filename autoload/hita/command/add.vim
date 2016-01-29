@@ -1,5 +1,6 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort

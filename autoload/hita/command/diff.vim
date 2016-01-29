@@ -1,5 +1,6 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -54,11 +55,11 @@ function! s:on_BufWriteCmd() abort
   let commit = hita#get_meta('commit', '')
   let options = hita#get_meta('options', {})
   if !s:is_patchable(commit, options)
-    call hita#util#prompt#warn(join([
+    call s:Prompt.attention(
           \ 'Patching diff is only available when diff was produced',
           \ 'by ":Hita diff [-- {filename}...]" or',
           \ '":Hita diff --cached --reverse [-- {filename}...]"',
-          \]))
+          \)
     return
   endif
   silent doautocmd BufWritePre
@@ -227,8 +228,8 @@ function! hita#command#diff#open2(...) abort
         \ 'split': '',
         \}, get(a:000, 0, {}))
   if len(options.filenames) > 1
-    call hita#util#prompt#warn(
-          \ 'Hita diff --split cannot handle multiple filenames',
+    call hita#throw(
+          \ 'Warning: Hita diff --split cannot handle multiple filenames',
           \)
     return
   endif

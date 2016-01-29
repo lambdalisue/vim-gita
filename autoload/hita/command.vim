@@ -9,33 +9,29 @@ function! hita#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
 endfunction
 function! hita#command#register(name, command, complete, ...) abort
-  try
-    call hita#util#validate#key_not_exists(
-          \ a:name, s:registry,
-          \ 'A command "%value" has already been registered',
-          \)
-    let s:registry[a:name] = {
-          \ 'command': s:Prelude.is_string(a:command)
-          \   ? function(a:command)
-          \   : a:command,
-          \ 'complete': s:Prelude.is_string(a:complete)
-          \   ? function(a:complete)
-          \   : a:complete,
-          \}
-  catch /^vim-hita:/
-    call hita#util#handle_exception(v:exception)
-  endtry
+  if has_key(s:registry, a:name)
+    call hita#throw(printf(
+          \ 'ValidationError: A command "%s" has already been registered',
+          \ a:name,
+          \))
+  endif
+  let s:registry[a:name] = {
+        \ 'command': s:Prelude.is_string(a:command)
+        \   ? function(a:command)
+        \   : a:command,
+        \ 'complete': s:Prelude.is_string(a:complete)
+        \   ? function(a:complete)
+        \   : a:complete,
+        \}
 endfunction
 function! hita#command#unregister(name) abort
-  try
-    call hita#util#validate#key_exists(
-          \ a:name, s:registry,
-          \ 'A command "%value" has not been registered yet',
-          \)
-    unlet s:registry[a:name]
-  catch /^vim-hita:/
-    call hita#util#handle_exception(v:exception)
-  endtry
+  if !has_key(s:registry, a:name)
+    call hita#throw(printf(
+          \ 'ValidationError: A command "%s" has not been registered yet',
+          \ a:name,
+          \))
+  endif
+  unlet s:registry[a:name]
 endfunction
 
 function! s:get_parser() abort

@@ -1,5 +1,3 @@
-let s:V = gista#vital()
-
 function! hita#option#init(content_type, options, ...) abort
   let options = deepcopy(a:options)
   if !empty(a:content_type)
