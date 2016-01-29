@@ -29,7 +29,7 @@ function! hita#action#diff#action(candidates, ...) abort
               \ 'opener': options.opener,
               \ 'commit': get(options, 'commit', ''),
               \ 'cached': get(candidate, 'is_staged', 0),
-              \ 'filename': candidate.path,
+              \ 'filenames': [candidate.path],
               \})
       else
         call hita#command#diff#open2({
@@ -37,7 +37,7 @@ function! hita#action#diff#action(candidates, ...) abort
               \ 'split': options.split,
               \ 'commit': get(options, 'commit', ''),
               \ 'cached': get(candidate, 'is_staged', 0),
-              \ 'filename': candidate.path,
+              \ 'filenames': [candidate.path],
               \})
       endif
     endif
