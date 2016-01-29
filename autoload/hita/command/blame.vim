@@ -205,16 +205,11 @@ function! hita#command#blame#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = hita#variable#get_valid_filename(options.filename)
   return hita#autocmd#bufname(hita, {
         \ 'content_type': 'blame',
         \ 'extra_options': [],
@@ -231,36 +226,31 @@ function! hita#command#blame#call(...) abort
         \ '_short_revision_length': -1,
         \ '_verbose': 1,
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = hita#variable#get_valid_filename(options.filename)
+  if options._verbose
+    redraw | echo 'Retrieving a blame content. It may take some time ...'
+  endif
+  let content = s:get_blame_content(hita, commit, filename, options)
+  if options._verbose
+    redraw | echo
+  endif
+  let result = {
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \ 'content': content,
+        \}
+  if get(options, 'porcelain')
+    let result.blame = s:parse_blame(hita, content, {
+          \ 'enable_pseudo_separator': options._enable_pseudo_separator,
+          \ 'navigation_winwidth': options._navigation_winwidth,
+          \ 'short_revision_length': options._short_revision_length,
           \})
-    let filename = hita#variable#get_valid_filename(options.filename)
-    if options._verbose
-      redraw | echo 'Retrieving a blame content. It may take some time ...'
-    endif
-    let content = s:get_blame_content(hita, commit, filename, options)
-    if options._verbose
-      redraw | echo
-    endif
-    let result = {
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \ 'content': content,
-          \}
-    if get(options, 'porcelain')
-      let result.blame = s:parse_blame(hita, content, {
-            \ 'enable_pseudo_separator': options._enable_pseudo_separator,
-            \ 'navigation_winwidth': options._navigation_winwidth,
-            \ 'short_revision_length': options._short_revision_length,
-            \})
-    endif
-    return result
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  endif
+  return result
 endfunction
 function! hita#command#blame#open(...) abort
   let options = extend({
@@ -290,34 +280,22 @@ function! hita#command#blame#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
   let options['porcelain'] = 1
   let result = hita#command#blame#view#call(options)
-  if empty(result)
-    return
-  endif
   call hita#util#buffer#read_content(result.blame.view_content)
 endfunction
 function! hita#command#blame#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  if options.force || hita#get_meta('content_type') !=# 'blame'
-    let options['porcelain'] = 1
-    let result = hita#command#blame#call(options)
-    if empty(result)
-      return
-    endif
-    call hita#set_meta('content_type', 'blame')
-    call hita#set_meta('options', s:Dict.omit(options, ['force']))
-    call hita#set_meta('commit', result.commit)
-    call hita#set_meta('filename', result.filename)
-    call hita#set_meta('content', result.content)
-    call hita#set_meta('blame', result.blame)
-    let blame = result.blame
-  else
-    let blame = hita#get_meta('blame')
-  endif
+  let options['porcelain'] = 1
+  let result = hita#command#blame#call(options)
+  call hita#set_meta('content_type', 'blame')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('commit', result.commit)
+  call hita#set_meta('filename', result.filename)
+  call hita#set_meta('content', result.content)
+  call hita#set_meta('blame', result.blame)
   setlocal buftype=nowrite noswapfile nobuflisted
-  setlocal nowrap nofoldenable foldcolumn=0
-  setlocal nonumber
+  setlocal nonumber nowrap nofoldenable foldcolumn=0
   setlocal nomodifiable
   setlocal scrollopt=ver
   augroup vim_hita_internal_blame
@@ -325,9 +303,9 @@ function! hita#command#blame#edit(...) abort
     autocmd BufWinEnter <buffer>
           \ setlocal nonumber nowrap nofoldenable foldcolumn=0
   augroup END
-  call hita#util#buffer#edit_content(blame.view_content)
+  call hita#util#buffer#edit_content(result.blame.view_content)
   call hita#command#blame#define_highlights()
-  call hita#command#blame#display_pseudo_separators(blame.separators)
+  call hita#command#blame#display_pseudo_separators(result.blame.separators)
 endfunction
 
 function! s:get_parser() abort

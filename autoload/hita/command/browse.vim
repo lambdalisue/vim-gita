@@ -102,28 +102,23 @@ function! hita#command#browse#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    if empty(options.filenames)
-      let filenames = ['%']
-    endif
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
-          \)
-    let urls = map(copy(filenames), 's:find_url(hita, commit, v:val, options)')
-    return {
-          \ 'commit': commit,
-          \ 'filenames': filenames,
-          \ 'urls': urls,
-          \}
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  if empty(options.filenames)
+    let filenames = ['%']
+  endif
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'hita#variable#get_valid_filename(v:val)',
+        \)
+  let urls = map(copy(filenames), 's:find_url(hita, commit, v:val, options)')
+  return {
+        \ 'commit': commit,
+        \ 'filenames': filenames,
+        \ 'urls': urls,
+        \}
 endfunction
 function! hita#command#browse#open(...) abort
   let options = get(a:000, 0, {})

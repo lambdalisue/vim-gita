@@ -28,18 +28,11 @@ function! hita#util#buffer#open(name, ...) abort
           \}
   endif
 endfunction
+
 function! hita#util#buffer#read_content(...) abort
   call call(s:Buffer.read_content, a:000, s:Buffer)
 endfunction
+
 function! hita#util#buffer#edit_content(...) abort
   call call(s:Buffer.edit_content, a:000, s:Buffer)
-endfunction
-
-function! hita#util#buffer#is_visible(expr) abort
-  let bufnum = bufnr(a:expr)
-  if bufnum == -1
-    return 0
-  endif
-  let buflist = tabpagebuflist()
-  return index(buflist, bufnum) >= 0
 endfunction

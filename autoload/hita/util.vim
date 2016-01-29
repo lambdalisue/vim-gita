@@ -24,14 +24,14 @@ function! hita#util#doautocmd(name, ...) abort
   endtry
 endfunction
 
-function! hita#util#handle_exception(exception) abort
+function! hita#util#handle_exception() abort
   let known_attention_patterns = [
         \ '^\%(vital: Git[:.]\|vim-hita:\) Cancel:',
         \ '^\%(vital: Git[:.]\|vim-hita:\) Attention:',
         \]
   for pattern in known_attention_patterns
-    if a:exception =~# pattern
-      call s:Prompt.attention(substitute(a:exception, pattern, '', ''))
+    if v:exception =~# pattern
+      call s:Prompt.attention(substitute(v:exception, pattern, '', ''))
       return
     endif
   endfor
@@ -40,8 +40,8 @@ function! hita#util#handle_exception(exception) abort
         \ '^\%(vital: Git[:.]\|vim-hita:\) \zeValidationError:',
         \]
   for pattern in known_warning_patterns
-    if a:exception =~# pattern
-      call s:Prompt.warn(substitute(a:exception, pattern, '', ''))
+    if v:exception =~# pattern
+      call s:Prompt.warn(substitute(v:exception, pattern, '', ''))
       return
     endif
   endfor

@@ -162,6 +162,9 @@ function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
     endif
     return filter(commits, 'v:val =~# "^" . a:arglead')
   catch
+    " fail silently
+    call s:Prompt.debug(v:exception)
+    call s:Prompt.debug(v:throwpoint)
     return []
   endtry
 endfunction
@@ -174,13 +177,16 @@ function! hita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abor
     " NOTE:
     " Filter filenames exists under the current working directory
     " and return filenames relative from the current working directory
-    let pattern = "^" . escape(getcwd(), '^$\.~[]') . s:Path.separator()
+    let pattern = '^' . escape(getcwd(), '^$\.~[]') . s:Path.separator()
     let filenames = map(
           \ filter(filenames, 'v:val =~# pattern'),
           \ 'fnamemodify(v:val, ":.")',
           \)
     return filter(filenames, 'v:val =~# "^" . a:arglead')
   catch
+    " fail silently
+    call s:Prompt.debug(v:exception)
+    call s:Prompt.debug(v:throwpoint)
     return []
   endtry
 endfunction

@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
@@ -67,7 +68,11 @@ function! hita#command#command(...) abort
     let args  = join(options.__unknown__)
     let name  = get(options, 'action', '')
     if hita#command#is_registered(name)
-      call s:registry[name].command(bang, range, args)
+      try
+        call s:registry[name].command(bang, range, args)
+      catch /^\%(vital: Git[:.]\|vim-hita:\)/
+        call hita#util#handle_exception()
+      endtry
     else
       echo parser.help()
     endif
@@ -82,7 +87,14 @@ function! hita#command#complete(arglead, cmdline, cursorpos, ...) abort
   if !empty(options)
     let name = get(options, 'action', '')
     if hita#command#is_registered(name)
-      return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
+      try
+        return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
+      catch
+        " fail silently
+        call s:Prompt.debug(v:exception)
+        call s:Prompt.debug(v:throwpoint)
+        return []
+      endtry
     endif
   endif
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)

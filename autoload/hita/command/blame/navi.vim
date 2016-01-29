@@ -1,34 +1,28 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 
-function! s:define_plugin_mappings() abort
-  nnoremap <buffer><silent> <Plug>(hita-quit)
-        \ :<C-u>q<CR>
-  nnoremap <buffer><silent> <Plug>(hita-redraw)
-        \ :call <SID>action('redraw')<CR>
-endfunction
-function! s:define_default_mappings() abort
-  nmap <buffer> q <Plug>(hita-quit)
-  nmap <buffer> <C-l> <Plug>(hita-redraw)
-endfunction
-
 function! s:get_entry(index) abort
   return {}
 endfunction
-function! s:action(name, ...) range abort
-  let fname = printf('s:action_%s', a:name)
-  if !exists('*' . fname)
-    call hita#throw(printf('Unknown action name "%s" is called.', a:name))
+function! s:define_actions() abort
+  let action = hita#action#define(function('s:get_entry'))
+  " Override 'redraw' action
+  function! action.actions.redraw(candidates, ...) abort
+    call hita#command#blame#navi#update()
+  endfunction
+
+  call hita#action#includes(
+        \ g:hita#command#blame#navi#enable_default_mappings, [
+        \   'close', 'redraw',
+        \   'edit', 'show', 'diff', 'blame', 'browse',
+        \])
+
+  if g:hita#command#blame#navi#enable_default_mappings
+    silent execute printf(
+          \ 'map <buffer> <Return> %s',
+          \ g:hita#command#blame#navi#default_action_mapping
+          \)
   endif
-  let entries = []
-  for n in range(a:firstline, a:lastline)
-    call add(entries, s:get_entry(n - 1))
-  endfor
-  call filter(entries, '!empty(v:val)')
-  call call(fname, extend([entries], a:000))
-endfunction
-function! s:action_redraw(candidates, ...) abort
-  call hita#command#blame#navi#redraw()
 endfunction
 
 function! hita#command#blame#navi#bufname(...) abort
@@ -36,16 +30,11 @@ function! hita#command#blame#navi#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    let filename = hita#variable#get_valid_filename(options.filename)
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = hita#variable#get_valid_filename(options.filename)
   return hita#autocmd#bufname(hita, {
         \ 'filebase': 0,
         \ 'content_type': 'blame-navi',
@@ -60,47 +49,33 @@ function! hita#command#blame#navi#call(...) abort
         \ 'filename': '',
         \})
   let bufname = hita#command#blame#bufname(options)
-  if empty(bufname)
-    return
+  let bufnum = bufnr(bufname)
+  let content_type = hita#get_meta('content_type', '', bufnum)
+  if bufnum == 0 || content_type !=# 'blame'
+    call hita#throw('hita-blame-navi window requires a corresponding hita-blame buffer.')
   endif
-  try
-    let bufnum = bufnr(bufname)
-    let content_type = hita#get_meta('content_type', '', bufnum)
-    if bufnum == 0 || content_type !=# 'blame'
-      call hita#throw(
-            \ 'hita-blame-navi window requires a corresponding hita-blame buffer.',
-            \)
-      return
-    endif
-    let commit = hita#get_meta('commit', '', bufnum)
-    let filename = hita#get_meta('filename', '', bufnum)
-    let content = hita#get_meta('content', [], bufnum)
-    let blame = hita#get_meta('blame', {}, bufnum)
-    if empty(blame)
-      call hita#throw(printf('No blame information has found on %s', bufname))
-    endif
-    let result = {
-          \ 'bufname': bufname,
-          \ 'bufnum': bufnum,
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \ 'content': content,
-          \ 'blame': blame,
-          \}
-    return result
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let commit = hita#get_meta('commit', '', bufnum)
+  let filename = hita#get_meta('filename', '', bufnum)
+  let content = hita#get_meta('content', [], bufnum)
+  let blame = hita#get_meta('blame', {}, bufnum)
+  if empty(blame)
+    call hita#throw(printf('No blame information has found on %s', bufname))
+  endif
+  let result = {
+        \ 'bufname': bufname,
+        \ 'bufnum': bufnum,
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \ 'content': content,
+        \ 'blame': blame,
+        \}
+  return result
 endfunction
 function! hita#command#blame#navi#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let result = hita#command#blame#navi#call(options)
-  if empty(result)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:hita#command#blame#default_opener
         \ : options.opener
@@ -116,10 +91,7 @@ function! hita#command#blame#navi#open(...) abort
   call hita#set_meta('content', result.content)
   call hita#set_meta('blame', result.blame)
   call hita#set_meta('winwidth', winwidth(0))
-  call s:define_plugin_mappings()
-  if g:hita#command#blame#navi#enable_default_mappings
-    call s:define_default_mappings()
-  endif
+  call s:define_actions()
   augroup vim_hita_status
     autocmd! * <buffer>
     autocmd BufReadCmd <buffer>
@@ -138,15 +110,10 @@ function! hita#command#blame#navi#open(...) abort
 endfunction
 function! hita#command#blame#navi#update(...) abort
   if &filetype !=# 'hita-blame-navi'
-    call hita#throw(
-          \ 'update() requires to be called in a hita-blame-navi buffer'
-          \)
+    call hita#throw('update() requires to be called in a hita-blame-navi buffer')
   endif
   let options = get(a:000, 0, {})
   let result = hita#command#blame#navi#call(options)
-  if empty(result)
-    return
-  endif
   call hita#set_meta('content_type', 'blame-navi')
   call hita#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#set_meta('commit', result.commit)
@@ -158,9 +125,7 @@ function! hita#command#blame#navi#update(...) abort
 endfunction
 function! hita#command#blame#navi#redraw() abort
   if &filetype !=# 'hita-blame-navi'
-    call hita#throw(
-          \ 'redraw() requires to be called in a hita-status buffer'
-          \)
+    call hita#throw('redraw() requires to be called in a hita-status buffer')
   endif
   let blame = hita#get_meta('blame')
   call hita#util#buffer#edit_content(blame.navi_content)
@@ -189,15 +154,6 @@ function! hita#command#blame#navi#define_syntax() abort
 endfunction
 
 call hita#util#define_variables('command#blame#navi', {
-      \ 'default_entry_opener': 'edit',
-      \ 'entry_openers': {
-      \   'edit':    ['edit', 1],
-      \   'above':   ['leftabove new', 1],
-      \   'below':   ['rightbelow new', 1],
-      \   'left':    ['leftabove vnew', 1],
-      \   'right':   ['rightbelow vnew', 1],
-      \   'tab':     ['tabnew', 0],
-      \   'preview': ['pedit', 0],
-      \ },
+      \ 'default_action_mapping': '<Plug>(hita-show)',
       \ 'enable_default_mappings': 1,
       \})

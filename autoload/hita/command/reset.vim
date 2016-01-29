@@ -31,26 +31,21 @@ function! hita#command#reset#call(...) abort
   let options = hita#option#init('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    if empty(options.filenames)
-      let filenames = []
-    else
-      let filenames = map(
-            \ copy(options.filenames),
-            \ 'hita#variable#get_valid_filename(v:val)',
-            \)
-    endif
-    let content = s:apply_command(hita, filenames, options)
-    silent call hita#util#doautocmd('StatusModified')
-    return {
-          \ 'filenames': filenames,
-          \ 'content': content,
-          \}
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let hita = hita#get_or_fail()
+  if empty(options.filenames)
+    let filenames = []
+  else
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'hita#variable#get_valid_filename(v:val)',
+          \)
+  endif
+  let content = s:apply_command(hita, filenames, options)
+  silent call hita#util#doautocmd('StatusModified')
+  return {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \}
 endfunction
 
 function! s:get_parser() abort

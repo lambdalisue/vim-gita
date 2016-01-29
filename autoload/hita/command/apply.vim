@@ -52,30 +52,25 @@ function! hita#command#apply#call(...) abort
         \ 'diff': [],
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    if empty(options.filenames)
-      let filenames = []
-      let diff = empty(options.diff) ? getline(1, '$') : options.diff
-      let content = s:apply_content(hita, diff, options)
-    else
-      let filenames = map(
-            \ copy(options.filenames),
-            \ 'hita#variable#get_valid_filename(v:val)',
-            \)
-      let diff = []
-      let content = s:apply_patches(hita, filenames, options)
-    endif
-    silent call hita#util#doautocmd('StatusModified')
-    return {
-          \ 'diff': diff,
-          \ 'filenames': filenames,
-          \ 'content': content,
-          \}
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let hita = hita#get_or_fail()
+  if empty(options.filenames)
+    let filenames = []
+    let diff = empty(options.diff) ? getline(1, '$') : options.diff
+    let content = s:apply_content(hita, diff, options)
+  else
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'hita#variable#get_valid_filename(v:val)',
+          \)
+    let diff = []
+    let content = s:apply_patches(hita, filenames, options)
+  endif
+  silent call hita#util#doautocmd('StatusModified')
+  return {
+        \ 'diff': diff,
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \}
 endfunction
 
 function! s:get_parser() abort

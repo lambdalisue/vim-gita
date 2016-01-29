@@ -94,7 +94,7 @@ function! hita#get_or_fail(...) abort
     return hita
   endif
   call hita#throw(printf(
-        \ 'Cancel: vim-hita is not available on %s', bufname(expr)
+        \ 'Attention: vim-hita is not available on %s', bufname(expr)
         \))
 endfunction
 function! hita#clear() abort

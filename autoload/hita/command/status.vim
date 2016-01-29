@@ -126,33 +126,47 @@ function! s:define_actions() abort
   endif
 endfunction
 
+function! s:on_BufReadCmd() abort
+  try
+    call hita#command#status#update()
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception()
+  endtry
+endfunction
 function! s:on_VimResized() abort
-  call hita#command#status#redraw()
+  try
+    call hita#command#status#redraw()
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception()
+  endtry
 endfunction
 function! s:on_WinEnter() abort
-  if hita#get_meta('winwidth', winwidth(0)) != winwidth(0)
-    call hita#command#status#redraw()
-  endif
+  try
+    if hita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+      call hita#command#status#redraw()
+    endif
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception()
+  endtry
 endfunction
 function! s:on_HitaStatusModified() abort
-  let winnum = winnr()
-  keepjump windo
-        \ if &filetype ==# 'hita-status' |
-        \   call hita#command#status#update() |
-        \ endif
-  execute printf('keepjump %dwincmd w', winnum)
+  try
+    let winnum = winnr()
+    keepjump windo
+          \ if &filetype ==# 'hita-status' |
+          \   call hita#command#status#update() |
+          \ endif
+    execute printf('keepjump %dwincmd w', winnum)
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception()
+  endtry
 endfunction
 
 function! hita#command#status#bufname(...) abort
   let options = hita#option#init('status', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-  catch /^\%(vital: Git[:.]\|vim-hita\)/
-    call hita#util#handle_exception(v:exception)
-    return
-  endtry
+  let hita = hita#get_or_fail()
   return hita#autocmd#bufname(hita, {
         \ 'filebase': 0,
         \ 'content_type': 'status',
@@ -167,32 +181,27 @@ function! hita#command#status#call(...) abort
   let options = hita#option#init('status', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    if !empty(options.filenames)
-      let filenames = map(
-            \ copy(options.filenames),
-            \ 'hita#variable#get_valid_filename(v:val)',
-            \)
-    else
-      let filenames = []
-    endif
-    let content = s:get_status_content(hita, filenames, options)
-    let result = {
-          \ 'filenames': filenames,
-          \ 'content': content,
-          \}
-    if get(options, 'porcelain')
-      let result.statuses = sort(
-            \ s:parse_statuses(hita, content, options),
-            \ function('s:compare_statuses'),
-            \)
-    endif
-    return result
-  catch /^\%(vital: Git[:.]\|vim-hita\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let hita = hita#get_or_fail()
+  if !empty(options.filenames)
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'hita#variable#get_valid_filename(v:val)',
+          \)
+  else
+    let filenames = []
+  endif
+  let content = s:get_status_content(hita, filenames, options)
+  let result = {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \}
+  if get(options, 'porcelain')
+    let result.statuses = sort(
+          \ s:parse_statuses(hita, content, options),
+          \ function('s:compare_statuses'),
+          \)
+  endif
+  return result
 endfunction
 function! hita#command#status#open(...) abort
   let options = extend({
@@ -200,9 +209,6 @@ function! hita#command#status#open(...) abort
         \}, get(a:000, 0, {}))
   let options['porcelain'] = 1
   let result = hita#command#status#call(options)
-  if empty(result)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:hita#command#status#default_opener
         \ : options.opener
@@ -214,49 +220,40 @@ function! hita#command#status#open(...) abort
   call hita#set_meta('content_type', 'status')
   call hita#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#set_meta('statuses', result.statuses)
-  call hita#set_meta('filename',
-        \ len(result.filenames) == 1 ? result.filenames[0] : '')
+  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#set_meta('filenames', result.filenames)
   call hita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
   augroup vim_hita_status
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer> call hita#command#status#update()
+    autocmd BufReadCmd <buffer> call s:on_BufReadCmd()
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
   " the following options are required so overwrite everytime
+  setlocal filetype=hita-status
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  setlocal filetype=hita-status
   call hita#command#status#redraw()
 endfunction
 function! hita#command#status#update(...) abort
   if &filetype !=# 'hita-status'
-    call hita#throw(
-          \ 'update() requires to be called in a hita-status buffer'
-          \)
+    call hita#throw('update() requires to be called in a hita-status buffer')
   endif
   let options = get(a:000, 0, {})
   let options['porcelain'] = 1
   let result = hita#command#status#call(options)
-  if empty(result)
-    return
-  endif
   call hita#set_meta('content_type', 'status')
   call hita#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#set_meta('statuses', result.statuses)
-  call hita#set_meta('filename',
-        \ len(result.filenames) == 1 ? result.filenames[0] : '')
+  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#set_meta('filenames', result.filenames)
   call hita#set_meta('winwidth', winwidth(0))
   call hita#command#status#redraw()
 endfunction
 function! hita#command#status#redraw() abort
   if &filetype !=# 'hita-status'
-    call hita#throw(
-          \ 'redraw() requires to be called in a hita-status buffer'
-          \)
+    call hita#throw('redraw() requires to be called in a hita-status buffer')
   endif
   let hita = hita#get_or_fail()
   let prologue = s:List.flatten([

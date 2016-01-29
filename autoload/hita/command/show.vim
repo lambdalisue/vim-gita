@@ -4,6 +4,7 @@ let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
+let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
@@ -16,17 +17,8 @@ function! s:get_ancestor_content(hita, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
   let rhs = empty(rhs) ? 'HEAD' : rhs
-  let result = hita#execute(a:hita, 'merge-base', {
-        \ 'commit1': lhs,
-        \ 'commit2': rhs,
-        \})
-  if result.status
-    call hita#throw(printf(
-          \ 'A common ancestor of %s and %s could not be found.',
-          \ lhs, rhs,
-          \))
-  endif
-  return s:get_revision_content(a:hita, result.stdout, a:filename, a:options)
+  let commit = s:GitInfo.get_common_ancestor(hita, lhs, rhs)
+  return s:get_revision_content(a:hita, commit, a:filename, a:options)
 endfunction
 function! s:get_revision_content(hita, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
@@ -61,8 +53,8 @@ function! s:get_diff_content(hita, content, filename, options) abort
           \ 'filenames': [tempfile1, tempfile2],
           \})
     if empty(result) || empty(result.content) || len(result.content) < 4
-      " fail or no differences
-      return []
+      " fail or no differences. Assume there are no differences
+      call hita#throw('Attention: No differences')
     endif
     " replace tempfile1/tempfile2 in HEADER to a:filename
     "
@@ -89,43 +81,34 @@ function! s:get_diff_content(hita, content, filename, options) abort
 endfunction
 
 function! s:on_BufWriteCmd() abort
-  let commit = hita#get_meta('commit', '')
-  let options = hita#get_meta('options', {})
-  let filename = hita#get_meta('filename', '')
-  if !empty(commit) || empty(filename)
-    call s:Prompt.attention(
-          \ 'Partial patching is only available in a INDEX file, namely',
-          \ 'a file opened by ":Hita show [--filename={filename}]"',
-          \)
-    return
-  endif
-  silent doautocmd BufWritePre
+  let tempfile = tempname()
   try
+    let commit = hita#get_meta('commit', '')
+    let options = hita#get_meta('options', {})
+    let filename = hita#get_meta('filename', '')
+    if !empty(commit) || empty(filename)
+      call hita#throw(
+            \ 'Attention:',
+            \ 'Partial patching is only available in a INDEX file, namely',
+            \ 'a file opened by ":Hita show [--filename={filename}]"',
+            \)
+    endif
+    silent doautocmd BufWritePre
     let hita = hita#get_or_fail()
     let content = s:get_diff_content(hita, getline(1, '$'), filename, options)
-    if empty(content)
-      " fail or no difference
-      return
-    endif
-    let tempfile = tempname()
-    try
-      call writefile(content, tempfile)
-      let result = hita#command#apply#call({
-            \ 'filenames': [tempfile],
-            \ 'cached': 1,
-            \ 'verbose': 1,
-            \})
-    finally
-      call delete(tempfile)
-    endtry
-    if empty(result)
-      return
-    endif
+    call writefile(content, tempfile)
+    call hita#command#apply#call({
+          \ 'filenames': [tempfile],
+          \ 'cached': 1,
+          \ 'verbose': 1,
+          \})
     call hita#command#show#edit({'force': 1})
     silent doautocmd BufWritePost
     silent diffupdate
-  catch /^\%(vital: Git[:.]\|vim-hita\)/
-    call hita#util#handle_exception(v:exception)
+  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+    call hita#util#handle_exception()
+  finally
+    call delete(tempfile)
   endtry
 endfunction
 
@@ -138,18 +121,13 @@ function! hita#command#show#bufname(...) abort
     return hita#variable#get_valid_filename(options.filename)
   endif
 
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    let filename = empty(options.filename)
-          \ ? ''
-          \ : hita#variable#get_valid_filename(options.filename)
-  catch /^\%(vital:\|vim-hita\)/
-    call hita#util#handle_exception(v:exception)
-    return
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = empty(options.filename)
+        \ ? ''
+        \ : hita#variable#get_valid_filename(options.filename)
   return hita#autocmd#bufname(hita, {
         \ 'content_type': 'show',
         \ 'extra_options': [],
@@ -162,35 +140,30 @@ function! hita#command#show#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    if empty(options.filename)
-      let filename = ''
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  if empty(options.filename)
+    let filename = ''
+    let content = s:get_revision_content(hita, commit, filename, options)
+  else
+    let filename = hita#variable#get_valid_filename(options.filename)
+    if commit =~# '^.\{-}\.\.\..*$'
+      let content = s:get_ancestor_content(hita, commit, filename, options)
+    elseif commit =~# '^.\{-}\.\..*$'
+      let commit  = s:GitTerm.split_range(commit)[0]
       let content = s:get_revision_content(hita, commit, filename, options)
     else
-      let filename = hita#variable#get_valid_filename(options.filename)
-      if commit =~# '^.\{-}\.\.\..*$'
-        let content = s:get_ancestor_content(hita, commit, filename, options)
-      elseif commit =~# '^.\{-}\.\..*$'
-        let commit  = s:GitTerm.split_range(commit)[0]
-        let content = s:get_revision_content(hita, commit, filename, options)
-      else
-        let content = s:get_revision_content(hita, commit, filename, options)
-      endif
+      let content = s:get_revision_content(hita, commit, filename, options)
     endif
-    let result = {
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \ 'content': content,
-          \}
-    return result
-  catch /^\%(vital:\|vim-hita\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  endif
+  let result = {
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \ 'content': content,
+        \}
+  return result
 endfunction
 function! hita#command#show#open(...) abort
   let options = extend({
@@ -210,36 +183,20 @@ endfunction
 function! hita#command#show#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
   let result = hita#command#show#call(options)
-  if empty(result)
-    return
-  endif
   call hita#util#buffer#read_content(result.content)
 endfunction
 function! hita#command#show#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  if options.force || hita#get_meta('content_type', '') !=# 'show'
-    " Reload content only when 1) no content exists yet, 2) ! applied to non modified buffer
-    let result = hita#command#show#call(options)
-    if empty(result)
-      return
-    endif
-    call hita#set_meta('content_type', 'show')
-    call hita#set_meta('options', s:Dict.omit(options, ['force']))
-    call hita#set_meta('commit', result.commit)
-    call hita#set_meta('filename', result.filename)
-    call hita#set_meta('content', result.content)
-    let commit = result.commit
-    let filename = result.filename
-    let content = result.content
-  else
-    let commit = hita#get_meta('commit')
-    let filename = hita#get_meta('filename')
-    let content = hita#get_meta('content')
-  endif
-  call hita#util#buffer#edit_content(content)
-  if empty(filename)
+  let result = hita#command#show#call(options)
+  call hita#set_meta('content_type', 'show')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('commit', result.commit)
+  call hita#set_meta('filename', result.filename)
+  call hita#set_meta('content', result.content)
+  call hita#util#buffer#edit_content(result.content)
+  if empty(result.filename)
     setfiletype git
     setlocal buftype=nowrite
     setlocal readonly
@@ -249,7 +206,7 @@ function! hita#command#show#edit(...) abort
       autocmd! * <buffer>
       autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
     augroup END
-    if empty(commit)
+    if empty(result.commit)
       setlocal noreadonly
     else
       setlocal readonly

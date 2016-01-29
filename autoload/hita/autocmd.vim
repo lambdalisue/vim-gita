@@ -97,7 +97,7 @@ function! hita#autocmd#call(name) abort
     let result.extra_options = split(result.extra_option, ':')
     call call(fname, [result])
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
+    call hita#util#handle_exception()
   endtry
 endfunction
 function! hita#autocmd#bufname(hita, options) abort

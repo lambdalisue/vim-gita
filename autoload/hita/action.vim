@@ -90,7 +90,7 @@ function! hita#action#call(name, ...) abort range
     call filter(candidates, '!empty(v:val)')
     call call('hita#action#do', [a:name, candidates] + a:000)
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
+    call hita#util#handle_exception()
   endtry
 endfunction
 

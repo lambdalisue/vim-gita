@@ -52,33 +52,30 @@ function! s:is_patchable(commit, options) abort
 endfunction
 
 function! s:on_BufWriteCmd() abort
-  let commit = hita#get_meta('commit', '')
-  let options = hita#get_meta('options', {})
-  if !s:is_patchable(commit, options)
-    call s:Prompt.attention(
-          \ 'Patching diff is only available when diff was produced',
-          \ 'by ":Hita diff [-- {filename}...]" or',
-          \ '":Hita diff --cached --reverse [-- {filename}...]"',
-          \)
-    return
-  endif
-  silent doautocmd BufWritePre
   try
-    let hita = hita#get_or_fail()
-    let result = hita#command#apply#call({
+    let commit = hita#get_meta('commit', '')
+    let options = hita#get_meta('options', {})
+    if !s:is_patchable(commit, options)
+      call hita#throw(
+            \ 'Attention:',
+            \ 'Patching diff is only available when diff was produced',
+            \ 'by ":Hita diff [-- {filename}...]" or',
+            \ '":Hita diff --cached --reverse [{commit}] [-- {filename}...]"',
+            \)
+      return
+    endif
+    silent doautocmd BufWritePre
+    call hita#command#apply#call({
           \ 'diff': getline(1, '$'),
           \ 'cached': 1,
           \ 'verbose': 1,
           \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
           \ 'whitespace': 'fix',
           \})
-    if empty(result)
-      return
-    endif
     call hita#command#diff#edit({'force': 1})
     silent doautocmd BufWritePost
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
+    call hita#util#handle_exception()
   endtry
 endfunction
 
@@ -89,23 +86,18 @@ function! hita#command#diff#bufname(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    if !empty(options.filenames)
-      let filenames = map(
-            \ copy(options.filenames),
-            \ 'hita#variable#get_valid_filename(v:val)',
-            \)
-    else
-      let filenames = []
-    endif
-  catch /^\%(vital:\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  if !empty(options.filenames)
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'hita#variable#get_valid_filename(v:val)',
+          \)
+  else
+    let filenames = []
+  endif
   if len(filenames) == 1
     return hita#autocmd#bufname(hita, {
           \ 'content_type': 'diff',
@@ -135,30 +127,25 @@ function! hita#command#diff#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
-          \})
-    if !empty(options.filenames)
-      let filenames = map(
-            \ copy(options.filenames),
-            \ 'hita#variable#get_valid_filename(v:val)',
-            \)
-    else
-      let filenames = []
-    endif
-    let content = s:get_diff_content(hita, commit, filenames, options)
-    let result = {
-          \ 'commit': commit,
-          \ 'filenames': filenames,
-          \ 'content': content,
-          \}
-    return result
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-    return {}
-  endtry
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  if !empty(options.filenames)
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'hita#variable#get_valid_filename(v:val)',
+          \)
+  else
+    let filenames = []
+  endif
+  let content = s:get_diff_content(hita, commit, filenames, options)
+  let result = {
+        \ 'commit': commit,
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \}
+  return result
 endfunction
 function! hita#command#diff#open(...) abort
   let options = extend({
@@ -178,45 +165,31 @@ endfunction
 function! hita#command#diff#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
   let result = hita#command#diff#call(options)
-  if empty(result)
-    return
-  endif
   call hita#util#buffer#read_content(result.content)
 endfunction
 function! hita#command#diff#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  if options.force || hita#get_meta('content_type', '') !=# 'diff'
-    let result = hita#command#diff#call(options)
-    if empty(result)
-      return
-    endif
-    call hita#set_meta('content_type', 'diff')
-    call hita#set_meta('options', s:Dict.omit(options, ['force']))
-    call hita#set_meta('commit', result.commit)
-    call hita#set_meta('filename',
-          \ len(result.filenames) == 1 ? result.filenames[0] : '')
-    call hita#set_meta('filenames', result.filenames)
-    call hita#set_meta('content', result.content)
-    let commit = result.commit
-    let content = result.content
-  else
-    let commit = hita#get_meta('commit')
-    let content = hita#get_meta('content')
-  endif
-  call hita#util#buffer#edit_content(content)
-  setfiletype diff
-  setlocal buftype=acwrite
+  let result = hita#command#diff#call(options)
+  call hita#set_meta('content_type', 'diff')
+  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('commit', result.commit)
+  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call hita#set_meta('filenames', result.filenames)
+  call hita#set_meta('content', result.content)
+  call hita#util#buffer#edit_content(result.content)
   augroup vim_gita_internal_diff_apply_diff
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
   augroup END
-  if s:is_patchable(commit, options)
+  setfiletype diff
+  if s:is_patchable(result.commit, options)
     setlocal noreadonly
   else
     setlocal readonly
   endif
+  setlocal buftype=acwrite
 endfunction
 function! hita#command#diff#open2(...) abort
   let options = extend({
@@ -233,93 +206,85 @@ function! hita#command#diff#open2(...) abort
           \)
     return
   endif
-  try
-    let hita = hita#get_or_fail()
-    let commit = hita#variable#get_valid_range(options.commit, {
-          \ '_allow_empty': 1,
+  let hita = hita#get_or_fail()
+  let commit = hita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = empty(options.filenames) ? '%' : options.filenames[0]
+  let filename = hita#variable#get_valid_filename(filename)
+  let WORKTREE = '@'  " @ is not valid commit thus
+  if empty(commit)
+    " git diff          : INDEX vs TREE
+    " git diff --cached :  HEAD vs INDEX
+    let lhs = options.cached ? 'HEAD' : ''
+    let rhs = options.cached ? '' : WORKTREE
+  elseif commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = commit
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  elseif commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  else
+    " git diff <ref>          : <ref> vs TREE
+    " git diff --cached <ref> : <ref> vs INDEX
+    let lhs = commit
+    let rhs = options.cached ? '' : WORKTREE
+  endif
+  let lbufname = lhs ==# WORKTREE
+        \ ? filename
+        \ : hita#command#show#bufname({'commit': lhs, 'filename': filename})
+  let rbufname = rhs ==# WORKTREE
+        \ ? filename
+        \ : hita#command#show#bufname({'commit': rhs, 'filename': filename})
+  let opener = empty(options.opener)
+        \ ? g:hita#command#diff#default_opener
+        \ : options.opener
+  let split = empty(options.split)
+        \ ? g:hita#command#diff#default_split
+        \ : options.split
+  " NOTE:
+  " Place main contant to visually rightbelow and focus
+  if !options.reverse
+    let rresult = hita#util#buffer#open(rbufname, {
+          \ 'group': 'diff_rhs',
+          \ 'opener': opener,
           \})
-    let filename = empty(options.filenames) ? '%' : options.filenames[0]
-    let filename = hita#variable#get_valid_filename(filename)
-    let WORKTREE = '@'  " @ is not valid commit thus
-    if empty(commit)
-      " git diff          : INDEX vs TREE
-      " git diff --cached :  HEAD vs INDEX
-      let lhs = options.cached ? 'HEAD' : ''
-      let rhs = options.cached ? '' : WORKTREE
-    elseif commit =~# '^.\{-}\.\.\..*$'
-      " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-      let [lhs, rhs] = s:GitTerm.split_range(commit)
-      let lhs = commit
-      let rhs = empty(rhs) ? 'HEAD' : rhs
-    elseif commit =~# '^.\{-}\.\.\..*$'
-      " git diff <lhs>..<rhs> : <lhs> vs <rhs>
-      let [lhs, rhs] = s:GitTerm.split_range(commit)
-      let lhs = empty(lhs) ? 'HEAD' : lhs
-      let rhs = empty(rhs) ? 'HEAD' : rhs
-    else
-      " git diff <ref>          : <ref> vs TREE
-      " git diff --cached <ref> : <ref> vs INDEX
-      let lhs = commit
-      let rhs = options.cached ? '' : WORKTREE
-    endif
-    let lbufname = lhs ==# WORKTREE
-          \ ? filename
-          \ : hita#command#show#bufname({'commit': lhs, 'filename': filename})
-    let rbufname = rhs ==# WORKTREE
-          \ ? filename
-          \ : hita#command#show#bufname({'commit': rhs, 'filename': filename})
-    let opener = empty(options.opener)
-          \ ? g:hita#command#diff#default_opener
-          \ : options.opener
-    let split = empty(options.split)
-          \ ? g:hita#command#diff#default_split
-          \ : options.split
-    " NOTE:
-    " Place main contant to visually rightbelow and focus
-    if !options.reverse
-      let rresult = hita#util#buffer#open(rbufname, {
-            \ 'group': 'diff_rhs',
-            \ 'opener': opener,
-            \})
-      silent execute 'file ' . rbufname
-      diffthis
-      let lresult = hita#util#buffer#open(lbufname, {
-            \ 'group': 'diff_lhs',
-            \ 'opener': split ==# 'vertical'
-            \   ? 'leftabove vertical split'
-            \   : 'leftabove split',
-            \})
-      silent execute 'file ' . lbufname
-      diffthis
-      diffupdate
-      execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-      keepjump normal zM
-      execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-      keepjump normal zM
-    else
-      let rresult = hita#util#buffer#open(rbufname, {
-            \ 'group': 'diff_rhs',
-            \ 'opener': opener,
-            \})
-      silent execute 'file ' . rbufname
-      diffthis
-      let lresult = hita#util#buffer#open(lbufname, {
-            \ 'group': 'diff_lhs',
-            \ 'opener': split ==# 'vertical'
-            \   ? 'rightbelow vertical split'
-            \   : 'rightbelow split',
-            \})
-      silent execute 'file ' . lbufname
-      diffthis
-      diffupdate
-      execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-      keepjump normal zM
-      execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-      keepjump normal zM
-    endif
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception(v:exception)
-  endtry
+    diffthis
+    let lresult = hita#util#buffer#open(lbufname, {
+          \ 'group': 'diff_lhs',
+          \ 'opener': split ==# 'vertical'
+          \   ? 'leftabove vertical split'
+          \   : 'leftabove split',
+          \})
+    diffthis
+    diffupdate
+    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
+    keepjump normal zM
+    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
+    keepjump normal zM
+  else
+    let rresult = hita#util#buffer#open(rbufname, {
+          \ 'group': 'diff_rhs',
+          \ 'opener': opener,
+          \})
+    diffthis
+    let lresult = hita#util#buffer#open(lbufname, {
+          \ 'group': 'diff_lhs',
+          \ 'opener': split ==# 'vertical'
+          \   ? 'rightbelow vertical split'
+          \   : 'rightbelow split',
+          \})
+    diffthis
+    diffupdate
+    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
+    keepjump normal zM
+    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
+    keepjump normal zM
+  endif
 endfunction
 
 function! s:get_parser() abort
