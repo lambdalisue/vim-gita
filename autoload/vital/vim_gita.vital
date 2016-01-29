@@ -17,5 +17,4 @@ Data.String
 VCS.Git.BlameParser
 Vim.Compat
 Vim.Validate
-Vim.Buffer.Anchor
 System.Cache.Dummy
