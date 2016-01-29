@@ -117,6 +117,10 @@ call hita#command#register('browse',
       \ 'hita#command#browse#command',
       \ 'hita#command#browse#complete',
       \)
+call hita#command#register('commit',
+      \ 'hita#command#commit#command',
+      \ 'hita#command#commit#complete',
+      \)
 call hita#command#register('checkout',
       \ 'hita#command#checkout#command',
       \ 'hita#command#checkout#complete',
