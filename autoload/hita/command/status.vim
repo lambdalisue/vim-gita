@@ -70,7 +70,7 @@ function! s:get_statusline_string(hita) abort
   let local = s:GitInfo.get_local_branch(a:hita)
   let remote = s:GitInfo.get_remote_branch(a:hita)
   let mode = s:GitInfo.get_current_mode(a:hita)
-  let is_connected = !empty(remote.name)
+  let is_connected = !empty(remote.remote)
 
   let name = a:hita.repository_name
   let branchinfo = is_connected

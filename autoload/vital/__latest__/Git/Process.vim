@@ -50,7 +50,15 @@ function! s:set_config(config) abort
 endfunction
 
 function! s:throw(msg) abort
-  throw 'vital: Git.Process: ' . a:msg
+  if s:Prelude.is_dict(a:msg)
+    let msg = printf("%s: %s\n%s",
+          \ a:msg.status == 0 ? 'OK' : 'Fail',
+          \ join(a:msg.args), a:msg.stdout,
+          \)
+  else
+    let msg = a:msg
+  endif
+  throw 'vital: Git.Process: ' . msg
 endfunction
 
 function! s:translate_option(key, val, pattern) abort

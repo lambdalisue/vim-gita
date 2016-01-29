@@ -221,7 +221,7 @@ endfunction
 function! s:get_local_branch(git) abort
   let head = s:get_head(a:git)
   let branch_name = head =~# 'refs/heads/'
-        \ ? matchstr(head, 'refs/heads/\zs/.\+$')
+        \ ? matchstr(head, 'refs/heads/\zs.\+$')
         \ : head[:7]
   let branch_hash = s:get_local_hash(a:git, branch_name)
   return {
@@ -273,14 +273,14 @@ function! s:get_last_commitmsg(git, ...) abort
   let content = s:Git.get_cache_content(a:git, 'index', slug, [])
   if options.force || empty(content)
     let result = s:GitProcess.execute(a:git, 'log', {
-          \ '-1': 1,
-          \ '--pretty': '%B',
+          \ '1': 1,
+          \ 'pretty': '%B',
           \})
     if result.status
       if options.fail_silently
         return []
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = result.content
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -297,14 +297,14 @@ function! s:count_commits_ahead_of_remote(git, ...) abort
   let content = s:Git.get_cache_content(a:git, 'index', slug, -1)
   if options.force || content == -1
     let result = s:GitProcess.execute(a:git, 'log', {
-          \ '--online': 1,
+          \ 'oneline': 1,
           \ 'revision-range': '@{upstream}..',
           \})
     if result.status
       if options.fail_silently
         return 0
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = len(result.content)
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -320,14 +320,14 @@ function! s:count_commits_behind_remote(git, ...) abort
   let content = s:Git.get_cache_content(a:git, 'index', slug, -1)
   if options.force || content == -1
     let result = s:GitProcess.execute(a:git, 'log', {
-          \ '--online': 1,
+          \ 'oneline': 1,
           \ 'revision-range': '..@{upstream}',
           \})
     if result.status
       if options.fail_silently
         return 0
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = len(result.content)
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -353,7 +353,7 @@ function! s:get_available_tags(git, ...) abort
       if options.fail_silently
         return []
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = result.content
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -380,7 +380,7 @@ function! s:get_available_branches(git, ...) abort
       if options.fail_silently
         return []
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -407,7 +407,7 @@ function! s:get_available_commits(git, ...) abort
       if options.fail_silently
         return []
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = result.content
     call s:Git.set_cache_content(a:git, 'index', slug, content)
@@ -453,7 +453,7 @@ function! s:get_available_filenames(git, ...) abort
       if options.fail_silently
         return []
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     " return real absolute paths
     let prefix = expand(a:git.worktree) . s:Path.separator()
@@ -481,7 +481,7 @@ function! s:find_common_ancestor(git, commit1, commit2, ...) abort
       if options.fail_silently
         return ''
       endif
-      call s:GitProcess.throw(result.stdout)
+      call s:GitProcess.throw(result)
     endif
     let content = result.stdout
     call s:Git.set_cache_content(a:git, 'index', slug, content)
