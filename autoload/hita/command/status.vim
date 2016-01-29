@@ -317,23 +317,27 @@ function! hita#command#status#define_highlights() abort
   highlight default link HitaUntracked  HitaUnstaged
   highlight default link HitaIgnored    Identifier
   highlight default link HitaBranch     Title
-  highlight default link HitaImportant  Keyword
+  highlight default link HitaHighlight  Keyword
+  highlight default link HitaImportant  Constant
 endfunction
 function! hita#command#status#define_syntax() abort
-  syntax match HitaStaged     /\v^[ MADRC][ MD]/he=e-1 contains=ALL
-  syntax match HitaUnstaged   /\v^[ MADRC][ MD]/hs=s+1 contains=ALL
-  syntax match HitaStaged     /\v^[ MADRC]\s.*$/hs=s+3 contains=ALL
-  syntax match HitaUnstaged   /\v^.[MDAU?].*$/hs=s+3 contains=ALL
-  syntax match HitaIgnored    /\v^\!\!\s.*$/
-  syntax match HitaUntracked  /\v^\?\?\s.*$/
-  syntax match HitaConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*$/
-  syntax match HitaComment    /\v^.*$/ contains=ALL
-  syntax match HitaBranch     /\v`[^`]{-}`/hs=s+1,he=e-1
-  syntax match HitaImportant  /\vREBASE-[mi] \d\/\d/
-  syntax match HitaImportant  /\vREBASE \d\/\d/
-  syntax match HitaImportant  /\vAM \d\/\d/
-  syntax match HitaImportant  /\vAM\/REBASE \d\/\d/
-  syntax match HitaImportant  /\v(MERGING|CHERRY-PICKING|REVERTING|BISECTING)/
+  syntax match HitaStaged     /^[ MADRC][ MD]/he=e-1 contains=ALL
+  syntax match HitaUnstaged   /^[ MADRC][ MD]/hs=s+1 contains=ALL
+  syntax match HitaStaged     /^[ MADRC]\s.*$/hs=s+3 contains=ALL
+  syntax match HitaUnstaged   /^.[MDAU?].*$/hs=s+3 contains=ALL
+  syntax match HitaIgnored    /^!!\s.*$/
+  syntax match HitaUntracked  /^??\s.*$/
+  syntax match HitaConflicted /^\%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/
+  syntax match HitaComment    /^.*$/ contains=ALL
+  syntax match HitaBranch     /Hita status of [^ ]\+/hs=s+15 contained
+  syntax match HitaBranch     /Hita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
+  syntax match HitaHighlight  /\d\+ commit(s) ahead/ contained
+  syntax match HitaHighlight  /\d\+ commit(s) behind/ contained
+  syntax match HitaImportant  /REBASE-[mi] \d\/\d/
+  syntax match HitaImportant  /REBASE \d\/\d/
+  syntax match HitaImportant  /AM \d\/\d/
+  syntax match HitaImportant  /AM\/REBASE \d\/\d/
+  syntax match HitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
 function! hita#command#status#get_statusline_string() abort
   let hita = hita#get()
