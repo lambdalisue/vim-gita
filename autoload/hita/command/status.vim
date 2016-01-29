@@ -2,16 +2,10 @@ let s:V = hita#vital()
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
-let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-quit)': 'Close the buffer',
-      \ '<Plug>(hita-update)': 'Update the status',
-      \ '<Plug>(hita-mapping)': 'Toggle mapping visibility',
-      \}
+let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:entry_offset = 0
 
 function! s:pick_available_options(options) abort
@@ -69,12 +63,6 @@ function! s:parse_statuses(hita, content, options) abort
   call map(statuses, 's:extend_status(a:hita, v:val)')
   return statuses
 endfunction
-
-function! s:get_entry(index) abort
-  let index = a:index - s:entry_offset
-  let statuses = hita#get_meta('statuses', [])
-  return index >= 0 ? get(statuses, index, {}) : {}
-endfunction
 function! s:format_entry(entry) abort
   return a:entry.record
 endfunction
@@ -109,69 +97,33 @@ function! s:get_statusline_string(hita) abort
         \ empty(mode) ? '' : printf(' [%s]', mode),
         \)
 endfunction
-function! s:get_current_mapping_visibility() abort
-  if exists('s:current_mapping_visibility')
-    return s:current_mapping_visibility
-  endif
-  let s:current_mapping_visibility =
-        \ g:hita#command#status#default_mapping_visibility
-  return s:current_mapping_visibility
-endfunction
-function! s:set_current_mapping_visibility(value) abort
-  let s:current_mapping_visibility = a:value
-endfunction
 
+function! s:get_entry(index) abort
+  let index = a:index - s:entry_offset
+  let statuses = hita#get_meta('statuses', [])
+  return index >= 0 ? get(statuses, index, {}) : {}
+endfunction
 function! s:define_actions() abort
   let action = hita#action#define(function('s:get_entry'))
-  function! action.actions.quit(candidates, ...) abort
-    quit
-  endfunction
-  function! action.actions.update(candidates, ...) abort
+  " Override 'redraw' action
+  function! action.actions.redraw(candidates, ...) abort
     call hita#command#status#update()
   endfunction
-  function! action.actions.mapping(candidates, ...) abort
-    call s:set_current_mapping_visibility(
-          \ !s:get_current_mapping_visibility()
+
+  call hita#action#includes(
+        \ g:hita#command#status#enable_default_mappings, [
+        \   'close', 'redraw', 'mapping',
+        \   'add', 'reset',
+        \   'edit', 'show', 'diff',
+        \   'blame',
+        \])
+
+  if g:hita#command#status#enable_default_mappings
+    silent execute printf(
+          \ 'map <buffer> <Return> %s',
+          \ g:hita#command#status#default_action_mapping
           \)
-    call hita#command#status#redraw()
-  endfunction
-endfunction
-function! s:define_plugin_mappings() abort
-  nnoremap <buffer><silent> <Plug>(hita-quit)
-        \ :<C-u>call hita#action#call('quit')<CR>
-  nnoremap <buffer><silent> <Plug>(hita-update)
-        \ :<C-u>call hita#action#call('update')<CR>
-  nnoremap <buffer><silent> <Plug>(hita-mapping)
-        \ :<C-u>call hita#action#call('mapping')<CR>
-
-  call hita#command#edit#define_plugin_mappings()
-  call hita#command#show#define_plugin_mappings()
-  call hita#command#diff#define_plugin_mappings()
-  call hita#command#blame#define_plugin_mappings()
-endfunction
-function! s:define_default_mappings() abort
-  silent execute printf(
-        \ 'map <buffer> <Return> %s',
-        \ g:hita#command#status#default_action_mapping
-        \)
-
-  nmap <buffer> q <Plug>(hita-quit)
-  nmap <buffer> ? <Plug>(hita-mapping)
-  nmap <buffer> <C-l> <Plug>(hita-update)
-
-  call hita#command#edit#define_default_mappings()
-  call hita#command#show#define_default_mappings()
-  call hita#command#diff#define_default_mappings()
-  call hita#command#blame#define_default_mappings()
-endfunction
-function! s:get_mapping_table() abort
-  let mapping_table = {}
-  call extend(mapping_table, s:MAPPING_TABLE)
-  call extend(mapping_table, hita#command#edit#get_mapping_table())
-  call extend(mapping_table, hita#command#show#get_mapping_table())
-  call extend(mapping_table, hita#command#diff#get_mapping_table())
-  call extend(mapping_table, hita#command#blame#get_mapping_table())
-  return mapping_table
+  endif
 endfunction
 
 function! s:on_VimResized() abort
@@ -181,6 +133,14 @@ function! s:on_WinEnter() abort
   if hita#get_meta('winwidth', winwidth(0)) != winwidth(0)
     call hita#command#status#redraw()
   endif
+endfunction
+function! s:on_HitaStatusModified() abort
+  let winnum = winnr()
+  keepjump windo
+        \ if &filetype ==# 'hita-status' |
+        \   call hita#command#status#update() |
+        \ endif
+  execute printf('keepjump %dwincmd w', winnum)
 endfunction
 
 function! hita#command#status#bufname(...) abort
@@ -259,15 +219,9 @@ function! hita#command#status#open(...) abort
   call hita#set_meta('filenames', result.filenames)
   call hita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
-  call s:define_plugin_mappings()
-  if g:hita#command#status#enable_default_mappings
-    call s:define_default_mappings()
-  endif
   augroup vim_hita_status
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer>
-          \ call hita#command#status#update() |
-          \ setlocal filetype=hita-status
+    autocmd BufReadCmd <buffer> call hita#command#status#update()
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
@@ -311,11 +265,10 @@ function! hita#command#status#redraw() abort
         \ g:hita#command#status#show_status_string_in_prologue
         \   ? [s:get_statusline_string(hita) . ' | Press ? to toggle a mapping help']
         \   : [],
-        \ s:get_current_mapping_visibility()
-        \   ? map(hita#util#mapping#help(s:get_mapping_table()), '"| " . v:val')
+        \ hita#action#mapping#get_visibility()
+        \   ? map(hita#action#get_mapping_help(), '"| " . v:val')
         \   : []
         \])
-  redraw
   let statuses = hita#get_meta('statuses', [])
   let contents = map(
         \ copy(statuses),
@@ -386,7 +339,6 @@ function! hita#command#status#define_syntax() abort
   syntax match HitaImportant  /\vAM\/REBASE \d\/\d/
   syntax match HitaImportant  /\v(MERGING|CHERRY-PICKING|REVERTING|BISECTING)/
 endfunction
-
 function! hita#command#status#get_statusline_string() abort
   let hita = hita#get()
   if hita.is_enabled
@@ -396,11 +348,15 @@ function! hita#command#status#get_statusline_string() abort
   endif
 endfunction
 
+augroup vim_hita_internal_status_update
+  autocmd!
+  autocmd User HitaStatusModified call s:on_HitaStatusModified()
+augroup END
+
 call hita#util#define_variables('command#status', {
       \ 'default_options': { 'untracked-files': 1 },
-      \ 'default_opener': 'topleft 15 split',
+      \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(hita-edit)',
       \ 'enable_default_mappings': 1,
-      \ 'default_mapping_visibility': 0,
       \ 'show_status_string_in_prologue': 1,
       \})

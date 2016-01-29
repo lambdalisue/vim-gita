@@ -2,14 +2,10 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:DateTime = s:V.import('DateTime')
 let s:String = s:V.import('Data.String')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:GitParser = s:V.import('Git.Parser')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:ProgressBar = s:V.import('ProgressBar')
-let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-blame)': 'Blame a content',
-      \}
 
 highlight HitaPseudoSeparatorDefault
       \ term=underline cterm=underline ctermfg=8 gui=underline guifg=#363636
@@ -371,36 +367,6 @@ function! hita#command#blame#display_pseudo_separators(separators, ...) abort
   let expr = get(a:000, 0, '%')
   call s:display_pseudo_separators(a:separators, expr)
 endfunction
-
-function! hita#command#blame#action(candidates, ...) abort
-  let options = extend({
-        \ 'opener': '',
-        \ 'anchor': 0,
-        \}, get(a:000, 0, {}))
-  if !empty(a:candidates) && options.anchor
-    call s:Anchor.focus()
-  endif
-  for candidate in a:candidates
-    if has_key(candidate, 'path')
-      call hita#command#blame#open({
-            \ 'opener': options.opener,
-            \ 'commit': get(options, 'commit', ''),
-            \ 'filename': candidate.path,
-            \})
-    endif
-  endfor
-endfunction
-function! hita#command#blame#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-blame)
-        \ :call hita#action#call('blame')<CR>
-endfunction
-function! hita#command#blame#define_default_mappings() abort
-  map <buffer> BB <Plug>(hita-blame)
-endfunction
-function! hita#command#blame#get_mapping_table() abort
-  return s:MAPPING_TABLE
-endfunction
-
 
 call hita#util#define_variables('command#blame', {
       \ 'default_options': {},

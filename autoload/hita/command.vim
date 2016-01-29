@@ -93,6 +93,10 @@ function! hita#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
+call hita#command#register('add',
+      \ 'hita#command#add#command',
+      \ 'hita#command#add#complete',
+      \)
 call hita#command#register('apply',
       \ 'hita#command#apply#command',
       \ 'hita#command#apply#complete',
@@ -104,6 +108,10 @@ call hita#command#register('blame',
 call hita#command#register('diff',
       \ 'hita#command#diff#command',
       \ 'hita#command#diff#complete',
+      \)
+call hita#command#register('reset',
+      \ 'hita#command#reset#command',
+      \ 'hita#command#reset#complete',
       \)
 call hita#command#register('show',
       \ 'hita#command#show#command',
