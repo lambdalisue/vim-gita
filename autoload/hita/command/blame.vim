@@ -4,6 +4,7 @@ let s:DateTime = s:V.import('DateTime')
 let s:String = s:V.import('Data.String')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:GitParser = s:V.import('Git.Parser')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:ProgressBar = s:V.import('ProgressBar')
 
@@ -24,7 +25,7 @@ function! s:get_blame_content(hita, commit, filename, options) abort
   let options['--'] = [a:filename]
   let result = hita#execute(a:hita, 'blame', options)
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction

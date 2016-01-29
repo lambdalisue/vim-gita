@@ -5,6 +5,7 @@ let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:entry_offset = 0
 
@@ -28,7 +29,7 @@ function! s:get_status_content(hita, filenames, options) abort
   endif
   let result = hita#execute(a:hita, 'status', options)
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction

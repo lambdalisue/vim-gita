@@ -1,6 +1,7 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -20,7 +21,7 @@ function! s:apply_command(hita, filenames, options) abort
   endif
   let result = hita#execute(a:hita, 'add', options)
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result)
   endif
   return result.content
 endfunction

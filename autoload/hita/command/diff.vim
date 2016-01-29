@@ -2,6 +2,7 @@ let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitTerm = s:V.import('Git.Term')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -32,7 +33,7 @@ function! s:get_diff_content(hita, commit, filenames, options) abort
     " and 0 means no differences
     return result.content
   elseif result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction

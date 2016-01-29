@@ -6,6 +6,7 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
 
@@ -32,7 +33,7 @@ function! s:get_revision_content(hita, commit, filename, options) abort
   endif
   let result = hita#execute(a:hita, 'show', options)
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction

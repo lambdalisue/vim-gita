@@ -1,5 +1,6 @@
 let s:V = hita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -33,7 +34,7 @@ function! s:apply_content(hita, content, options) abort
         \ 'input': a:content,
         \})
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
@@ -42,7 +43,7 @@ function! s:apply_patches(hita, filenames, options) abort
   let options['--'] = a:filenames
   let result = hita#execute(a:hita, 'apply', options)
   if result.status
-    call hita#throw(result.stdout)
+    call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
