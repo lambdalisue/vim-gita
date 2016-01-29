@@ -114,7 +114,7 @@ function! s:on_BufWriteCmd() abort
 endfunction
 
 function! hita#command#show#bufname(...) abort
-  let options = hita#option#init('show', get(a:000, 0, {}), {
+  let options = hita#option#init('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
@@ -137,7 +137,7 @@ function! hita#command#show#bufname(...) abort
         \})
 endfunction
 function! hita#command#show#call(...) abort
-  let options = hita#option#init('show', get(a:000, 0, {}), {
+  let options = hita#option#init('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})

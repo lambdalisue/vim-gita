@@ -71,22 +71,23 @@ function! s:commit_commitmsg() abort
           \)
   endif
 
-  let options = deepcopy(options)
-  let options.file = tempname()
-  let options.porcelain = 0
-  let options['dry-run'] = 0
+  let tempfile = tempname()
   try
-    call writefile(commitmsg, options.file)
-    let content = s:get_commit_content(hita, [], options)
+    call writefile(commitmsg, tempfile)
+    let options2 = deepcopy(options)
+    let options2['file'] = tempfile
+    let content = s:get_commit_content(hita, [], options2)
     call s:Prompt.title(printf(
           \ 'OK: the changes on %d files have committed',
           \ len(staged_statuses),
           \))
     call s:Prompt.echo('None', join(content, "\n"))
     call hita#set_meta('commitmsg_saved', '')
-    call hita#set_meta('amend', 0)
+
+    silent! unlet options.amend
+    call hita#set_meta('options', options)
   finally
-    call delete(options.file)
+    call delete(tempfile)
   endtry
 endfunction
 
@@ -187,16 +188,14 @@ function! s:on_HitaStatusModified() abort
 endfunction
 
 function! hita#command#commit#bufname(...) abort
-  let options = hita#option#init('commit', get(a:000, 0, {}), {
+  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
         \ 'filenames': [],
-        \ 'amend': 0,
         \})
   let hita = hita#get_or_fail()
   return hita#autocmd#bufname(hita, {
         \ 'filebase': 0,
         \ 'content_type': 'commit',
         \ 'extra_options': [
-        \   options.amend ? 'amend': '',
         \   empty(options.filenames) ? '' : 'partial',
         \ ],
         \ 'commitish': '',
@@ -204,7 +203,7 @@ function! hita#command#commit#bufname(...) abort
         \})
 endfunction
 function! hita#command#commit#call(...) abort
-  let options = hita#option#init('commit', get(a:000, 0, {}), {
+  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \ 'amend': 0,
         \})
@@ -221,7 +220,7 @@ function! hita#command#commit#call(...) abort
   let result = {
         \ 'filenames': filenames,
         \ 'content': content,
-        \ 'amend': options.amend,
+        \ 'options': options,
         \}
   if get(options, 'porcelain')
     let result.statuses = hita#command#status#parse_statuses(hita, content)
@@ -244,8 +243,9 @@ function! hita#command#commit#open(...) abort
         \ 'group': 'manipulation_panel',
         \})
   call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('amend', result.amend)
+  call hita#set_meta('options', s:Dict.omit(result.options, [
+        \ 'force', 'porcelain', 'dry-run',
+        \]))
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#set_meta('filenames', result.filenames)
@@ -279,7 +279,9 @@ function! hita#command#commit#update(...) abort
   let options['dry-run'] = 1
   let result = hita#command#commit#call(options)
   call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
+  call hita#set_meta('options', s:Dict.omit(result.options, [
+        \ 'force', 'porcelain', 'dry-run',
+        \]))
   call hita#set_meta('amend', result.amend)
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
@@ -292,7 +294,7 @@ function! hita#command#commit#redraw() abort
     call hita#throw('redraw() requires to be called in a hita-commit buffer')
   endif
   let hita = hita#get_or_fail()
-  let amend = hita#get_meta('amend')
+  let options = hita#get_meta('options')
 
   let commit_mode = ''
   if !empty(hita#get_meta('commitmsg_cached'))
@@ -304,7 +306,7 @@ function! hita#command#commit#redraw() abort
   elseif s:GitInfo.is_merging(hita)
     let commitmsg = s:GitInfo.get_merge_msg(hita)
     let commit_mode = 'merge'
-  elseif amend
+  elseif options.amend
     let commitmsg = s:GitInfo.get_last_commitmsg(hita)
     let commit_mode = 'amend'
   else

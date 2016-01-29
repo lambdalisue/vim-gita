@@ -1,7 +1,10 @@
+let s:V = hita#vital()
+let s:Prompt = s:V.import('Vim.Prompt')
+
 function! hita#option#init(content_type, options, ...) abort
   let options = deepcopy(a:options)
-  if !empty(a:content_type)
-        \ && hita#get_meta('content_type', '') ==# a:content_type
+  let content_type = hita#get_meta('content_type', '')
+  if !empty(a:content_type)&& content_type =~# a:content_type
     call extend(options, hita#get_meta('options', {}), 'keep')
   endif
   call extend(options, get(a:000, 0, {}), 'keep')

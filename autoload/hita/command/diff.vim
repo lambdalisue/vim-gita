@@ -81,7 +81,7 @@ function! s:on_BufWriteCmd() abort
 endfunction
 
 function! hita#command#diff#bufname(...) abort
-  let options = hita#option#init('diff', get(a:000, 0, {}), {
+  let options = hita#option#init('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
@@ -122,7 +122,7 @@ function! hita#command#diff#bufname(...) abort
   endif
 endfunction
 function! hita#command#diff#call(...) abort
-  let options = hita#option#init('diff', get(a:000, 0, {}), {
+  let options = hita#option#init('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
@@ -205,7 +205,6 @@ function! hita#command#diff#open2(...) abort
     call hita#throw(
           \ 'Warning: Hita diff --split cannot handle multiple filenames',
           \)
-    return
   endif
   let hita = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
