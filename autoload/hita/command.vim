@@ -2,10 +2,10 @@ let s:V = hita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
-
 function! hita#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
 endfunction
@@ -33,6 +33,17 @@ function! hita#command#unregister(name) abort
           \))
   endif
   unlet s:registry[a:name]
+endfunction
+
+function! s:apply_command(name, options) abort
+  let args = [a:name] + a:options.__unknown__
+  let git = hita#get()
+  if git.is_enabled
+    let args = ['-C', git.worktree] + args
+  endif
+  let config = s:GitProcess.get_config()
+  let args = [config.executable] + config.arguments + args
+  execute printf('!%s', join(args))
 endfunction
 
 function! s:get_parser() abort
@@ -67,14 +78,14 @@ function! hita#command#command(...) abort
     let range = a:2
     let args  = join(options.__unknown__)
     let name  = get(options, 'action', '')
-    if hita#command#is_registered(name)
+    if bang !=# '!'  && hita#command#is_registered(name)
       try
         call s:registry[name].command(bang, range, args)
       catch /^\%(vital: Git[:.]\|vim-hita:\)/
         call hita#util#handle_exception()
       endtry
     else
-      echo parser.help()
+      call s:apply_command(name, options)
     endif
   endif
 endfunction
