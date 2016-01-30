@@ -29,7 +29,7 @@ function! hita#action#stage#action(candidates, ...) abort
   endfor
   noautocmd call hita#action#do('add', add_candidates, {})
   noautocmd call hita#action#do('rm', rm_candidates, {})
-  silent call hita#util#doautocmd('StatusModified')
+  call hita#util#doautocmd('StatusModified')
 endfunction
 
 function! hita#action#stage#define_plugin_mappings() abort

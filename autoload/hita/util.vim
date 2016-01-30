@@ -11,6 +11,9 @@ function! hita#util#clip(content) abort
 endfunction
 
 function! hita#util#doautocmd(name, ...) abort
+  if !exists('#User#Hita' . a:name)
+    return
+  endif
   let guard = s:Guard.store('g:hita#avars')
   let g:hita#avars = extend(
         \ get(g:, 'hita#avars', {}),
@@ -58,7 +61,7 @@ function! hita#util#define_variables(prefix, defaults) abort
   for [key, value] in items(a:defaults)
     let name = printf('%s#%s', prefix, key)
     if !exists(name)
-      silent execute printf('let %s = %s', name, string(value))
+      execute printf('let %s = %s', name, string(value))
     endif
     unlet value
   endfor

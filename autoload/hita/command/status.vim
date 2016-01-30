@@ -115,7 +115,7 @@ function! s:define_actions() abort
         \])
 
   if g:hita#command#status#enable_default_mappings
-    silent execute printf(
+    execute printf(
           \ 'map <buffer> <Return> %s',
           \ g:hita#command#status#default_action_mapping
           \)

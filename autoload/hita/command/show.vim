@@ -94,7 +94,9 @@ function! s:on_BufWriteCmd() abort
             \ 'a file opened by ":Hita show [--filename={filename}]"',
             \)
     endif
-    silent doautocmd BufWritePre
+    if exists('#BufWritePre')
+      doautocmd BufWritePre
+    endif
     let hita = hita#get_or_fail()
     let content = s:get_diff_content(hita, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
@@ -104,8 +106,10 @@ function! s:on_BufWriteCmd() abort
           \ 'verbose': 1,
           \})
     call hita#command#show#edit({'force': 1})
-    silent doautocmd BufWritePost
-    silent diffupdate
+    if exists('#BufWritePost')
+      doautocmd BufWritePost
+    endif
+    diffupdate
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception()
   finally

@@ -65,7 +65,9 @@ function! s:on_BufWriteCmd() abort
             \)
       return
     endif
-    silent doautocmd BufWritePre
+    if exists('#BufWritePre')
+      doautocmd BufWritePre
+    endif
     call hita#command#apply#call({
           \ 'diff': getline(1, '$'),
           \ 'cached': 1,
@@ -74,7 +76,9 @@ function! s:on_BufWriteCmd() abort
           \ 'whitespace': 'fix',
           \})
     call hita#command#diff#edit({'force': 1})
-    silent doautocmd BufWritePost
+    if exists('#BufWritePost')
+      doautocmd BufWritePost
+    endif
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception()
   endtry

@@ -66,7 +66,7 @@ function! hita#command#apply#call(...) abort
     let diff = []
     let content = s:apply_patches(hita, filenames, options)
   endif
-  silent call hita#util#doautocmd('StatusModified')
+  call hita#util#doautocmd('StatusModified')
   return {
         \ 'diff': diff,
         \ 'filenames': filenames,

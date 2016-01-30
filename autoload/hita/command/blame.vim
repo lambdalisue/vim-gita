@@ -192,9 +192,9 @@ function! s:parse_blame(hita, content, options) abort
 endfunction
 function! s:display_pseudo_separators(separators, expr) abort
   let bufnum = bufnr(a:expr)
-  silent execute printf('sign unplace * buffer=%d', bufnum)
+  execute printf('sign unplace * buffer=%d', bufnum)
   for linenum in a:separators
-    silent execute printf(
+    execute printf(
           \ 'sign place %d line=%d name=HitaPseudoSeparatorSign buffer=%d',
           \ linenum, linenum, bufnum,
           \)

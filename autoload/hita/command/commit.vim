@@ -84,7 +84,7 @@ function! s:commit_commitmsg() abort
     call s:Prompt.echo('None', join(content, "\n"))
     call hita#set_meta('commitmsg_saved', '')
 
-    silent! unlet options.amend
+    unlet options.amend
     call hita#set_meta('options', options)
   finally
     call delete(tempfile)
@@ -121,7 +121,7 @@ function! s:define_actions() abort
         \])
 
   if g:hita#command#commit#enable_default_mappings
-    silent execute printf(
+    execute printf(
           \ 'map <buffer> <Return> %s',
           \ g:hita#command#commit#default_action_mapping
           \)

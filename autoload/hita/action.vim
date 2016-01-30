@@ -30,7 +30,7 @@ function! s:filter_mappings(rhs, ...) abort
   let rhs = flag . a:rhs . '\S*$'
   try
     redir => content
-    silent execute 'map'
+    execute 'map'
   finally
     redir END
   endtry

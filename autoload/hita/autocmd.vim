@@ -16,7 +16,9 @@ function! s:on_SourceCmd(info) abort
   endtry
 endfunction
 function! s:on_BufReadCmd(info) abort
-  silent doautocmd BufReadPre
+  if exists('#BufReadPre')
+    doautocmd BufReadPre
+  endif
   let content_type = get(a:info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#edit({
@@ -43,10 +45,14 @@ function! s:on_BufReadCmd(info) abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  silent doautocmd BufReadPost
+  if exists('#BufReadPost')
+    doautocmd BufReadPost
+  endif
 endfunction
 function! s:on_FileReadCmd(info) abort
-  silent doautocmd FileReadPre
+  if exists('#FileReadPre')
+    doautocmd FileReadPre
+  endif
   let content_type = get(a:info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#read({
@@ -73,7 +79,9 @@ function! s:on_FileReadCmd(info) abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  silent doautocmd FileReadPost
+  if exists('#FileReadPost')
+    doautocmd FileReadPost
+  endif
 endfunction
 
 function! hita#autocmd#call(name) abort

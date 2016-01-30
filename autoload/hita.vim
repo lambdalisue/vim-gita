@@ -101,7 +101,7 @@ function! hita#clear() abort
   let repository_cache = s:get_repository_cache()
   call repository_cache.clear()
   call s:Git.clear()
-  silent bufdo silent unlet! b:_gita
+  bufdo silent unlet! b:_gita
 endfunction
 
 function! hita#execute(hita, name, ...) abort

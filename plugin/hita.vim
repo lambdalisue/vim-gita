@@ -8,7 +8,7 @@ command! -nargs=? -range=% -bang
 
 " NOTE:
 " To use gf mapping on hita://, isfname requires to contain ':'
-augroup vim_hita_read_file
+augroup vim_hita_internal_read_file
   autocmd!
   autocmd BufReadCmd  hita://* call hita#autocmd#call('BufReadCmd')
   autocmd FileReadCmd hita://* call hita#autocmd#call('FileReadCmd')

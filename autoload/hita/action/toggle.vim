@@ -36,7 +36,7 @@ function! hita#action#toggle#action(candidates, ...) abort
   endfor
   noautocmd call hita#action#do('stage', stage_candidates, {})
   noautocmd call hita#action#do('unstage', unstage_candidates, {})
-  silent call hita#util#doautocmd('StatusModified')
+  call hita#util#doautocmd('StatusModified')
 endfunction
 
 function! hita#action#toggle#define_plugin_mappings() abort

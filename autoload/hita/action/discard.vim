@@ -58,9 +58,9 @@ function! hita#action#discard#action(candidates, ...) abort
   " delete untracked files
   for candidate in delete_candidates
     if isdirectory(candidate.path)
-      silent call s:File.rmdir(candidate.path, 'r')
+      call s:File.rmdir(candidate.path, 'r')
     elseif filewritable(candidate.path)
-      silent call delete(candidate.path)
+      call delete(candidate.path)
     endif
   endfor
   " checkout tracked files from HEAD

@@ -52,7 +52,7 @@ function! hita#command#checkout#call(...) abort
           \)
   endif
   let content = s:apply_command(hita, commit, filenames, options)
-  silent call hita#util#doautocmd('StatusModified')
+  call hita#util#doautocmd('StatusModified')
   return {
         \ 'commit': commit,
         \ 'filenames': filenames,
