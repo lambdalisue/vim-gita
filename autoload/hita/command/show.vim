@@ -173,6 +173,7 @@ endfunction
 function! hita#command#show#open(...) abort
   let options = extend({
         \ 'opener': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:hita#command#show#default_opener
@@ -183,6 +184,7 @@ function! hita#command#show#open(...) abort
           \ 'opener': opener,
           \})
     " BufReadCmd will call ...#edit to apply the content
+    call hita#util#select(options.selection)
   endif
 endfunction
 function! hita#command#show#read(...) abort
@@ -248,6 +250,11 @@ function! s:get_parser() abort
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
+          \ '--selection',
+          \ 'A line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \})
+    call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to see.',
           \   'If nothing is specified, it show a content of the index.',
@@ -279,6 +286,14 @@ function! hita#command#show#command(...) abort
   endif
   call hita#option#assign_commit(options)
   call hita#option#assign_filename(options)
+  if has_key(options, 'selection')
+    let options.selection = map(
+          \ split(options.selection, '-'),
+          \ 'str2nr(v:val)',
+          \)
+  else
+    let options.selection = options.__range__
+  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:hita#command#show#default_options),

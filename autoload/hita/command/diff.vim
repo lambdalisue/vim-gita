@@ -162,6 +162,7 @@ endfunction
 function! hita#command#diff#open(...) abort
   let options = extend({
         \ 'opener': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:hita#command#diff#default_opener
@@ -172,6 +173,7 @@ function! hita#command#diff#open(...) abort
           \ 'opener': opener,
           \})
     " BufReadCmd will call ...#edit to apply the content
+    call hita#util#select(options.selection)
   endif
 endfunction
 function! hita#command#diff#read(...) abort
@@ -211,6 +213,7 @@ function! hita#command#diff#open2(...) abort
         \ 'filenames': [],
         \ 'opener': '',
         \ 'split': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   if len(options.filenames) > 1
     call hita#throw(
@@ -277,6 +280,7 @@ function! hita#command#diff#open2(...) abort
     keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
     keepjump normal! zM
+    call hita#util#select(options.selection)
   else
     let rresult = hita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',
@@ -295,6 +299,7 @@ function! hita#command#diff#open2(...) abort
     keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
     keepjump normal! zM
+    call hita#util#select(options.selection)
   endif
 endfunction
 
@@ -327,6 +332,11 @@ function! s:get_parser() abort
           \   'choices': ['vertical', 'horizontal'],
           \})
     call s:parser.add_argument(
+          \ '--selection',
+          \ 'A line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \})
+    call s:parser.add_argument(
           \ 'commit',
           \ 'A commit', {
           \   'complete': function('hita#variable#complete_commit'),
@@ -345,12 +355,20 @@ function! hita#command#diff#command(...) abort
   if !empty(options.__unknown__)
     let options.filenames = options.__unknown__
   endif
+  if has_key(options, 'selection')
+    let options.selection = map(
+          \ split(options.selection, '-'),
+          \ 'str2nr(v:val)',
+          \)
+  elseif !empty(get(options, 'split'))
+    let options.selection = options.__range__
+  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:hita#command#diff#default_options),
         \ options,
         \)
-  if empty(get(options, 'split', ''))
+  if empty(get(options, 'split'))
     call hita#command#diff#open(options)
   else
     call hita#option#assign_filename(options)
