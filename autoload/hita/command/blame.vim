@@ -19,11 +19,11 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:get_blame_content(hita, commit, filename, options) abort
+function! s:get_blame_content(git, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
   let options['--'] = [a:filename]
-  let result = hita#execute(a:hita, 'blame', options)
+  let result = hita#execute(a:git, 'blame', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -86,7 +86,7 @@ function! s:format_chunk(chunk, width, now, wrap, extra, srl, whitespaces) abort
   endif
   return formatted
 endfunction
-function! s:parse_blame(hita, content, options) abort
+function! s:parse_blame(git, content, options) abort
   let options = extend({
         \ 'enable_pseudo_separator': -1,
         \ 'navigation_winwidth': -1,
@@ -206,12 +206,12 @@ function! hita#command#blame#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(hita, {
+  return hita#autocmd#bufname(git, {
         \ 'content_type': 'blame',
         \ 'extra_options': [],
         \ 'commitish': commit,
@@ -227,7 +227,7 @@ function! hita#command#blame#call(...) abort
         \ '_short_revision_length': -1,
         \ '_verbose': 1,
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -235,7 +235,7 @@ function! hita#command#blame#call(...) abort
   if options._verbose
     redraw | echo 'Retrieving a blame content. It may take some time ...'
   endif
-  let content = s:get_blame_content(hita, commit, filename, options)
+  let content = s:get_blame_content(git, commit, filename, options)
   if options._verbose
     redraw | echo
   endif
@@ -245,7 +245,7 @@ function! hita#command#blame#call(...) abort
         \ 'content': content,
         \}
   if get(options, 'porcelain')
-    let result.blame = s:parse_blame(hita, content, {
+    let result.blame = s:parse_blame(git, content, {
           \ 'enable_pseudo_separator': options._enable_pseudo_separator,
           \ 'navigation_winwidth': options._navigation_winwidth,
           \ 'short_revision_length': options._short_revision_length,

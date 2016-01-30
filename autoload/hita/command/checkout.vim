@@ -18,16 +18,16 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:apply_command(hita, commit, filenames, options) abort
+function! s:apply_command(git, commit, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
   if !empty(a:filenames)
     let options['--'] = map(
           \ copy(a:filenames),
-          \ 's:Path.unixpath(s:Git.get_relative_path(a:hita, v:val))',
+          \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
           \)
   endif
-  let result = hita#execute(a:hita, 'checkout', options)
+  let result = hita#execute(a:git, 'checkout', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -39,7 +39,7 @@ function! hita#command#checkout#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -51,7 +51,7 @@ function! hita#command#checkout#call(...) abort
           \ 'hita#variable#get_valid_filename(v:val)',
           \)
   endif
-  let content = s:apply_command(hita, commit, filenames, options)
+  let content = s:apply_command(git, commit, filenames, options)
   call hita#util#doautocmd('StatusModified')
   return {
         \ 'commit': commit,

@@ -6,13 +6,16 @@ let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
 
-function! s:is_hita_expired(hita) abort
-  let bufname = bufname(a:hita.bufnum)
-  let buftype = s:Compat.getbufvar(a:hita.bufnum, '&buftype')
-  if buftype =~# '^\|nowrite\|acwrite$' && bufname !=# a:hita.bufname
+function! s:is_expired(expr) abort
+  let cbufname = hita#get_meta('bufname')
+  let ccwd = hita#get_meta('cwd')
+  let bufnum = bufnr(a:expr)
+  let bufname = bufname(bufnum)
+  let buftype = s:Compat.getbufvar(bufnum, '&buftype')
+  if buftype =~# '^\|nowrite\|acwrite$' && bufname !=# cbufname
     " filename has changed on file like buffer
     return 1
-  elseif buftype=~# '^nofile\|quickfix\|help$' && getcwd() !=# a:hita.cwd
+  elseif buftype=~# '^nofile\|quickfix\|help$' && getcwd() !=# ccwd
     " current working directory has changed on non file buffer
     return 1
   endif
@@ -23,12 +26,11 @@ function! s:get_git_instance(bufnum) abort
   let buftype = s:Compat.getbufvar(a:bufnum, '&buftype')
   let repository_cache = s:get_repository_cache()
   if bufname =~# '^hita://' || bufname =~# '^hita[^:]\+:'
-    " hita buffer
+    " git buffer
     let repository_name = matchstr(
           \ bufname, '^hita[^:]*:\%(//\)\?\zs[^:/]\+\ze'
           \)
     let git = repository_cache.get(repository_name, {})
-    return git
   elseif buftype =~# '^\|nowrite\|acwrite$'
     " file buffer
     let filename = hita#expand(a:bufnum)
@@ -43,19 +45,12 @@ function! s:get_git_instance(bufnum) abort
   if git.is_enabled
     call repository_cache.set(git.repository_name, git)
   endif
-  return git
-endfunction
-function! s:get_hita_instance(bufnum) abort
-  let git = s:get_git_instance(a:bufnum)
-  let hita = extend(deepcopy(git), {
-        \ 'bufnum':  bufnr(a:bufnum),
-        \ 'bufname': bufname(a:bufnum),
-        \ 'cwd':     getcwd(),
-        \})
   if bufexists(a:bufnum)
-    call setbufvar(a:bufnum, '_hita', hita)
+    call setbufvar(a:bufnum, '_git', git)
+    call hita#set_meta('bufname', bufname(a:bufnum))
+    call hita#set_meta('cwd', getcwd())
   endif
-  return hita
+  return git
 endfunction
 function! s:get_meta_instance(bufnum) abort
   let meta = s:Compat.getbufvar(a:bufnum, '_hita_meta', {})
@@ -81,17 +76,17 @@ endfunction
 function! hita#get(...) abort
   let expr = get(a:000, 0, '%')
   let bufnum = bufnr(expr)
-  let hita = s:Compat.getbufvar(bufnum, '_hita', {})
-  if !empty(hita) && !s:is_hita_expired(hita)
-    return hita
+  let git = s:Compat.getbufvar(bufnum, '_git', {})
+  if !empty(git) && !s:is_expired(bufnum)
+    return git
   endif
-  return s:get_hita_instance(bufnum)
+  return s:get_git_instance(bufnum)
 endfunction
 function! hita#get_or_fail(...) abort
   let expr = get(a:000, 0, '%')
-  let hita = hita#get(expr)
-  if hita.is_enabled
-    return hita
+  let git = hita#get(expr)
+  if git.is_enabled
+    return git
   endif
   call hita#throw(printf(
         \ 'Attention: vim-hita is not available on %s', bufname(expr)
@@ -101,16 +96,16 @@ function! hita#clear() abort
   let repository_cache = s:get_repository_cache()
   call repository_cache.clear()
   call s:Git.clear()
-  bufdo silent unlet! b:_gita
+  bufdo silent unlet! b:_git
 endfunction
 
-function! hita#execute(hita, name, ...) abort
+function! hita#execute(git, name, ...) abort
   let options = get(a:000, 0, {})
   let config  = get(a:000, 1, {})
   if !g:hita#debug
-    return s:GitProcess.execute(a:hita, a:name, options, config)
+    return s:GitProcess.execute(a:git, a:name, options, config)
   else
-    let result = s:GitProcess.execute(a:hita, a:name, options, config)
+    let result = s:GitProcess.execute(a:git, a:name, options, config)
     call s:Prompt.debug(printf(
           \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
           \))
@@ -128,14 +123,14 @@ function! hita#execute(hita, name, ...) abort
     return result
   endif
 endfunction
-function! hita#get_relative_path(hita, path) abort
+function! hita#get_relative_path(git, path) abort
   " NOTE:
   " Return a unix relative path from the repository for git command.
   " The {path} requires to be a (real) absolute paht.
   if empty(a:path)
     return ''
   endif
-  let relpath = s:Git.get_relative_path(a:hita, a:path)
+  let relpath = s:Git.get_relative_path(a:git, a:path)
   return s:Path.unixpath(relpath)
 endfunction
 

@@ -16,12 +16,12 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:apply_command(hita, filenames, options) abort
+function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:hita, 'reset', options)
+  let result = hita#execute(a:git, 'reset', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -32,7 +32,7 @@ function! hita#command#reset#call(...) abort
   let options = hita#option#init('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   if empty(options.filenames)
     let filenames = []
   else
@@ -41,7 +41,7 @@ function! hita#command#reset#call(...) abort
           \ 'hita#variable#get_valid_filename(v:val)',
           \)
   endif
-  let content = s:apply_command(hita, filenames, options)
+  let content = s:apply_command(git, filenames, options)
   call hita#util#doautocmd('StatusModified')
   return {
         \ 'filenames': filenames,

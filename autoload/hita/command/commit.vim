@@ -27,12 +27,12 @@ function! s:pick_available_options(options) abort
   endif
   return options
 endfunction
-function! s:get_commit_content(hita, filenames, options) abort
+function! s:get_commit_content(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:hita, 'commit', options)
+  let result = hita#execute(a:git, 'commit', options)
   if get(options, 'dry-run') && result.status == 1
     " Note:
     " Somehow 'git commit' return 1 when --dry-run is specified
@@ -49,11 +49,11 @@ function! s:save_commitmsg() abort
   call hita#set_meta('commitmsg_saved', s:get_current_commitmsg())
 endfunction
 function! s:commit_commitmsg() abort
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let options = hita#get_meta('options')
   let statuses = hita#get_meta('statuses')
   let staged_statuses = filter(copy(statuses), 'v:val.is_staged')
-  if !s:GitInfo.is_merging(hita) && empty(staged_statuses) && get(options, 'allow-empty')
+  if !s:GitInfo.is_merging(git) && empty(staged_statuses) && get(options, 'allow-empty')
     call hita#throw(
           \ 'An empty commit is now allowed. Add --allow-empty option to allow.',
           \)
@@ -76,7 +76,7 @@ function! s:commit_commitmsg() abort
     call writefile(commitmsg, tempfile)
     let options2 = deepcopy(options)
     let options2['file'] = tempfile
-    let content = s:get_commit_content(hita, [], options2)
+    let content = s:get_commit_content(git, [], options2)
     call s:Prompt.title(printf(
           \ 'OK: the changes on %d files have committed',
           \ len(staged_statuses),
@@ -191,8 +191,8 @@ function! hita#command#commit#bufname(...) abort
   let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
-  return hita#autocmd#bufname(hita, {
+  let git = hita#get_or_fail()
+  return hita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'commit',
         \ 'extra_options': [
@@ -207,7 +207,7 @@ function! hita#command#commit#call(...) abort
         \ 'filenames': [],
         \ 'amend': 0,
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
@@ -216,14 +216,14 @@ function! hita#command#commit#call(...) abort
   else
     let filenames = []
   endif
-  let content = s:get_commit_content(hita, filenames, options)
+  let content = s:get_commit_content(git, filenames, options)
   let result = {
         \ 'filenames': filenames,
         \ 'content': content,
         \ 'options': options,
         \}
   if get(options, 'porcelain')
-    let result.statuses = hita#command#status#parse_statuses(hita, content)
+    let result.statuses = hita#command#status#parse_statuses(git, content)
   endif
   return result
 endfunction
@@ -293,7 +293,7 @@ function! hita#command#commit#redraw() abort
   if &filetype !=# 'hita-commit'
     call hita#throw('redraw() requires to be called in a hita-commit buffer')
   endif
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let options = hita#get_meta('options')
 
   let commit_mode = ''
@@ -303,11 +303,11 @@ function! hita#command#commit#redraw() abort
     setlocal modified
   elseif !empty(hita#get_meta('commitmsg_saved'))
     let commitmsg = hita#get_meta('commitmsg_saved')
-  elseif s:GitInfo.is_merging(hita)
-    let commitmsg = s:GitInfo.get_merge_msg(hita)
+  elseif s:GitInfo.is_merging(git)
+    let commitmsg = s:GitInfo.get_merge_msg(git)
     let commit_mode = 'merge'
   elseif options.amend
-    let commitmsg = s:GitInfo.get_last_commitmsg(hita)
+    let commitmsg = s:GitInfo.get_last_commitmsg(git)
     let commit_mode = 'amend'
   else
     let commitmsg = ['']

@@ -32,7 +32,7 @@ Describe hita
   End
 
   Describe s:get_git_instance({expr})
-    Context A hita buffer of known repository in a git repository
+    Context A git buffer of known repository in a git repository
       Before
       End
     End
@@ -45,14 +45,14 @@ Describe hita
         let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It returns a hita instance
-        let hita = sf.get_hita_instance(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance
+        let git = sf.get_hita_instance(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a different hita instance
+      It returns a different git instance
         let hita1 = sf.get_hita_instance(bufname)
         let hita2 = sf.get_hita_instance(bufname)
         Assert NotSame(hita1, hita2)
@@ -65,22 +65,22 @@ Describe hita
         let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It returns a hita instance while cwd is in a git repository
-        let hita = sf.get_hita_instance(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance while cwd is in a git repository
+        let git = sf.get_hita_instance(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a hita instance but not enabled if cwd is not in a git repository
+      It returns a git instance but not enabled if cwd is not in a git repository
         WorkonOutside
-        let hita = sf.get_hita_instance(bufname)
-        Assert Equals(hita.is_enabled, 0)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+        let git = sf.get_hita_instance(bufname)
+        Assert Equals(git.is_enabled, 0)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a different hita instance always
+      It returns a different git instance always
         let hita1 = sf.get_hita_instance(bufname)
         let hita2 = sf.get_hita_instance(bufname)
         Assert NotSame(hita1, hita2)
@@ -94,20 +94,20 @@ Describe hita
         silent execute printf('new %s', bufname)
         setlocal buftype=nofile
       End
-      It returns a hita instance while cwd is in a git repository
-        let hita = sf.get_hita_instance(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance while cwd is in a git repository
+        let git = sf.get_hita_instance(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a hita instance obut not enabled if cwd is not in a git repository
+      It returns a git instance obut not enabled if cwd is not in a git repository
         WorkonOutside
-        let hita = sf.get_hita_instance(bufname)
-        Assert Equals(hita.is_enabled, 0)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+        let git = sf.get_hita_instance(bufname)
+        Assert Equals(git.is_enabled, 0)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
     End
   End
@@ -119,19 +119,19 @@ Describe hita
         let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It returns a hita instance
-        let hita = hita#get(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance
+        let git = hita#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a same hita instance
+      It returns a same git instance
         let hita1 = hita#get(bufname)
         let hita2 = hita#get(bufname)
         Assert Same(hita1, hita2)
       End
-      It does not return a same hita instance if bufname has changed
+      It does not return a same git instance if bufname has changed
         let hita1 = hita#get(bufname)
         silent execute printf('file %s', bufname . '.mod')
         let hita2 = hita#get(bufname . '.mod')
@@ -146,27 +146,27 @@ Describe hita
         let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
         silent execute printf('new %s', bufname)
       End
-      It returns a hita instance while cwd is in a git repository
-        let hita = hita#get(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance while cwd is in a git repository
+        let git = hita#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a hita instance but not enabled if cwd is not in a git repository
+      It returns a git instance but not enabled if cwd is not in a git repository
         WorkonOutside
-        let hita = hita#get(bufname)
-        Assert Equals(hita.is_enabled, 0)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+        let git = hita#get(bufname)
+        Assert Equals(git.is_enabled, 0)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a same hita instance
+      It returns a same git instance
         let hita1 = hita#get(bufname)
         let hita2 = hita#get(bufname)
         Assert Same(hita1, hita2)
       End
-      It does not return a same hita instance if bufname has changed
+      It does not return a same git instance if bufname has changed
         let hita1 = hita#get(bufname)
         silent execute printf('file %s', bufname . '.mod')
         let hita2 = hita#get(bufname . '.mod')
@@ -182,27 +182,27 @@ Describe hita
         silent execute printf('new %s', bufname)
         setlocal buftype=nofile
       End
-      It returns a hita instance while cwd is in a git repository
-        let hita = hita#get(bufname)
-        Assert Equals(hita.is_enabled, 1)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+      It returns a git instance while cwd is in a git repository
+        let git = hita#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a hita instance but not enabled if cwd is not in a git repository
+      It returns a git instance but not enabled if cwd is not in a git repository
         WorkonOutside
-        let hita = hita#get(bufname)
-        Assert Equals(hita.is_enabled, 0)
-        Assert Equals(hita.bufname, bufname(bufname))
-        Assert Equals(hita.bufnum, bufnr(bufname))
-        Assert Equals(hita.cwd, getcwd())
+        let git = hita#get(bufname)
+        Assert Equals(git.is_enabled, 0)
+        Assert Equals(git.bufname, bufname(bufname))
+        Assert Equals(git.bufnum, bufnr(bufname))
+        Assert Equals(git.cwd, getcwd())
       End
-      It returns a same hita instance
+      It returns a same git instance
         let hita1 = hita#get(bufname)
         let hita2 = hita#get(bufname)
         Assert Same(hita1, hita2)
       End
-      It does not return a same hita instance if a current working directory has changed
+      It does not return a same git instance if a current working directory has changed
         let hita1 = hita#get(bufname)
         WorkonOutside
         let hita2 = hita#get(bufname)

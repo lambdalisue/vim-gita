@@ -92,7 +92,7 @@ function! hita#autocmd#call(name) abort
           \))
   endif
   try
-    let hita = hita#get_or_fail()
+    let git = hita#get_or_fail()
     let result = hita#autocmd#parse_filename(expand('<afile>'))
     let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
     let result.commit = commit
@@ -101,14 +101,14 @@ function! hita#autocmd#call(name) abort
     " it to a real absolute path (s:Git.get_absolute_path returns a real path)
     let result.filename = empty(unixpath)
           \ ? ''
-          \ : s:Git.get_absolute_path(hita, unixpath)
+          \ : s:Git.get_absolute_path(git, unixpath)
     let result.extra_options = split(result.extra_option, ':')
     call call(fname, [result])
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception()
   endtry
 endfunction
-function! hita#autocmd#bufname(hita, options) abort
+function! hita#autocmd#bufname(git, options) abort
   let options = extend({
         \ 'filebase': 1,
         \ 'content_type': 'show',
@@ -119,12 +119,12 @@ function! hita#autocmd#bufname(hita, options) abort
   let realpath = s:Path.realpath(options.path)
   let unixpath = s:Path.unixpath(
         \ s:Path.is_absolute(realpath)
-        \   ? s:Git.get_relative_path(a:hita, realpath)
+        \   ? s:Git.get_relative_path(a:git, realpath)
         \   : realpath
         \)
   let treeish = printf('%s:%s', options.commitish, unixpath)
   let bits = [
-        \ a:hita.repository_name,
+        \ a:git.repository_name,
         \ options.content_type ==# 'show' ? '' : options.content_type,
         \ join(filter(options.extra_options, '!empty(v:val)'), ':'),
         \]

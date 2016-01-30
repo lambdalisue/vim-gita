@@ -14,37 +14,37 @@ function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
-function! s:get_ancestor_content(hita, commit, filename, options) abort
+function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
   let rhs = empty(rhs) ? 'HEAD' : rhs
-  let commit = s:GitInfo.get_common_ancestor(hita, lhs, rhs)
-  return s:get_revision_content(a:hita, commit, a:filename, a:options)
+  let commit = s:GitInfo.get_common_ancestor(git, lhs, rhs)
+  return s:get_revision_content(a:git, commit, a:filename, a:options)
 endfunction
-function! s:get_revision_content(hita, commit, filename, options) abort
+function! s:get_revision_content(git, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   if empty(a:filename)
     let options['object'] = a:commit
   else
     let options['object'] = printf('%s:%s',
           \ a:commit,
-          \ hita#get_relative_path(a:hita, a:filename),
+          \ hita#get_relative_path(a:git, a:filename),
           \)
   endif
-  let result = hita#execute(a:hita, 'show', options)
+  let result = hita#execute(a:git, 'show', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
-function! s:get_diff_content(hita, content, filename, options) abort
+function! s:get_diff_content(git, content, filename, options) abort
   let tempfile = tempname()
   let tempfile1 = tempfile . '.index'
   let tempfile2 = tempfile . '.buffer'
   try
     " save contents to temporary files
     call writefile(
-          \ s:get_revision_content(a:hita, '', a:filename, a:options),
+          \ s:get_revision_content(a:git, '', a:filename, a:options),
           \ tempfile1,
           \)
     call writefile(a:content, tempfile2)
@@ -67,7 +67,7 @@ function! s:get_diff_content(hita, content, filename, options) abort
     let src1 = s:StringExt.escape_regex(tempfile1)
     let src2 = s:StringExt.escape_regex(tempfile2)
     let repl = (tempfile =~# '^/' ? '/' : '') . s:Path.unixpath(
-          \ s:Git.get_relative_path(a:hita, a:filename)
+          \ s:Git.get_relative_path(a:git, a:filename)
           \)
     let content = result.content
     let content[0] = substitute(content[0], src1, repl, '')
@@ -97,8 +97,8 @@ function! s:on_BufWriteCmd() abort
     if exists('#BufWritePre')
       doautocmd BufWritePre
     endif
-    let hita = hita#get_or_fail()
-    let content = s:get_diff_content(hita, getline(1, '$'), filename, options)
+    let git = hita#get_or_fail()
+    let content = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
     call hita#command#apply#call({
           \ 'filenames': [tempfile],
@@ -126,14 +126,14 @@ function! hita#command#show#bufname(...) abort
     return hita#variable#get_valid_filename(options.filename)
   endif
 
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filename)
         \ ? ''
         \ : hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(hita, {
+  return hita#autocmd#bufname(git, {
         \ 'content_type': 'show',
         \ 'extra_options': [],
         \ 'commitish': commit,
@@ -145,22 +145,22 @@ function! hita#command#show#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   if empty(options.filename)
     let filename = ''
-    let content = s:get_revision_content(hita, commit, filename, options)
+    let content = s:get_revision_content(git, commit, filename, options)
   else
     let filename = hita#variable#get_valid_filename(options.filename)
     if commit =~# '^.\{-}\.\.\..*$'
-      let content = s:get_ancestor_content(hita, commit, filename, options)
+      let content = s:get_ancestor_content(git, commit, filename, options)
     elseif commit =~# '^.\{-}\.\..*$'
       let commit  = s:GitTerm.split_range(commit)[0]
-      let content = s:get_revision_content(hita, commit, filename, options)
+      let content = s:get_revision_content(git, commit, filename, options)
     else
-      let content = s:get_revision_content(hita, commit, filename, options)
+      let content = s:get_revision_content(git, commit, filename, options)
     endif
   endif
   let result = {

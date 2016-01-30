@@ -23,28 +23,28 @@ function! s:pick_available_options(options) abort
   endif
   return options
 endfunction
-function! s:get_status_content(hita, filenames, options) abort
+function! s:get_status_content(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:hita, 'status', options)
+  let result = hita#execute(a:git, 'status', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
 
-function! s:extend_status(hita, status) abort
+function! s:extend_status(git, status) abort
   " NOTE:
   " git -C <rep> status --porcelain returns paths from the repository root
   " so convert it to a real absolute path
   let a:status.path = s:Git.get_absolute_path(
-        \ a:hita, s:Path.realpath(a:status.path),
+        \ a:git, s:Path.realpath(a:status.path),
         \)
   if has_key(a:status, 'path2')
     let a:status.path2 = s:Git.get_absolute_path(
-          \ a:hita, s:Path.realpath(a:status.path2),
+          \ a:git, s:Path.realpath(a:status.path2),
           \)
   endif
   return a:status
@@ -61,20 +61,20 @@ endfunction
 function! s:format_entry(entry) abort
   return a:entry.record
 endfunction
-function! s:get_statusline_string(hita) abort
-  let local = s:GitInfo.get_local_branch(a:hita)
-  let remote = s:GitInfo.get_remote_branch(a:hita)
-  let mode = s:GitInfo.get_current_mode(a:hita)
+function! s:get_statusline_string(git) abort
+  let local = s:GitInfo.get_local_branch(a:git)
+  let remote = s:GitInfo.get_remote_branch(a:git)
+  let mode = s:GitInfo.get_current_mode(a:git)
   let is_connected = !empty(remote.remote)
 
-  let name = a:hita.repository_name
+  let name = a:git.repository_name
   let branchinfo = is_connected
         \ ? printf('%s/%s <> %s/%s', name, local.name, remote.remote, remote.name)
         \ : printf('%s/%s', name, local.name)
   let connection = ''
   if is_connected
-    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:hita)
-    let incoming = s:GitInfo.count_commits_behind_remote(a:hita)
+    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
+    let incoming = s:GitInfo.count_commits_behind_remote(a:git)
     if outgoing > 0 && incoming > 0
       let connection = printf(
             \ '%d commit(s) ahead and %d commit(s) behind of remote',
@@ -162,8 +162,8 @@ function! hita#command#status#bufname(...) abort
   let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
-  return hita#autocmd#bufname(hita, {
+  let git = hita#get_or_fail()
+  return hita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'status',
         \ 'extra_options': [
@@ -177,7 +177,7 @@ function! hita#command#status#call(...) abort
   let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
@@ -186,14 +186,14 @@ function! hita#command#status#call(...) abort
   else
     let filenames = []
   endif
-  let content = s:get_status_content(hita, filenames, options)
+  let content = s:get_status_content(git, filenames, options)
   let result = {
         \ 'filenames': filenames,
         \ 'content': content,
         \ 'options': options,
         \}
   if get(options, 'porcelain')
-    let result.statuses = hita#command#status#parse_statuses(hita, content)
+    let result.statuses = hita#command#status#parse_statuses(git, content)
   endif
   return result
 endfunction
@@ -254,10 +254,10 @@ function! hita#command#status#redraw() abort
   if &filetype !=# 'hita-status'
     call hita#throw('redraw() requires to be called in a hita-status buffer')
   endif
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let prologue = s:List.flatten([
         \ g:hita#command#status#show_status_string_in_prologue
-        \   ? [s:get_statusline_string(hita) . ' | Press ? to toggle a mapping help']
+        \   ? [s:get_statusline_string(git) . ' | Press ? to toggle a mapping help']
         \   : [],
         \ hita#action#mapping#get_visibility()
         \   ? map(hita#action#get_mapping_help(), '"| " . v:val')
@@ -338,19 +338,19 @@ function! hita#command#status#define_syntax() abort
   syntax match HitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
 function! hita#command#status#get_statusline_string() abort
-  let hita = hita#get()
-  if hita.is_enabled
-    return s:get_statusline_string(hita)
+  let git = hita#get()
+  if git.is_enabled
+    return s:get_statusline_string(git)
   else
     return ''
   endif
 endfunction
-function! hita#command#status#parse_statuses(hita, content) abort
+function! hita#command#status#parse_statuses(git, content) abort
   let statuses = s:GitParser.parse_status(a:content, {
         \ 'fail_silently': 1,
         \ 'flatten': 1,
         \})
-  call map(statuses, 's:extend_status(a:hita, v:val)')
+  call map(statuses, 's:extend_status(a:git, v:val)')
   return sort(statuses, function('s:compare_statuses'))
 endfunction
 

@@ -27,10 +27,10 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:apply_content(hita, content, options) abort
+function! s:apply_content(git, content, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = ['-']
-  let result = hita#execute(a:hita, 'apply', options, {
+  let result = hita#execute(a:git, 'apply', options, {
         \ 'input': a:content,
         \})
   if result.status
@@ -38,10 +38,10 @@ function! s:apply_content(hita, content, options) abort
   endif
   return result.content
 endfunction
-function! s:apply_patches(hita, filenames, options) abort
+function! s:apply_patches(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
-  let result = hita#execute(a:hita, 'apply', options)
+  let result = hita#execute(a:git, 'apply', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -53,18 +53,18 @@ function! hita#command#apply#call(...) abort
         \ 'diff': [],
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   if empty(options.filenames)
     let filenames = []
     let diff = empty(options.diff) ? getline(1, '$') : options.diff
-    let content = s:apply_content(hita, diff, options)
+    let content = s:apply_content(git, diff, options)
   else
     let filenames = map(
           \ copy(options.filenames),
           \ 'hita#variable#get_valid_filename(v:val)',
           \)
     let diff = []
-    let content = s:apply_patches(hita, filenames, options)
+    let content = s:apply_patches(git, filenames, options)
   endif
   call hita#util#doautocmd('StatusModified')
   return {

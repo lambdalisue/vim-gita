@@ -8,14 +8,14 @@ let s:GitTerm = s:V.import('Git.Term')
 let s:GitInfo = s:V.import('Git.Info')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:find_commit_meta(hita, commit) abort
-  let config = s:GitInfo.get_repository_config(a:hita)
+function! s:find_commit_meta(git, commit) abort
+  let config = s:GitInfo.get_repository_config(a:git)
   if a:commit =~# '^.\{-}\.\.\..*$'
     let [lhs, rhs] = s:GitTerm.split_range(a:commit)
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
     let remote = s:GitInfo.get_branch_remote(config, lhs)
-    let lhs = s:GitInfo.find_common_ancestor(a:hita, lhs, rhs)
+    let lhs = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
   elseif a:commit =~# '^.\{-}\.\..*$'
     let [lhs, rhs] = s:GitTerm.split_range(a:commit)
     let lhs = empty(lhs) ? 'HEAD' : lhs
@@ -45,9 +45,9 @@ function! s:translate_url(url, scheme_name, translation_patterns) abort
   endfor
   return ''
 endfunction
-function! s:find_url(hita, commit, filename, options) abort
+function! s:find_url(git, commit, filename, options) abort
   let relpath = s:Path.unixpath(
-        \ s:Git.get_relative_path(a:hita, a:filename),
+        \ s:Git.get_relative_path(a:git, a:filename),
         \)
   " get selected region
   let line_start = get(a:options, 'line_start', 0)
@@ -55,9 +55,9 @@ function! s:find_url(hita, commit, filename, options) abort
   let line_end   = line_start == line_end ? 0 : line_end
 
   " normalize commit to figure out remote, commit, and remote_url
-  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(a:hita, a:commit)
-  let revision1 = s:GitInfo.get_remote_hash(a:hita, remote, commit1)
-  let revision2 = s:GitInfo.get_remote_hash(a:hita, remote, commit2)
+  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(a:git, a:commit)
+  let revision1 = s:GitInfo.get_remote_hash(a:git, remote, commit1)
+  let revision2 = s:GitInfo.get_remote_hash(a:git, remote, commit2)
 
   " create a URL
   let data = {
@@ -102,7 +102,7 @@ function! hita#command#browse#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -113,7 +113,7 @@ function! hita#command#browse#call(...) abort
         \ copy(options.filenames),
         \ 'hita#variable#get_valid_filename(v:val)',
         \)
-  let urls = map(copy(filenames), 's:find_url(hita, commit, v:val, options)')
+  let urls = map(copy(filenames), 's:find_url(git, commit, v:val, options)')
   return {
         \ 'commit': commit,
         \ 'filenames': filenames,

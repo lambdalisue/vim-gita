@@ -18,13 +18,13 @@ let s:format_map = {
       \}
 function! s:format_map.og(data) abort
   " outgoing
-  let hita = a:data._hita
-  return s:GitInfo.count_commits_ahead_of_remote(hita)
+  let git = a:data._hita
+  return s:GitInfo.count_commits_ahead_of_remote(git)
 endfunction
 function! s:format_map.ic(data) abort
   " outgoing
-  let hita = a:data._hita
-  return s:GitInfo.count_commits_behind_remote(hita)
+  let git = a:data._hita
+  return s:GitInfo.count_commits_behind_remote(git)
 endfunction
 function! s:format_map.nc(data) abort
   " number of conflicted
@@ -86,7 +86,7 @@ let s:preset.traffic = '%{<| }ic%{>|}og'
 let s:preset.traffic_fancy = '%{￩| }ic%{￫}og'
 
 function! s:extend_status_count(data) abort
-  let hita = a:data._hita
+  let git = a:data._hita
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
@@ -97,7 +97,7 @@ function! s:extend_status_count(data) abort
         \ 'modified': 0,
         \}
   try
-    let result = s:GitProcess.execute(hita, 'status', {
+    let result = s:GitProcess.execute(git, 'status', {
           \ 'porcelain': 1,
           \ 'ignore_submodules': 1,
           \})
@@ -130,21 +130,21 @@ function! s:extend_status_count(data) abort
   endtry
 endfunction
 
-function! s:get_format_cache(hita) abort
-  if !has_key(a:hita, '_statusline_format_cache')
-    let a:hita._statusline_format_cache = s:Cache.new()
+function! s:get_format_cache(git) abort
+  if !has_key(a:git, '_statusline_format_cache')
+    let a:git._statusline_format_cache = s:Cache.new()
   endif
-  return a:hita._statusline_format_cache
+  return a:git._statusline_format_cache
 endfunction
-function! s:get_uptime_cache(hita) abort
-  if !has_key(a:hita, '_statusline_uptime_cache')
-    let a:hita._statusline_uptime_cache = s:Cache.new()
+function! s:get_uptime_cache(git) abort
+  if !has_key(a:git, '_statusline_uptime_cache')
+    let a:git._statusline_uptime_cache = s:Cache.new()
   endif
-  return a:hita._statusline_uptime_cache
+  return a:git._statusline_uptime_cache
 endfunction
 
-function! s:is_repository_updated(hita) abort
-  let uptime_cache = s:get_uptime_cache(a:hita)
+function! s:is_repository_updated(git) abort
+  let uptime_cache = s:get_uptime_cache(a:git)
   let watched = [
         \ 'index', 'HEAD',
         \ 'MERGE_HEAD',
@@ -154,7 +154,7 @@ function! s:is_repository_updated(hita) abort
         \]
   for name in watched
     let cached = uptime_cache.get(name, -1)
-    let uptime = s:Git.getftime(a:hita, name)
+    let uptime = s:Git.getftime(a:git, name)
     if uptime > cached
       call uptime_cache.set(name, uptime)
       return 1
@@ -169,8 +169,8 @@ endfunction
 function! s:on_BufWritePost() abort
   if get(b:, '_hita_statusline_modified')
     try
-      let hita = hita#get_or_fail()
-      silent! unlet! hita._statusline_format_cache
+      let git = hita#get_or_fail()
+      silent! unlet! git._statusline_format_cache
     catch
       " fail silently
     endtry
@@ -180,23 +180,23 @@ endfunction
 
 function! hita#statusline#format(format) abort
   try
-    let hita = hita#get_or_fail()
-    let format_cache = s:get_format_cache(hita)
-    if format_cache.has(a:format) && !s:is_repository_updated(hita)
+    let git = hita#get_or_fail()
+    let format_cache = s:get_format_cache(git)
+    if format_cache.has(a:format) && !s:is_repository_updated(git)
       return format_cache.get(a:format)
     endif
     call format_cache.remove(a:format)
-    let local_branch = s:GitInfo.get_local_branch(hita)
-    let remote_branch = s:GitInfo.get_remote_branch(hita)
+    let local_branch = s:GitInfo.get_local_branch(git)
+    let remote_branch = s:GitInfo.get_remote_branch(git)
     let info = {
-          \ 'local_name': hita.repository_name,
+          \ 'local_name': git.repository_name,
           \ 'local_branch': local_branch.name,
           \ 'local_hashref': local_branch.hash,
           \ 'remote_name': remote_branch.remote,
           \ 'remote_branch': remote_branch.name,
           \ 'remote_hashref': remote_branch.hash,
-          \ 'mode': s:GitInfo.get_current_mode(hita),
-          \ '_hita': hita,
+          \ 'mode': s:GitInfo.get_current_mode(git),
+          \ '_hita': git,
           \}
     let text = s:StringExt.format(a:format, s:format_map, info)
     call format_cache.set(a:format, text)

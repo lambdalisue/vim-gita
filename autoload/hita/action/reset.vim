@@ -8,12 +8,12 @@ let s:MAPPING_TABLE = {
 function! hita#action#reset#action(candidates, ...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call add(filenames, s:Path.unixpath(
-            \ s:Git.get_relative_path(hita, candidate.path)
+            \ s:Git.get_relative_path(git, candidate.path)
             \))
     endif
   endfor

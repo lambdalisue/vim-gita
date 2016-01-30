@@ -16,12 +16,12 @@ function! hita#action#checkout#action(candidates, ...) abort
         \ 'ours': 0,
         \ 'theirs': 0,
         \}, get(a:000, 0, {}))
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call checkout(filenames, s:Path.unixpath(
-            \ s:Git.get_relative_path(hita, candidate.path)
+            \ s:Git.get_relative_path(git, candidate.path)
             \))
     endif
   endfor

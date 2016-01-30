@@ -15,7 +15,7 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:get_diff_content(hita, commit, filenames, options) abort
+function! s:get_diff_content(git, commit, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['no-color'] = 1
   let options['commit'] = a:commit
@@ -25,7 +25,7 @@ function! s:get_diff_content(hita, commit, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:hita, 'diff', options)
+  let result = hita#execute(a:git, 'diff', options)
   if get(options, 'no-index') || get(options, 'exit-code')
     " NOTE:
     " --no-index force --exit-code option.
@@ -91,7 +91,7 @@ function! hita#command#diff#bufname(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -104,7 +104,7 @@ function! hita#command#diff#bufname(...) abort
     let filenames = []
   endif
   if len(filenames) == 1
-    return hita#autocmd#bufname(hita, {
+    return hita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
           \   options.cached ? 'cached' : '',
@@ -114,7 +114,7 @@ function! hita#command#diff#bufname(...) abort
           \ 'path': filenames[0],
           \})
   else
-    return hita#autocmd#bufname(hita, {
+    return hita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
           \   options.cached ? 'cached' : '',
@@ -132,7 +132,7 @@ function! hita#command#diff#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -144,7 +144,7 @@ function! hita#command#diff#call(...) abort
   else
     let filenames = []
   endif
-  let content = s:get_diff_content(hita, commit, filenames, options)
+  let content = s:get_diff_content(git, commit, filenames, options)
   let result = {
         \ 'commit': commit,
         \ 'filenames': filenames,
@@ -210,7 +210,7 @@ function! hita#command#diff#open2(...) abort
           \ 'Warning: Hita diff --split cannot handle multiple filenames',
           \)
   endif
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})

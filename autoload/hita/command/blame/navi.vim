@@ -30,12 +30,12 @@ function! hita#command#blame#navi#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let hita = hita#get_or_fail()
+  let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(hita, {
+  return hita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'blame-navi',
         \ 'extra_options': [],
