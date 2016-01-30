@@ -27,17 +27,6 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
-function! s:apply_content(git, content, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['--'] = ['-']
-  let result = hita#execute(a:git, 'apply', options, {
-        \ 'input': a:content,
-        \})
-  if result.status
-    call s:GitProcess.throw(result.stdout)
-  endif
-  return result.content
-endfunction
 function! s:apply_patches(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
@@ -50,25 +39,19 @@ endfunction
 
 function! hita#command#apply#call(...) abort
   let options = hita#option#init('', get(a:000, 0, {}), {
-        \ 'diff': [],
         \ 'filenames': [],
         \})
   let git = hita#get_or_fail()
   if empty(options.filenames)
-    let filenames = []
-    let diff = empty(options.diff) ? getline(1, '$') : options.diff
-    let content = s:apply_content(git, diff, options)
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
-          \)
-    let diff = []
-    let content = s:apply_patches(git, filenames, options)
+    call hita#throw('ValidationError: "filenames" cannot be empty')
   endif
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'hita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:apply_patches(git, filenames, options)
   call hita#util#doautocmd('StatusModified')
   return {
-        \ 'diff': diff,
         \ 'filenames': filenames,
         \ 'content': content,
         \}

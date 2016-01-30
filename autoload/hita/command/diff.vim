@@ -68,13 +68,20 @@ function! s:on_BufWriteCmd() abort
     if exists('#BufWritePre')
       doautocmd BufWritePre
     endif
-    call hita#command#apply#call({
-          \ 'diff': getline(1, '$'),
-          \ 'cached': 1,
-          \ 'verbose': 1,
-          \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
-          \ 'whitespace': 'fix',
-          \})
+    let tempfile = tempname()
+    try
+      call writefile(getline(1, '$'), tempfile)
+      call hita#command#apply#call({
+            \ 'filenames': [tempfile],
+            \ 'cached': 1,
+            \ 'verbose': 1,
+            \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
+            \ 'recount': 1,
+            \ 'whitespace': 'fix',
+            \})
+    finally
+      call delete(tempfile)
+    endtry
     call hita#command#diff#edit({'force': 1})
     if exists('#BufWritePost')
       doautocmd BufWritePost
