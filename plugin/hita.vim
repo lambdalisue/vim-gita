@@ -1,7 +1,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-command! -nargs=? -range=% -bang
+command! -nargs=? -range -bang
       \ -complete=customlist,hita#command#complete
       \ Hita
       \ :call hita#command#command(<q-bang>, [<line1>, <line2>], <f-args>)

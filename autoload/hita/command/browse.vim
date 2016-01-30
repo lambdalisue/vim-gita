@@ -50,8 +50,13 @@ function! s:find_url(git, commit, filename, options) abort
         \ s:Git.get_relative_path(a:git, a:filename),
         \)
   " get selected region
-  let line_start = get(a:options, 'line_start', 0)
-  let line_end   = get(a:options, 'line_end', 0)
+  if has_key(a:options, 'selection')
+    let line_start = get(a:options.selection, 0, 0)
+    let line_end   = get(a:options.selection, 1, 0)
+  else
+    let line_start = 0
+    let line_end = 0
+  endif
   let line_end   = line_start == line_end ? 0 : line_end
 
   " normalize commit to figure out remote, commit, and remote_url
@@ -180,6 +185,16 @@ function! s:get_parser() abort
           \   'default': '_',
           \})
     call s:parser.add_argument(
+          \ '--line-start',
+          \ 'Start line for the selection', {
+          \   'pattern': '^\d\+$',
+          \})
+    call s:parser.add_argument(
+          \ '--line-end',
+          \ 'End line for the selection', {
+          \   'pattern': '^\d\+$',
+          \})
+    call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to see.',
           \   'If nothing is specified, it open a remote content of origin/HEAD.',
@@ -192,6 +207,16 @@ function! s:get_parser() abort
     function! s:parser.hooks.pre_validate(options) abort
       if empty(s:parser.get_conflicted_arguments('open', a:options))
         let a:options.open = 1
+      endif
+    endfunction
+    function! s:parser.hooks.post_validate(options) abort
+      if has_key(a:options, 'line-start')
+        let a:options.line_start = a:options['line-start']
+        unlet a:options['line-start']
+      endif
+      if has_key(a:options, 'line-end')
+        let a:options.line_end = a:options['line-end']
+        unlet a:options['line-end']
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -209,6 +234,9 @@ function! hita#command#browse#command(...) abort
     let options.filenames = ['%']
   else
     let options.filenames = options.__unknown__
+  endif
+  if len(options.filenames) == 1 && expand(options.filenames[0]) ==# expand('%')
+    let options.selection = options.__range__
   endif
   " extend default options
   let options = extend(
