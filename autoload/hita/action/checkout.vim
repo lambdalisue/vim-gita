@@ -20,7 +20,7 @@ function! hita#action#checkout#action(candidates, ...) abort
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
-      call checkout(filenames, s:Path.unixpath(
+      call add(filenames, s:Path.unixpath(
             \ s:Git.get_relative_path(git, candidate.path)
             \))
     endif
