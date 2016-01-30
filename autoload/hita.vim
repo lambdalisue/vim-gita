@@ -153,7 +153,9 @@ function! hita#remove_meta(name, ...) abort
   " DO NOT USE 'hita' instance in this method.
   let expr = get(a:000, 0, '%')
   let meta = s:get_meta_instance(bufnr(expr))
-  unlet meta[a:name]
+  if has_key(meta, a:name)
+    unlet meta[a:name]
+  endif
 endfunction
 
 function! hita#vital() abort
