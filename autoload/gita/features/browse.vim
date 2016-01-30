@@ -48,7 +48,7 @@ call s:parser.add_argument(
       \ })
 function! s:parser.hooks.pre_validate(opts) abort " {{{
   " Automatically use '--open' if no conflicted argument is specified
-  if empty(self.get_conflicted_arguments('open', a:opts))
+  if empty(s:parser.get_conflicted_arguments('open', a:opts))
     let a:opts.open = 1
   endif
 endfunction " }}}
