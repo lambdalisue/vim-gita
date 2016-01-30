@@ -158,6 +158,9 @@ function! hita#remove_meta(name, ...) abort
   endif
 endfunction
 
+function! hita#is_enabled(...) abort
+  return call('hita#get', a:000).is_enabled
+endfunction
 function! hita#vital() abort
   return s:V
 endfunction
