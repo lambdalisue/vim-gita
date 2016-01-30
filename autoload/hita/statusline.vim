@@ -167,15 +167,19 @@ function! s:on_BufWritePre() abort
   let b:_hita_statusline_modified = &modified
 endfunction
 function! s:on_BufWritePost() abort
-  if get(b:, '_hita_statusline_modified')
-    try
-      let git = hita#get_or_fail()
-      silent! unlet! git._statusline_format_cache
-    catch
-      " fail silently
-    endtry
+  if get(b:, '_hita_statusline_modified', &modified) != &modified
+    let git = hita#get()
+    if git.is_enabled
+      call s:get_format_cache(git).clear()
+    endif
   endif
   silent! unlet! b:_hita_statusline_modified
+endfunction
+function! s:on_HitaStatusModified() abort
+  let git = hita#get()
+  if git.is_enabled
+    call s:get_format_cache(git).clear()
+  endif
 endfunction
 
 function! hita#statusline#format(format) abort
@@ -221,4 +225,5 @@ augroup vim_hita_internal_statusline_clear_cache
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * call s:on_BufWritePost()
+  autocmd User HitaStatusModified call s:on_HitaStatusModified()
 augroup END
