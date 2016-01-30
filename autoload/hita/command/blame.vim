@@ -293,7 +293,6 @@ function! hita#command#blame#edit(...) abort
   call hita#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#set_meta('commit', result.commit)
   call hita#set_meta('filename', result.filename)
-  call hita#set_meta('content', result.content)
   call hita#set_meta('blame', result.blame)
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nonumber nowrap nofoldenable foldcolumn=0

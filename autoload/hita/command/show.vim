@@ -201,7 +201,6 @@ function! hita#command#show#edit(...) abort
   call hita#set_meta('options', s:Dict.omit(options, ['force']))
   call hita#set_meta('commit', result.commit)
   call hita#set_meta('filename', result.filename)
-  call hita#set_meta('content', result.content)
   call hita#util#buffer#edit_content(result.content)
   if empty(result.filename)
     setfiletype git

@@ -191,7 +191,6 @@ function! hita#command#diff#edit(...) abort
   call hita#set_meta('commit', result.commit)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#set_meta('filenames', result.filenames)
-  call hita#set_meta('content', result.content)
   call hita#util#buffer#edit_content(result.content)
   augroup vim_gita_internal_diff_apply_diff
     autocmd! * <buffer>
