@@ -301,3 +301,4 @@ function! s:schemes.clone(name, options) abort
         \ get(a:options, 'directory', ''),
         \])
 endfunction
+

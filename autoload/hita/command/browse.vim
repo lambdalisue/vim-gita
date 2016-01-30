@@ -190,7 +190,7 @@ function! s:get_parser() abort
           \   'complete': function('hita#variable#complete_commit'),
           \})
     function! s:parser.hooks.pre_validate(options) abort
-      if empty(self.get_conflicted_arguments('open', a:options))
+      if empty(s:parser.get_conflicted_arguments('open', a:options))
         let a:options.open = 1
       endif
     endfunction
@@ -227,6 +227,7 @@ function! hita#command#browse#complete(...) abort
 endfunction
 
 call hita#util#define_variables('command#browse', {
+      \ 'default_options': {},
       \ 'translation_patterns': {
       \   'github.com': [
       \     [
