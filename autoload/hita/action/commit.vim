@@ -24,11 +24,11 @@ endfunction
 
 function! hita#action#commit#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(hita-commit)
-        \ :call hita#action#call('commit')<CR>
+        \ :<C-u>call hita#action#call('commit')<CR>
   noremap <buffer><silent> <Plug>(hita-commit-new)
-        \ :call hita#action#call('commit', { 'amend': 0 })<CR>
+        \ :<C-u>call hita#action#call('commit', { 'amend': 0 })<CR>
   noremap <buffer><silent> <Plug>(hita-commit-amend)
-        \ :call hita#action#call('commit', { 'amend': 1 })<CR>
+        \ :<C-u>call hita#action#call('commit', { 'amend': 1 })<CR>
 endfunction
 
 function! hita#action#commit#define_default_mappings() abort

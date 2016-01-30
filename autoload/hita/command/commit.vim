@@ -112,6 +112,16 @@ function! s:define_actions() abort
   function! action.actions.redraw(candidates, ...) abort
     call hita#command#commit#update()
   endfunction
+  function! action.actions.redraw(candidates, ...) abort
+    call hita#command#commit#update()
+  endfunction
+  function! action.actions.commit_do(candidates, ...) abort
+    call s:commit_commitmsg()
+    call hita#action#call('status')
+  endfunction
+
+  nnoremap <buffer><silent> <Plug>(hita-commit-do)
+        \ :<C-u>call hita#action#call('commit_do')<CR>
 
   call hita#action#includes(
         \ g:hita#command#commit#enable_default_mappings, [
@@ -125,6 +135,7 @@ function! s:define_actions() abort
           \ 'map <buffer> <Return> %s',
           \ g:hita#command#commit#default_action_mapping
           \)
+    map <buffer> CC <Plug>(hita-commit-do)
   endif
 endfunction
 
