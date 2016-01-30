@@ -103,9 +103,9 @@ function! hita#command#browse#call(...) abort
         \ 'filenames': [],
         \})
   let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
+  let local_branch = s:GitInfo.get_local_branch(git)
+  let commit = empty(options.commit) ? local_branch.name : options.commit
+  let commit = hita#variable#get_valid_range(commit)
   if empty(options.filenames)
     let filenames = ['%']
   endif
@@ -205,7 +205,9 @@ function! hita#command#browse#command(...) abort
     return
   endif
   call hita#option#assign_commit(options)
-  if !empty(options.__unknown__)
+  if empty(options.__unknown__)
+    let options.filenames = ['%']
+  else
     let options.filenames = options.__unknown__
   endif
   " extend default options
@@ -213,9 +215,9 @@ function! hita#command#browse#command(...) abort
         \ deepcopy(g:hita#command#browse#default_options),
         \ options,
         \)
-  if options.yank
+  if get(options, 'yank')
     call hita#command#browse#yank(options)
-  elseif options.echo
+  elseif get(options, 'echo')
     call hita#command#browse#echo(options)
   else
     call hita#command#browse#open(options)
