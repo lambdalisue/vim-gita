@@ -86,6 +86,7 @@ function! hita#command#command(...) abort
       endtry
     else
       call s:apply_command(name, options)
+      call hita#util#doautocmd('StatusModified')
     endif
   endif
 endfunction
