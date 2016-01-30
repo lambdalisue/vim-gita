@@ -82,10 +82,9 @@ function! s:commit_commitmsg() abort
           \ len(staged_statuses),
           \))
     call s:Prompt.echo('None', join(content, "\n"))
-    call hita#set_meta('commitmsg_saved', '')
-
-    unlet options.amend
-    call hita#set_meta('options', options)
+    call hita#remove_meta('commitmsg_saved', '')
+    call hita#set_meta('options', {})
+    call hita#util#doautocmd('StatusModified')
   finally
     call delete(tempfile)
   endtry
@@ -199,7 +198,7 @@ function! s:on_HitaStatusModified() abort
 endfunction
 
 function! hita#command#commit#bufname(...) abort
-  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
+  let options = hita#option#init('^commit$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
   let git = hita#get_or_fail()
@@ -214,7 +213,7 @@ function! hita#command#commit#bufname(...) abort
         \})
 endfunction
 function! hita#command#commit#call(...) abort
-  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
+  let options = hita#option#init('^commit$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \ 'amend': 0,
         \})
@@ -242,9 +241,6 @@ function! hita#command#commit#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let options['porcelain'] = 1
-  let options['dry-run'] = 1
-  let result = hita#command#commit#call(options)
   let opener = empty(options.opener)
         \ ? g:hita#command#commit#default_opener
         \ : options.opener
@@ -253,9 +249,12 @@ function! hita#command#commit#open(...) abort
         \ 'opener': opener,
         \ 'group': 'manipulation_panel',
         \})
+  let options['porcelain'] = 1
+  let options['dry-run'] = 1
+  let result = hita#command#commit#call(options)
   call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'porcelain', 'dry-run',
+  call hita#set_meta('options', s:Dict.omit(options, [
+        \ 'force', 'opener', 'porcelain', 'dry-run',
         \]))
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
@@ -290,10 +289,9 @@ function! hita#command#commit#update(...) abort
   let options['dry-run'] = 1
   let result = hita#command#commit#call(options)
   call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'porcelain', 'dry-run',
+  call hita#set_meta('options', s:Dict.omit(options, [
+        \ 'force', 'opener', 'porcelain', 'dry-run',
         \]))
-  call hita#set_meta('amend', result.amend)
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call hita#set_meta('filenames', result.filenames)
@@ -317,7 +315,7 @@ function! hita#command#commit#redraw() abort
   elseif s:GitInfo.is_merging(git)
     let commitmsg = s:GitInfo.get_merge_msg(git)
     let commit_mode = 'merge'
-  elseif options.amend
+  elseif get(options, 'amend')
     let commitmsg = s:GitInfo.get_last_commitmsg(git)
     let commit_mode = 'amend'
   else

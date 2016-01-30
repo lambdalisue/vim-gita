@@ -159,7 +159,7 @@ function! s:on_HitaStatusModified() abort
 endfunction
 
 function! hita#command#status#bufname(...) abort
-  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
+  let options = hita#option#init('^status$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
   let git = hita#get_or_fail()
@@ -174,7 +174,7 @@ function! hita#command#status#bufname(...) abort
         \})
 endfunction
 function! hita#command#status#call(...) abort
-  let options = hita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}), {
+  let options = hita#option#init('^status$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
   let git = hita#get_or_fail()
@@ -201,8 +201,6 @@ function! hita#command#status#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let options['porcelain'] = 1
-  let result = hita#command#status#call(options)
   let opener = empty(options.opener)
         \ ? g:hita#command#status#default_opener
         \ : options.opener
@@ -211,9 +209,11 @@ function! hita#command#status#open(...) abort
         \ 'opener': opener,
         \ 'group': 'manipulation_panel',
         \})
+  let options['porcelain'] = 1
+  let result = hita#command#status#call(options)
   call hita#set_meta('content_type', 'status')
   call hita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'porcelain',
+        \ 'force', 'opener', 'porcelain',
         \]))
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
@@ -242,7 +242,7 @@ function! hita#command#status#update(...) abort
   let result = hita#command#status#call(options)
   call hita#set_meta('content_type', 'status')
   call hita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'porcelain',
+        \ 'force', 'opener', 'porcelain',
         \]))
   call hita#set_meta('statuses', result.statuses)
   call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')

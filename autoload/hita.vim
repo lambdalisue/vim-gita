@@ -148,6 +148,13 @@ function! hita#set_meta(name, value, ...) abort
   let meta = s:get_meta_instance(bufnr(expr))
   let meta[a:name] = a:value
 endfunction
+function! hita#remove_meta(name, ...) abort
+  " WARNING:
+  " DO NOT USE 'hita' instance in this method.
+  let expr = get(a:000, 0, '%')
+  let meta = s:get_meta_instance(bufnr(expr))
+  unlet meta[a:name]
+endfunction
 
 function! hita#vital() abort
   return s:V
