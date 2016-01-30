@@ -274,9 +274,9 @@ function! hita#command#diff#open2(...) abort
     diffthis
     diffupdate
     execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-    keepjump normal zM
+    keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-    keepjump normal zM
+    keepjump normal! zM
   else
     let rresult = hita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',
@@ -292,9 +292,9 @@ function! hita#command#diff#open2(...) abort
     diffthis
     diffupdate
     execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-    keepjump normal zM
+    keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-    keepjump normal zM
+    keepjump normal! zM
   endif
 endfunction
 
