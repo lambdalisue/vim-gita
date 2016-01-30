@@ -348,6 +348,7 @@ endfunction
 function! hita#command#status#parse_statuses(hita, content) abort
   let statuses = s:GitParser.parse_status(a:content, {
         \ 'fail_silently': 1,
+        \ 'flatten': 1,
         \})
   call map(statuses, 's:extend_status(a:hita, v:val)')
   return sort(statuses, function('s:compare_statuses'))

@@ -240,12 +240,18 @@ endfunction
 function! s:parse_status(content, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'flatten': 1,
+        \ 'flatten': 0,
         \}, get(a:000, 0, {}))
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)
         \ : a:content
-  let result = { 'statuses': [] }
+  let result = {
+        \ 'conflicted': [],
+        \ 'staged': [],
+        \ 'unstaged': [],
+        \ 'untracked': [],
+        \ 'ignored': [],
+        \}
   for line in content
     let status = s:parse_status_record(line, options)
     if empty(status)
@@ -253,11 +259,23 @@ function! s:parse_status(content, ...) abort
     elseif has_key(status, 'current_branch')
       call extend(result, status)
       continue
+    elseif options.flatten
+      call add(result.conflicted, status)
     else
-      call add(result.statuses, status)
+      if status.is_conflicted
+        call add(result.conflicted, status)
+      elseif status.is_staged
+        call add(result.staged, status)
+      elseif status.is_unstaged
+        call add(result.unstaged, status)
+      elseif status.is_untracked
+        call add(result.untracked, status)
+      else
+        call add(result.is_ignored, status)
+      endif
     endif
   endfor
-  return options.flatten ? result.statuses : result
+  return options.flatten ? result.conflicted : result
 endfunction
 
 
