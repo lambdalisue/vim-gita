@@ -306,7 +306,7 @@ function! s:count_commits_ahead_of_remote(git, ...) abort
       endif
       call s:GitProcess.throw(result)
     endif
-    let content = len(result.content)
+    let content = len(filter(result.content, '!empty(v:val)'))
     call s:Git.set_cache_content(a:git, 'index', slug, content)
   endif
   return content
@@ -329,7 +329,7 @@ function! s:count_commits_behind_remote(git, ...) abort
       endif
       call s:GitProcess.throw(result)
     endif
-    let content = len(result.content)
+    let content = len(filter(result.content, '!empty(v:val)'))
     call s:Git.set_cache_content(a:git, 'index', slug, content)
   endif
   return content
