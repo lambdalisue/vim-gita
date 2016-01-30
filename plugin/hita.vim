@@ -19,6 +19,13 @@ augroup vim_hita_internal_read_file
   endtry
 augroup END
 
+augroup vim_hita_internal_status_modified
+  autocmd!
+  autocmd BufWritePre * call hita#autocmd#call('BufWritePre')
+  autocmd BufWritePost * call hita#autocmd#call('BufWritePost')
+augroup END
+
+
 let &cpo = s:save_cpo
 unlet! s:save_cpo
 " vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:

@@ -3,7 +3,8 @@ let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 
-function! s:on_SourceCmd(info) abort
+
+function! s:on_SourceCmd() abort
   let content = getbufline(expand('<afile>'), 1, '$')
   try
     let tempfile = tempname()
@@ -15,29 +16,30 @@ function! s:on_SourceCmd(info) abort
     endif
   endtry
 endfunction
-function! s:on_BufReadCmd(info) abort
+function! s:on_BufReadCmd() abort
+  let info = hita#autocmd#parse('<afile>')
   if exists('#BufReadPre')
     doautocmd BufReadPre
   endif
-  let content_type = get(a:info, 'content_type')
+  let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#edit({
-          \ 'commit': a:info.commit,
-          \ 'filename': a:info.filename,
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
     call hita#command#diff#edit({
-          \ 'commit': a:info.commit,
-          \ 'filenames': empty(a:info.filename) ? [] : [a:info.filename],
-          \ 'cached': index(a:info.extra_options, 'cached') >= 0,
-          \ 'reverse': index(a:info.extra_options, 'reverse') >= 0,
+          \ 'commit': info.commit,
+          \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'cached': index(info.extra_options, 'cached') >= 0,
+          \ 'reverse': index(info.extra_options, 'reverse') >= 0,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'blame'
     call hita#command#blame#edit({
-          \ 'commit': a:info.commit,
-          \ 'filename': a:info.filename,
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   else
@@ -49,29 +51,30 @@ function! s:on_BufReadCmd(info) abort
     doautocmd BufReadPost
   endif
 endfunction
-function! s:on_FileReadCmd(info) abort
+function! s:on_FileReadCmd() abort
+  let info = hita#autocmd#parse('<afile>')
   if exists('#FileReadPre')
     doautocmd FileReadPre
   endif
-  let content_type = get(a:info, 'content_type')
+  let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call hita#command#show#read({
-          \ 'commit': a:info.commit,
-          \ 'filename': a:info.filename,
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
     call hita#command#diff#read({
-          \ 'commit': a:info.commit,
-          \ 'filenames': empty(a:info.filename) ? [] : [a:info.filename],
-          \ 'cached': index(a:info.extra_options, 'cached') >= 0,
-          \ 'reverse': index(a:info.extra_options, 'reverse') >= 0,
+          \ 'commit': info.commit,
+          \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'cached': index(info.extra_options, 'cached') >= 0,
+          \ 'reverse': index(info.extra_options, 'reverse') >= 0,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'blame'
     call hita#command#blame#read({
-          \ 'commit': a:info.commit,
-          \ 'filename': a:info.filename,
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   else
@@ -83,6 +86,17 @@ function! s:on_FileReadCmd(info) abort
     doautocmd FileReadPost
   endif
 endfunction
+function! s:on_BufWritePre() abort
+  let b:_hita_autocmd_modified = &modified
+endfunction
+function! s:on_BufWritePost() abort
+  if get(b:, '_hita_autocmd_modified', &modified) != &modified
+    if hita#get().is_enabled
+      call hita#util#doautocmd('StatusModified')
+    endif
+  endif
+  silent! unlet! b:_hita_autocmd_modified
+endfunction
 
 function! hita#autocmd#call(name) abort
   let fname = 's:on_' . a:name
@@ -92,21 +106,24 @@ function! hita#autocmd#call(name) abort
           \))
   endif
   try
-    let git = hita#get_or_fail()
-    let result = hita#autocmd#parse_filename(expand('<afile>'))
-    let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
-    let result.commit = commit
-    " NOTE:
-    " filename is always a relative path from the repository root so convert
-    " it to a real absolute path (s:Git.get_absolute_path returns a real path)
-    let result.filename = empty(unixpath)
-          \ ? ''
-          \ : s:Git.get_absolute_path(git, unixpath)
-    let result.extra_options = split(result.extra_option, ':')
-    call call(fname, [result])
+    call call(fname, [])
   catch /^\%(vital: Git[:.]\|vim-hita:\)/
     call hita#util#handle_exception()
   endtry
+endfunction
+function! hita#autocmd#parse(expr) abort
+  let git = hita#get_or_fail(a:expr)
+  let result = s:parse_filename(expand(a:expr))
+  let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
+  let result.commit = commit
+  " NOTE:
+  " filename is always a relative path from the repository root so convert
+  " it to a real absolute path (s:Git.get_absolute_path returns a real path)
+  let result.filename = empty(unixpath)
+        \ ? ''
+        \ : s:Git.get_absolute_path(git, unixpath)
+  let result.extra_options = split(result.extra_option, ':')
+  return result
 endfunction
 function! hita#autocmd#bufname(git, options) abort
   let options = extend({
@@ -135,7 +152,22 @@ function! hita#autocmd#bufname(git, options) abort
     return printf('hita:%s:%s', domain, treeish)
   endif
 endfunction
-function! hita#autocmd#parse_filename(filename) abort
+
+" gita://<repository>/<treeish>
+" gita://<repository>:<content-type>/<treeish>
+" gita://<repository>:<content-type>:<extra-option>/<treeish>
+" gita://vim-gita/:                             git show
+" gita://vim-gita/HEAD~:                        git show HEAD~
+" gita://vim-gita/:README.md                    git show :README.md
+" gita://vim-gita/develop:README.md             git show develop:README.md
+" gita://vim-gita:diff/                         git diff
+" gita://vim-gita:diff/:README.md               git diff -- README.md
+" gita://vim-gita:diff/HEAD:README.md           git diff HEAD -- README.md
+" gita://vim-gita:diff:cached/                  git diff --cached
+" gita://vim-gita:diff:cached/:README.md        git diff --cached -- README.md
+" gita://vim-gita:diff:cached/HEAD:README.md    git diff --cached HEAD -- README.md
+" gita://vim-gita:diff:cached:reverse/HEAD:README.md    git diff --cached --reverse HEAD -- README.md
+function! s:parse_filename(filename) abort
   for scheme in s:schemes
     if a:filename !~# scheme[0]
       continue
@@ -157,21 +189,6 @@ function! hita#autocmd#parse_filename(filename) abort
         \ a:filename
         \))
 endfunction
-
-" gita://<repository>/<treeish>
-" gita://<repository>:<content-type>/<treeish>
-" gita://<repository>:<content-type>:<extra-option>/<treeish>
-" gita://vim-gita/:                             git show
-" gita://vim-gita/HEAD~:                        git show HEAD~
-" gita://vim-gita/:README.md                    git show :README.md
-" gita://vim-gita/develop:README.md             git show develop:README.md
-" gita://vim-gita:diff/                         git diff
-" gita://vim-gita:diff/:README.md               git diff -- README.md
-" gita://vim-gita:diff/HEAD:README.md           git diff HEAD -- README.md
-" gita://vim-gita:diff:cached/                  git diff --cached
-" gita://vim-gita:diff:cached/:README.md        git diff --cached -- README.md
-" gita://vim-gita:diff:cached/HEAD:README.md    git diff --cached HEAD -- README.md
-" gita://vim-gita:diff:cached:reverse/HEAD:README.md    git diff --cached --reverse HEAD -- README.md
 let s:schemes = [
       \ ['^hita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\)/\(.\+\)$', {
       \   'repository': 1,
