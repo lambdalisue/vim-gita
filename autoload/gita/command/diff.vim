@@ -67,7 +67,6 @@ function! s:on_BufWriteCmd() abort
     finally
       call delete(tempfile)
     endtry
-    call gita#command#diff#edit({'force': 1})
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif
@@ -282,12 +281,12 @@ function! gita#command#diff#open2(...) abort
     let rhs = options.cached ? '' : WORKTREE
   endif
   let lbufname = gita#command#show#bufname({
-        \ 'patch': options.reverse && options.patch,
+        \ 'patch': !options.reverse && options.patch,
         \ 'commit': lhs,
         \ 'filename': filename,
         \})
   let rbufname = rhs ==# WORKTREE ? filename : gita#command#show#bufname({
-        \ 'patch': !options.reverse && options.patch,
+        \ 'patch': options.reverse && options.patch,
         \ 'commit': rhs,
         \ 'filename': filename,
         \})
@@ -306,29 +305,32 @@ function! gita#command#diff#open2(...) abort
           \})
     call gita#util#diffthis()
     let lresult = gita#util#buffer#open(lbufname, {
-          \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'leftabove vertical split'
           \   : 'leftabove split',
           \})
     call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
+    execute printf('keepjump %dwincmd w', bufwinnr(
+          \ options.patch ? lresult.bufnum : rresult.bufnum
+          \))
     call gita#util#select(options.selection)
   else
     let rresult = gita#util#buffer#open(rbufname, {
-          \ 'group': 'diff_rhs',
+          \ 'group': 'diff_lhs',
           \ 'opener': opener,
           \})
     call gita#util#diffthis()
     let lresult = gita#util#buffer#open(lbufname, {
-          \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'rightbelow vertical split'
           \   : 'rightbelow split',
           \})
     call gita#util#diffthis()
     diffupdate
+    execute printf('keepjump %dwincmd w', bufwinnr(
+          \ options.patch ? rresult.bufnum : lresult.bufnum
+          \))
     call gita#util#select(options.selection)
   endif
 endfunction

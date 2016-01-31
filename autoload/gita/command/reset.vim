@@ -66,6 +66,10 @@ function! s:get_parser() abort
           \ 'unknown_description': 'filenames',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ '--patch', '-p', [
+          \ 'An alias option for ":Gita diff --patch HEAD -- %" to perform HEAD -> index patch',
+          \])
     " TODO: Add more arguments
   endif
   return s:parser
@@ -84,7 +88,19 @@ function! gita#command#reset#command(...) abort
         \ deepcopy(g:gita#command#reset#default_options),
         \ options,
         \)
-  call gita#command#reset#call(options)
+  if get(options, 'patch')
+    let options.filenames = get(options, 'filenames', [])
+    let filename = len(options.filenames) == 1
+          \ ? options.filenames[0]
+          \ : '%'
+    call gita#command#diff#open2({
+          \ 'patch': 1,
+          \ 'commit': 'HEAD',
+          \ 'filenames': [filename],
+          \})
+  else
+    call gita#command#reset#call(options)
+  endif
 endfunction
 function! gita#command#reset#complete(...) abort
   let parser = s:get_parser()
@@ -94,4 +110,3 @@ endfunction
 call gita#util#define_variables('command#reset', {
       \ 'default_options': {},
       \})
-

@@ -103,7 +103,6 @@ function! s:on_BufWriteCmd() abort
           \ 'cached': 1,
           \ 'verbose': 1,
           \})
-    call gita#command#show#edit({'force': 1})
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif

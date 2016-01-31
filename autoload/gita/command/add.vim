@@ -97,6 +97,10 @@ function! s:get_parser() abort
           \ 'If some files could not be added because of errors indexing them, do not abort the operation,',
           \ 'but continue adding the others. The command shall still exit with non-zero status.',
           \])
+    call s:parser.add_argument(
+          \ '--patch', '-p', [
+          \ 'An alias option for ":Gita diff --patch -- %" to perform working tree -> index patch',
+          \])
   endif
   return s:parser
 endfunction
@@ -114,7 +118,19 @@ function! gita#command#add#command(...) abort
         \ deepcopy(g:gita#command#add#default_options),
         \ options,
         \)
-  call gita#command#add#call(options)
+  if get(options, 'patch')
+    let options.filenames = get(options, 'filenames', [])
+    let filename = len(options.filenames) == 1
+          \ ? options.filenames[0]
+          \ : '%'
+    call gita#command#diff#open2({
+          \ 'patch': 1,
+          \ 'commit': '',
+          \ 'filenames': [filename],
+          \})
+  else
+    call gita#command#add#call(options)
+  endif
 endfunction
 function! gita#command#add#complete(...) abort
   let parser = s:get_parser()
