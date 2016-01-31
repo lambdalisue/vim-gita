@@ -33,6 +33,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#diff#edit({
           \ 'commit': info.commit,
           \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'cached': index(info.extra_options, 'cached') >= 0,
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
           \ 'force': v:cmdbang && !&modified,
@@ -69,6 +70,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#diff#read({
           \ 'commit': info.commit,
           \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'cached': index(info.extra_options, 'cached') >= 0,
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
           \ 'force': v:cmdbang && !&modified,

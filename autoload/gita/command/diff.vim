@@ -17,16 +17,17 @@ function! s:pick_available_options(options) abort
         \ 'patience',
         \ 'histogram',
         \ 'cached',
-        \ 'R',
+        \ 'R', 'reverse',
         \])
   return options
 endfunction
 function! s:get_diff_content(git, commit, filenames, options) abort
-  if !has_key(options, 'R') && get(a:options, 'reverse', 0)
-    " Diff use 'R' instead of 'reverse' so translate
+  let options = s:pick_available_options(a:options)
+  " Diff use 'R' instead of 'reverse' so translate
+  if !has_key(a:options, 'R') && get(a:options, 'reverse', 0)
     let options['R'] = 1
   endif
-  let options = s:pick_available_options(a:options)
+  let options = s:Dict.omit(options, ['reverse'])
   let options['no-color'] = 1
   let options['commit'] = a:commit
   if !empty(a:filenames)
@@ -44,34 +45,11 @@ function! s:get_diff_content(git, commit, filenames, options) abort
   endif
   return result.content
 endfunction
-function! s:is_patchable(commit, options) abort
-  let options = extend({
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \}, a:options)
-  if empty(a:commit) && !options.cached && !options.reverse
-    " Diff between TREE <> INDEX
-    return 1
-  elseif options.cached && options.reverse
-    " Diff between {ANY} <> INDEX
-    return 1
-  endif
-  return 0
-endfunction
 
 function! s:on_BufWriteCmd() abort
+  " It is only called when PATCH mode is enabled
   try
-    let commit = gita#get_meta('commit', '')
     let options = gita#get_meta('options', {})
-    if !s:is_patchable(commit, options)
-      call gita#throw(
-            \ 'Attention:',
-            \ 'Patching diff is only available when diff was produced',
-            \ 'by ":Gita diff [-- {filename}...]" or',
-            \ '":Gita diff --cached --reverse [{commit}] [-- {filename}...]"',
-            \)
-      return
-    endif
     if exists('#BufWritePre')
       doautocmd BufWritePre
     endif
@@ -100,6 +78,7 @@ endfunction
 
 function! gita#command#diff#bufname(...) abort
   let options = gita#option#init('^diff$', get(a:000, 0, {}), {
+        \ 'patch': 0,
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
@@ -121,8 +100,9 @@ function! gita#command#diff#bufname(...) abort
     return gita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
-          \   options.cached ? 'cached' : '',
-          \   options.reverse ? 'reverse' : '',
+          \   options.patch ? 'patch' : '',
+          \   !options.patch && options.cached ? 'cached' : '',
+          \   !options.patch && options.reverse ? 'reverse' : '',
           \ ],
           \ 'commitish': commit,
           \ 'path': filenames[0],
@@ -131,8 +111,9 @@ function! gita#command#diff#bufname(...) abort
     return gita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
-          \   options.cached ? 'cached' : '',
-          \   options.reverse ? 'reverse' : '',
+          \   options.patch ? 'patch' : '',
+          \   !options.patch && options.cached ? 'cached' : '',
+          \   !options.patch && options.reverse ? 'reverse' : '',
           \ ],
           \ 'commitish': commit,
           \ 'path': '',
@@ -191,8 +172,29 @@ function! gita#command#diff#read(...) abort
 endfunction
 function! gita#command#diff#edit(...) abort
   let options = extend({
+        \ 'patch': 0,
         \ 'force': 0,
         \}, get(a:000, 0, {}))
+  if options.patch
+    " 'patch' mode requires:
+    " - Existence of INDEX, namely no commit or --cached
+    let commit = get(options, 'commit', '')
+    if empty(commit)
+      " INDEX vs HEAD
+      let options.cached = 0
+      let options.reverse = 0
+    elseif commit =~# '^.\{-}\.\.\.?.*$'
+      " RANGE is not allowed
+      call gita#throw(printf(
+            \ 'A commit range "%s" is not allowed for PATCH mode.',
+            \ commit,
+            \))
+    else
+      " COMMIT vs INDEX
+      let options.cached = 1
+      let options.reverse = 1
+    endif
+  endif
   let result = gita#command#diff#call(options)
   call gita#set_meta('content_type', 'diff')
   call gita#set_meta('options', s:Dict.omit(result.options, [
@@ -202,20 +204,22 @@ function! gita#command#diff#edit(...) abort
   call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call gita#set_meta('filenames', result.filenames)
   call gita#util#buffer#edit_content(result.content)
-  augroup vim_gita_internal_diff_apply_diff
-    autocmd! * <buffer>
-    autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
-  augroup END
-  setfiletype diff
-  if s:is_patchable(result.commit, options)
+  if options.patch
+    augroup vim_gita_internal_diff_apply_diff
+      autocmd! * <buffer>
+      autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
+    augroup END
+    setlocal buftype=acwrite
     setlocal noreadonly
   else
+    setlocal buftype=nowrite
     setlocal readonly
   endif
-  setlocal buftype=acwrite
+  setfiletype diff
 endfunction
 function! gita#command#diff#open2(...) abort
   let options = extend({
+        \ 'patch': 0,
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
@@ -228,6 +232,26 @@ function! gita#command#diff#open2(...) abort
     call gita#throw(
           \ 'Warning: "Gita diff --split" cannot handle multiple filenames',
           \)
+  endif
+  if options.patch
+    " 'patch' mode requires:
+    " - Existence of INDEX, namely no commit or --cached
+    let commit = get(options, 'commit', '')
+    if empty(commit)
+      " INDEX vs HEAD
+      let options.cached = 0
+      let options.reverse = 0
+    elseif commit =~# '^.\{-}\.\.\.?.*$'
+      " RANGE is not allowed
+      call gita#throw(printf(
+            \ 'A commit range "%s" is not allowed for PATCH mode.',
+            \ commit,
+            \))
+    else
+      " COMMIT vs INDEX
+      let options.cached = 1
+      let options.reverse = 1
+    endif
   endif
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
@@ -257,12 +281,16 @@ function! gita#command#diff#open2(...) abort
     let lhs = commit
     let rhs = options.cached ? '' : WORKTREE
   endif
-  let lbufname = lhs ==# WORKTREE
-        \ ? filename
-        \ : gita#command#show#bufname({'commit': lhs, 'filename': filename})
-  let rbufname = rhs ==# WORKTREE
-        \ ? filename
-        \ : gita#command#show#bufname({'commit': rhs, 'filename': filename})
+  let lbufname = lhs ==# gita#command#show#bufname({
+        \ 'patch': options.reverse && options.patch,
+        \ 'commit': lhs,
+        \ 'filename': filename,
+        \})
+  let rbufname = rhs ==# WORKTREE ? filename : gita#command#show#bufname({
+        \ 'patch': !options.reverse && options.patch,
+        \ 'commit': rhs,
+        \ 'filename': filename,
+        \})
   let opener = empty(options.opener)
         \ ? g:gita#command#diff#default_opener
         \ : options.opener
@@ -327,15 +355,17 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--cached',
+          \ '--cached', '-c',
           \ 'Compare the changes you staged for the next commit rather than working tree', {
+          \   'conflicts': ['--patch'],
           \})
     call s:parser.add_argument(
-          \ '--reverse',
+          \ '--reverse', '-R',
           \ 'Show a diff content reversely', {
+          \   'conflicts': ['--patch'],
           \})
     call s:parser.add_argument(
-          \ '--split',
+          \ '--split', '-s',
           \ 'Open two buffer to compare by vimdiff rather than to open a single diff file', {
           \   'on_default': g:gita#command#diff#default_split,
           \   'choices': ['vertical', 'horizontal'],
@@ -344,6 +374,11 @@ function! s:get_parser() abort
           \ '--selection',
           \ 'A line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \})
+    call s:parser.add_argument(
+          \ '--patch',
+          \ 'Diff a content in PATCH mode. It automatically assign --cached/--reverse correctly', {
+          \   'conflicts': ['--cached', '--reverse'],
           \})
     call s:parser.add_argument(
           \ 'commit', [
