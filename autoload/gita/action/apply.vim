@@ -26,7 +26,7 @@ function! gita#action#apply#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#apply#define_default_mappings() abort
-  map <buffer><expr> AA gita#action#smart_map('AA', '<Plug>(gita-apply)')
+  map <buffer><nowait><expr> AA gita#action#smart_map('AA', '<Plug>(gita-apply)')
 endfunction
 
 function! gita#action#apply#get_mapping_table() abort

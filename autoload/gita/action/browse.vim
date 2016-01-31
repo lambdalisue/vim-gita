@@ -52,11 +52,11 @@ function! gita#action#browse#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#browse#define_default_mappings() abort
-  map <buffer><expr> bb gita#action#smart_map('bb', '<Plug>(gita-browse)')
-  map <buffer><expr> bd gita#action#smart_map('bd', '<Plug>(gita-browse-diff)')
-  map <buffer><expr> bB gita#action#smart_map('bB', '<Plug>(gita-browse-blame)')
-  map <buffer><expr> be gita#action#smart_map('be', '<Plug>(gita-browse-exact)')
-  map <buffer><expr> yy gita#action#smart_map('yy', '<Plug>(gita-browse-yank)')
+  map <buffer><nowait><expr> bb gita#action#smart_map('bb', '<Plug>(gita-browse)')
+  map <buffer><nowait><expr> bd gita#action#smart_map('bd', '<Plug>(gita-browse-diff)')
+  map <buffer><nowait><expr> bB gita#action#smart_map('bB', '<Plug>(gita-browse-blame)')
+  map <buffer><nowait><expr> be gita#action#smart_map('be', '<Plug>(gita-browse-exact)')
+  map <buffer><nowait><expr> yy gita#action#smart_map('yy', '<Plug>(gita-browse-yank)')
 endfunction
 
 function! gita#action#browse#get_mapping_table() abort
