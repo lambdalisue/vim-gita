@@ -6,22 +6,29 @@ let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Personally only the following options are available.
+  " Let me know or send me a PR if you need options which is not listed in
+  " below.
   let options = s:Dict.pick(a:options, [
         \ 'ignore-submodules',
-        \ 'no-prefix', 'no-index', 'exit-code',
-        \ 'U', 'unified', 'minimal',
-        \ 'patience', 'histogram', 'diff-algorithm',
+        \ 'no-index', 'exit-code',
+        \ 'U', 'unified',
+        \ 'patience',
+        \ 'histogram',
         \ 'cached',
+        \ 'R',
         \])
   return options
 endfunction
 function! s:get_diff_content(git, commit, filenames, options) abort
+  if !has_key(options, 'R') && get(a:options, 'reverse', 0)
+    " Diff use 'R' instead of 'reverse' so translate
+    let options['R'] = 1
+  endif
   let options = s:pick_available_options(a:options)
   let options['no-color'] = 1
   let options['commit'] = a:commit
-  if !has_key(options, 'R')
-    let options['R'] = get(a:options, 'reverse', 0)
-  endif
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
@@ -156,6 +163,7 @@ function! gita#command#diff#call(...) abort
         \ 'commit': commit,
         \ 'filenames': filenames,
         \ 'content': content,
+        \ 'options': options,
         \}
   return result
 endfunction
@@ -187,7 +195,9 @@ function! gita#command#diff#edit(...) abort
         \}, get(a:000, 0, {}))
   let result = gita#command#diff#call(options)
   call gita#set_meta('content_type', 'diff')
-  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('options', s:Dict.omit(result.options, [
+        \ 'force', 'opener', 'selection',
+        \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
   call gita#set_meta('filenames', result.filenames)
@@ -216,7 +226,7 @@ function! gita#command#diff#open2(...) abort
         \}, get(a:000, 0, {}))
   if len(options.filenames) > 1
     call gita#throw(
-          \ 'Warning: Gita diff --split cannot handle multiple filenames',
+          \ 'Warning: "Gita diff --split" cannot handle multiple filenames',
           \)
   endif
   let git = gita#get_or_fail()
@@ -318,15 +328,15 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--cached',
-          \ 'Compare the changes you staged for the next commit', {
+          \ 'Compare the changes you staged for the next commit rather than working tree', {
           \})
     call s:parser.add_argument(
           \ '--reverse',
-          \ 'reverse', {
+          \ 'Show a diff content reversely', {
           \})
     call s:parser.add_argument(
           \ '--split',
-          \ 'Open two buffer to compare rather than to open a diff file', {
+          \ 'Open two buffer to compare by vimdiff rather than to open a single diff file', {
           \   'on_default': g:gita#command#diff#default_split,
           \   'choices': ['vertical', 'horizontal'],
           \})
@@ -336,8 +346,13 @@ function! s:get_parser() abort
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
-          \ 'commit',
-          \ 'A commit', {
+          \ 'commit', [
+          \   'A commit which you want to diff.',
+          \   'If nothing is specified, it diff a content between an index and working tree or HEAD when --cached is specified.',
+          \   'If <commit> is specified, it diff a content between the named <commit> and working tree or an index.',
+          \   'If <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
+          \   'If <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
+          \ ], {
           \   'complete': function('gita#variable#complete_commit'),
           \})
     " TODO: Add more arguments
