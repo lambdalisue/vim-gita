@@ -67,6 +67,7 @@ function! s:on_BufWriteCmd() abort
     finally
       call delete(tempfile)
     endtry
+    setlocal nomodified
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif

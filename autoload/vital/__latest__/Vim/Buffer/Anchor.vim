@@ -84,7 +84,7 @@ endfunction
 function! s:register() abort
   augroup vital_Vim_Buffer_Anchor
     autocmd! * <buffer>
-    if exists('#QuitPre')
+    if exists('##QuitPre')
       autocmd QuitPre  <buffer> call s:_ac_QuitPre()
       autocmd WinLeave <buffer> call s:_ac_WinLeave()
     else

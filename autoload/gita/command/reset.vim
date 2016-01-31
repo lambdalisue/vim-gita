@@ -56,6 +56,19 @@ function! gita#command#reset#call(...) abort
         \ 'options': options,
         \}
 endfunction
+function! gita#command#reset#patch(...) abort
+  let options = gita#option#init('', get(a:000, 0, {}), {
+        \ 'filenames': [],
+        \})
+  let filename = len(options.filenames) > 0
+        \ ? options.filenames[0]
+        \ : '%'
+  call gita#command#diff#open2({
+        \ 'patch': 1,
+        \ 'commit': 'HEAD',
+        \ 'filenames': [filename],
+        \})
+endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -89,15 +102,7 @@ function! gita#command#reset#command(...) abort
         \ options,
         \)
   if get(options, 'patch')
-    let options.filenames = get(options, 'filenames', [])
-    let filename = len(options.filenames) == 1
-          \ ? options.filenames[0]
-          \ : '%'
-    call gita#command#diff#open2({
-          \ 'patch': 1,
-          \ 'commit': 'HEAD',
-          \ 'filenames': [filename],
-          \})
+    call gita#command#reset#patch(options)
   else
     call gita#command#reset#call(options)
   endif

@@ -103,6 +103,7 @@ function! s:on_BufWriteCmd() abort
           \ 'cached': 1,
           \ 'verbose': 1,
           \})
+    setlocal nomodified
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif
