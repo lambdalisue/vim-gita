@@ -1,9 +1,13 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Path = s:V.import('System.Filepath')
+let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
         \ 'q', 'quiet',
         \ 'soft',
@@ -19,8 +23,10 @@ endfunction
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
-    " Convert a real absolute path into unix relative path
-    let options['--'] = a:filenames
+    let options['--'] = map(
+          \ copy(a:filenames),
+          \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
+          \)
   endif
   let result = gita#execute(a:git, 'reset', options)
   if result.status
@@ -47,6 +53,7 @@ function! gita#command#reset#call(...) abort
   return {
         \ 'filenames': filenames,
         \ 'content': content,
+        \ 'options': options,
         \}
 endfunction
 

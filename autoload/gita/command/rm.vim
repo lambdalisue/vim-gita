@@ -4,6 +4,8 @@ let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
         \ 'q', 'quiet',
         \ 'f', 'force',
@@ -42,6 +44,7 @@ function! gita#command#rm#call(...) abort
   return {
         \ 'filenames': filenames,
         \ 'content': content,
+        \ 'options': options,
         \}
 endfunction
 

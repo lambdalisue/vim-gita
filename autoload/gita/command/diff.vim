@@ -7,9 +7,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
   " Note:
-  " Personally only the following options are available.
-  " Let me know or send me a PR if you need options which is not listed in
-  " below.
+  " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
         \ 'ignore-submodules',
         \ 'no-index', 'exit-code',
@@ -61,8 +59,10 @@ function! s:on_BufWriteCmd() abort
             \ 'cached': 1,
             \ 'verbose': 1,
             \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
-            \ 'recount': 1,
             \ 'whitespace': 'fix',
+            \ 'allow-overlap': 1,
+            \ 'inaccurate-eof': 1,
+            \ 'recount': 1,
             \})
     finally
       call delete(tempfile)

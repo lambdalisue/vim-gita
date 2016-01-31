@@ -12,6 +12,8 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:entry_offset = 0
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
         \ 'file',
         \ 'porcelain',
@@ -19,6 +21,7 @@ function! s:pick_available_options(options) abort
         \ 'u', 'untracked-files',
         \ 'a', 'all',
         \ 'reset-author',
+        \ 'allow-empty',
         \ 'amend',
         \])
   if s:GitInfo.get_git_version() =~# '^-\|^1\.[1-3]\.'
@@ -346,6 +349,26 @@ function! s:get_parser() abort
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
+    call s:parser.add_argument(
+          \ '--ammend',
+          \ 'Ammend',
+          \)
+    call s:parser.add_argument(
+          \ '--allow-empty',
+          \ 'Allow an empty commit',
+          \)
+    call s:parser.add_argument(
+          \ '--reset-author',
+          \ 'Allow an empty commit',
+          \)
+    call s:parser.add_argument(
+          \ '--all', '-a',
+          \ 'Allow an empty commit',
+          \)
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'Allow an empty commit',
+          \)
     " TODO: Add more arguments
   endif
   return s:parser

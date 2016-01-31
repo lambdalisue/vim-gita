@@ -4,26 +4,18 @@ let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'include', 'exclude',
-        \ 'p',
-        \ 'no-add',
-        \ 'stat', 'numstat',
-        \ 'summary', 'check',
-        \ 'index', 'cached',
-        \ 'unsafe-paths',
-        \ 'build-fake-ancestor',
-        \ 'C',
+        \ 'cached',
         \ 'whitespace',
         \ 'ignore-space-change', 'ignore-whitespace',
         \ 'R', 'reverse',
         \ 'unidiff-zero',
-        \ 'reject',
         \ 'allow-overlap',
         \ 'v', 'verbose',
         \ 'inaccurate-eof',
         \ 'recount',
-        \ 'directory',
         \])
   return options
 endfunction
@@ -54,6 +46,7 @@ function! gita#command#apply#call(...) abort
   return {
         \ 'filenames': filenames,
         \ 'content': content,
+        \ 'options': options,
         \}
 endfunction
 

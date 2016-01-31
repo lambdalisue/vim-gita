@@ -123,14 +123,12 @@ function! gita#command#browse#call(...) abort
         \ 'commit': commit,
         \ 'filenames': filenames,
         \ 'urls': urls,
+        \ 'options': options,
         \}
 endfunction
 function! gita#command#browse#open(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  if empty(result)
-    return
-  endif
   for url in result.urls
     call s:File.open(url)
   endfor
@@ -138,9 +136,6 @@ endfunction
 function! gita#command#browse#echo(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  if empty(result)
-    return
-  endif
   for url in result.urls
     echo url
   endfor
@@ -148,9 +143,6 @@ endfunction
 function! gita#command#browse#yank(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  if empty(result)
-    return
-  endif
   call gita#util#clip(join(result.urls, "\n"))
 endfunction
 
@@ -185,14 +177,9 @@ function! s:get_parser() abort
           \   'default': '_',
           \})
     call s:parser.add_argument(
-          \ '--line-start',
-          \ 'Start line for the selection', {
-          \   'pattern': '^\d\+$',
-          \})
-    call s:parser.add_argument(
-          \ '--line-end',
-          \ 'End line for the selection', {
-          \   'pattern': '^\d\+$',
+          \ '--selection',
+          \ 'A line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
           \ 'commit', [
@@ -207,16 +194,6 @@ function! s:get_parser() abort
     function! s:parser.hooks.pre_validate(options) abort
       if empty(s:parser.get_conflicted_arguments('open', a:options))
         let a:options.open = 1
-      endif
-    endfunction
-    function! s:parser.hooks.post_validate(options) abort
-      if has_key(a:options, 'line-start')
-        let a:options.line_start = a:options['line-start']
-        unlet a:options['line-start']
-      endif
-      if has_key(a:options, 'line-end')
-        let a:options.line_end = a:options['line-end']
-        unlet a:options['line-end']
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -235,7 +212,13 @@ function! gita#command#browse#command(...) abort
   else
     let options.filenames = options.__unknown__
   endif
-  if len(options.filenames) == 1 && expand(options.filenames[0]) ==# expand('%')
+  if has_key(options, 'selection')
+    let options.selection = map(
+          \ split(options.selection, '-'),
+          \ 'str2nr(v:val)',
+          \)
+  elseif len(options.filenames) == 1
+        \ && expand(options.filenames[0]) ==# expand('%')
     let options.selection = options.__range__
   endif
   " extend default options
