@@ -1,5 +1,4 @@
 let s:V = hita#vital()
-let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-show)': 'Show an INDEX content',

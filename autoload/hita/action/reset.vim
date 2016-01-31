@@ -1,6 +1,4 @@
 let s:V = hita#vital()
-let s:Path = s:V.import('System.Filepath')
-let s:Git = s:V.import('Git')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-reset)': 'Reset changes on an index',
       \}
@@ -8,13 +6,10 @@ let s:MAPPING_TABLE = {
 function! hita#action#reset#action(candidates, ...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
-  let git = hita#get_or_fail()
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
-      call add(filenames, s:Path.unixpath(
-            \ s:Git.get_relative_path(git, candidate.path)
-            \))
+      call add(filenames, candidate.path)
     endif
   endfor
   if !empty(filenames)

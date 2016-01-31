@@ -1,6 +1,4 @@
 let s:V = hita#vital()
-let s:Path = s:V.import('System.Filepath')
-let s:Git = s:V.import('Git')
 let s:MAPPING_TABLE = {
       \ '<Plug>(hita-checkout)': 'Checkout contents to the working tree',
       \ '<Plug>(hita-CHECKOUT)': 'Checkout contents to the working tree (force)',
@@ -20,9 +18,7 @@ function! hita#action#checkout#action(candidates, ...) abort
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
-      call add(filenames, s:Path.unixpath(
-            \ s:Git.get_relative_path(git, candidate.path)
-            \))
+      call add(filenames, candidate.path)
     endif
   endfor
   if !empty(filenames)

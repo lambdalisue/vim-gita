@@ -19,6 +19,7 @@ endfunction
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
+    " Convert a real absolute path into unix relative path
     let options['--'] = a:filenames
   endif
   let result = hita#execute(a:git, 'reset', options)
