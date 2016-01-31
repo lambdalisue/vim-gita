@@ -86,18 +86,12 @@ function! s:get_diff_content(git, content, filename, options) abort
 endfunction
 
 function! s:on_BufWriteCmd() abort
+  " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try
     let commit = gita#get_meta('commit', '')
     let options = gita#get_meta('options', {})
     let filename = gita#get_meta('filename', '')
-    if !empty(commit) || empty(filename)
-      call gita#throw(
-            \ 'Attention:',
-            \ 'Partial patching is only available in a INDEX file, namely',
-            \ 'a file opened by ":Gita show [--filename={filename}]"',
-            \)
-    endif
     if exists('#BufWritePre')
       doautocmd BufWritePre
     endif
@@ -125,6 +119,7 @@ function! gita#command#show#bufname(...) abort
   let options = gita#option#init('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
+        \ 'patch': 0,
         \})
   if options.commit ==# s:WORKTREE
     return gita#variable#get_valid_filename(options.filename)
@@ -138,7 +133,9 @@ function! gita#command#show#bufname(...) abort
         \ : gita#variable#get_valid_filename(options.filename)
   return gita#autocmd#bufname(git, {
         \ 'content_type': 'show',
-        \ 'extra_options': [],
+        \ 'extra_options': [
+        \   options.patch ? 'patch' : '',
+        \ ],
         \ 'commitish': commit,
         \ 'path': filename,
         \})
@@ -198,8 +195,17 @@ function! gita#command#show#read(...) abort
 endfunction
 function! gita#command#show#edit(...) abort
   let options = extend({
-        \ 'force': 0,
+        \ 'patch': 0,
         \}, get(a:000, 0, {}))
+  if options.patch
+    " 'patch' mode requires:
+    " - INDEX content, naemly 'commit' should be an empty value
+    " - file content, namely 'filename' is reqiured
+    let options.commit = ''
+    let options.filename = gita#variable#get_valid_filename(
+          \ get(options, 'filename', ''),
+          \)
+  endif
   let result = gita#command#show#call(options)
   call gita#set_meta('content_type', 'show')
   call gita#set_meta('options', s:Dict.omit(result.options, [
@@ -212,17 +218,16 @@ function! gita#command#show#edit(...) abort
     setfiletype git
     setlocal buftype=nowrite
     setlocal readonly
-  else
+  elseif options.patch
     setlocal buftype=acwrite
     augroup vim_gita_internal_show_apply_diff
       autocmd! * <buffer>
       autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
     augroup END
-    if empty(result.commit)
-      setlocal noreadonly
-    else
-      setlocal readonly
-    endif
+    setlocal noreadonly
+  else
+    setlocal buftype=nowrite
+    setlocal readonly
   endif
 endfunction
 
@@ -239,18 +244,18 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--summary',
+          \ '--summary', '-s',
           \ 'Show a summary of the repository instead of a file content', {
           \   'conflicts': ['filename'],
           \})
     call s:parser.add_argument(
-          \ '--filename',
+          \ '--filename', '-f',
           \ 'A filename', {
           \   'complete': function('gita#variable#complete_filename'),
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
-          \ '--worktree',
+          \ '--worktree', '-w',
           \ 'Open a content of a file in working tree', {
           \   'conflicts': ['summary'],
           \})
@@ -259,6 +264,10 @@ function! s:get_parser() abort
           \ 'A line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
+    call s:parser.add_argument(
+          \ '--patch',
+          \ 'Show a content of a file in PATCH mode. It force to open an INDEX file content',
+          \)
     call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to see.',

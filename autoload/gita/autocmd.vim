@@ -26,6 +26,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#show#edit({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
+          \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
@@ -61,6 +62,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#show#read({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
+          \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
@@ -142,7 +144,9 @@ function! gita#autocmd#bufname(git, options) abort
   let treeish = printf('%s:%s', options.commitish, unixpath)
   let bits = [
         \ a:git.repository_name,
-        \ options.content_type ==# 'show' ? '' : options.content_type,
+        \ options.content_type ==# 'show' && empty(options.extra_options)
+        \   ? ''
+        \   : options.content_type,
         \ join(filter(options.extra_options, '!empty(v:val)'), ':'),
         \]
   let domain = join(filter(bits, '!empty(v:val)'), ':')
