@@ -123,7 +123,7 @@ Describe Git.Process
         let ret = GitProcess.translate_option('key', 'value', '')
         Assert Equals(ret, '--key=value')
       End
-      if !g:is_windows || (exists('&shellslash') && &shellslash)
+      if !s:is_windows || (exists('&shellslash') && &shellslash)
         It returns "--key='v a l u e'" for ('key', 'v a l u e', '')
           let ret = GitProcess.translate_option('key', 'v a l u e', '')
           Assert Equals(ret, '--key=''v a l u e''')
@@ -179,7 +179,7 @@ Describe Git.Process
         let ret = GitProcess.translate_option('k', 'value', '-%k%V')
         Assert Equals(ret, '-kvalue')
       End
-      if !g:is_windows || (exists('&shellslash') && &shellslash)
+      if !s:is_windows || (exists('&shellslash') && &shellslash)
         It returns "-k'v a l u e'" for ('k', 'v a l u e', '-%k%V')
           let ret = GitProcess.translate_option('k', 'v a l u e', '-%k%V')
           Assert Equals(ret, '-k''v a l u e''')

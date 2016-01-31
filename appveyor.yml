@@ -1,52 +1,25 @@
-version: '{build}-{branch}'
-
-# branches to build
-branches:
-  except:
-    - gh-pages
-skip_tags: true
+# disable deployment
+deploy: off
+version: '{build}'
 clone_depth: 1
-
-# environment variables (%TEMP% cannot be used in this section)
 environment:
   matrix:
     - VIM_URL: http://files.kaoriya.net/vim/vim74-kaoriya-win64.zip
-# Vim 7.3 in Windows show somehow 'E65 Illegal back reference' so don't support for now
-# https://ci.appveyor.com/project/lambdalisue/vim-gita/build/job/uxym4f2ngao20s84
-#    - VIM_URL: http://files.kaoriya.net/vim/2011/vim73-kaoriya-win64-20110306.zip
-
-# scripts that run after cloning repository
+    #- VIM_URL: http://files.kaoriya.net/vim/2011/vim73-kaoriya-win64-20110306.zip
 install:
-  - cd %TEMP%
+  - 'cd %APPVEYOR_BUILD_FOLDER%'
+  - 'appveyor DownloadFile %VIM_URL% -FileName %TEMP%\vim.zip'
+  - '7z x -o%TEMP% %TEMP%\vim.zip > nul'
+  - ps: $Env:THEMIS_VIM = (Get-ChildItem $Env:TEMP | Select-Object -First 1).FullName + '\vim.exe'
 
-  # Install vim
-  - appveyor DownloadFile %VIM_URL% -FileName vim.zip
-  - 7z x vim.zip > nul
-  - ps: $env:THEMIS_VIM = (Get-ChildItem . | Select-Object -First 1).FullName + '\vim.exe'
+  - 'git -c advice.detachedHead=false clone https://github.com/Shougo/vimproc.vim --quiet --branch ver.9.2 --single-branch --depth 1 %TEMP%\vimproc'
+  - 'git -c advice.detachedHead=false clone https://github.com/vim-jp/vital.vim --quiet --single-branch --depth 1 %TEMP%\vital'
+  - 'appveyor DownloadFile https://github.com/Shougo/vimproc.vim/releases/download/ver.9.2/vimproc_win64.dll -FileName %TEMP%\vimproc\lib\vimproc_win64.dll'
 
-  # Install vim-themis
-  - git -c advice.detachedHead=false clone --single-branch --depth 1 --branch v1.5 ^
-    https://github.com/thinca/vim-themis
-  # Install vital.vim
-  - git -c advice.detachedHead=false clone --single-branch --depth 1 ^
-    https://github.com/vim-jp/vital.vim
-  # Install vimproc.vim
-  - git -c advice.detachedHead=false clone --single-branch --depth 1 --branch ver.9.2 ^
-    https://github.com/Shougo/vimproc.vim
-  - appveyor DownloadFile https://github.com/Shougo/vimproc.vim/releases/download/ver.9.2/vimproc_win64.dll ^
-    -FileName vimproc.vim\lib\vimproc_win64.dll
-
-  - cd %APPVEYOR_BUILD_FOLDER%
-
-# disable building
+  - 'git -c advice.detachedHead=false clone https://github.com/thinca/vim-themis --quiet --branch v1.5 --single-branch --depth 1 %TEMP%\vim-themis'
+  - 'reg copy HKLM\SOFTWARE\Python\PythonCore\2.7 HKLM\SOFTWARE\Python\PythonCore\2.7-32 /s /reg:32'
+  - 'reg copy HKLM\SOFTWARE\Python\PythonCore\2.7 HKLM\SOFTWARE\Python\PythonCore\2.7-32 /s /reg:64'
 build: off
-
-# test
 test_script:
-  - call %THEMIS_VIM% --version
-  - call %TEMP%\vim-themis\bin\themis.bat --reporter dot ^
-    --runtimepath %TEMP%/vimproc.vim ^
-    --runtimepath %TEMP%/vital.vim
-
-# disable deployment
-deploy: off
+  - '%THEMIS_VIM% --version'
+  - '%TEMP%\vim-themis\bin\themis.bat --runtimepath %TEMP%\vimproc --runtimepath %TEMP%\vital --reporter dot'

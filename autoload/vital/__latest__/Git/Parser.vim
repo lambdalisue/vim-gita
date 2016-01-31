@@ -264,13 +264,17 @@ function! s:parse_status(content, ...) abort
     else
       if status.is_conflicted
         call add(result.conflicted, status)
-      elseif status.is_staged
+      endif
+      if status.is_staged
         call add(result.staged, status)
-      elseif status.is_unstaged
+      endif
+      if status.is_unstaged
         call add(result.unstaged, status)
-      elseif status.is_untracked
+      endif
+      if status.is_untracked
         call add(result.untracked, status)
-      else
+      endif
+      if status.is_ignored
         call add(result.is_ignored, status)
       endif
     endif

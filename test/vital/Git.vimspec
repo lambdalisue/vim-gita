@@ -47,7 +47,6 @@ Describe Git
     It should return an empty string for a non git working directory
       Assert Equals(sf._find_repository(outside), '')
     End
-
   End
 
 

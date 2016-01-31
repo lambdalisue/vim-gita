@@ -1,0 +1,35 @@
+language: generic
+env:
+  - HEAD=yes
+    # - HEAD=no
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - language-pack-ja
+      - vim
+      - libperl-dev
+      - python-dev
+      - python3-dev
+      - liblua5.1-0-dev
+      - lua5.1
+
+install:
+  - bash scripts/install-vim.sh
+  - if [ x"$HEAD" = "xyes" ]; then export PATH=$HOME/vim/bin:$PATH; fi
+
+before_script:
+  - git clone https://github.com/syngan/vim-vimlint /tmp/vim-vimlint
+  - git clone https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
+  - git clone https://github.com/thinca/vim-themis --branch v1.5 --single-branch --depth 1 /tmp/vim-themis
+  - git clone https://github.com/Shougo/vimproc.vim /tmp/vimproc
+  - git clone https://github.com/vim-jp/vital.vim /tmp/vital
+  - (cd /tmp/vimproc && make)
+
+script:
+  - which -a vim
+  - vim --cmd version --cmd quit
+  - vim --cmd "try | helptags doc/ | catch | cquit | endtry" --cmd quit
+  - sh /tmp/vim-vimlint/bin/vimlint.sh -l /tmp/vim-vimlint -p /tmp/vim-vimlparser -e EVL103=1 -e EVL102.l:_=1 -c func_abort=1 autoload
+  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vimproc --runtimepath /tmp/vital --reporter dot

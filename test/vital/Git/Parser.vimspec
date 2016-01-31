@@ -191,31 +191,7 @@ Describe Git.Parser
             \], "\n")
       let result = GitParser.parse_status(status, { 'flatten': 0 })
       let expected = {
-            \ 'statuses': [
-            \   {
-            \     'index': ' ',
-            \     'worktree': 'M',
-            \     'path': 'foo/bar/hoge1.vim',
-            \     'record': ' M foo/bar/hoge1.vim',
-            \     'sign': ' M',
-            \     'is_conflicted': 0,
-            \     'is_staged': 0,
-            \     'is_unstaged': 1,
-            \     'is_untracked': 0,
-            \     'is_ignored': 0,
-            \   },
-            \   {
-            \     'index': 'M',
-            \     'worktree': ' ',
-            \     'path': 'foo/bar/hoge2.vim',
-            \     'record': 'M  foo/bar/hoge2.vim',
-            \     'sign': 'M ',
-            \     'is_conflicted': 0,
-            \     'is_staged': 1,
-            \     'is_unstaged': 0,
-            \     'is_untracked': 0,
-            \     'is_ignored': 0,
-            \   },
+            \ 'conflicted': [
             \   {
             \     'index': 'U',
             \     'worktree': 'U',
@@ -224,6 +200,20 @@ Describe Git.Parser
             \     'sign': 'UU',
             \     'is_conflicted': 1,
             \     'is_staged': 0,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \ 'staged': [
+            \   {
+            \     'index': 'M',
+            \     'worktree': ' ',
+            \     'path': 'foo/bar/hoge2.vim',
+            \     'record': 'M  foo/bar/hoge2.vim',
+            \     'sign': 'M ',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
             \     'is_unstaged': 0,
             \     'is_untracked': 0,
             \     'is_ignored': 0,
@@ -241,6 +231,37 @@ Describe Git.Parser
             \     'is_untracked': 0,
             \     'is_ignored': 0,
             \   },
+            \ ],
+            \ 'unstaged': [
+            \   {
+            \     'index': ' ',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge1.vim',
+            \     'record': ' M foo/bar/hoge1.vim',
+            \     'sign': ' M',
+            \     'is_conflicted': 0,
+            \     'is_staged': 0,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'R',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge4.vim',
+            \     'path2': 'foo/bar/hoge5.vim',
+            \     'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \     'sign': 'RM',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \ 'untracked': [
+            \ ],
+            \ 'ignored': [
             \ ],
             \}
       Assert Equals(result, expected)

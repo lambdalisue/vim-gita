@@ -5,6 +5,5 @@ let s:file = s:Path.realpath('autoload/gita/variable.vim')
 
 Describe gita#variable
   Before
-    let sf = s:ScriptLocal.sfuncs(s:file)
   End
 End
