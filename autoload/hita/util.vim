@@ -29,8 +29,8 @@ endfunction
 
 function! hita#util#handle_exception() abort
   let known_attention_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-hita:\) Cancel:',
-        \ '^\%(vital: Git[:.]\|vim-hita:\) Attention:',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) Cancel: ',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) Attention: ',
         \]
   for pattern in known_attention_patterns
     if v:exception =~# pattern
@@ -39,8 +39,8 @@ function! hita#util#handle_exception() abort
     endif
   endfor
   let known_warning_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeWarning:',
-        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeValidationError:',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeWarning: ',
+        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeValidationError: ',
         \]
   for pattern in known_warning_patterns
     if v:exception =~# pattern

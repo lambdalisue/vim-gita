@@ -36,7 +36,7 @@ function! s:get_git_instance(bufnum) abort
           \ bufname, '^hita:\%(//\)\?\zs[^:/]\+\ze'
           \)
     let git = repository_cache.get(repository_name, {})
-    let git = git.is_enabled ? git : s:Git.get(getcwd())
+    let git = empty(git) ? s:Git.get(getcwd()) : git
   elseif buftype =~# '^\%(\|nowrite\|acwrite\)$'
     " file buffer
     let filename = hita#expand(a:bufnum)
@@ -81,9 +81,12 @@ endfunction
 
 function! hita#get(...) abort
   let expr = get(a:000, 0, '%')
+  let options = get(a:000, 1, {
+        \ 'force': 0,
+        \})
   let bufnum = bufnr(expr)
   let git = s:Compat.getbufvar(bufnum, '_git', {})
-  if !empty(git) && !s:is_expired(bufnum)
+  if !options.force && !empty(git) && !s:is_expired(bufnum)
     return git
   endif
   return s:get_git_instance(bufnum)
@@ -95,7 +98,7 @@ function! hita#get_or_fail(...) abort
     return git
   endif
   call hita#throw(printf(
-        \ 'Attention: vim-hita is not available on %s', bufname(expr)
+        \ 'Attention: vim-hita is not available on %s', expand(expr),
         \))
 endfunction
 function! hita#clear() abort
@@ -186,8 +189,9 @@ function! hita#expand(expr) abort
   " Always return a real absolute path
   return s:Path.abspath(s:Path.realpath(filename))
 endfunction
-function! hita#throw(msg) abort
-  throw printf('vim-hita: %s', a:msg)
+function! hita#throw(...) abort
+  let msg = s:Prelude.is_string(a:msg) ? a:msg : join(a:msg)
+  throw printf('vim-hita: %s', msg)
 endfunction
 
 call s:Prompt.set_config({

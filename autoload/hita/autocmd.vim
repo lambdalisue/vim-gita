@@ -17,7 +17,7 @@ function! s:on_SourceCmd() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
-  let info = hita#autocmd#parse('<afile>')
+  let info = hita#autocmd#parse(expand('<afile>'))
   if exists('#BufReadPre')
     doautocmd BufReadPre
   endif
@@ -52,7 +52,7 @@ function! s:on_BufReadCmd() abort
   endif
 endfunction
 function! s:on_FileReadCmd() abort
-  let info = hita#autocmd#parse('<afile>')
+  let info = hita#autocmd#parse(expand('<afile>'))
   if exists('#FileReadPre')
     doautocmd FileReadPre
   endif
