@@ -102,7 +102,7 @@ function! s:define_actions() abort
   let action = gita#action#define(function('s:get_entry'))
   " Override 'redraw' action
   function! action.actions.redraw(candidates, ...) abort
-    call gita#command#status#update()
+    call gita#command#status#edit()
   endfunction
 
   call gita#action#includes(
@@ -124,7 +124,7 @@ endfunction
 
 function! s:on_BufReadCmd() abort
   try
-    call gita#command#status#update()
+    call gita#command#status#edit()
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry
@@ -150,7 +150,7 @@ function! s:on_GitaStatusModified() abort
     let winnum = winnr()
     keepjump windo
           \ if &filetype ==# 'gita-status' |
-          \   call gita#command#status#update() |
+          \   call gita#command#status#edit() |
           \ endif
     execute printf('keepjump %dwincmd w', winnum)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -212,6 +212,10 @@ function! gita#command#status#open(...) abort
         \})
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git
+  call gita#command#status#edit(options)
+endfunction
+function! gita#command#status#edit(...) abort
+  let options = get(a:000, 0, {})
   let options['porcelain'] = 1
   let result = gita#command#status#call(options)
   call gita#set_meta('content_type', 'status')
@@ -234,23 +238,6 @@ function! gita#command#status#open(...) abort
   setlocal filetype=gita-status
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  call gita#command#status#redraw()
-endfunction
-function! gita#command#status#update(...) abort
-  if &filetype !=# 'gita-status'
-    call gita#throw('update() requires to be called in a gita-status buffer')
-  endif
-  let options = get(a:000, 0, {})
-  let options['porcelain'] = 1
-  let result = gita#command#status#call(options)
-  call gita#set_meta('content_type', 'status')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'porcelain',
-        \]))
-  call gita#set_meta('statuses', result.statuses)
-  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#set_meta('filenames', result.filenames)
-  call gita#set_meta('winwidth', winwidth(0))
   call gita#command#status#redraw()
 endfunction
 function! gita#command#status#redraw() abort

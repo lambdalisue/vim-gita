@@ -109,10 +109,10 @@ endfunction
 function! s:define_actions() abort
   let action = gita#action#define(function('s:get_entry'))
   function! action.actions.redraw(candidates, ...) abort
-    call gita#command#commit#update()
+    call gita#command#commit#edit()
   endfunction
   function! action.actions.redraw(candidates, ...) abort
-    call gita#command#commit#update()
+    call gita#command#commit#edit()
   endfunction
   function! action.actions.commit_do(candidates, ...) abort
     call s:commit_commitmsg()
@@ -140,7 +140,7 @@ endfunction
 
 function! s:on_BufReadCmd() abort
   try
-    call gita#command#commit#update()
+    call gita#command#commit#edit()
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry
@@ -189,7 +189,7 @@ function! s:on_GitaStatusModified() abort
     let winnum = winnr()
     keepjump windo
           \ if &filetype ==# 'gita-commit' |
-          \   call gita#command#commit#update() |
+          \   call gita#command#commit#edit() |
           \ endif
     execute printf('keepjump %dwincmd w', winnum)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -252,6 +252,10 @@ function! gita#command#commit#open(...) abort
         \})
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git
+  call gita#command#commit#edit(options)
+endfunction
+function! gita#command#commit#edit(...) abort
+  let options = get(a:000, 0, {})
   let options['porcelain'] = 1
   let options['dry-run'] = 1
   let result = gita#command#commit#call(options)
@@ -266,12 +270,12 @@ function! gita#command#commit#open(...) abort
   call s:define_actions()
   augroup vim_gita_internal_commit
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer> call s:on_BufReadCmd()
+    autocmd BufReadCmd  <buffer> call s:on_BufReadCmd()
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
-    autocmd VimResized <buffer> call s:on_VimResized()
-    autocmd WinEnter   <buffer> call s:on_WinEnter()
-    autocmd WinLeave   <buffer> call s:on_WinLeave()
-    autocmd QuitPre    <buffer> call s:on_QuitPre()
+    autocmd VimResized  <buffer> call s:on_VimResized()
+    autocmd WinEnter    <buffer> call s:on_WinEnter()
+    autocmd WinLeave    <buffer> call s:on_WinLeave()
+    autocmd QuitPre     <buffer> call s:on_QuitPre()
   augroup END
   " NOTE:
   " Vim.Buffer.Anchor.register use WinLeave thus it MUST called after autocmd
@@ -281,24 +285,6 @@ function! gita#command#commit#open(...) abort
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
-  call gita#command#commit#redraw()
-endfunction
-function! gita#command#commit#update(...) abort
-  if &filetype !=# 'gita-commit'
-    call gita#throw('update() requires to be called in a gita-commit buffer')
-  endif
-  let options = get(a:000, 0, {})
-  let options['porcelain'] = 1
-  let options['dry-run'] = 1
-  let result = gita#command#commit#call(options)
-  call gita#set_meta('content_type', 'commit')
-  call gita#set_meta('options', s:Dict.omit(options, [
-        \ 'force', 'opener', 'porcelain', 'dry-run',
-        \]))
-  call gita#set_meta('statuses', result.statuses)
-  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#set_meta('filenames', result.filenames)
-  call gita#set_meta('winwidth', winwidth(0))
   call gita#command#commit#redraw()
 endfunction
 function! gita#command#commit#redraw() abort
@@ -420,7 +406,7 @@ augroup END
 call gita#util#define_variables('command#commit', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-edit)',
+      \ 'default_action_mapping': '<Plug>(gita-diff)',
       \ 'enable_default_mappings': 1,
       \ 'show_status_string_in_prologue': 1,
       \})
