@@ -1,0 +1,16 @@
+vim_gita
+97df3f5389a21b11f8540c265d47dc9c62e634eb
+
+Prelude
+Vim.Compat
+Vim.Buffer
+Vim.BufferManager
+Vim.Guard
+System.File
+System.Filepath
+System.Cache
+Data.List
+Data.Dict
+Data.String
+DateTime
+ArgumentParser
