@@ -26,7 +26,8 @@ function! s:is_expired(expr) abort
   endif
   return 0
 endfunction
-function! s:get_git_instance(bufnum) abort
+function! s:get_git_instance(bufnum, force) abort
+  let options = { 'force': a:force }
   let bufname = bufname(a:bufnum)
   let buftype = s:Compat.getbufvar(a:bufnum, '&buftype')
   let repository_cache = s:get_repository_cache()
@@ -36,16 +37,26 @@ function! s:get_git_instance(bufnum) abort
           \ bufname, '^gita:\%(//\)\?\zs[^:/]\+\ze'
           \)
     let git = repository_cache.get(repository_name, {})
-    let git = empty(git) ? s:Git.get(getcwd()) : git
+    let git = empty(git) ? s:Git.get(getcwd(), options) : git
   elseif buftype =~# '^\%(\|nowrite\|acwrite\)$'
     " file buffer
     let filename = gita#expand(a:bufnum)
-    let git = s:Git.get(filename)
-    let git = git.is_enabled ? git : s:Git.get(resolve(filename))
-    let git = git.is_enabled ? git : s:Git.get(getcwd())
+    let git = s:Git.get(filename, options)
+    let git = !git.is_enabled && filename !=# resolve(filename)
+          \ ? s:Git.get(resolve(filename), options)
+          \ : git
+    let git = !git.is_enabled && filename !=# getcwd()
+          \ ? s:Git.get(getcwd(), options)
+          \ : git
+    let git = !git.is_enabled && getcwd() !=# resolve(getcwd())
+          \ ? s:Git.get(resolve(getcwd()), options)
+          \ : git
   else
     " non file buffer
-    let git = s:Git.get(getcwd())
+    let git = s:Git.get(getcwd(), options)
+    let git = !git.is_enabled && getcwd() !=# resolve(getcwd())
+          \ ? s:Git.get(resolve(getcwd()), options)
+          \ : git
   endif
   " register git instance
   if git.is_enabled
@@ -86,10 +97,21 @@ function! gita#get(...) abort
         \})
   let bufnum = bufnr(expr)
   let git = s:Compat.getbufvar(bufnum, '_git', {})
-  if !options.force && !empty(git) && !s:is_expired(bufnum)
+  if !options.force
+        \ && !empty(git)
+        \ && !get(git, 'is_expired')
+        \ && !s:is_expired(bufnum)
     return git
   endif
-  return s:get_git_instance(bufnum)
+  if get(git, 'is_enabled') && get(git, 'is_expired')
+    " force to find git instance again from the worktree
+    " this step is required while gita#get() might be called from
+    " a pseudo file like gita://XXXXX
+    let git = s:Git.get(git.worktree, { 'force': 1 })
+    " 'is_expired' attribute in newly retrieve git instance is missing
+    " so further step will use cached git instance
+  endif
+  return s:get_git_instance(bufnum, get(git, 'is_expired'))
 endfunction
 function! gita#get_or_fail(...) abort
   let expr = get(a:000, 0, '%')
@@ -97,15 +119,15 @@ function! gita#get_or_fail(...) abort
   if git.is_enabled
     return git
   endif
-  call gita#throw(printf(
-        \ 'Attention: vim-gita is not available on %s', expand(expr),
-        \))
+  call gita#throw(
+        \ 'Attention:',
+        \ printf('Git is not available on "%s" buffer.', expand(expr)),
+        \ 'Call ":GitaClear" if you would like to remove cache.',
+        \)
 endfunction
 function! gita#clear() abort
-  let repository_cache = s:get_repository_cache()
-  call repository_cache.clear()
-  call s:Git.clear()
-  bufdo silent unlet! b:_git
+  let git = gita#get()
+  let git.is_expired = 1
 endfunction
 
 function! gita#execute(git, name, ...) abort

@@ -44,6 +44,15 @@ function! s:apply_command(name, options) abort
   let config = s:GitProcess.get_config()
   let args = [config.executable] + config.arguments + args
   execute printf('!%s', join(args))
+  if !v:shell_error
+    if a:name ==# 'init'
+      " Likely need to clear the cache of the current buffer
+      call gita#clear()
+    else
+      " Maybe status is modified
+      call gita#util#doautocmd('StatusModified')
+    endif
+  endif
 endfunction
 
 function! s:get_parser() abort

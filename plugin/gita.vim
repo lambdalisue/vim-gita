@@ -1,6 +1,4 @@
-let s:save_cpo = &cpo
-set cpo&vim
-
+command! GitaClear :call gita#clear()
 command! -nargs=? -range -bang
       \ -complete=customlist,gita#command#complete
       \ Gita
@@ -24,8 +22,3 @@ augroup vim_gita_internal_status_modified
   autocmd BufWritePre * call gita#autocmd#call('BufWritePre')
   autocmd BufWritePost * call gita#autocmd#call('BufWritePost')
 augroup END
-
-
-let &cpo = s:save_cpo
-unlet! s:save_cpo
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
