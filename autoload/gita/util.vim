@@ -3,6 +3,20 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
 
+function! s:diffthis_on_BufWinLeave() abort
+  augroup vim_gita_internal_util_diffthis
+    autocmd! * <buffer>
+  augroup END
+  if !&diff
+    return
+  endif
+  if maparg('<C-l>', 'n') ==# '<Plug>(gita-C-l)'
+    unmap <buffer> <C-l>
+  endif
+  nunmap <buffer> <Plug>(gita-C-l)
+  diffoff
+endfunction
+
 function! gita#util#clip(content) abort
   let @" = a:content
   if has('clipboard')
@@ -25,6 +39,21 @@ function! gita#util#doautocmd(name, ...) abort
   finally
     call guard.restore()
   endtry
+endfunction
+
+function! gita#util#diffthis() abort
+  if maparg('<C-l>', 'n') ==# ''
+    nmap <buffer> <C-l> <Plug>(gita-C-l)
+  endif
+  nnoremap <buffer><silent> <Plug>(gita-C-l)
+        \ :<C-u>diffupdate<BAR>redraw<CR>
+
+  augroup vim_gita_internal_util_diffthis
+    autocmd! * <buffer>
+    autocmd BufWinLeave <buffer> noautocmd call s:diffthis_on_BufWinLeave()
+  augroup END
+  diffthis
+  keepjump normal! zM
 endfunction
 
 function! gita#util#handle_exception() abort

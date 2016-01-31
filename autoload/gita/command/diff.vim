@@ -281,7 +281,7 @@ function! gita#command#diff#open2(...) abort
     let lhs = commit
     let rhs = options.cached ? '' : WORKTREE
   endif
-  let lbufname = lhs ==# gita#command#show#bufname({
+  let lbufname = gita#command#show#bufname({
         \ 'patch': options.reverse && options.patch,
         \ 'commit': lhs,
         \ 'filename': filename,
@@ -304,38 +304,31 @@ function! gita#command#diff#open2(...) abort
           \ 'group': 'diff_rhs',
           \ 'opener': opener,
           \})
-    diffthis
+    call gita#util#diffthis()
     let lresult = gita#util#buffer#open(lbufname, {
           \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'leftabove vertical split'
           \   : 'leftabove split',
           \})
-    diffthis
+    call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-    keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-    keepjump normal! zM
     call gita#util#select(options.selection)
   else
     let rresult = gita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',
           \ 'opener': opener,
           \})
-    diffthis
+    call gita#util#diffthis()
     let lresult = gita#util#buffer#open(lbufname, {
           \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'rightbelow vertical split'
           \   : 'rightbelow split',
           \})
-    diffthis
+    call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-    keepjump normal! zM
-    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-    keepjump normal! zM
     call gita#util#select(options.selection)
   endif
 endfunction
