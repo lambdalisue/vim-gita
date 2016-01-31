@@ -60,12 +60,14 @@ function! s:find_suitable(winnum) abort
       return winnum
     endif
   endfor
-  " find a suitable window in leftabove to before a previous window
-  for winnum in range(1, a:winnum - 1)
-    if s:is_suitable(winnum)
-      return winnum
-    endif
-  endfor
+  if a:winnum > 1
+    " find a suitable window in leftabove to before a previous window
+    for winnum in range(1, a:winnum - 1)
+      if s:is_suitable(winnum)
+        return winnum
+      endif
+    endfor
+  endif
   " no suitable window is found.
   return 0
 endfunction
