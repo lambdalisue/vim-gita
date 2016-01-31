@@ -321,7 +321,7 @@ function! s:get_parser() abort
           \   'If nothing is specified, it show a blame of HEAD.',
           \   'If <commit> is specified, it show a blame of the named <commit>.',
           \ ], {
-          \   'complete': function('s:complete_commit'),
+          \   'complete': function('hita#variable#complete_commit'),
           \ })
     call s:parser.add_argument(
           \ 'filename', [
