@@ -11,6 +11,10 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@'
 
 function! s:pick_available_options(options) abort
+  " Note:
+  " Personally 'git show' is used only for showing a content of a particular
+  " <refspec> so no options are required to be allowed.
+  " Let me know or send me a PR if you need some options to be allowed.
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
@@ -38,7 +42,7 @@ function! s:get_revision_content(git, commit, filename, options) abort
   return result.content
 endfunction
 function! s:get_diff_content(git, content, filename, options) abort
-  let tempfile = tempname()
+  let tempfile  = tempname()
   let tempfile1 = tempfile . '.index'
   let tempfile2 = tempfile . '.buffer'
   try
@@ -48,16 +52,16 @@ function! s:get_diff_content(git, content, filename, options) abort
           \ tempfile1,
           \)
     call writefile(a:content, tempfile2)
-    " create a diff between index_content and content
+    " create a diff content between index_content and content
     let result = gita#command#diff#call({
           \ 'no-index': 1,
           \ 'filenames': [tempfile1, tempfile2],
           \})
     if empty(result) || empty(result.content) || len(result.content) < 4
-      " fail or no differences. Assume there are no differences
-      call gita#throw('Attention: No differences')
+      " fail or no differences. Assume that there are no differences
+      call gita#throw('Attention: No differences are detected')
     endif
-    " replace tempfile1/tempfile2 in HEADER to a:filename
+    " replace tempfile1/tempfile2 in the header to a:filename
     "
     "   diff --git a/<tempfile1> b/<tempfile2>
     "   index XXXXXXX..XXXXXXX XXXXXX
@@ -166,6 +170,7 @@ function! gita#command#show#call(...) abort
         \ 'commit': commit,
         \ 'filename': filename,
         \ 'content': content,
+        \ 'options': options,
         \}
   return result
 endfunction
@@ -197,7 +202,9 @@ function! gita#command#show#edit(...) abort
         \}, get(a:000, 0, {}))
   let result = gita#command#show#call(options)
   call gita#set_meta('content_type', 'show')
-  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('options', s:Dict.omit(result.options, [
+        \ 'force', 'opener', 'selection',
+        \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
   call gita#util#buffer#edit_content(result.content)
@@ -233,7 +240,7 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--summary',
-          \ 'Show summary of the repository instead of file content', {
+          \ 'Show a summary of the repository instead of a file content', {
           \   'conflicts': ['filename'],
           \})
     call s:parser.add_argument(

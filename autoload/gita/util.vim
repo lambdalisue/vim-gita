@@ -34,7 +34,10 @@ function! gita#util#handle_exception() abort
         \]
   for pattern in known_attention_patterns
     if v:exception =~# pattern
-      call s:Prompt.attention(substitute(v:exception, pattern, '', ''))
+      call s:Prompt.attention(
+            \ 'gita:',
+            \ substitute(v:exception, pattern, '', ''),
+            \)
       return
     endif
   endfor
@@ -44,7 +47,10 @@ function! gita#util#handle_exception() abort
         \]
   for pattern in known_warning_patterns
     if v:exception =~# pattern
-      call s:Prompt.warn(substitute(v:exception, pattern, '', ''))
+      call s:Prompt.warn(
+            \ 'gita:',
+            \ substitute(v:exception, pattern, '', ''),
+            \)
       return
     endif
   endfor
