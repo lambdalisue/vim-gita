@@ -125,7 +125,6 @@ function! hita#command#show#bufname(...) abort
   if options.commit ==# s:WORKTREE
     return hita#variable#get_valid_filename(options.filename)
   endif
-
   let git = hita#get_or_fail()
   let commit = hita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

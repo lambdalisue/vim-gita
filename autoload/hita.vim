@@ -1,4 +1,5 @@
 let s:V = vital#of('vim_gita')
+let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
@@ -12,10 +13,14 @@ function! s:is_expired(expr) abort
   let bufnum = bufnr(a:expr)
   let bufname = bufname(bufnum)
   let buftype = s:Compat.getbufvar(bufnum, '&buftype')
-  if buftype =~# '^\|nowrite\|acwrite$' && bufname !=# cbufname
+  let filetype = s:Compat.getbufvar(bufnum, '&filetype')
+  if filetype =~# '^\%(hita-status\|hita-commit\)$'
+    " hita-status/hita-commit cascade git instance so do not expired
+    return 0
+  elseif buftype =~# '^\%(\|nowrite\|acwrite\)$' && bufname !=# cbufname
     " filename has changed on file like buffer
     return 1
-  elseif buftype=~# '^nofile\|quickfix\|help$' && getcwd() !=# ccwd
+  elseif buftype=~# '^\%(nofile\|quickfix\|help\)$' && getcwd() !=# ccwd
     " current working directory has changed on non file buffer
     return 1
   endif
@@ -25,13 +30,14 @@ function! s:get_git_instance(bufnum) abort
   let bufname = bufname(a:bufnum)
   let buftype = s:Compat.getbufvar(a:bufnum, '&buftype')
   let repository_cache = s:get_repository_cache()
-  if bufname =~# '^hita://' || bufname =~# '^hita[^:]\+:'
+  if bufname =~# '^hita://' || bufname =~# '^hita:.\+'
     " git buffer
     let repository_name = matchstr(
-          \ bufname, '^hita[^:]*:\%(//\)\?\zs[^:/]\+\ze'
+          \ bufname, '^hita:\%(//\)\?\zs[^:/]\+\ze'
           \)
     let git = repository_cache.get(repository_name, {})
-  elseif buftype =~# '^\|nowrite\|acwrite$'
+    let git = git.is_enabled ? git : s:Git.get(getcwd())
+  elseif buftype =~# '^\%(\|nowrite\|acwrite\)$'
     " file buffer
     let filename = hita#expand(a:bufnum)
     let git = s:Git.get(filename)
@@ -172,7 +178,9 @@ function! hita#expand(expr) abort
   endif
   let bufnum = bufnr(a:expr)
   let meta_filename = hita#get_meta('filename', '', bufnum)
-  let real_filename = expand(a:expr)
+  let real_filename = expand(
+        \ s:Prelude.is_string(a:expr) ? a:expr : bufname(a:expr)
+        \)
   let filename = empty(meta_filename) ? real_filename : meta_filename
   " NOTE:
   " Always return a real absolute path

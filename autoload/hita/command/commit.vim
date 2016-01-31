@@ -241,6 +241,7 @@ function! hita#command#commit#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
+  let git = hita#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:hita#command#commit#default_opener
         \ : options.opener
@@ -249,6 +250,8 @@ function! hita#command#commit#open(...) abort
         \ 'opener': opener,
         \ 'group': 'manipulation_panel',
         \})
+  " cascade git instance of previous buffer which open this buffer
+  let b:_git = git
   let options['porcelain'] = 1
   let options['dry-run'] = 1
   let result = hita#command#commit#call(options)

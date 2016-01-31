@@ -155,8 +155,7 @@ function! s:_find(path) abort
   if empty(a:path)
     return {'worktree': '', 'repository': ''}
   endif
-  let abspath = s:Path.abspath(s:Path.realpath(a:path))
-  let dirpath = isdirectory(abspath) ? abspath : fnamemodify(abspath, ':h')
+  let dirpath = isdirectory(a:path) ? a:path : fnamemodify(a:path, ':h')
   let worktree = s:_find_worktree(dirpath)
   let repository = strlen(worktree) ? s:_find_repository(worktree) : ''
   let meta = {
