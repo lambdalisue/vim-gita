@@ -1,9 +1,9 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-apply)': 'Apply diff into an index',
+      \ '<Plug>(gita-apply)': 'Apply diff into an index',
       \}
 
-function! hita#action#apply#action(candidates, ...) abort
+function! gita#action#apply#action(candidates, ...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
   let filenames = []
@@ -13,25 +13,25 @@ function! hita#action#apply#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = hita#command#apply#call({
+    let result = gita#command#apply#call({
           \ 'filenames': filenames,
           \})
     " TODO: Show some success message?
   endif
 endfunction
 
-function! hita#action#apply#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-apply)
-        \ :call hita#action#call('apply')<CR>
+function! gita#action#apply#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-apply)
+        \ :call gita#action#call('apply')<CR>
 endfunction
 
-function! hita#action#apply#define_default_mappings() abort
-  map <buffer> AA <Plug>(hita-apply)
+function! gita#action#apply#define_default_mappings() abort
+  map <buffer> AA <Plug>(gita-apply)
 endfunction
 
-function! hita#action#apply#get_mapping_table() abort
+function! gita#action#apply#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#apply', {})
+call gita#util#define_variables('action#apply', {})
 

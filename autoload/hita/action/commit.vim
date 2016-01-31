@@ -1,46 +1,46 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-commit)': 'Open hita-commit window',
-      \ '<Plug>(hita-commit-new)': 'Open hita-commit window in new mode',
-      \ '<Plug>(hita-commit-amend)': 'Open hita-commit window in amend mode',
+      \ '<Plug>(gita-commit)': 'Open gita-commit window',
+      \ '<Plug>(gita-commit-new)': 'Open gita-commit window in new mode',
+      \ '<Plug>(gita-commit-amend)': 'Open gita-commit window in amend mode',
       \}
 
-function! hita#action#commit#action(candidates, ...) abort
+function! gita#action#commit#action(candidates, ...) abort
   let options = extend({
         \ 'amend': -1,
         \}, get(a:000, 0, {}))
-  let filenames = hita#get_meta('filenames', [])
+  let filenames = gita#get_meta('filenames', [])
   if options.amend == -1
-    call hita#command#commit#open({
+    call gita#command#commit#open({
           \ 'filenames': filenames,
           \})
   else
-    call hita#command#commit#open({
+    call gita#command#commit#open({
           \ 'amend': options.amend,
           \ 'filenames': filenames,
           \})
   endif
 endfunction
 
-function! hita#action#commit#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-commit)
-        \ :<C-u>call hita#action#call('commit')<CR>
-  noremap <buffer><silent> <Plug>(hita-commit-new)
-        \ :<C-u>call hita#action#call('commit', { 'amend': 0 })<CR>
-  noremap <buffer><silent> <Plug>(hita-commit-amend)
-        \ :<C-u>call hita#action#call('commit', { 'amend': 1 })<CR>
+function! gita#action#commit#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-commit)
+        \ :<C-u>call gita#action#call('commit')<CR>
+  noremap <buffer><silent> <Plug>(gita-commit-new)
+        \ :<C-u>call gita#action#call('commit', { 'amend': 0 })<CR>
+  noremap <buffer><silent> <Plug>(gita-commit-amend)
+        \ :<C-u>call gita#action#call('commit', { 'amend': 1 })<CR>
 endfunction
 
-function! hita#action#commit#define_default_mappings() abort
-  map <buffer> cc <Plug>(hita-commit)
-  map <buffer> cC <Plug>(hita-commit-new)
-  map <buffer> cA <Plug>(hita-commit-amend)
+function! gita#action#commit#define_default_mappings() abort
+  map <buffer> cc <Plug>(gita-commit)
+  map <buffer> cC <Plug>(gita-commit-new)
+  map <buffer> cA <Plug>(gita-commit-amend)
 endfunction
 
-function! hita#action#commit#get_mapping_table() abort
+function! gita#action#commit#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#commit', {})
+call gita#util#define_variables('action#commit', {})
 
 

@@ -1,10 +1,10 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-rm)': 'Add (rm) changes into an index',
-      \ '<Plug>(hita-RM)': 'Add (rm) changes into an index (force)',
+      \ '<Plug>(gita-rm)': 'Add (rm) changes into an index',
+      \ '<Plug>(gita-RM)': 'Add (rm) changes into an index (force)',
       \}
 
-function! hita#action#rm#action(candidates, ...) abort
+function! gita#action#rm#action(candidates, ...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
@@ -15,7 +15,7 @@ function! hita#action#rm#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = hita#command#rm#call({
+    let result = gita#command#rm#call({
           \ 'filenames': filenames,
           \ 'force': options.force,
           \ 'quiet': 1,
@@ -24,21 +24,21 @@ function! hita#action#rm#action(candidates, ...) abort
   endif
 endfunction
 
-function! hita#action#rm#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-rm)
-        \ :call hita#action#call('rm')<CR>
-  noremap <buffer><silent> <Plug>(hita-RM)
-        \ :call hita#action#call('rm', { 'force': 1 })<CR>
+function! gita#action#rm#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-rm)
+        \ :call gita#action#call('rm')<CR>
+  noremap <buffer><silent> <Plug>(gita-RM)
+        \ :call gita#action#call('rm', { 'force': 1 })<CR>
 endfunction
 
-function! hita#action#rm#define_default_mappings() abort
-  map <buffer> -d <Plug>(hita-rm)
-  map <buffer> -D <Plug>(hita-RM)
+function! gita#action#rm#define_default_mappings() abort
+  map <buffer> -d <Plug>(gita-rm)
+  map <buffer> -D <Plug>(gita-RM)
 endfunction
 
-function! hita#action#rm#get_mapping_table() abort
+function! gita#action#rm#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#rm', {})
+call gita#util#define_variables('action#rm', {})
 

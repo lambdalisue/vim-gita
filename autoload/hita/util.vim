@@ -1,36 +1,36 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
 
-function! hita#util#clip(content) abort
+function! gita#util#clip(content) abort
   let @" = a:content
   if has('clipboard')
     call setreg(v:register, a:content)
   endif
 endfunction
 
-function! hita#util#doautocmd(name, ...) abort
-  if !exists('#User#Hita' . a:name)
+function! gita#util#doautocmd(name, ...) abort
+  if !exists('#User#Gita' . a:name)
     return
   endif
-  let guard = s:Guard.store('g:hita#avars')
-  let g:hita#avars = extend(
-        \ get(g:, 'hita#avars', {}),
+  let guard = s:Guard.store('g:gita#avars')
+  let g:gita#avars = extend(
+        \ get(g:, 'gita#avars', {}),
         \ get(a:000, 0, {})
         \)
   try
-    let expr = printf('User Hita%s', a:name)
+    let expr = printf('User Gita%s', a:name)
     call s:Compat.doautocmd(expr, 1)
   finally
     call guard.restore()
   endtry
 endfunction
 
-function! hita#util#handle_exception() abort
+function! gita#util#handle_exception() abort
   let known_attention_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-hita:\) Cancel: ',
-        \ '^\%(vital: Git[:.]\|vim-hita:\) Attention: ',
+        \ '^\%(vital: Git[:.]\|vim-gita:\) Cancel: ',
+        \ '^\%(vital: Git[:.]\|vim-gita:\) Attention: ',
         \]
   for pattern in known_attention_patterns
     if v:exception =~# pattern
@@ -39,8 +39,8 @@ function! hita#util#handle_exception() abort
     endif
   endfor
   let known_warning_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeWarning: ',
-        \ '^\%(vital: Git[:.]\|vim-hita:\) \zeValidationError: ',
+        \ '^\%(vital: Git[:.]\|vim-gita:\) \zeWarning: ',
+        \ '^\%(vital: Git[:.]\|vim-gita:\) \zeValidationError: ',
         \]
   for pattern in known_warning_patterns
     if v:exception =~# pattern
@@ -52,12 +52,12 @@ function! hita#util#handle_exception() abort
   call s:Prompt.debug(v:throwpoint)
 endfunction
 
-function! hita#util#define_variables(prefix, defaults) abort
+function! gita#util#define_variables(prefix, defaults) abort
   " Note:
   "   Funcref is not supported while the variable must start with a capital
   let prefix = empty(a:prefix)
-        \ ? 'g:hita'
-        \ : printf('g:hita#%s', a:prefix)
+        \ ? 'g:gita'
+        \ : printf('g:gita#%s', a:prefix)
   for [key, value] in items(a:defaults)
     let name = printf('%s#%s', prefix, key)
     if !exists(name)
@@ -67,7 +67,7 @@ function! hita#util#define_variables(prefix, defaults) abort
   endfor
 endfunction
 
-function! hita#util#select(selection, ...) abort
+function! gita#util#select(selection, ...) abort
   " Original from mattn/emmet-vim
   " https://github.com/mattn/emmet-vim/blob/master/autoload/emmet/util.vim#L75-L79
   let prefer_visual = get(a:000, 0, 0)

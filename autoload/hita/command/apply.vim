@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -30,27 +30,27 @@ endfunction
 function! s:apply_patches(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
-  let result = hita#execute(a:git, 'apply', options)
+  let result = gita#execute(a:git, 'apply', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
 
-function! hita#command#apply#call(...) abort
-  let options = hita#option#init('', get(a:000, 0, {}), {
+function! gita#command#apply#call(...) abort
+  let options = gita#option#init('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
+  let git = gita#get_or_fail()
   if empty(options.filenames)
-    call hita#throw('ValidationError: "filenames" cannot be empty')
+    call gita#throw('ValidationError: "filenames" cannot be empty')
   endif
   let filenames = map(
         \ copy(options.filenames),
-        \ 'hita#variable#get_valid_filename(v:val)',
+        \ 'gita#variable#get_valid_filename(v:val)',
         \)
   let content = s:apply_patches(git, filenames, options)
-  call hita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('StatusModified')
   return {
         \ 'filenames': filenames,
         \ 'content': content,
@@ -58,13 +58,13 @@ function! hita#command#apply#call(...) abort
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita apply',
+          \ 'name': 'Gita apply',
           \ 'description': 'Apply patch(es) to the repository',
-          \ 'complete_unknown': function('hita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--cached',
@@ -74,7 +74,7 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
-function! hita#command#apply#command(...) abort
+function! gita#command#apply#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -85,15 +85,15 @@ function! hita#command#apply#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#apply#default_options),
+        \ deepcopy(g:gita#command#apply#default_options),
         \ options,
         \)
-  call hita#command#apply#call(options)
+  call gita#command#apply#call(options)
 endfunction
-function! hita#command#apply#complete(...) abort
+function! gita#command#apply#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#apply', {
+call gita#util#define_variables('command#apply', {
       \})

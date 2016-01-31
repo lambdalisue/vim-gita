@@ -2,27 +2,27 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 command! -nargs=? -range -bang
-      \ -complete=customlist,hita#command#complete
-      \ Hita
-      \ :call hita#command#command(<q-bang>, [<line1>, <line2>], <f-args>)
+      \ -complete=customlist,gita#command#complete
+      \ Gita
+      \ :call gita#command#command(<q-bang>, [<line1>, <line2>], <f-args>)
 
 " NOTE:
-" To use gf mapping on hita://, isfname requires to contain ':'
-augroup vim_hita_internal_read_file
+" To use gf mapping on gita://, isfname requires to contain ':'
+augroup vim_gita_internal_read_file
   autocmd!
-  autocmd BufReadCmd  hita://* call hita#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd hita://* call hita#autocmd#call('FileReadCmd')
+  autocmd BufReadCmd  gita://* call gita#autocmd#call('BufReadCmd')
+  autocmd FileReadCmd gita://* call gita#autocmd#call('FileReadCmd')
   try
-    autocmd SourceCmd hita://* call hita#autocmd#call('SourceCmd')
+    autocmd SourceCmd gita://* call gita#autocmd#call('SourceCmd')
   catch /-Vim\%((\a\+)\)\=E216/
-    autocmd SourcePre hita://* call hita#autocmd#call('SourceCmd')
+    autocmd SourcePre gita://* call gita#autocmd#call('SourceCmd')
   endtry
 augroup END
 
-augroup vim_hita_internal_status_modified
+augroup vim_gita_internal_status_modified
   autocmd!
-  autocmd BufWritePre * call hita#autocmd#call('BufWritePre')
-  autocmd BufWritePost * call hita#autocmd#call('BufWritePost')
+  autocmd BufWritePre * call gita#autocmd#call('BufWritePre')
+  autocmd BufWritePost * call gita#autocmd#call('BufWritePost')
 augroup END
 
 

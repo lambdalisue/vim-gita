@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -22,28 +22,28 @@ function! s:apply_command(git, filenames, options) abort
     " Convert a real absolute path into unix relative path
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:git, 'reset', options)
+  let result = gita#execute(a:git, 'reset', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
   return result.content
 endfunction
 
-function! hita#command#reset#call(...) abort
-  let options = hita#option#init('', get(a:000, 0, {}), {
+function! gita#command#reset#call(...) abort
+  let options = gita#option#init('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
+  let git = gita#get_or_fail()
   if empty(options.filenames)
     let filenames = []
   else
     let filenames = map(
           \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
+          \ 'gita#variable#get_valid_filename(v:val)',
           \)
   endif
   let content = s:apply_command(git, filenames, options)
-  call hita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('StatusModified')
   return {
         \ 'filenames': filenames,
         \ 'content': content,
@@ -51,19 +51,19 @@ function! hita#command#reset#call(...) abort
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita reset',
+          \ 'name': 'Gita reset',
           \ 'description': 'Reset changes on index',
-          \ 'complete_unknown': function('hita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     " TODO: Add more arguments
   endif
   return s:parser
 endfunction
-function! hita#command#reset#command(...) abort
+function! gita#command#reset#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -74,17 +74,17 @@ function! hita#command#reset#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#reset#default_options),
+        \ deepcopy(g:gita#command#reset#default_options),
         \ options,
         \)
-  call hita#command#reset#call(options)
+  call gita#command#reset#call(options)
 endfunction
-function! hita#command#reset#complete(...) abort
+function! gita#command#reset#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#reset', {
+call gita#util#define_variables('command#reset', {
       \ 'default_options': {},
       \})
 

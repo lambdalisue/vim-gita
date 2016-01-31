@@ -1,9 +1,9 @@
 if exists('b:current_syntax')
   finish
 endif
-let b:current_syntax = 'hita-blame-navi'
+let b:current_syntax = 'gita-blame-navi'
 
 syntax clear
-call hita#command#blame#navi#define_highlights()
-call hita#command#blame#navi#define_syntax()
+call gita#command#blame#navi#define_highlights()
+call gita#command#blame#navi#define_syntax()
 

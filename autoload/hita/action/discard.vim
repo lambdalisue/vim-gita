@@ -1,10 +1,10 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-discard)': 'Discard changes on the working tree',
-      \ '<Plug>(hita-DISCARD)': 'Discard changes on the working tree (force)',
+      \ '<Plug>(gita-discard)': 'Discard changes on the working tree',
+      \ '<Plug>(gita-DISCARD)': 'Discard changes on the working tree (force)',
       \}
 
 function! s:is_available(candidate) abort
@@ -21,7 +21,7 @@ function! s:is_available(candidate) abort
   return 1
 endfunction
 
-function! hita#action#discard#action(candidates, ...) abort
+function! gita#action#discard#action(candidates, ...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
@@ -52,7 +52,7 @@ function! hita#action#discard#action(candidates, ...) abort
       echo '- ' . s:Path.relpath(candidate.path)
     endfor
     if !s:Prompt.confirm('Are you sure to discard the changes?')
-      call hita#throw('Cancel: The operation has canceled by user')
+      call gita#throw('Cancel: The operation has canceled by user')
     endif
   endif
   " delete untracked files
@@ -64,26 +64,26 @@ function! hita#action#discard#action(candidates, ...) abort
     endif
   endfor
   " checkout tracked files from HEAD
-  noautocmd call hita#action#do('checkout', checkout_candidates, {
+  noautocmd call gita#action#do('checkout', checkout_candidates, {
         \ 'commit': 'HEAD',
         \ 'force': 1,
         \})
-  call hita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('StatusModified')
 endfunction
 
-function! hita#action#discard#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-discard)
-        \ :call hita#action#call('discard')<CR>
-  noremap <buffer><silent> <Plug>(hita-DISCARD)
-        \ :call hita#action#call('discard', { 'force': 1 })<CR>
+function! gita#action#discard#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-discard)
+        \ :call gita#action#call('discard')<CR>
+  noremap <buffer><silent> <Plug>(gita-DISCARD)
+        \ :call gita#action#call('discard', { 'force': 1 })<CR>
 endfunction
 
-function! hita#action#discard#define_default_mappings() abort
-  map <buffer> == <Plug>(hita-discard)
+function! gita#action#discard#define_default_mappings() abort
+  map <buffer> == <Plug>(gita-discard)
 endfunction
 
-function! hita#action#discard#get_mapping_table() abort
+function! gita#action#discard#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#discard', {})
+call gita#util#define_variables('action#discard', {})

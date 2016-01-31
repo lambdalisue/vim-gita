@@ -1,24 +1,24 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-close)': 'Close the buffer and focus an anchor',
+      \ '<Plug>(gita-close)': 'Close the buffer and focus an anchor',
       \}
 
-function! hita#action#close#action(candidates, ...) abort
+function! gita#action#close#action(candidates, ...) abort
   let winnum = winnr()
   call s:Anchor.focus()
   execute printf('%dclose', winnum)
 endfunction
 
-function! hita#action#close#define_plugin_mappings() abort
-  nnoremap <buffer><silent> <Plug>(hita-close)
-        \ :<C-u>call hita#action#call('close')<CR>
+function! gita#action#close#define_plugin_mappings() abort
+  nnoremap <buffer><silent> <Plug>(gita-close)
+        \ :<C-u>call gita#action#call('close')<CR>
 endfunction
 
-function! hita#action#close#define_default_mappings() abort
-  map <buffer> q <Plug>(hita-close)
+function! gita#action#close#define_default_mappings() abort
+  map <buffer> q <Plug>(gita-close)
 endfunction
 
-function! hita#action#close#get_mapping_table() abort
+function! gita#action#close#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction

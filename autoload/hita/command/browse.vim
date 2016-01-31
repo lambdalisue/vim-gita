@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:File = s:V.import('System.File')
@@ -85,8 +85,8 @@ function! s:find_url(git, commit, filename, options) abort
         \ 'le': 'line_end',
         \}
   let translation_patterns = extend(
-        \ deepcopy(g:hita#command#browse#translation_patterns),
-        \ g:hita#command#browse#extra_translation_patterns,
+        \ deepcopy(g:gita#command#browse#translation_patterns),
+        \ g:gita#command#browse#extra_translation_patterns,
         \)
   let url = s:translate_url(
         \ remote_url,
@@ -94,7 +94,7 @@ function! s:find_url(git, commit, filename, options) abort
         \ translation_patterns
         \)
   if empty(url)
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'Warning: No url translation pattern for "%s" is found.',
           \ remote_url,
           \))
@@ -102,21 +102,21 @@ function! s:find_url(git, commit, filename, options) abort
   return s:StringExt.format(url, format_map, data)
 endfunction
 
-function! hita#command#browse#call(...) abort
-  let options = hita#option#init('', get(a:000, 0, {}), {
+function! gita#command#browse#call(...) abort
+  let options = gita#option#init('', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
+  let git = gita#get_or_fail()
   let local_branch = s:GitInfo.get_local_branch(git)
   let commit = empty(options.commit) ? local_branch.name : options.commit
-  let commit = hita#variable#get_valid_range(commit)
+  let commit = gita#variable#get_valid_range(commit)
   if empty(options.filenames)
     let filenames = ['%']
   endif
   let filenames = map(
         \ copy(options.filenames),
-        \ 'hita#variable#get_valid_filename(v:val)',
+        \ 'gita#variable#get_valid_filename(v:val)',
         \)
   let urls = map(copy(filenames), 's:find_url(git, commit, v:val, options)')
   return {
@@ -125,9 +125,9 @@ function! hita#command#browse#call(...) abort
         \ 'urls': urls,
         \}
 endfunction
-function! hita#command#browse#open(...) abort
+function! gita#command#browse#open(...) abort
   let options = get(a:000, 0, {})
-  let result = hita#command#browse#call(options)
+  let result = gita#command#browse#call(options)
   if empty(result)
     return
   endif
@@ -135,9 +135,9 @@ function! hita#command#browse#open(...) abort
     call s:File.open(url)
   endfor
 endfunction
-function! hita#command#browse#echo(...) abort
+function! gita#command#browse#echo(...) abort
   let options = get(a:000, 0, {})
-  let result = hita#command#browse#call(options)
+  let result = gita#command#browse#call(options)
   if empty(result)
     return
   endif
@@ -145,23 +145,23 @@ function! hita#command#browse#echo(...) abort
     echo url
   endfor
 endfunction
-function! hita#command#browse#yank(...) abort
+function! gita#command#browse#yank(...) abort
   let options = get(a:000, 0, {})
-  let result = hita#command#browse#call(options)
+  let result = gita#command#browse#call(options)
   if empty(result)
     return
   endif
-  call hita#util#clip(join(result.urls, "\n"))
+  call gita#util#clip(join(result.urls, "\n"))
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita browse',
+          \ 'name': 'Gita browse',
           \ 'description': 'Browse a content of the remote in a system default browser',
-          \ 'complete_unknown': function('hita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--open', '-o',
@@ -202,7 +202,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it try to open a diff page of the remote content',
           \   'If <commit1>...<commit2> is specified, it try to open a diff open of the remote content',
           \], {
-          \   'complete': function('hita#variable#complete_commit'),
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     function! s:parser.hooks.pre_validate(options) abort
       if empty(s:parser.get_conflicted_arguments('open', a:options))
@@ -223,13 +223,13 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
-function! hita#command#browse#command(...) abort
+function! gita#command#browse#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  call hita#option#assign_commit(options)
+  call gita#option#assign_commit(options)
   if empty(options.__unknown__)
     let options.filenames = ['%']
   else
@@ -240,23 +240,23 @@ function! hita#command#browse#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#browse#default_options),
+        \ deepcopy(g:gita#command#browse#default_options),
         \ options,
         \)
   if get(options, 'yank')
-    call hita#command#browse#yank(options)
+    call gita#command#browse#yank(options)
   elseif get(options, 'echo')
-    call hita#command#browse#echo(options)
+    call gita#command#browse#echo(options)
   else
-    call hita#command#browse#open(options)
+    call gita#command#browse#open(options)
   endif
 endfunction
-function! hita#command#browse#complete(...) abort
+function! gita#command#browse#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#browse', {
+call gita#util#define_variables('command#browse', {
       \ 'default_options': {},
       \ 'translation_patterns': {
       \   'github.com': [

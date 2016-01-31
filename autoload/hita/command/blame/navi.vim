@@ -1,41 +1,41 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 
 function! s:get_entry(index) abort
   return {}
 endfunction
 function! s:define_actions() abort
-  let action = hita#action#define(function('s:get_entry'))
+  let action = gita#action#define(function('s:get_entry'))
   " Override 'redraw' action
   function! action.actions.redraw(candidates, ...) abort
-    call hita#command#blame#navi#update()
+    call gita#command#blame#navi#update()
   endfunction
 
-  call hita#action#includes(
-        \ g:hita#command#blame#navi#enable_default_mappings, [
+  call gita#action#includes(
+        \ g:gita#command#blame#navi#enable_default_mappings, [
         \   'close', 'redraw',
         \   'edit', 'show', 'diff', 'blame', 'browse',
         \])
 
-  if g:hita#command#blame#navi#enable_default_mappings
+  if g:gita#command#blame#navi#enable_default_mappings
     execute printf(
           \ 'map <buffer> <Return> %s',
-          \ g:hita#command#blame#navi#default_action_mapping
+          \ g:gita#command#blame#navi#default_action_mapping
           \)
   endif
 endfunction
 
-function! hita#command#blame#navi#bufname(...) abort
-  let options = hita#option#init('blame-navi', get(a:000, 0, {}), {
+function! gita#command#blame#navi#bufname(...) abort
+  let options = gita#option#init('blame-navi', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(git, {
+  let filename = gita#variable#get_valid_filename(options.filename)
+  return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'blame-navi',
         \ 'extra_options': [],
@@ -43,23 +43,23 @@ function! hita#command#blame#navi#bufname(...) abort
         \ 'path': filename,
         \})
 endfunction
-function! hita#command#blame#navi#call(...) abort
-  let options = hita#option#init('blame-navi', get(a:000, 0, {}), {
+function! gita#command#blame#navi#call(...) abort
+  let options = gita#option#init('blame-navi', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let bufname = hita#command#blame#bufname(options)
+  let bufname = gita#command#blame#bufname(options)
   let bufnum = bufnr(bufname)
-  let content_type = hita#get_meta('content_type', '', bufnum)
+  let content_type = gita#get_meta('content_type', '', bufnum)
   if bufnum == 0 || content_type !=# 'blame'
-    call hita#throw('hita-blame-navi window requires a corresponding hita-blame buffer.')
+    call gita#throw('gita-blame-navi window requires a corresponding gita-blame buffer.')
   endif
-  let commit = hita#get_meta('commit', '', bufnum)
-  let filename = hita#get_meta('filename', '', bufnum)
-  let content = hita#get_meta('content', [], bufnum)
-  let blame = hita#get_meta('blame', {}, bufnum)
+  let commit = gita#get_meta('commit', '', bufnum)
+  let filename = gita#get_meta('filename', '', bufnum)
+  let content = gita#get_meta('content', [], bufnum)
+  let blame = gita#get_meta('blame', {}, bufnum)
   if empty(blame)
-    call hita#throw(printf('No blame information has found on %s', bufname))
+    call gita#throw(printf('No blame information has found on %s', bufname))
   endif
   let result = {
         \ 'bufname': bufname,
@@ -71,32 +71,32 @@ function! hita#command#blame#navi#call(...) abort
         \}
   return result
 endfunction
-function! hita#command#blame#navi#open(...) abort
+function! gita#command#blame#navi#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let result = hita#command#blame#navi#call(options)
+  let result = gita#command#blame#navi#call(options)
   let opener = empty(options.opener)
-        \ ? g:hita#command#blame#default_opener
+        \ ? g:gita#command#blame#default_opener
         \ : options.opener
-  let bufname = hita#command#blame#navi#bufname(options)
-  call hita#util#buffer#open(bufname, {
+  let bufname = gita#command#blame#navi#bufname(options)
+  call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'group': 'blame_navigation_panel',
         \})
-  call hita#set_meta('content_type', 'blame-navi')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('commit', result.commit)
-  call hita#set_meta('filename', result.filename)
-  call hita#set_meta('content', result.content)
-  call hita#set_meta('blame', result.blame)
-  call hita#set_meta('winwidth', winwidth(0))
+  call gita#set_meta('content_type', 'blame-navi')
+  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('commit', result.commit)
+  call gita#set_meta('filename', result.filename)
+  call gita#set_meta('content', result.content)
+  call gita#set_meta('blame', result.blame)
+  call gita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
-  augroup vim_hita_status
+  augroup vim_gita_status
     autocmd! * <buffer>
     autocmd BufReadCmd <buffer>
-          \ call hita#command#blame#navi#update() |
-          \ setlocal filetype=hita-blame-navi
+          \ call gita#command#blame#navi#update() |
+          \ setlocal filetype=gita-blame-navi
     "autocmd VimResized <buffer> call s:on_VimResized()
     "autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
@@ -105,55 +105,55 @@ function! hita#command#blame#navi#open(...) abort
   setlocal nonumber nolist
   setlocal nomodifiable
   setlocal scrollopt=ver
-  setlocal filetype=hita-blame-navi
-  call hita#command#blame#navi#redraw()
+  setlocal filetype=gita-blame-navi
+  call gita#command#blame#navi#redraw()
 endfunction
-function! hita#command#blame#navi#update(...) abort
-  if &filetype !=# 'hita-blame-navi'
-    call hita#throw('update() requires to be called in a hita-blame-navi buffer')
+function! gita#command#blame#navi#update(...) abort
+  if &filetype !=# 'gita-blame-navi'
+    call gita#throw('update() requires to be called in a gita-blame-navi buffer')
   endif
   let options = get(a:000, 0, {})
-  let result = hita#command#blame#navi#call(options)
-  call hita#set_meta('content_type', 'blame-navi')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('commit', result.commit)
-  call hita#set_meta('filename', result.filename)
-  call hita#set_meta('content', result.content)
-  call hita#set_meta('blame', result.blame)
-  call hita#set_meta('winwidth', winwidth(0))
-  call hita#command#blame#navi#redraw()
+  let result = gita#command#blame#navi#call(options)
+  call gita#set_meta('content_type', 'blame-navi')
+  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('commit', result.commit)
+  call gita#set_meta('filename', result.filename)
+  call gita#set_meta('content', result.content)
+  call gita#set_meta('blame', result.blame)
+  call gita#set_meta('winwidth', winwidth(0))
+  call gita#command#blame#navi#redraw()
 endfunction
-function! hita#command#blame#navi#redraw() abort
-  if &filetype !=# 'hita-blame-navi'
-    call hita#throw('redraw() requires to be called in a hita-status buffer')
+function! gita#command#blame#navi#redraw() abort
+  if &filetype !=# 'gita-blame-navi'
+    call gita#throw('redraw() requires to be called in a gita-status buffer')
   endif
-  let blame = hita#get_meta('blame')
-  call hita#util#buffer#edit_content(blame.navi_content)
-  call hita#command#blame#display_pseudo_separators(blame.separators)
+  let blame = gita#get_meta('blame')
+  call gita#util#buffer#edit_content(blame.navi_content)
+  call gita#command#blame#display_pseudo_separators(blame.separators)
 endfunction
 
-function! hita#command#blame#navi#define_highlights() abort
-  call hita#command#blame#define_highlights()
-  highlight default link HitaHorizontal Comment
-  highlight default link HitaSummary    Title
-  highlight default link HitaMetaInfo   Comment
-  highlight default link HitaAuthor     Identifier
-  highlight default link HitaTimeDelta  Comment
-  highlight default link HitaRevision   String
-  highlight default link HitaPrevious   Special
-  highlight default link HitaLineNr     LineNr
+function! gita#command#blame#navi#define_highlights() abort
+  call gita#command#blame#define_highlights()
+  highlight default link GitaHorizontal Comment
+  highlight default link GitaSummary    Title
+  highlight default link GitaMetaInfo   Comment
+  highlight default link GitaAuthor     Identifier
+  highlight default link GitaTimeDelta  Comment
+  highlight default link GitaRevision   String
+  highlight default link GitaPrevious   Special
+  highlight default link GitaLineNr     LineNr
 endfunction
-function! hita#command#blame#navi#define_syntax() abort
-  syntax match HitaSummary   /\v.*/ contains=HitaLineNr,HitaMetaInfo,HitaPrevious
-  syntax match HitaLineNr    /\v^\s*[0-9]+/
-  syntax match HitaMetaInfo  /\v\w+ authored .*$/ contains=HitaAuthor,HitaTimeDelta,HitaRevision
-  syntax match HitaAuthor    /\v\w+\ze authored/ contained
-  syntax match HitaTimeDelta /\vauthored \zs.*\ze\s+[0-9a-fA-F]{7}$/ contained
-  syntax match HitaRevision  /\v[0-9a-fA-F]{7}$/ contained
-  syntax match HitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
+function! gita#command#blame#navi#define_syntax() abort
+  syntax match GitaSummary   /\v.*/ contains=GitaLineNr,GitaMetaInfo,GitaPrevious
+  syntax match GitaLineNr    /\v^\s*[0-9]+/
+  syntax match GitaMetaInfo  /\v\w+ authored .*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
+  syntax match GitaAuthor    /\v\w+\ze authored/ contained
+  syntax match GitaTimeDelta /\vauthored \zs.*\ze\s+[0-9a-fA-F]{7}$/ contained
+  syntax match GitaRevision  /\v[0-9a-fA-F]{7}$/ contained
+  syntax match GitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
 endfunction
 
-call hita#util#define_variables('command#blame#navi', {
-      \ 'default_action_mapping': '<Plug>(hita-show)',
+call gita#util#define_variables('command#blame#navi', {
+      \ 'default_action_mapping': '<Plug>(gita-show)',
       \ 'enable_default_mappings': 1,
       \})

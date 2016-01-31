@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
@@ -28,10 +28,10 @@ function! s:get_revision_content(git, commit, filename, options) abort
   else
     let options['object'] = printf('%s:%s',
           \ a:commit,
-          \ hita#get_relative_path(a:git, a:filename),
+          \ gita#get_relative_path(a:git, a:filename),
           \)
   endif
-  let result = hita#execute(a:git, 'show', options)
+  let result = gita#execute(a:git, 'show', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -49,13 +49,13 @@ function! s:get_diff_content(git, content, filename, options) abort
           \)
     call writefile(a:content, tempfile2)
     " create a diff between index_content and content
-    let result = hita#command#diff#call({
+    let result = gita#command#diff#call({
           \ 'no-index': 1,
           \ 'filenames': [tempfile1, tempfile2],
           \})
     if empty(result) || empty(result.content) || len(result.content) < 4
       " fail or no differences. Assume there are no differences
-      call hita#throw('Attention: No differences')
+      call gita#throw('Attention: No differences')
     endif
     " replace tempfile1/tempfile2 in HEADER to a:filename
     "
@@ -84,75 +84,75 @@ endfunction
 function! s:on_BufWriteCmd() abort
   let tempfile = tempname()
   try
-    let commit = hita#get_meta('commit', '')
-    let options = hita#get_meta('options', {})
-    let filename = hita#get_meta('filename', '')
+    let commit = gita#get_meta('commit', '')
+    let options = gita#get_meta('options', {})
+    let filename = gita#get_meta('filename', '')
     if !empty(commit) || empty(filename)
-      call hita#throw(
+      call gita#throw(
             \ 'Attention:',
             \ 'Partial patching is only available in a INDEX file, namely',
-            \ 'a file opened by ":Hita show [--filename={filename}]"',
+            \ 'a file opened by ":Gita show [--filename={filename}]"',
             \)
     endif
     if exists('#BufWritePre')
       doautocmd BufWritePre
     endif
-    let git = hita#get_or_fail()
+    let git = gita#get_or_fail()
     let content = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
-    call hita#command#apply#call({
+    call gita#command#apply#call({
           \ 'filenames': [tempfile],
           \ 'cached': 1,
           \ 'verbose': 1,
           \})
-    call hita#command#show#edit({'force': 1})
+    call gita#command#show#edit({'force': 1})
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif
     diffupdate
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   finally
     call delete(tempfile)
   endtry
 endfunction
 
-function! hita#command#show#bufname(...) abort
-  let options = hita#option#init('^show$', get(a:000, 0, {}), {
+function! gita#command#show#bufname(...) abort
+  let options = gita#option#init('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
   if options.commit ==# s:WORKTREE
-    return hita#variable#get_valid_filename(options.filename)
+    return gita#variable#get_valid_filename(options.filename)
   endif
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filename)
         \ ? ''
-        \ : hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(git, {
+        \ : gita#variable#get_valid_filename(options.filename)
+  return gita#autocmd#bufname(git, {
         \ 'content_type': 'show',
         \ 'extra_options': [],
         \ 'commitish': commit,
         \ 'path': filename,
         \})
 endfunction
-function! hita#command#show#call(...) abort
-  let options = hita#option#init('^show$', get(a:000, 0, {}), {
+function! gita#command#show#call(...) abort
+  let options = gita#option#init('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   if empty(options.filename)
     let filename = ''
     let content = s:get_revision_content(git, commit, filename, options)
   else
-    let filename = hita#variable#get_valid_filename(options.filename)
+    let filename = gita#variable#get_valid_filename(options.filename)
     if commit =~# '^.\{-}\.\.\..*$'
       let content = s:get_ancestor_content(git, commit, filename, options)
     elseif commit =~# '^.\{-}\.\..*$'
@@ -169,38 +169,38 @@ function! hita#command#show#call(...) abort
         \}
   return result
 endfunction
-function! hita#command#show#open(...) abort
+function! gita#command#show#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
-        \ ? g:hita#command#show#default_opener
+        \ ? g:gita#command#show#default_opener
         \ : options.opener
-  let bufname = hita#command#show#bufname(options)
+  let bufname = gita#command#show#bufname(options)
   if !empty(bufname)
-    call hita#util#buffer#open(bufname, {
+    call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})
     " BufReadCmd will call ...#edit to apply the content
-    call hita#util#select(options.selection)
+    call gita#util#select(options.selection)
   endif
 endfunction
-function! hita#command#show#read(...) abort
+function! gita#command#show#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let result = hita#command#show#call(options)
-  call hita#util#buffer#read_content(result.content)
+  let result = gita#command#show#call(options)
+  call gita#util#buffer#read_content(result.content)
 endfunction
-function! hita#command#show#edit(...) abort
+function! gita#command#show#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let result = hita#command#show#call(options)
-  call hita#set_meta('content_type', 'show')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('commit', result.commit)
-  call hita#set_meta('filename', result.filename)
-  call hita#util#buffer#edit_content(result.content)
+  let result = gita#command#show#call(options)
+  call gita#set_meta('content_type', 'show')
+  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('commit', result.commit)
+  call gita#set_meta('filename', result.filename)
+  call gita#util#buffer#edit_content(result.content)
   if empty(result.filename)
     setfiletype git
     setlocal buftype=nowrite
@@ -220,11 +220,11 @@ function! hita#command#show#edit(...) abort
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita show',
+          \ 'name': 'Gita show',
           \ 'description': 'Show a content of a commit or a file',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -239,7 +239,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--filename',
           \ 'A filename', {
-          \   'complete': function('hita#variable#complete_filename'),
+          \   'complete': function('gita#variable#complete_filename'),
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
@@ -260,7 +260,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it show a content of the named <commit1>',
           \   'If <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
           \], {
-          \   'complete': function('hita#variable#complete_commit'),
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'summary')
@@ -276,14 +276,14 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
-function! hita#command#show#command(...) abort
+function! gita#command#show#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  call hita#option#assign_commit(options)
-  call hita#option#assign_filename(options)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
   if has_key(options, 'selection')
     let options.selection = map(
           \ split(options.selection, '-'),
@@ -294,17 +294,17 @@ function! hita#command#show#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#show#default_options),
+        \ deepcopy(g:gita#command#show#default_options),
         \ options,
         \)
-  call hita#command#show#open(options)
+  call gita#command#show#open(options)
 endfunction
-function! hita#command#show#complete(...) abort
+function! gita#command#show#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#show', {
+call gita#util#define_variables('command#show', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \})

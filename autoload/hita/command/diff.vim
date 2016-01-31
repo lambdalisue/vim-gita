@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitTerm = s:V.import('Git.Term')
@@ -25,7 +25,7 @@ function! s:get_diff_content(git, commit, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:git, 'diff', options)
+  let result = gita#execute(a:git, 'diff', options)
   if get(options, 'no-index') || get(options, 'exit-code')
     " NOTE:
     " --no-index force --exit-code option.
@@ -54,14 +54,14 @@ endfunction
 
 function! s:on_BufWriteCmd() abort
   try
-    let commit = hita#get_meta('commit', '')
-    let options = hita#get_meta('options', {})
+    let commit = gita#get_meta('commit', '')
+    let options = gita#get_meta('options', {})
     if !s:is_patchable(commit, options)
-      call hita#throw(
+      call gita#throw(
             \ 'Attention:',
             \ 'Patching diff is only available when diff was produced',
-            \ 'by ":Hita diff [-- {filename}...]" or',
-            \ '":Hita diff --cached --reverse [{commit}] [-- {filename}...]"',
+            \ 'by ":Gita diff [-- {filename}...]" or',
+            \ '":Gita diff --cached --reverse [{commit}] [-- {filename}...]"',
             \)
       return
     endif
@@ -71,7 +71,7 @@ function! s:on_BufWriteCmd() abort
     let tempfile = tempname()
     try
       call writefile(getline(1, '$'), tempfile)
-      call hita#command#apply#call({
+      call gita#command#apply#call({
             \ 'filenames': [tempfile],
             \ 'cached': 1,
             \ 'verbose': 1,
@@ -82,36 +82,36 @@ function! s:on_BufWriteCmd() abort
     finally
       call delete(tempfile)
     endtry
-    call hita#command#diff#edit({'force': 1})
+    call gita#command#diff#edit({'force': 1})
     if exists('#BufWritePost')
       doautocmd BufWritePost
     endif
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 
-function! hita#command#diff#bufname(...) abort
-  let options = hita#option#init('^diff$', get(a:000, 0, {}), {
+function! gita#command#diff#bufname(...) abort
+  let options = gita#option#init('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
+          \ 'gita#variable#get_valid_filename(v:val)',
           \)
   else
     let filenames = []
   endif
   if len(filenames) == 1
-    return hita#autocmd#bufname(git, {
+    return gita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
           \   options.cached ? 'cached' : '',
@@ -121,7 +121,7 @@ function! hita#command#diff#bufname(...) abort
           \ 'path': filenames[0],
           \})
   else
-    return hita#autocmd#bufname(git, {
+    return gita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
           \   options.cached ? 'cached' : '',
@@ -132,21 +132,21 @@ function! hita#command#diff#bufname(...) abort
           \})
   endif
 endfunction
-function! hita#command#diff#call(...) abort
-  let options = hita#option#init('^diff$', get(a:000, 0, {}), {
+function! gita#command#diff#call(...) abort
+  let options = gita#option#init('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
+          \ 'gita#variable#get_valid_filename(v:val)',
           \)
   else
     let filenames = []
@@ -159,39 +159,39 @@ function! hita#command#diff#call(...) abort
         \}
   return result
 endfunction
-function! hita#command#diff#open(...) abort
+function! gita#command#diff#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
-        \ ? g:hita#command#diff#default_opener
+        \ ? g:gita#command#diff#default_opener
         \ : options.opener
-  let bufname = hita#command#diff#bufname(options)
+  let bufname = gita#command#diff#bufname(options)
   if !empty(bufname)
-    call hita#util#buffer#open(bufname, {
+    call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})
     " BufReadCmd will call ...#edit to apply the content
-    call hita#util#select(options.selection)
+    call gita#util#select(options.selection)
   endif
 endfunction
-function! hita#command#diff#read(...) abort
+function! gita#command#diff#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
-  let result = hita#command#diff#call(options)
-  call hita#util#buffer#read_content(result.content)
+  let result = gita#command#diff#call(options)
+  call gita#util#buffer#read_content(result.content)
 endfunction
-function! hita#command#diff#edit(...) abort
+function! gita#command#diff#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let result = hita#command#diff#call(options)
-  call hita#set_meta('content_type', 'diff')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('commit', result.commit)
-  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call hita#set_meta('filenames', result.filenames)
-  call hita#util#buffer#edit_content(result.content)
+  let result = gita#command#diff#call(options)
+  call gita#set_meta('content_type', 'diff')
+  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('commit', result.commit)
+  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#set_meta('filenames', result.filenames)
+  call gita#util#buffer#edit_content(result.content)
   augroup vim_gita_internal_diff_apply_diff
     autocmd! * <buffer>
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
@@ -204,7 +204,7 @@ function! hita#command#diff#edit(...) abort
   endif
   setlocal buftype=acwrite
 endfunction
-function! hita#command#diff#open2(...) abort
+function! gita#command#diff#open2(...) abort
   let options = extend({
         \ 'cached': 0,
         \ 'reverse': 0,
@@ -215,16 +215,16 @@ function! hita#command#diff#open2(...) abort
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   if len(options.filenames) > 1
-    call hita#throw(
-          \ 'Warning: Hita diff --split cannot handle multiple filenames',
+    call gita#throw(
+          \ 'Warning: Gita diff --split cannot handle multiple filenames',
           \)
   endif
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filenames) ? '%' : options.filenames[0]
-  let filename = hita#variable#get_valid_filename(filename)
+  let filename = gita#variable#get_valid_filename(filename)
   let WORKTREE = '@'  " @ is not valid commit thus
   if empty(commit)
     " git diff          : INDEX vs TREE
@@ -249,25 +249,25 @@ function! hita#command#diff#open2(...) abort
   endif
   let lbufname = lhs ==# WORKTREE
         \ ? filename
-        \ : hita#command#show#bufname({'commit': lhs, 'filename': filename})
+        \ : gita#command#show#bufname({'commit': lhs, 'filename': filename})
   let rbufname = rhs ==# WORKTREE
         \ ? filename
-        \ : hita#command#show#bufname({'commit': rhs, 'filename': filename})
+        \ : gita#command#show#bufname({'commit': rhs, 'filename': filename})
   let opener = empty(options.opener)
-        \ ? g:hita#command#diff#default_opener
+        \ ? g:gita#command#diff#default_opener
         \ : options.opener
   let split = empty(options.split)
-        \ ? g:hita#command#diff#default_split
+        \ ? g:gita#command#diff#default_split
         \ : options.split
   " NOTE:
   " Place main contant to visually rightbelow and focus
   if !options.reverse
-    let rresult = hita#util#buffer#open(rbufname, {
+    let rresult = gita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',
           \ 'opener': opener,
           \})
     diffthis
-    let lresult = hita#util#buffer#open(lbufname, {
+    let lresult = gita#util#buffer#open(lbufname, {
           \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'leftabove vertical split'
@@ -279,14 +279,14 @@ function! hita#command#diff#open2(...) abort
     keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
     keepjump normal! zM
-    call hita#util#select(options.selection)
+    call gita#util#select(options.selection)
   else
-    let rresult = hita#util#buffer#open(rbufname, {
+    let rresult = gita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',
           \ 'opener': opener,
           \})
     diffthis
-    let lresult = hita#util#buffer#open(lbufname, {
+    let lresult = gita#util#buffer#open(lbufname, {
           \ 'group': 'diff_lhs',
           \ 'opener': split ==# 'vertical'
           \   ? 'rightbelow vertical split'
@@ -298,18 +298,18 @@ function! hita#command#diff#open2(...) abort
     keepjump normal! zM
     execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
     keepjump normal! zM
-    call hita#util#select(options.selection)
+    call gita#util#select(options.selection)
   endif
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita diff',
+          \ 'name': 'Gita diff',
           \ 'description': 'Show a diff content of a commit or files',
-          \ 'complete_unknown': function('hita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -327,7 +327,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--split',
           \ 'Open two buffer to compare rather than to open a diff file', {
-          \   'on_default': g:hita#command#diff#default_split,
+          \   'on_default': g:gita#command#diff#default_split,
           \   'choices': ['vertical', 'horizontal'],
           \})
     call s:parser.add_argument(
@@ -338,19 +338,19 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'commit',
           \ 'A commit', {
-          \   'complete': function('hita#variable#complete_commit'),
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     " TODO: Add more arguments
   endif
   return s:parser
 endfunction
-function! hita#command#diff#command(...) abort
+function! gita#command#diff#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  call hita#option#assign_commit(options)
+  call gita#option#assign_commit(options)
   if !empty(options.__unknown__)
     let options.filenames = options.__unknown__
   endif
@@ -364,22 +364,22 @@ function! hita#command#diff#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#diff#default_options),
+        \ deepcopy(g:gita#command#diff#default_options),
         \ options,
         \)
   if empty(get(options, 'split'))
-    call hita#command#diff#open(options)
+    call gita#command#diff#open(options)
   else
-    call hita#option#assign_filename(options)
-    call hita#command#diff#open2(options)
+    call gita#option#assign_filename(options)
+    call gita#command#diff#open2(options)
   endif
 endfunction
-function! hita#command#diff#complete(...) abort
+function! gita#command#diff#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
 
-call hita#util#define_variables('command#diff', {
+call gita#util#define_variables('command#diff', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
       \ 'default_split': 'vertical',

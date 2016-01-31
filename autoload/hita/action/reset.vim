@@ -1,9 +1,9 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-reset)': 'Reset changes on an index',
+      \ '<Plug>(gita-reset)': 'Reset changes on an index',
       \}
 
-function! hita#action#reset#action(candidates, ...) abort
+function! gita#action#reset#action(candidates, ...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
   let filenames = []
@@ -13,7 +13,7 @@ function! hita#action#reset#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = hita#command#reset#call({
+    let result = gita#command#reset#call({
           \ 'filenames': filenames,
           \ 'quiet': 1,
           \})
@@ -21,17 +21,17 @@ function! hita#action#reset#action(candidates, ...) abort
   endif
 endfunction
 
-function! hita#action#reset#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-reset)
-        \ :call hita#action#call('reset')<CR>
+function! gita#action#reset#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-reset)
+        \ :call gita#action#call('reset')<CR>
 endfunction
 
-function! hita#action#reset#define_default_mappings() abort
-  map <buffer> -r <Plug>(hita-reset)
+function! gita#action#reset#define_default_mappings() abort
+  map <buffer> -r <Plug>(gita-reset)
 endfunction
 
-function! hita#action#reset#get_mapping_table() abort
+function! gita#action#reset#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#reset', {})
+call gita#util#define_variables('action#reset', {})

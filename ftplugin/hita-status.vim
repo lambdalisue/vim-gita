@@ -3,7 +3,7 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-" Users can override the following with user's ftplugin/hita-status.vim
+" Users can override the following with user's ftplugin/gita-status.vim
 setlocal winfixheight
 setlocal cursorline
 setlocal nolist nospell

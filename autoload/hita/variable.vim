@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
@@ -8,19 +8,19 @@ let s:GitInfo = s:V.import('Git.Info')
 function! s:validate_filename(filename, ...) abort
   let options = get(a:000, 0, {})
   if empty(a:filename)
-    call hita#throw(
+    call gita#throw(
           \ 'ValidationError: A filename cannot be empty'
           \)
   endif
   if s:Path.is_relative(a:filename)
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'A filename "%s" requires to be a real absolute path before validation',
           \ a:filename,
           \))
   endif
 endfunction
 
-function! hita#variable#get_valid_commit(commit, ...) abort
+function! gita#variable#get_valid_commit(commit, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -31,10 +31,10 @@ function! hita#variable#get_valid_commit(commit, ...) abort
       call histadd('input', 'origin/HEAD')
       let commit = s:Prompt.ask(
             \ 'Please input a commit: ', '',
-            \ 'customlist,hita#variable#complete_commit',
+            \ 'customlist,gita#variable#complete_commit',
             \)
       if empty(commit)
-        call hita#throw('Cancel')
+        call gita#throw('Cancel')
       endif
     finally
       call guard.restore()
@@ -45,7 +45,7 @@ function! hita#variable#get_valid_commit(commit, ...) abort
   call s:GitTerm.validate_commit(commit, options)
   return commit
 endfunction
-function! hita#variable#get_valid_commitish(commitish, ...) abort
+function! gita#variable#get_valid_commitish(commitish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -56,10 +56,10 @@ function! hita#variable#get_valid_commitish(commitish, ...) abort
       call histadd('input', 'origin/HEAD')
       let commitish = s:Prompt.ask(
             \ 'Please input a commitish: ', '',
-            \ 'customlist,hita#variable#complete_commit',
+            \ 'customlist,gita#variable#complete_commit',
             \)
       if empty(commitish)
-        call hita#throw('Cancel')
+        call gita#throw('Cancel')
       endif
     finally
       call guard.restore()
@@ -70,7 +70,7 @@ function! hita#variable#get_valid_commitish(commitish, ...) abort
   call s:GitTerm.validate_commitish(commitish, options)
   return commitish
 endfunction
-function! hita#variable#get_valid_treeish(treeish, ...) abort
+function! gita#variable#get_valid_treeish(treeish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -81,10 +81,10 @@ function! hita#variable#get_valid_treeish(treeish, ...) abort
       call histadd('input', 'origin/HEAD')
       let treeish = s:Prompt.ask(
             \ 'Please input a treeish: ', '',
-            \ 'customlist,hita#variable#complete_commit',
+            \ 'customlist,gita#variable#complete_commit',
             \)
       if empty(treeish)
-        call hita#throw('Cancel')
+        call gita#throw('Cancel')
       endif
     finally
       call guard.restore()
@@ -95,7 +95,7 @@ function! hita#variable#get_valid_treeish(treeish, ...) abort
   call s:GitTerm.validate_treeish(treeish, options)
   return treeish
 endfunction
-function! hita#variable#get_valid_range(range, ...) abort
+function! gita#variable#get_valid_range(range, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -106,10 +106,10 @@ function! hita#variable#get_valid_range(range, ...) abort
       call histadd('input', 'origin/HEAD...')
       let range = s:Prompt.ask(
             \ 'Please input a commitish or commitish range: ', '',
-            \ 'customlist,hita#variable#complete_commit',
+            \ 'customlist,gita#variable#complete_commit',
             \)
       if empty(range)
-        call hita#throw('Cancel')
+        call gita#throw('Cancel')
       endif
     finally
       call guard.restore()
@@ -120,25 +120,25 @@ function! hita#variable#get_valid_range(range, ...) abort
   call s:GitTerm.validate_range(range, options)
   return range
 endfunction
-function! hita#variable#get_valid_filename(filename, ...) abort
+function! gita#variable#get_valid_filename(filename, ...) abort
   let options = get(a:000, 0, {})
   if empty(a:filename)
     let guard = s:Guard.store(['_complete_options', s:])
     let s:_complete_options = options
     try
-      call histadd('input', s:Path.relpath(hita#expand('%')))
+      call histadd('input', s:Path.relpath(gita#expand('%')))
       let filename = s:Prompt.ask(
             \ 'Please input a filename: ', '',
-            \ 'customlist,hita#variable#complete_filename'
+            \ 'customlist,gita#variable#complete_filename'
             \)
       if empty(filename)
-        call hita#throw('Cancel')
+        call gita#throw('Cancel')
       endif
     finally
       call guard.restore()
     endtry
   else
-    let filename = hita#expand(a:filename)
+    let filename = gita#expand(a:filename)
   endif
   " NOTE:
   " Alwasy return a real absolute path
@@ -147,11 +147,11 @@ function! hita#variable#get_valid_filename(filename, ...) abort
   return filename
 endfunction
 
-function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
+function! gita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
-    let git = hita#get_or_fail()
+    let git = gita#get_or_fail()
     let complete_branches = s:GitInfo.get_available_branches(git, options)
     let complete_tags = s:GitInfo.get_available_tags(git, options)
     if !empty(a:arglead)
@@ -168,11 +168,11 @@ function! hita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
     return []
   endtry
 endfunction
-function! hita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abort
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
-    let git = hita#get_or_fail()
+    let git = gita#get_or_fail()
     let filenames = s:GitInfo.get_available_filenames(git, options)
     " NOTE:
     " Filter filenames exists under the current working directory

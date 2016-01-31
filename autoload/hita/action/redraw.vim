@@ -1,26 +1,26 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-redraw)': 'Redraw the buffer',
+      \ '<Plug>(gita-redraw)': 'Redraw the buffer',
       \}
 
-function! hita#action#redraw#action(candidates, ...) abort
-  if &filetype =~# '^hita-'
-    let name = matchstr(&filetype, '^hita-\zs.*$')
-    call call(function(printf('hita#command#%s#redraw', name)), [])
+function! gita#action#redraw#action(candidates, ...) abort
+  if &filetype =~# '^gita-'
+    let name = matchstr(&filetype, '^gita-\zs.*$')
+    call call(function(printf('gita#command#%s#redraw', name)), [])
   endif
 endfunction
 
-function! hita#action#redraw#define_plugin_mappings() abort
-  nnoremap <buffer><silent> <Plug>(hita-redraw)
-        \ :<C-u>call hita#action#call('redraw')<CR>
+function! gita#action#redraw#define_plugin_mappings() abort
+  nnoremap <buffer><silent> <Plug>(gita-redraw)
+        \ :<C-u>call gita#action#call('redraw')<CR>
 endfunction
 
-function! hita#action#redraw#define_default_mappings() abort
-  map <buffer> <C-l> <Plug>(hita-redraw)
+function! gita#action#redraw#define_default_mappings() abort
+  map <buffer> <C-l> <Plug>(gita-redraw)
 endfunction
 
-function! hita#action#redraw#get_mapping_table() abort
+function! gita#action#redraw#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#redraw', {})
+call gita#util#define_variables('action#redraw', {})

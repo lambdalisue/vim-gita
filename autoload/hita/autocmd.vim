@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
@@ -17,19 +17,19 @@ function! s:on_SourceCmd() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
-  let info = hita#autocmd#parse(expand('<afile>'))
+  let info = gita#autocmd#parse(expand('<afile>'))
   if exists('#BufReadPre')
     doautocmd BufReadPre
   endif
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
-    call hita#command#show#edit({
+    call gita#command#show#edit({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
-    call hita#command#diff#edit({
+    call gita#command#diff#edit({
           \ 'commit': info.commit,
           \ 'filenames': empty(info.filename) ? [] : [info.filename],
           \ 'cached': index(info.extra_options, 'cached') >= 0,
@@ -37,13 +37,13 @@ function! s:on_BufReadCmd() abort
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'blame'
-    call hita#command#blame#edit({
+    call gita#command#blame#edit({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   else
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
@@ -52,19 +52,19 @@ function! s:on_BufReadCmd() abort
   endif
 endfunction
 function! s:on_FileReadCmd() abort
-  let info = hita#autocmd#parse(expand('<afile>'))
+  let info = gita#autocmd#parse(expand('<afile>'))
   if exists('#FileReadPre')
     doautocmd FileReadPre
   endif
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
-    call hita#command#show#read({
+    call gita#command#show#read({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'diff'
-    call hita#command#diff#read({
+    call gita#command#diff#read({
           \ 'commit': info.commit,
           \ 'filenames': empty(info.filename) ? [] : [info.filename],
           \ 'cached': index(info.extra_options, 'cached') >= 0,
@@ -72,13 +72,13 @@ function! s:on_FileReadCmd() abort
           \ 'force': v:cmdbang && !&modified,
           \})
   elseif content_type ==# 'blame'
-    call hita#command#blame#read({
+    call gita#command#blame#read({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   else
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
@@ -87,32 +87,32 @@ function! s:on_FileReadCmd() abort
   endif
 endfunction
 function! s:on_BufWritePre() abort
-  let b:_hita_autocmd_modified = &modified
+  let b:_gita_autocmd_modified = &modified
 endfunction
 function! s:on_BufWritePost() abort
-  if get(b:, '_hita_autocmd_modified', &modified) != &modified
-    if hita#get().is_enabled
-      call hita#util#doautocmd('StatusModified')
+  if get(b:, '_gita_autocmd_modified', &modified) != &modified
+    if gita#get().is_enabled
+      call gita#util#doautocmd('StatusModified')
     endif
   endif
-  silent! unlet! b:_hita_autocmd_modified
+  silent! unlet! b:_gita_autocmd_modified
 endfunction
 
-function! hita#autocmd#call(name) abort
+function! gita#autocmd#call(name) abort
   let fname = 's:on_' . a:name
   if !exists('*' . fname)
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'No autocmd function "%s" is found.', fname
           \))
   endif
   try
     call call(fname, [])
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
-function! hita#autocmd#parse(expr) abort
-  let git = hita#get_or_fail(a:expr)
+function! gita#autocmd#parse(expr) abort
+  let git = gita#get_or_fail(a:expr)
   let result = s:parse_filename(expand(a:expr))
   let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
   let result.commit = commit
@@ -125,7 +125,7 @@ function! hita#autocmd#parse(expr) abort
   let result.extra_options = split(result.extra_option, ':')
   return result
 endfunction
-function! hita#autocmd#bufname(git, options) abort
+function! gita#autocmd#bufname(git, options) abort
   let options = extend({
         \ 'filebase': 1,
         \ 'content_type': 'show',
@@ -147,9 +147,9 @@ function! hita#autocmd#bufname(git, options) abort
         \]
   let domain = join(filter(bits, '!empty(v:val)'), ':')
   if options.filebase
-    return printf('hita://%s/%s', domain, treeish)
+    return printf('gita://%s/%s', domain, treeish)
   else
-    return printf('hita:%s:%s', domain, treeish)
+    return printf('gita:%s:%s', domain, treeish)
   endif
 endfunction
 
@@ -184,25 +184,25 @@ function! s:parse_filename(filename) abort
     endfor
     return o
   endfor
-  call hita#throw(printf(
+  call gita#throw(printf(
         \ '"%s" does not have required component(s).',
         \ a:filename
         \))
 endfunction
 let s:schemes = [
-      \ ['^hita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\)/\(.\+\)$', {
+      \ ['^gita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\)/\(.\+\)$', {
       \   'repository': 1,
       \   'content_type': 2,
       \   'extra_option': 3,
       \   'treeish': 4,
       \ }],
-      \ ['^hita://\([^/:]\{-}\):\([^/:]\{-}\)/\(.\+\)$', {
+      \ ['^gita://\([^/:]\{-}\):\([^/:]\{-}\)/\(.\+\)$', {
       \   'repository': 1,
       \   'content_type': 2,
       \   'extra_option': '',
       \   'treeish': 3,
       \ }],
-      \ ['^hita://\([^/:]\{-}\)/\(.\+\)$', {
+      \ ['^gita://\([^/:]\{-}\)/\(.\+\)$', {
       \   'repository': 1,
       \   'content_type': 'show',
       \   'extra_option': '',

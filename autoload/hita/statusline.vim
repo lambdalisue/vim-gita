@@ -1,5 +1,5 @@
 scriptencoding utf8
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Cache = s:V.import('System.Cache.Memory')
@@ -18,12 +18,12 @@ let s:format_map = {
       \}
 function! s:format_map.og(data) abort
   " outgoing
-  let git = a:data._hita
+  let git = a:data._gita
   return s:GitInfo.count_commits_ahead_of_remote(git)
 endfunction
 function! s:format_map.ic(data) abort
   " outgoing
-  let git = a:data._hita
+  let git = a:data._gita
   return s:GitInfo.count_commits_behind_remote(git)
 endfunction
 function! s:format_map.nc(data) abort
@@ -86,7 +86,7 @@ let s:preset.traffic = '%{<| }ic%{>|}og'
 let s:preset.traffic_fancy = '%{￩| }ic%{￫}og'
 
 function! s:extend_status_count(data) abort
-  let git = a:data._hita
+  let git = a:data._gita
   let status_count = {
         \ 'conflicted': 0,
         \ 'unstaged': 0,
@@ -164,27 +164,27 @@ function! s:is_repository_updated(git) abort
 endfunction
 
 function! s:on_BufWritePre() abort
-  let b:_hita_statusline_modified = &modified
+  let b:_gita_statusline_modified = &modified
 endfunction
 function! s:on_BufWritePost() abort
-  if get(b:, '_hita_statusline_modified', &modified) != &modified
-    let git = hita#get()
+  if get(b:, '_gita_statusline_modified', &modified) != &modified
+    let git = gita#get()
     if git.is_enabled
       call s:get_format_cache(git).clear()
     endif
   endif
-  silent! unlet! b:_hita_statusline_modified
+  silent! unlet! b:_gita_statusline_modified
 endfunction
-function! s:on_HitaStatusModified() abort
-  let git = hita#get()
+function! s:on_GitaStatusModified() abort
+  let git = gita#get()
   if git.is_enabled
     call s:get_format_cache(git).clear()
   endif
 endfunction
 
-function! hita#statusline#format(format) abort
+function! gita#statusline#format(format) abort
   try
-    let git = hita#get_or_fail()
+    let git = gita#get_or_fail()
     let format_cache = s:get_format_cache(git)
     if format_cache.has(a:format) && !s:is_repository_updated(git)
       return format_cache.get(a:format)
@@ -200,30 +200,30 @@ function! hita#statusline#format(format) abort
           \ 'remote_branch': remote_branch.name,
           \ 'remote_hashref': remote_branch.hash,
           \ 'mode': s:GitInfo.get_current_mode(git),
-          \ '_hita': git,
+          \ '_gita': git,
           \}
     let text = s:StringExt.format(a:format, s:format_map, info)
     call format_cache.set(a:format, text)
     return text
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
     return ''
   endtry
 endfunction
 
-function! hita#statusline#preset(name) abort
+function! gita#statusline#preset(name) abort
   if !has_key(s:preset, a:name)
     call s:Prompt.error(printf(
-          \ 'vim-hita: statusline: A preset "%s" is not found.',
+          \ 'vim-gita: statusline: A preset "%s" is not found.',
           \ a:name,
           \))
     return ''
   endif
-  return hita#statusline#format(s:preset[a:name])
+  return gita#statusline#format(s:preset[a:name])
 endfunction
 
-augroup vim_hita_internal_statusline_clear_cache
+augroup vim_gita_internal_statusline_clear_cache
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * call s:on_BufWritePost()
-  autocmd User HitaStatusModified call s:on_HitaStatusModified()
+  autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END

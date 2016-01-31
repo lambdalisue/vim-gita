@@ -1,27 +1,27 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-status)': 'Open hita-status window',
+      \ '<Plug>(gita-status)': 'Open gita-status window',
       \}
 
-function! hita#action#status#action(candidates, ...) abort
-  let filenames = hita#get_meta('filenames', [])
-  call hita#command#status#open({
+function! gita#action#status#action(candidates, ...) abort
+  let filenames = gita#get_meta('filenames', [])
+  call gita#command#status#open({
         \ 'filenames': filenames,
         \})
 endfunction
 
-function! hita#action#status#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-status)
-        \ :call hita#action#call('status')<CR>
+function! gita#action#status#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-status)
+        \ :call gita#action#call('status')<CR>
 endfunction
 
-function! hita#action#status#define_default_mappings() abort
-  map <buffer> cc <Plug>(hita-status)
+function! gita#action#status#define_default_mappings() abort
+  map <buffer> cc <Plug>(gita-status)
 endfunction
 
-function! hita#action#status#get_mapping_table() abort
+function! gita#action#status#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#status', {})
+call gita#util#define_variables('action#status', {})
 

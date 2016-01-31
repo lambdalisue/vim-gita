@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
@@ -32,7 +32,7 @@ function! s:get_commit_content(git, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = hita#execute(a:git, 'commit', options)
+  let result = gita#execute(a:git, 'commit', options)
   if get(options, 'dry-run') && result.status == 1
     " Note:
     " Somehow 'git commit' return 1 when --dry-run is specified
@@ -46,26 +46,26 @@ function! s:get_current_commitmsg() abort
   return filter(getline(1, '$'), 'v:val !~# "^#"')
 endfunction
 function! s:save_commitmsg() abort
-  call hita#set_meta('commitmsg_saved', s:get_current_commitmsg())
+  call gita#set_meta('commitmsg_saved', s:get_current_commitmsg())
 endfunction
 function! s:commit_commitmsg() abort
-  let git = hita#get_or_fail()
-  let options = hita#get_meta('options')
-  let statuses = hita#get_meta('statuses')
+  let git = gita#get_or_fail()
+  let options = gita#get_meta('options')
+  let statuses = gita#get_meta('statuses')
   let staged_statuses = filter(copy(statuses), 'v:val.is_staged')
   if !s:GitInfo.is_merging(git) && empty(staged_statuses) && get(options, 'allow-empty')
-    call hita#throw(
+    call gita#throw(
           \ 'An empty commit is now allowed. Add --allow-empty option to allow.',
           \)
   elseif &modified
-    call hita#throw(
+    call gita#throw(
           \ 'Warning:',
           \ 'You have unsaved changes. Save the changes by ":w" first',
           \)
   endif
   let commitmsg = s:get_current_commitmsg()
   if join(commitmsg) =~# '^\s*$'
-    call hita#throw(
+    call gita#throw(
           \ 'Warning:',
           \ 'No commit message is written. Write a commit message first',
           \)
@@ -82,9 +82,9 @@ function! s:commit_commitmsg() abort
           \ len(staged_statuses),
           \))
     call s:Prompt.echo('None', join(content, "\n"))
-    call hita#remove_meta('commitmsg_saved', '')
-    call hita#set_meta('options', {})
-    call hita#util#doautocmd('StatusModified')
+    call gita#remove_meta('commitmsg_saved', '')
+    call gita#set_meta('options', {})
+    call gita#util#doautocmd('StatusModified')
   finally
     call delete(tempfile)
   endtry
@@ -103,106 +103,106 @@ function! s:get_entry(index) abort
     let offset += 1
   endfor
   let index = a:index - s:entry_offset - offset
-  let statuses = hita#get_meta('statuses', [])
+  let statuses = gita#get_meta('statuses', [])
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:define_actions() abort
-  let action = hita#action#define(function('s:get_entry'))
+  let action = gita#action#define(function('s:get_entry'))
   function! action.actions.redraw(candidates, ...) abort
-    call hita#command#commit#update()
+    call gita#command#commit#update()
   endfunction
   function! action.actions.redraw(candidates, ...) abort
-    call hita#command#commit#update()
+    call gita#command#commit#update()
   endfunction
   function! action.actions.commit_do(candidates, ...) abort
     call s:commit_commitmsg()
-    call hita#action#call('status')
+    call gita#action#call('status')
   endfunction
 
-  nnoremap <buffer><silent> <Plug>(hita-commit-do)
-        \ :<C-u>call hita#action#call('commit_do')<CR>
+  nnoremap <buffer><silent> <Plug>(gita-commit-do)
+        \ :<C-u>call gita#action#call('commit_do')<CR>
 
-  call hita#action#includes(
-        \ g:hita#command#commit#enable_default_mappings, [
+  call gita#action#includes(
+        \ g:gita#command#commit#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
         \   'edit', 'show', 'diff', 'blame', 'browse',
         \   'status',
         \])
 
-  if g:hita#command#commit#enable_default_mappings
+  if g:gita#command#commit#enable_default_mappings
     execute printf(
           \ 'map <buffer> <Return> %s',
-          \ g:hita#command#commit#default_action_mapping
+          \ g:gita#command#commit#default_action_mapping
           \)
-    map <buffer> CC <Plug>(hita-commit-do)
+    map <buffer> CC <Plug>(gita-commit-do)
   endif
 endfunction
 
 function! s:on_BufReadCmd() abort
   try
-    call hita#command#commit#update()
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+    call gita#command#commit#update()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 function! s:on_BufWriteCmd() abort
   try
     call s:save_commitmsg()
     setlocal nomodified
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 function! s:on_VimResized() abort
   try
-    call hita#command#commit#redraw()
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+    call gita#command#commit#redraw()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 function! s:on_WinEnter() abort
   try
-    if hita#get_meta('winwidth', winwidth(0)) != winwidth(0)
-      call hita#command#commit#redraw()
+    if gita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+      call gita#command#commit#redraw()
     endif
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 function! s:on_WinLeave() abort
-  if exists('w:_vim_hita_commit_QuitPre')
-    unlet w:_vim_hita_commit_QuitPre
+  if exists('w:_vim_gita_commit_QuitPre')
+    unlet w:_vim_gita_commit_QuitPre
     try
       if !&modified && s:Prompt.confirm('Do you want to commit changes?', 'y')
         call s:commit_commitmsg()
       endif
-    catch /^\%(vital: Git[:.]\|vim-hita:\)/
-      call hita#util#handle_exception()
+    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+      call gita#util#handle_exception()
     endtry
   endif
 endfunction
 function! s:on_QuitPre() abort
-  let w:_vim_hita_commit_QuitPre = 1
+  let w:_vim_gita_commit_QuitPre = 1
 endfunction
-function! s:on_HitaStatusModified() abort
+function! s:on_GitaStatusModified() abort
   try
     let winnum = winnr()
     keepjump windo
-          \ if &filetype ==# 'hita-commit' |
-          \   call hita#command#commit#update() |
+          \ if &filetype ==# 'gita-commit' |
+          \   call gita#command#commit#update() |
           \ endif
     execute printf('keepjump %dwincmd w', winnum)
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 
-function! hita#command#commit#bufname(...) abort
-  let options = hita#option#init('^commit$', get(a:000, 0, {}), {
+function! gita#command#commit#bufname(...) abort
+  let options = gita#option#init('^commit$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let git = hita#get_or_fail()
-  return hita#autocmd#bufname(git, {
+  let git = gita#get_or_fail()
+  return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'commit',
         \ 'extra_options': [
@@ -212,16 +212,16 @@ function! hita#command#commit#bufname(...) abort
         \ 'path': '',
         \})
 endfunction
-function! hita#command#commit#call(...) abort
-  let options = hita#option#init('^commit$', get(a:000, 0, {}), {
+function! gita#command#commit#call(...) abort
+  let options = gita#option#init('^commit$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \ 'amend': 0,
         \})
-  let git = hita#get_or_fail()
+  let git = gita#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
-          \ 'hita#variable#get_valid_filename(v:val)',
+          \ 'gita#variable#get_valid_filename(v:val)',
           \)
   else
     let filenames = []
@@ -233,20 +233,20 @@ function! hita#command#commit#call(...) abort
         \ 'options': options,
         \}
   if get(options, 'porcelain')
-    let result.statuses = hita#command#status#parse_statuses(git, content)
+    let result.statuses = gita#command#status#parse_statuses(git, content)
   endif
   return result
 endfunction
-function! hita#command#commit#open(...) abort
+function! gita#command#commit#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = hita#get_or_fail()
+  let git = gita#get_or_fail()
   let opener = empty(options.opener)
-        \ ? g:hita#command#commit#default_opener
+        \ ? g:gita#command#commit#default_opener
         \ : options.opener
-  let bufname = hita#command#commit#bufname(options)
-  call hita#util#buffer#open(bufname, {
+  let bufname = gita#command#commit#bufname(options)
+  call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'group': 'manipulation_panel',
         \})
@@ -254,17 +254,17 @@ function! hita#command#commit#open(...) abort
   let b:_git = git
   let options['porcelain'] = 1
   let options['dry-run'] = 1
-  let result = hita#command#commit#call(options)
-  call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(options, [
+  let result = gita#command#commit#call(options)
+  call gita#set_meta('content_type', 'commit')
+  call gita#set_meta('options', s:Dict.omit(options, [
         \ 'force', 'opener', 'porcelain', 'dry-run',
         \]))
-  call hita#set_meta('statuses', result.statuses)
-  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call hita#set_meta('filenames', result.filenames)
-  call hita#set_meta('winwidth', winwidth(0))
+  call gita#set_meta('statuses', result.statuses)
+  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#set_meta('filenames', result.filenames)
+  call gita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
-  augroup vim_hita_internal_commit
+  augroup vim_gita_internal_commit
     autocmd! * <buffer>
     autocmd BufReadCmd <buffer> call s:on_BufReadCmd()
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
@@ -278,43 +278,43 @@ function! hita#command#commit#open(...) abort
   " of this buffer has registered.
   call s:Anchor.register()
   " the following options are required so overwrite everytime
-  setlocal filetype=hita-commit
+  setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
-  call hita#command#commit#redraw()
+  call gita#command#commit#redraw()
 endfunction
-function! hita#command#commit#update(...) abort
-  if &filetype !=# 'hita-commit'
-    call hita#throw('update() requires to be called in a hita-commit buffer')
+function! gita#command#commit#update(...) abort
+  if &filetype !=# 'gita-commit'
+    call gita#throw('update() requires to be called in a gita-commit buffer')
   endif
   let options = get(a:000, 0, {})
   let options['porcelain'] = 1
   let options['dry-run'] = 1
-  let result = hita#command#commit#call(options)
-  call hita#set_meta('content_type', 'commit')
-  call hita#set_meta('options', s:Dict.omit(options, [
+  let result = gita#command#commit#call(options)
+  call gita#set_meta('content_type', 'commit')
+  call gita#set_meta('options', s:Dict.omit(options, [
         \ 'force', 'opener', 'porcelain', 'dry-run',
         \]))
-  call hita#set_meta('statuses', result.statuses)
-  call hita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call hita#set_meta('filenames', result.filenames)
-  call hita#set_meta('winwidth', winwidth(0))
-  call hita#command#commit#redraw()
+  call gita#set_meta('statuses', result.statuses)
+  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#set_meta('filenames', result.filenames)
+  call gita#set_meta('winwidth', winwidth(0))
+  call gita#command#commit#redraw()
 endfunction
-function! hita#command#commit#redraw() abort
-  if &filetype !=# 'hita-commit'
-    call hita#throw('redraw() requires to be called in a hita-commit buffer')
+function! gita#command#commit#redraw() abort
+  if &filetype !=# 'gita-commit'
+    call gita#throw('redraw() requires to be called in a gita-commit buffer')
   endif
-  let git = hita#get_or_fail()
-  let options = hita#get_meta('options')
+  let git = gita#get_or_fail()
+  let options = gita#get_meta('options')
 
   let commit_mode = ''
-  if !empty(hita#get_meta('commitmsg_cached'))
-    let commitmsg = hita#get_meta('commitmsg_cached')
-    call hita#get_meta('commitmsg_cached', [])
+  if !empty(gita#get_meta('commitmsg_cached'))
+    let commitmsg = gita#get_meta('commitmsg_cached')
+    call gita#get_meta('commitmsg_cached', [])
     setlocal modified
-  elseif !empty(hita#get_meta('commitmsg_saved'))
-    let commitmsg = hita#get_meta('commitmsg_saved')
+  elseif !empty(gita#get_meta('commitmsg_saved'))
+    let commitmsg = gita#get_meta('commitmsg_saved')
   elseif s:GitInfo.is_merging(git)
     let commitmsg = s:GitInfo.get_merge_msg(git)
     let commit_mode = 'merge'
@@ -326,34 +326,34 @@ function! hita#command#commit#redraw() abort
   endif
 
   let prologue = s:List.flatten([
-        \ g:hita#command#commit#show_status_string_in_prologue
-        \   ? ['# ' . hita#command#status#get_statusline_string() . ' | Press ? to toggle a mapping help']
+        \ g:gita#command#commit#show_status_string_in_prologue
+        \   ? ['# ' . gita#command#status#get_statusline_string() . ' | Press ? to toggle a mapping help']
         \   : [],
-        \ hita#action#mapping#get_visibility()
-        \   ? map(hita#action#get_mapping_help(), '"# | " . v:val')
+        \ gita#action#mapping#get_visibility()
+        \   ? map(gita#action#get_mapping_help(), '"# | " . v:val')
         \   : [],
         \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
         \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \])
-  let statuses = hita#get_meta('statuses', [])
+  let statuses = gita#get_meta('statuses', [])
   let contents = map(
         \ copy(statuses),
         \ 's:format_entry(v:val)'
         \)
   let s:entry_offset = len(prologue)
-  call hita#util#buffer#edit_content(
+  call gita#util#buffer#edit_content(
         \ commitmsg + prologue + contents
         \)
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita commit',
+          \ 'name': 'Gita commit',
           \ 'description': 'Show a status of the repository',
-          \ 'complete_unknown': function('hita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -364,7 +364,7 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
-function! hita#command#commit#command(...) abort
+function! gita#command#commit#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
@@ -372,55 +372,55 @@ function! hita#command#commit#command(...) abort
   endif
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#commit#default_options),
+        \ deepcopy(g:gita#command#commit#default_options),
         \ options,
         \)
-  call hita#command#commit#open(options)
+  call gita#command#commit#open(options)
 endfunction
-function! hita#command#commit#complete(...) abort
+function! gita#command#commit#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
-function! hita#command#commit#define_highlights() abort
-  highlight default link HitaComment    Comment
-  highlight default link HitaConflicted Error
-  highlight default link HitaUnstaged   Constant
-  highlight default link HitaStaged     Special
-  highlight default link HitaUntracked  HitaUnstaged
-  highlight default link HitaIgnored    Identifier
-  highlight default link HitaBranch     Title
-  highlight default link HitaHighlight  Keyword
-  highlight default link HitaImportant  Constant
+function! gita#command#commit#define_highlights() abort
+  highlight default link GitaComment    Comment
+  highlight default link GitaConflicted Error
+  highlight default link GitaUnstaged   Constant
+  highlight default link GitaStaged     Special
+  highlight default link GitaUntracked  GitaUnstaged
+  highlight default link GitaIgnored    Identifier
+  highlight default link GitaBranch     Title
+  highlight default link GitaHighlight  Keyword
+  highlight default link GitaImportant  Constant
 endfunction
-function! hita#command#commit#define_syntax() abort
-  syntax match HitaStaged     /^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
-  syntax match HitaUnstaged   /^# [ MADRC][ MD]/hs=s+3 contains=ALL
-  syntax match HitaStaged     /^# [ MADRC]\s.*$/hs=s+5 contains=ALL
-  syntax match HitaUnstaged   /^# .[MDAU?].*$/hs=s+5 contains=ALL
-  syntax match HitaIgnored    /^# !!\s.*$/hs=s+2
-  syntax match HitaUntracked  /^# ??\s.*$/hs=s+2
-  syntax match HitaConflicted /^# \%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/hs=s+2
-  syntax match HitaComment    /^# .*$/ contains=ALL
-  syntax match HitaBranch     /Hita status of [^ ]\+/hs=s+15 contained
-  syntax match HitaBranch     /Hita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
-  syntax match HitaHighlight  /\d\+ commit(s) ahead/ contained
-  syntax match HitaHighlight  /\d\+ commit(s) behind/ contained
-  syntax match HitaImportant  /REBASE-[mi] \d\/\d/
-  syntax match HitaImportant  /REBASE \d\/\d/
-  syntax match HitaImportant  /AM \d\/\d/
-  syntax match HitaImportant  /AM\/REBASE \d\/\d/
-  syntax match HitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
+function! gita#command#commit#define_syntax() abort
+  syntax match GitaStaged     /^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
+  syntax match GitaUnstaged   /^# [ MADRC][ MD]/hs=s+3 contains=ALL
+  syntax match GitaStaged     /^# [ MADRC]\s.*$/hs=s+5 contains=ALL
+  syntax match GitaUnstaged   /^# .[MDAU?].*$/hs=s+5 contains=ALL
+  syntax match GitaIgnored    /^# !!\s.*$/hs=s+2
+  syntax match GitaUntracked  /^# ??\s.*$/hs=s+2
+  syntax match GitaConflicted /^# \%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/hs=s+2
+  syntax match GitaComment    /^# .*$/ contains=ALL
+  syntax match GitaBranch     /Gita status of [^ ]\+/hs=s+15 contained
+  syntax match GitaBranch     /Gita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
+  syntax match GitaHighlight  /\d\+ commit(s) ahead/ contained
+  syntax match GitaHighlight  /\d\+ commit(s) behind/ contained
+  syntax match GitaImportant  /REBASE-[mi] \d\/\d/
+  syntax match GitaImportant  /REBASE \d\/\d/
+  syntax match GitaImportant  /AM \d\/\d/
+  syntax match GitaImportant  /AM\/REBASE \d\/\d/
+  syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
 
-augroup vim_hita_internal_commit_update
+augroup vim_gita_internal_commit_update
   autocmd!
-  autocmd User HitaStatusModified call s:on_HitaStatusModified()
+  autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END
 
-call hita#util#define_variables('command#commit', {
+call gita#util#define_variables('command#commit', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(hita-edit)',
+      \ 'default_action_mapping': '<Plug>(gita-edit)',
       \ 'enable_default_mappings': 1,
       \ 'show_status_string_in_prologue': 1,
       \})

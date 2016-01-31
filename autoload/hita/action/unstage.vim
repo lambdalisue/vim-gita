@@ -1,23 +1,23 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-unstage)': 'Unstage changes from the index',
+      \ '<Plug>(gita-unstage)': 'Unstage changes from the index',
       \}
 
-function! hita#action#unstage#action(candidates, ...) abort
-  call hita#action#do('reset', a:candidates, {})
+function! gita#action#unstage#action(candidates, ...) abort
+  call gita#action#do('reset', a:candidates, {})
 endfunction
 
-function! hita#action#unstage#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-unstage)
-        \ :call hita#action#call('unstage')<CR>
+function! gita#action#unstage#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-unstage)
+        \ :call gita#action#call('unstage')<CR>
 endfunction
 
-function! hita#action#unstage#define_default_mappings() abort
-  map <buffer> >> <Plug>(hita-unstage)
+function! gita#action#unstage#define_default_mappings() abort
+  map <buffer> >> <Plug>(gita-unstage)
 endfunction
 
-function! hita#action#unstage#get_mapping_table() abort
+function! gita#action#unstage#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('action#unstage', {})
+call gita#util#define_variables('action#unstage', {})

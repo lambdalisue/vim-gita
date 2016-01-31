@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
@@ -6,12 +6,12 @@ let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
-function! hita#command#is_registered(name) abort
+function! gita#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
 endfunction
-function! hita#command#register(name, command, complete, ...) abort
+function! gita#command#register(name, command, complete, ...) abort
   if has_key(s:registry, a:name)
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'ValidationError: A command "%s" has already been registered',
           \ a:name,
           \))
@@ -25,9 +25,9 @@ function! hita#command#register(name, command, complete, ...) abort
         \   : a:complete,
         \}
 endfunction
-function! hita#command#unregister(name) abort
+function! gita#command#unregister(name) abort
   if !has_key(s:registry, a:name)
-    call hita#throw(printf(
+    call gita#throw(printf(
           \ 'ValidationError: A command "%s" has not been registered yet',
           \ a:name,
           \))
@@ -37,7 +37,7 @@ endfunction
 
 function! s:apply_command(name, options) abort
   let args = [a:name] + a:options.__unknown__
-  let git = hita#get()
+  let git = gita#get()
   if git.is_enabled
     let args = ['-C', git.worktree] + args
   endif
@@ -47,16 +47,16 @@ function! s:apply_command(name, options) abort
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita',
+          \ 'name': 'Gita',
           \ 'description': [
           \   'A git manipulation command',
           \ ],
           \})
     call s:parser.add_argument(
           \ 'action', [
-          \   'An action name of vim-hita. The following actions are available:',
+          \   'An action name of vim-gita. The following actions are available:',
           \ ], {
           \   'required': 1,
           \   'terminal': 1,
@@ -70,7 +70,7 @@ function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
   let available_commands = keys(s:registry)
   return filter(available_commands, 'v:val =~# "^" . a:arglead')
 endfunction
-function! hita#command#command(...) abort
+function! gita#command#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if !empty(options)
@@ -78,27 +78,27 @@ function! hita#command#command(...) abort
     let range = a:2
     let args  = join(options.__unknown__)
     let name  = get(options, 'action', '')
-    if bang !=# '!'  && hita#command#is_registered(name)
+    if bang !=# '!'  && gita#command#is_registered(name)
       try
         call s:registry[name].command(bang, range, args)
-      catch /^\%(vital: Git[:.]\|vim-hita:\)/
-        call hita#util#handle_exception()
+      catch /^\%(vital: Git[:.]\|vim-gita:\)/
+        call gita#util#handle_exception()
       endtry
     else
       call s:apply_command(name, options)
-      call hita#util#doautocmd('StatusModified')
+      call gita#util#doautocmd('StatusModified')
     endif
   endif
 endfunction
-function! hita#command#complete(arglead, cmdline, cursorpos, ...) abort
-  let bang    = a:cmdline =~# '\v^Hita!'
-  let cmdline = substitute(a:cmdline, '\C^Hita!\?\s', '', '')
+function! gita#command#complete(arglead, cmdline, cursorpos, ...) abort
+  let bang    = a:cmdline =~# '\v^Gita!'
+  let cmdline = substitute(a:cmdline, '\C^Gita!\?\s', '', '')
   let cmdline = substitute(cmdline, '[^ ]\+$', '', '')
   let parser  = s:get_parser()
   let options = call(parser.parse, [bang, [0, 0], cmdline], parser)
   if !empty(options)
     let name = get(options, 'action', '')
-    if hita#command#is_registered(name)
+    if gita#command#is_registered(name)
       try
         return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
       catch
@@ -113,47 +113,47 @@ function! hita#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
-call hita#command#register('add',
-      \ 'hita#command#add#command',
-      \ 'hita#command#add#complete',
+call gita#command#register('add',
+      \ 'gita#command#add#command',
+      \ 'gita#command#add#complete',
       \)
-call hita#command#register('apply',
-      \ 'hita#command#apply#command',
-      \ 'hita#command#apply#complete',
+call gita#command#register('apply',
+      \ 'gita#command#apply#command',
+      \ 'gita#command#apply#complete',
       \)
-call hita#command#register('blame',
-      \ 'hita#command#blame#command',
-      \ 'hita#command#blame#complete',
+call gita#command#register('blame',
+      \ 'gita#command#blame#command',
+      \ 'gita#command#blame#complete',
       \)
-call hita#command#register('browse',
-      \ 'hita#command#browse#command',
-      \ 'hita#command#browse#complete',
+call gita#command#register('browse',
+      \ 'gita#command#browse#command',
+      \ 'gita#command#browse#complete',
       \)
-call hita#command#register('commit',
-      \ 'hita#command#commit#command',
-      \ 'hita#command#commit#complete',
+call gita#command#register('commit',
+      \ 'gita#command#commit#command',
+      \ 'gita#command#commit#complete',
       \)
-call hita#command#register('checkout',
-      \ 'hita#command#checkout#command',
-      \ 'hita#command#checkout#complete',
+call gita#command#register('checkout',
+      \ 'gita#command#checkout#command',
+      \ 'gita#command#checkout#complete',
       \)
-call hita#command#register('diff',
-      \ 'hita#command#diff#command',
-      \ 'hita#command#diff#complete',
+call gita#command#register('diff',
+      \ 'gita#command#diff#command',
+      \ 'gita#command#diff#complete',
       \)
-call hita#command#register('reset',
-      \ 'hita#command#reset#command',
-      \ 'hita#command#reset#complete',
+call gita#command#register('reset',
+      \ 'gita#command#reset#command',
+      \ 'gita#command#reset#complete',
       \)
-call hita#command#register('rm',
-      \ 'hita#command#rm#command',
-      \ 'hita#command#rm#complete',
+call gita#command#register('rm',
+      \ 'gita#command#rm#command',
+      \ 'gita#command#rm#complete',
       \)
-call hita#command#register('show',
-      \ 'hita#command#show#command',
-      \ 'hita#command#show#complete',
+call gita#command#register('show',
+      \ 'gita#command#show#command',
+      \ 'gita#command#show#complete',
       \)
-call hita#command#register('status',
-      \ 'hita#command#status#command',
-      \ 'hita#command#status#complete',
+call gita#command#register('status',
+      \ 'gita#command#status#command',
+      \ 'gita#command#status#complete',
       \)

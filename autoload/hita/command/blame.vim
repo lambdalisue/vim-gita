@@ -1,4 +1,4 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:DateTime = s:V.import('DateTime')
 let s:String = s:V.import('Data.String')
@@ -8,10 +8,10 @@ let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:ProgressBar = s:V.import('ProgressBar')
 
-highlight HitaPseudoSeparatorDefault
+highlight GitaPseudoSeparatorDefault
       \ term=underline cterm=underline ctermfg=8 gui=underline guifg=#363636
-sign define HitaPseudoSeparatorSign
-      \ texthl=SignColumn linehl=HitaPseudoSeparator
+sign define GitaPseudoSeparatorSign
+      \ texthl=SignColumn linehl=GitaPseudoSeparator
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
@@ -23,7 +23,7 @@ function! s:get_blame_content(git, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
   let options['--'] = [a:filename]
-  let result = hita#execute(a:git, 'blame', options)
+  let result = gita#execute(a:git, 'blame', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
   endif
@@ -93,13 +93,13 @@ function! s:parse_blame(git, content, options) abort
         \ 'short_revision_length': -1,
         \}, a:options)
   let enable_pseudo_separator = options.enable_pseudo_separator == -1
-        \ ? g:hita#command#blame#enable_pseudo_separator
+        \ ? g:gita#command#blame#enable_pseudo_separator
         \ : options.enable_pseudo_separator
   let navigation_winwidth = options.navigation_winwidth == -1
-        \ ? g:hita#command#blame#navigation_winwidth
+        \ ? g:gita#command#blame#navigation_winwidth
         \ : options.navigation_winwidth
   let short_revision_length = options.short_revision_length == -1
-        \ ? g:hita#command#blame#short_revision_length
+        \ ? g:gita#command#blame#short_revision_length
         \ : options.short_revision_length
   " subtract columns for signs
   let navigation_winwidth -= 2
@@ -195,31 +195,31 @@ function! s:display_pseudo_separators(separators, expr) abort
   execute printf('sign unplace * buffer=%d', bufnum)
   for linenum in a:separators
     execute printf(
-          \ 'sign place %d line=%d name=HitaPseudoSeparatorSign buffer=%d',
+          \ 'sign place %d line=%d name=GitaPseudoSeparatorSign buffer=%d',
           \ linenum, linenum, bufnum,
           \)
   endfor
 endfunction
 
-function! hita#command#blame#bufname(...) abort
-  let options = hita#option#init('blame', get(a:000, 0, {}), {
+function! gita#command#blame#bufname(...) abort
+  let options = gita#option#init('blame', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = hita#variable#get_valid_filename(options.filename)
-  return hita#autocmd#bufname(git, {
+  let filename = gita#variable#get_valid_filename(options.filename)
+  return gita#autocmd#bufname(git, {
         \ 'content_type': 'blame',
         \ 'extra_options': [],
         \ 'commitish': commit,
         \ 'path': filename,
         \})
 endfunction
-function! hita#command#blame#call(...) abort
-  let options = hita#option#init('blame', get(a:000, 0, {}), {
+function! gita#command#blame#call(...) abort
+  let options = gita#option#init('blame', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \ '_enable_pseudo_separator': -1,
@@ -227,11 +227,11 @@ function! hita#command#blame#call(...) abort
         \ '_short_revision_length': -1,
         \ '_verbose': 1,
         \})
-  let git = hita#get_or_fail()
-  let commit = hita#variable#get_valid_range(options.commit, {
+  let git = gita#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = hita#variable#get_valid_filename(options.filename)
+  let filename = gita#variable#get_valid_filename(options.filename)
   if options._verbose
     redraw | echo 'Retrieving a blame content. It may take some time ...'
   endif
@@ -253,22 +253,22 @@ function! hita#command#blame#call(...) abort
   endif
   return result
 endfunction
-function! hita#command#blame#open(...) abort
+function! gita#command#blame#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
-        \ ? g:hita#command#blame#default_opener
+        \ ? g:gita#command#blame#default_opener
         \ : options.opener
-  let bufname = hita#command#blame#bufname(options)
+  let bufname = gita#command#blame#bufname(options)
   if !empty(bufname)
-    call hita#util#buffer#open(bufname, {
+    call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})
-    call hita#command#blame#navi#open(extend(copy(options), {
+    call gita#command#blame#navi#open(extend(copy(options), {
           \ 'opener': printf(
           \   'leftabove vertical %d split',
-          \   g:hita#command#blame#navigation_winwidth,
+          \   g:gita#command#blame#navigation_winwidth,
           \ ),
           \}))
     setlocal scrollbind
@@ -277,43 +277,43 @@ function! hita#command#blame#open(...) abort
     " BufReadCmd will call ...#edit to apply the content
   endif
 endfunction
-function! hita#command#blame#read(...) abort
+function! gita#command#blame#read(...) abort
   let options = extend({}, get(a:000, 0, {}))
   let options['porcelain'] = 1
-  let result = hita#command#blame#view#call(options)
-  call hita#util#buffer#read_content(result.blame.view_content)
+  let result = gita#command#blame#view#call(options)
+  call gita#util#buffer#read_content(result.blame.view_content)
 endfunction
-function! hita#command#blame#edit(...) abort
+function! gita#command#blame#edit(...) abort
   let options = extend({
         \ 'force': 0,
         \}, get(a:000, 0, {}))
   let options['porcelain'] = 1
-  let result = hita#command#blame#call(options)
-  call hita#set_meta('content_type', 'blame')
-  call hita#set_meta('options', s:Dict.omit(options, ['force']))
-  call hita#set_meta('commit', result.commit)
-  call hita#set_meta('filename', result.filename)
-  call hita#set_meta('blame', result.blame)
+  let result = gita#command#blame#call(options)
+  call gita#set_meta('content_type', 'blame')
+  call gita#set_meta('options', s:Dict.omit(options, ['force']))
+  call gita#set_meta('commit', result.commit)
+  call gita#set_meta('filename', result.filename)
+  call gita#set_meta('blame', result.blame)
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nonumber nowrap nofoldenable foldcolumn=0
   setlocal nomodifiable
   setlocal scrollopt=ver
-  augroup vim_hita_internal_blame
+  augroup vim_gita_internal_blame
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer>
           \ setlocal nonumber nowrap nofoldenable foldcolumn=0
   augroup END
-  call hita#util#buffer#edit_content(result.blame.view_content)
-  call hita#command#blame#define_highlights()
-  call hita#command#blame#display_pseudo_separators(result.blame.separators)
+  call gita#util#buffer#edit_content(result.blame.view_content)
+  call gita#command#blame#define_highlights()
+  call gita#command#blame#display_pseudo_separators(result.blame.separators)
 endfunction
 
 function! s:get_parser() abort
-  if !exists('s:parser') || g:hita#develop
+  if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Hita blame',
+          \ 'name': 'Gita blame',
           \ 'description': 'Show what revision and author last modified each line of a file',
-          \ 'complete_threshold': g:hita#complete_threshold,
+          \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ 'commit', [
@@ -321,7 +321,7 @@ function! s:get_parser() abort
           \   'If nothing is specified, it show a blame of HEAD.',
           \   'If <commit> is specified, it show a blame of the named <commit>.',
           \ ], {
-          \   'complete': function('hita#variable#complete_commit'),
+          \   'complete': function('gita#variable#complete_commit'),
           \ })
     call s:parser.add_argument(
           \ 'filename', [
@@ -333,34 +333,34 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
-function! hita#command#blame#command(...) abort
+function! gita#command#blame#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  call hita#option#assign_commit(options)
-  call hita#option#assign_filename(options)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
   " extend default options
   let options = extend(
-        \ deepcopy(g:hita#command#blame#default_options),
+        \ deepcopy(g:gita#command#blame#default_options),
         \ options,
         \)
-  call hita#command#blame#open(options)
+  call gita#command#blame#open(options)
 endfunction
-function! hita#command#blame#complete(...) abort
+function! gita#command#blame#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
-function! hita#command#blame#define_highlights() abort
-  highlight default link HitaPseudoSeparator HitaPseudoSeparatorDefault
+function! gita#command#blame#define_highlights() abort
+  highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
 endfunction
-function! hita#command#blame#display_pseudo_separators(separators, ...) abort
+function! gita#command#blame#display_pseudo_separators(separators, ...) abort
   let expr = get(a:000, 0, '%')
   call s:display_pseudo_separators(a:separators, expr)
 endfunction
 
-call hita#util#define_variables('command#blame', {
+call gita#util#define_variables('command#blame', {
       \ 'default_options': {},
       \ 'default_opener': 'tabnew',
       \ 'enable_pseudo_separator': 1,

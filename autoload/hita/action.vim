@@ -1,14 +1,14 @@
 function! s:get_action_function(name) abort
-  return function(printf('hita#action#%s#action', a:name))
+  return function(printf('gita#action#%s#action', a:name))
 endfunction
 function! s:get_define_plugin_mappings_function(name) abort
-  return function(printf('hita#action#%s#define_plugin_mappings', a:name))
+  return function(printf('gita#action#%s#define_plugin_mappings', a:name))
 endfunction
 function! s:get_define_default_mappings_function(name) abort
-  return function(printf('hita#action#%s#define_default_mappings', a:name))
+  return function(printf('gita#action#%s#define_default_mappings', a:name))
 endfunction
 function! s:get_get_mapping_table_function(name) abort
-  return function(printf('hita#action#%s#get_mapping_table', a:name))
+  return function(printf('gita#action#%s#get_mapping_table', a:name))
 endfunction
 
 function! s:parse_mapping(raw) abort
@@ -46,7 +46,7 @@ endfunction
 " @vimlint(EVL102, 1, l:mode)
 " @vimlint(EVL102, 1, l:flag)
 function! s:build_mapping_help(table) abort
-  let mappings = s:filter_mappings('<Plug>(hita-', {
+  let mappings = s:filter_mappings('<Plug>(gita-', {
         \ 'noremap': 0,
         \ 'buffer': 1,
         \})
@@ -70,8 +70,8 @@ endfunction
 " @vimlint(EVL102, 0, l:mode)
 " @vimlint(EVL102, 0, l:flag)
 
-function! hita#action#do(name, candidates, ...) abort range
-  let action = hita#action#get()
+function! gita#action#do(name, candidates, ...) abort range
+  let action = gita#action#get()
   let args = [a:candidates] + a:000
   if has_key(action.actions, a:name)
     call call(action.actions[a:name], args, action.actions)
@@ -80,46 +80,46 @@ function! hita#action#do(name, candidates, ...) abort range
   endif
 endfunction
 
-function! hita#action#call(name, ...) abort range
-  let action = hita#action#get()
+function! gita#action#call(name, ...) abort range
+  let action = gita#action#get()
   try
     let candidates = map(
           \ copy(range(a:firstline, a:lastline)),
           \ 'action.get_entry(v:val - 1)'
           \)
     call filter(candidates, '!empty(v:val)')
-    call call('hita#action#do', [a:name, candidates] + a:000)
-  catch /^\%(vital: Git[:.]\|vim-hita:\)/
-    call hita#util#handle_exception()
+    call call('gita#action#do', [a:name, candidates] + a:000)
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
   endtry
 endfunction
 
-function! hita#action#define(fn) abort
+function! gita#action#define(fn) abort
   let action = {
         \ 'get_entry': a:fn,
         \ 'actions': {},
         \ 'mapping_table': {},
         \}
-  let b:_hita_action = action
+  let b:_gita_action = action
   return action
 endfunction
 
-function! hita#action#get() abort
-  if !exists('b:_hita_action')
-    call hita#throw(printf(
-          \ '"b:_hita_action on %s is not defined.', bufname('%')
+function! gita#action#get() abort
+  if !exists('b:_gita_action')
+    call gita#throw(printf(
+          \ '"b:_gita_action on %s is not defined.', bufname('%')
           \))
   endif
-  return b:_hita_action
+  return b:_gita_action
 endfunction
 
-function! hita#action#get_mapping_help() abort
-  let action = hita#action#get()
+function! gita#action#get_mapping_help() abort
+  let action = gita#action#get()
   return s:build_mapping_help(action.mapping_table)
 endfunction
 
-function! hita#action#include(enable_default_mappings, name) abort
-  let action = hita#action#get()
+function! gita#action#include(enable_default_mappings, name) abort
+  let action = gita#action#get()
   call call(s:get_define_plugin_mappings_function(a:name), [])
   if a:enable_default_mappings
     call call(s:get_define_default_mappings_function(a:name), [])
@@ -130,8 +130,8 @@ function! hita#action#include(enable_default_mappings, name) abort
         \)
 endfunction
 
-function! hita#action#includes(enable_default_mappings, names) abort
+function! gita#action#includes(enable_default_mappings, names) abort
   for name in a:names
-    call hita#action#include(a:enable_default_mappings, name)
+    call gita#action#include(a:enable_default_mappings, name)
   endfor
 endfunction

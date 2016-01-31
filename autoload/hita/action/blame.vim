@@ -1,20 +1,20 @@
-let s:V = hita#vital()
+let s:V = gita#vital()
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
-      \ '<Plug>(hita-blame)': 'Blame a content',
+      \ '<Plug>(gita-blame)': 'Blame a content',
       \}
 
-function! hita#action#blame#action(candidates, ...) abort
+function! gita#action#blame#action(candidates, ...) abort
   let options = extend({
-        \ 'opener': g:hita#action#blame#default_opener,
-        \ 'anchor': g:hita#action#blame#default_anchor,
+        \ 'opener': g:gita#action#blame#default_opener,
+        \ 'anchor': g:gita#action#blame#default_anchor,
         \}, get(a:000, 0, {}))
   if !empty(a:candidates) && options.anchor
     call s:Anchor.focus()
   endif
   for candidate in a:candidates
     if has_key(candidate, 'path')
-      call hita#command#blame#open({
+      call gita#command#blame#open({
             \ 'opener': options.opener,
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,
@@ -23,20 +23,20 @@ function! hita#action#blame#action(candidates, ...) abort
   endfor
 endfunction
 
-function! hita#action#blame#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(hita-blame)
-        \ :call hita#action#call('blame')<CR>
+function! gita#action#blame#define_plugin_mappings() abort
+  noremap <buffer><silent> <Plug>(gita-blame)
+        \ :call gita#action#call('blame')<CR>
 endfunction
 
-function! hita#action#blame#define_default_mappings() abort
-  map <buffer> BB <Plug>(hita-blame)
+function! gita#action#blame#define_default_mappings() abort
+  map <buffer> BB <Plug>(gita-blame)
 endfunction
 
-function! hita#action#blame#get_mapping_table() abort
+function! gita#action#blame#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call hita#util#define_variables('apply#blame', {
+call gita#util#define_variables('apply#blame', {
       \ 'default_opener': 'tabnew',
       \ 'default_anchor': 0,
       \})
