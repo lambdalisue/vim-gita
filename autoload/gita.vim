@@ -83,13 +83,6 @@ function! s:get_repository_cache() abort
   return s:repository_cache
 endfunction
 
-function! s:is_debug() abort
-  return g:gita#debug
-endfunction
-function! s:is_batch() abort
-  return g:gita#test
-endfunction
-
 function! gita#get(...) abort
   let expr = get(a:000, 0, '%')
   let options = get(a:000, 1, {
@@ -104,12 +97,12 @@ function! gita#get(...) abort
     return git
   endif
   if get(git, 'is_enabled') && get(git, 'is_expired')
-    " force to find git instance again from the worktree
+    " force to find git instance again from the worktree.
     " this step is required while gita#get() might be called from
     " a pseudo file like gita://XXXXX
     let git = s:Git.get(git.worktree, { 'force': 1 })
-    " 'is_expired' attribute in newly retrieve git instance is missing
-    " so further step will use cached git instance
+    " 'is_expired' attribute in a newly retrieve git instance is missing
+    " so further steps will use cached git instance in s:Git module.
   endif
   return s:get_git_instance(bufnum, get(git, 'is_expired'))
 endfunction
@@ -126,6 +119,11 @@ function! gita#get_or_fail(...) abort
         \)
 endfunction
 function! gita#clear() abort
+  " NOTE:
+  " Do not remove cache at this point otherwise gita#get() won't return a
+  " correct git instance for a pseudo buffer like gita://XXXXX.
+  " Instead of removing cache, assing 'is_expired = 1' and let gita#get()
+  " to perform actual step.
   let git = gita#get()
   let git.is_expired = 1
 endfunction
@@ -214,6 +212,15 @@ endfunction
 function! gita#throw(...) abort
   let msg = join(a:000)
   throw printf('vim-gita: %s', msg)
+endfunction
+
+function! s:is_debug() abort
+  " Used to tell if gita is in debug mode
+  return g:gita#debug
+endfunction
+function! s:is_batch() abort
+  " Used to tell if gita is in batch mode (test mode)
+  return g:gita#test
 endfunction
 
 call s:Prompt.set_config({
