@@ -72,4 +72,3 @@ endfunction
 function! s:remove_ansi_sequences(text) abort
   return substitute(a:text, '\v\e\[%(%(\d;)?\d{1,2})?[mK]', '', 'g')
 endfunction
-

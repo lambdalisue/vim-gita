@@ -1,5 +1,5 @@
 vim_gita
-6b504430b0252f2105298e91b51a1db98397590c
+d896d1d3ea937ae1a008e0ed88ece92474aee6ed
 
 Prelude
 Data.List
@@ -18,3 +18,4 @@ VCS.Git.BlameParser
 Vim.Compat
 Vim.Validate
 System.Cache.Dummy
+System.Cache.Memory
