@@ -38,7 +38,7 @@ function! gita#action#stage#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#stage#define_default_mappings() abort
-  map <buffer> << <Plug>(gita-stage)
+  map <buffer><expr> << gita#action#smart_map('<<', '<Plug>(gita-stage)')
 endfunction
 
 function! gita#action#stage#get_mapping_table() abort

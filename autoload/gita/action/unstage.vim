@@ -13,7 +13,7 @@ function! gita#action#unstage#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#unstage#define_default_mappings() abort
-  map <buffer> >> <Plug>(gita-unstage)
+  map <buffer><expr> >> gita#action#smart_map('>>', '<Plug>(gita-unstage)')
 endfunction
 
 function! gita#action#unstage#get_mapping_table() abort

@@ -50,10 +50,10 @@ function! gita#action#show#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#show#define_default_mappings() abort
-  map <buffer> oo <Plug>(gita-show)
-  map <buffer> OO <Plug>(gita-show-right)
-  map <buffer> ot <Plug>(gita-show-tabnew)
-  map <buffer> op <Plug>(gita-show-pedit)
+  map <buffer><expr> ss gita#action#smart_map('ss', '<Plug>(gita-show)')
+  map <buffer><expr> SS gita#action#smart_map('SS', '<Plug>(gita-show-right)')
+  map <buffer><expr> st gita#action#smart_map('st', '<Plug>(gita-show-tabnew)')
+  map <buffer><expr> sp gita#action#smart_map('sp', '<Plug>(gita-show-pedit)')
 endfunction
 
 function! gita#action#show#get_mapping_table() abort

@@ -53,10 +53,10 @@ function! gita#action#edit#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#edit#define_default_mappings() abort
-  map <buffer> ee <Plug>(gita-edit)
-  map <buffer> EE <Plug>(gita-edit-right)
-  map <buffer> et <Plug>(gita-edit-tabnew)
-  map <buffer> ep <Plug>(gita-edit-pedit)
+  map <buffer><expr> ee gita#action#smart_map('ee', '<Plug>(gita-edit)')
+  map <buffer><expr> EE gita#action#smart_map('EE', '<Plug>(gita-edit-right)')
+  map <buffer><expr> et gita#action#smart_map('et', '<Plug>(gita-edit-tabnew)')
+  map <buffer><expr> ep gita#action#smart_map('ep', '<Plug>(gita-edit-pedit)')
 endfunction
 
 function! gita#action#edit#get_mapping_table() abort

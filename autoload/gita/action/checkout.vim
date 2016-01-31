@@ -49,12 +49,12 @@ function! gita#action#checkout#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#checkout#define_default_mappings() abort
-  map <buffer> -c <Plug>(gita-checkout)
-  map <buffer> -C <Plug>(gita-CHECKOUT)
-  map <buffer> -o <Plug>(gita-checkout-ours)
-  map <buffer> -O <Plug>(gita-CHECKOUT-OURS)
-  map <buffer> -t <Plug>(gita-checkout-theirs)
-  map <buffer> -T <Plug>(gita-CHECKOUT-THEIRS)
+  map <buffer><expr> -c gita#action#smart_map('-c', '<Plug>(gita-checkout)')
+  map <buffer><expr> -C gita#action#smart_map('-C', '<Plug>(gita-CHECKOUT)')
+  map <buffer><expr> -o gita#action#smart_map('-o', '<Plug>(gita-checkout-ours)')
+  map <buffer><expr> -O gita#action#smart_map('-O', '<Plug>(gita-CHECKOUT-OURS)')
+  map <buffer><expr> -t gita#action#smart_map('-t', '<Plug>(gita-checkout-theirs)')
+  map <buffer><expr> -T gita#action#smart_map('-T', '<Plug>(gita-CHECKOUT-THEIRS)')
 endfunction
 
 function! gita#action#checkout#get_mapping_table() abort

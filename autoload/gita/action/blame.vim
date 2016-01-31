@@ -29,7 +29,7 @@ function! gita#action#blame#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#blame#define_default_mappings() abort
-  map <buffer> BB <Plug>(gita-blame)
+  map <buffer><expr> BB gita#action#smart_map('BB', '<Plug>(gita-blame)')
 endfunction
 
 function! gita#action#blame#get_mapping_table() abort

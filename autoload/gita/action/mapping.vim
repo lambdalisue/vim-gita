@@ -34,7 +34,7 @@ function! gita#action#mapping#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#mapping#define_default_mappings() abort
-  map <buffer> ? <Plug>(gita-mapping)
+  nmap <buffer> ? <Plug>(gita-mapping)
 endfunction
 
 function! gita#action#mapping#get_mapping_table() abort

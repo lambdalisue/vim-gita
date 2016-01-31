@@ -32,9 +32,9 @@ function! gita#action#commit#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#commit#define_default_mappings() abort
-  map <buffer> cc <Plug>(gita-commit)
-  map <buffer> cC <Plug>(gita-commit-new)
-  map <buffer> cA <Plug>(gita-commit-amend)
+  nmap <buffer> cc <Plug>(gita-commit)
+  nmap <buffer> cC <Plug>(gita-commit-new)
+  nmap <buffer> cA <Plug>(gita-commit-amend)
 endfunction
 
 function! gita#action#commit#get_mapping_table() abort

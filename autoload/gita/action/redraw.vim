@@ -16,7 +16,7 @@ function! gita#action#redraw#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#redraw#define_default_mappings() abort
-  map <buffer> <C-l> <Plug>(gita-redraw)
+  nmap <buffer> <C-l> <Plug>(gita-redraw)
 endfunction
 
 function! gita#action#redraw#get_mapping_table() abort

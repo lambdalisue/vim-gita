@@ -45,7 +45,7 @@ function! gita#action#toggle#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#toggle#define_default_mappings() abort
-  map <buffer> -- <Plug>(gita-toggle)
+  map <buffer><expr> -- gita#action#smart_map('--', '<Plug>(gita-toggle)')
 endfunction
 
 function! gita#action#toggle#get_mapping_table() abort

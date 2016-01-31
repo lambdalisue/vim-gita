@@ -27,7 +27,7 @@ function! gita#action#reset#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#reset#define_default_mappings() abort
-  map <buffer> -r <Plug>(gita-reset)
+  map <buffer><expr> -r gita#action#smart_map('-r', '<Plug>(gita-reset)')
 endfunction
 
 function! gita#action#reset#get_mapping_table() abort

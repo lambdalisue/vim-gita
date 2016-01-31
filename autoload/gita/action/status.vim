@@ -16,7 +16,7 @@ function! gita#action#status#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#status#define_default_mappings() abort
-  map <buffer> cc <Plug>(gita-status)
+  nmap <buffer> cc <Plug>(gita-status)
 endfunction
 
 function! gita#action#status#get_mapping_table() abort

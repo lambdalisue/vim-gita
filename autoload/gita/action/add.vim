@@ -32,8 +32,8 @@ function! gita#action#add#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#add#define_default_mappings() abort
-  map <buffer> -a <Plug>(gita-add)
-  map <buffer> -A <Plug>(gita-ADD)
+  map <buffer><expr> -a gita#action#smart_map('-a', '<Plug>(gita-add)')
+  map <buffer><expr> -A gita#action#smart_map('-a', '<Plug>(gita-ADD)')
 endfunction
 
 function! gita#action#add#get_mapping_table() abort

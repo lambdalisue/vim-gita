@@ -79,7 +79,7 @@ function! gita#action#discard#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#discard#define_default_mappings() abort
-  map <buffer> == <Plug>(gita-discard)
+  map <buffer><expr> == gita#action#smart_map('==', '<Plug>(gita-discard)')
 endfunction
 
 function! gita#action#discard#get_mapping_table() abort

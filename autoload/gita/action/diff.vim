@@ -68,12 +68,12 @@ function! gita#action#diff#define_plugin_mappings() abort
 endfunction
 
 function! gita#action#diff#define_default_mappings() abort
-  map <buffer> dd <Plug>(gita-diff)
-  map <buffer> DD <Plug>(gita-diff-right)
-  map <buffer> dt <Plug>(gita-diff-tabnew)
-  map <buffer> dp <Plug>(gita-diff-pedit)
-  map <buffer> ss <Plug>(gita-diff-vertical)
-  map <buffer> SS <Plug>(gita-diff-horizontal)
+  map <buffer><expr> dd gita#action#smart_map('dd', '<Plug>(gita-diff)')
+  map <buffer><expr> DD gita#action#smart_map('DD', '<Plug>(gita-diff-right)')
+  map <buffer><expr> dt gita#action#smart_map('dt', '<Plug>(gita-diff-tabnew)')
+  map <buffer><expr> dp gita#action#smart_map('dp', '<Plug>(gita-diff-pedit)')
+  map <buffer><expr> ds gita#action#smart_map('ss', '<Plug>(gita-diff-vertical)')
+  map <buffer><expr> DS gita#action#smart_map('SS', '<Plug>(gita-diff-horizontal)')
 endfunction
 
 function! gita#action#diff#get_mapping_table() abort
