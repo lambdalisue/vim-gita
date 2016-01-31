@@ -18,7 +18,7 @@ function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
   let rhs = empty(rhs) ? 'HEAD' : rhs
-  let commit = s:GitInfo.get_common_ancestor(git, lhs, rhs)
+  let commit = s:GitInfo.get_common_ancestor(a:git, lhs, rhs)
   return s:get_revision_content(a:git, commit, a:filename, a:options)
 endfunction
 function! s:get_revision_content(git, commit, filename, options) abort
