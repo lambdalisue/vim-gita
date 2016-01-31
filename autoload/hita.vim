@@ -190,7 +190,7 @@ function! hita#expand(expr) abort
   return s:Path.abspath(s:Path.realpath(filename))
 endfunction
 function! hita#throw(...) abort
-  let msg = s:Prelude.is_string(a:msg) ? a:msg : join(a:msg)
+  let msg = join(a:000)
   throw printf('vim-hita: %s', msg)
 endfunction
 
