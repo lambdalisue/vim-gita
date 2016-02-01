@@ -2,27 +2,111 @@ let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 
 function! s:get_entry(index) abort
-  return {}
+  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+  let lineinfo = get(blamemeta.lineinfos, a:index, {})
+  if empty(lineinfo)
+    return {}
+  endif
+  return blamemeta.chunks[lineinfo.chunkref]
 endfunction
 function! s:define_actions() abort
   let action = gita#action#define(function('s:get_entry'))
-  " Override 'redraw' action
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#blame#navi#update()
+  function! action.actions.blame_echo(candidates, ...) abort
+    let candidate = get(a:candidates, 0, {})
+    if empty(candidate)
+      return
+    endif
+    let commit   = gita#get_meta('commit')
+    let filename = gita#get_meta('filename')
+    echo '=== Current ==='
+    echo 'Commit:   ' . commit
+    echo 'Filename: ' . filename
+    echo '===  Chunk  ==='
+    echo 'Summary:  ' . candidate.summary
+    echo 'Author:   ' . candidate.author
+    echo 'Boundary: ' . (get(candidate, 'boundary') ? 'boundary' : '')
+    echo 'Commit:   ' . candidate.revision
+    echo 'Previous: ' . get(candidate, 'previous', '')
+    echo 'Filename: ' . candidate.filename
+    echo 'Line (O): ' . candidate.linenum.original
+    echo 'Line (F): ' . candidate.linenum.final
   endfunction
+  function! action.actions.blame_enter(candidates, ...) abort
+    let candidate = get(a:candidates, 0, {})
+    if empty(candidate)
+      return
+    endif
+    let commit = gita#get_meta('commit')
+    if candidate.revision ==# commit
+      if !has_key(candidate, 'previous')
+        call gita#throw(
+              \ 'Cancel:',
+              \ printf('A commit %s has no previous commit', candidate.revision),
+              \)
+      endif
+      let [revision, filename] = split(candidate.previous)
+      if revision ==# commit
+        call gita#throw(
+              \ 'Cancel:',
+              \ printf('A commit %s is a boundary commit', candidate.revision),
+              \)
+      endif
+    else
+      let revision = candidate.revision
+      let filename = candidate.filename
+    endif
+    let winnum = winnr()
+    call gita#command#blame#open({
+          \ 'commit': revision,
+          \ 'filename': filename,
+          \ 'selection': [
+          \   gita#command#blame#get_pseudo_linenum(line('.')),
+          \ ],
+          \})
+    execute printf('%dwincmd w', winnum)
+  endfunction
+
+  nnoremap <silent><buffer> <Plug>(gita-blame-echo)
+        \ :<C-u>call gita#action#call('blame_echo')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-blame-enter)
+        \ :<C-u>call gita#action#call('blame_enter')<CR>
+
+  nmap <buffer> <C-g> <Plug>(gita-blame-echo)
+  nmap <buffer> <CR> <Plug>(gita-blame-enter)
 
   call gita#action#includes(
         \ g:gita#command#blame#navi#enable_default_mappings, [
         \   'close', 'redraw',
         \   'edit', 'show', 'diff', 'blame', 'browse',
         \])
+endfunction
 
-  if g:gita#command#blame#navi#enable_default_mappings
-    execute printf(
-          \ 'map <buffer> <Return> %s',
-          \ g:gita#command#blame#navi#default_action_mapping
-          \)
-  endif
+function! s:on_CursorMoved() abort
+  try
+    " Restrict cursor movement to mimic linenum columns
+    let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+    let linenum_width = blamemeta.linenum_width
+    let column = col('.')
+    if column <= linenum_width + 1
+      call setpos('.', [0, line('.'), linenum_width + 2, 0])
+    endif
+  catch
+    " fail silently
+  endtry
+endfunction
+function! s:on_BufReadCmd() abort
+  try
+    let winnum = winnr()
+    let commit = gita#get_meta('commit')
+    let filename = gita#get_meta('filename')
+    call gita#command#blame#open({
+          \ 'commit': commit,
+          \ 'filename': filename,
+          \})
+    execute printf('keepjumps %dwincmd w', winnum)
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
 endfunction
 
 function! gita#command#blame#navi#bufname(...) abort
@@ -43,62 +127,45 @@ function! gita#command#blame#navi#bufname(...) abort
         \ 'path': filename,
         \})
 endfunction
-function! gita#command#blame#navi#call(...) abort
-  let options = gita#option#init('blame-navi', get(a:000, 0, {}), {
-        \ 'commit': '',
-        \ 'filename': '',
-        \})
-  let bufname = gita#command#blame#bufname(options)
-  let bufnum = bufnr(bufname)
-  let content_type = gita#get_meta('content_type', '', bufnum)
-  if bufnum == 0 || content_type !=# 'blame'
-    call gita#throw('gita-blame-navi window requires a corresponding gita-blame buffer.')
-  endif
-  let commit = gita#get_meta('commit', '', bufnum)
-  let filename = gita#get_meta('filename', '', bufnum)
-  let content = gita#get_meta('content', [], bufnum)
-  let blame = gita#get_meta('blame', {}, bufnum)
-  if empty(blame)
-    call gita#throw(printf('No blame information has found on %s', bufname))
-  endif
-  let result = {
-        \ 'bufname': bufname,
-        \ 'bufnum': bufnum,
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'content': content,
-        \ 'blame': blame,
-        \}
-  return result
-endfunction
-function! gita#command#blame#navi#open(...) abort
+function! gita#command#blame#navi#_open(blameobj, ...) abort
+  " NOTE:
+  " This function should be called only from gita#command#blame#open so that
+  " options.commit, options.filename should be valid.
   let options = extend({
         \ 'opener': '',
+        \ 'commit': '',
+        \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let result = gita#command#blame#navi#call(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#blame#default_opener
+        \ ? g:gita#command#blame#navi#default_opener
         \ : options.opener
   let bufname = gita#command#blame#navi#bufname(options)
   call gita#util#buffer#open(bufname, {
+        \ 'group': 'blame_navi',
         \ 'opener': opener,
-        \ 'group': 'blame_navigation_panel',
         \})
+  " gita#command#blame#navi#_edit() will be called by
+  " gita#command#blame#open() later so store 'blameobj' reference into meta
   call gita#set_meta('content_type', 'blame-navi')
-  call gita#set_meta('options', s:Dict.omit(options, ['force']))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('filename', result.filename)
-  call gita#set_meta('content', result.content)
-  call gita#set_meta('blame', result.blame)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#set_meta('blameobj', a:blameobj)
+  call gita#set_meta('commit', options.commit)
+  call gita#set_meta('filename', options.filename)
+endfunction
+function! gita#command#blame#navi#_edit() abort
+  let blameobj = gita#command#blame#get_blameobj_or_fail()
+  if !has_key(blameobj, 'blamemeta') || gita#get_meta('winwidth') != winwidth(0)
+    " Construct 'blamemeta' from 'blameobj'. It is time-consuming process.
+    " Store constructed 'blamemeta' in 'blameobj' so that blame-view buffer
+    " can access to the instance.
+    let blameobj.blamemeta = gita#command#blame#format(blameobj, winwidth(0))
+    call gita#set_meta('winwidth', winwidth(0))
+  endif
   call s:define_actions()
-  augroup vim_gita_status
+  augroup vim_gita_internal_blame_navi
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer>
-          \ call gita#command#blame#navi#update() |
-          \ setlocal filetype=gita-blame-navi
-    "autocmd VimResized <buffer> call s:on_VimResized()
-    "autocmd WinEnter   <buffer> call s:on_WinEnter()
+    autocmd CursorMoved <buffer> call s:on_CursorMoved()
+    autocmd BufEnter    <buffer> call s:on_CursorMoved()
+    autocmd BufReadCmd  <buffer> call s:on_BufReadCmd()
   augroup END
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nowrap nofoldenable foldcolumn=0 colorcolumn=0
@@ -108,52 +175,35 @@ function! gita#command#blame#navi#open(...) abort
   setlocal filetype=gita-blame-navi
   call gita#command#blame#navi#redraw()
 endfunction
-function! gita#command#blame#navi#update(...) abort
-  if &filetype !=# 'gita-blame-navi'
-    call gita#throw('update() requires to be called in a gita-blame-navi buffer')
-  endif
-  let options = get(a:000, 0, {})
-  let result = gita#command#blame#navi#call(options)
-  call gita#set_meta('content_type', 'blame-navi')
-  call gita#set_meta('options', s:Dict.omit(options, ['force']))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('filename', result.filename)
-  call gita#set_meta('content', result.content)
-  call gita#set_meta('blame', result.blame)
-  call gita#set_meta('winwidth', winwidth(0))
-  call gita#command#blame#navi#redraw()
-endfunction
 function! gita#command#blame#navi#redraw() abort
-  if &filetype !=# 'gita-blame-navi'
-    call gita#throw('redraw() requires to be called in a gita-status buffer')
-  endif
-  let blame = gita#get_meta('blame')
-  call gita#util#buffer#edit_content(blame.navi_content)
-  call gita#command#blame#display_pseudo_separators(blame.separators)
+  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+  call gita#util#buffer#edit_content(blamemeta.navi_content)
+  call gita#command#blame#display_pseudo_separators(blamemeta.separators)
 endfunction
 
 function! gita#command#blame#navi#define_highlights() abort
-  call gita#command#blame#define_highlights()
   highlight default link GitaHorizontal Comment
   highlight default link GitaSummary    Title
   highlight default link GitaMetaInfo   Comment
   highlight default link GitaAuthor     Identifier
+  highlight default link GitaNotCommittedYet Constant
   highlight default link GitaTimeDelta  Comment
   highlight default link GitaRevision   String
-  highlight default link GitaPrevious   Special
   highlight default link GitaLineNr     LineNr
 endfunction
 function! gita#command#blame#navi#define_syntax() abort
-  syntax match GitaSummary   /\v.*/ contains=GitaLineNr,GitaMetaInfo,GitaPrevious
-  syntax match GitaLineNr    /\v^\s*[0-9]+/
-  syntax match GitaMetaInfo  /\v\w+ authored .*$/ contains=GitaAuthor,GitaTimeDelta,GitaRevision
-  syntax match GitaAuthor    /\v\w+\ze authored/ contained
-  syntax match GitaTimeDelta /\vauthored \zs.*\ze\s+[0-9a-fA-F]{7}$/ contained
-  syntax match GitaRevision  /\v[0-9a-fA-F]{7}$/ contained
-  syntax match GitaPrevious  /\vPrev: [0-9a-fA-F]{7}$/ contained
+  syntax match GitaSummary   /.*/ contains=GitaLineNr,GitaMetaInfo
+  syntax match GitaLineNr    /^\s*[0-9]\+/
+  syntax match GitaMetaInfo  /\%(\w\+ authored\|Not committed yet\) .*$/
+        \ contains=GitaAuthor,GitaNotCommittedYet,GitaTimeDelta,GitaRevision
+  syntax match GitaAuthor    /\w\+\ze authored/ contained
+  syntax match GitaNotCommittedYet /Not committed yet/ contained
+  syntax match GitaTimeDelta /authored \zs.*\ze\s\+[0-9a-fA-F]\{7}$/ contained
+  syntax match GitaRevision  /[0-9a-fA-F]\{7}$/ contained
 endfunction
 
 call gita#util#define_variables('command#blame#navi', {
-      \ 'default_action_mapping': '<Plug>(gita-show)',
+      \ 'default_opener': 'leftabove 50 vsplit',
+      \ 'default_action_mapping': '<Plug>(gita-blame-enter)',
       \ 'enable_default_mappings': 1,
       \})

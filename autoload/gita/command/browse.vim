@@ -207,20 +207,13 @@ function! gita#command#browse#command(...) abort
     return
   endif
   call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
   if empty(options.__unknown__)
     let options.filenames = ['%']
   else
     let options.filenames = options.__unknown__
   endif
-  if has_key(options, 'selection')
-    let options.selection = map(
-          \ split(options.selection, '-'),
-          \ 'str2nr(v:val)',
-          \)
-  elseif len(options.filenames) == 1
-        \ && expand(options.filenames[0]) ==# expand('%')
-    let options.selection = options.__range__
-  endif
+
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#browse#default_options),

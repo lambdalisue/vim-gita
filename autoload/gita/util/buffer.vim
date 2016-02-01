@@ -1,4 +1,4 @@
-let s:V = gista#vital()
+let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Buffer = s:V.import('Vim.Buffer')
 let s:BufferManager = s:V.import('Vim.BufferManager')

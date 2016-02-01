@@ -50,8 +50,7 @@ endfunction
 
 " *** BlameParser ************************************************************
 function! s:parse_blame(blame, ...) abort
-  let Callback = get(a:000, 0, 0)
-  let is_callable = s:Prelude.is_funcref(Callback)
+  let progressbar = get(a:000, 0, {})
   let revisions = {}
   let lineinfos = []
   let current_revision = {}
@@ -60,6 +59,9 @@ function! s:parse_blame(blame, ...) abort
         \ ? split(a:blame, '\r\?\n', 1)
         \ : a:blame
   for line in lines
+    if !empty(progressbar)
+      call progressbar.update()
+    endif
     let bits = split(line, '\W', 1)
     if len(bits[0]) == 40
       let revision = bits[0]
@@ -73,9 +75,6 @@ function! s:parse_blame(blame, ...) abort
             \}
       if !has_key(revisions, revision)
         let revisions[revision] = {}
-      endif
-      if !empty(current_lineinfo) && is_callable
-        call call(Callback, [revisions, current_lineinfo])
       endif
       let current_revision = revisions[revision]
       let current_lineinfo = headline
@@ -102,8 +101,7 @@ function! s:parse_blame(blame, ...) abort
 endfunction
 
 function! s:parse_blame_to_chunks(blame, ...) abort
-  let Callback = get(a:000, 0, 0)
-  let is_callable = s:Prelude.is_funcref(Callback)
+  let progressbar = get(a:000, 0, {})
   let revisions = {}
   let chunks = []
   let current_revision = {}
@@ -113,6 +111,9 @@ function! s:parse_blame_to_chunks(blame, ...) abort
         \ ? split(a:blame, '\r\?\n', 1)
         \ : a:blame
   for line in lines
+    if !empty(progressbar)
+      call progressbar.update()
+    endif
     let bits = split(line, '\W', 1)
     if len(bits[0]) == 40
       if len(bits) < 4
@@ -132,9 +133,6 @@ function! s:parse_blame_to_chunks(blame, ...) abort
         let revisions[revision] = {}
       endif
       let current_revision = revisions[revision]
-      if chunk_index > -1 && is_callable
-        call call(Callback, [revisions, current_chunk])
-      endif
       let chunk_index += 1
       let current_chunk = headline
       let current_chunk.index = chunk_index
@@ -155,9 +153,6 @@ function! s:parse_blame_to_chunks(blame, ...) abort
       continue
     endif
   endfor
-    if chunk_index > -1 && is_callable
-      call call(Callback, [revisions, current_chunk])
-    endif
   return {
         \ 'revisions': revisions,
         \ 'chunks': chunks,

@@ -300,14 +300,7 @@ function! gita#command#show#command(...) abort
   endif
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
-  if has_key(options, 'selection')
-    let options.selection = map(
-          \ split(options.selection, '-'),
-          \ 'str2nr(v:val)',
-          \)
-  else
-    let options.selection = options.__range__
-  endif
+  call gita#option#assign_selection(options)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#show#default_options),

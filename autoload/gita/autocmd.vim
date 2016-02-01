@@ -38,12 +38,6 @@ function! s:on_BufReadCmd() abort
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
           \ 'force': v:cmdbang && !&modified,
           \})
-  elseif content_type ==# 'blame'
-    call gita#command#blame#edit({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'force': v:cmdbang && !&modified,
-          \})
   else
     call gita#throw(printf(
           \ 'Unknown content-type "%s" is specified', content_type,
@@ -73,12 +67,6 @@ function! s:on_FileReadCmd() abort
           \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'cached': index(info.extra_options, 'cached') >= 0,
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
-          \ 'force': v:cmdbang && !&modified,
-          \})
-  elseif content_type ==# 'blame'
-    call gita#command#blame#read({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
           \ 'force': v:cmdbang && !&modified,
           \})
   else

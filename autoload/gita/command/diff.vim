@@ -397,16 +397,9 @@ function! gita#command#diff#command(...) abort
     return
   endif
   call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
   if !empty(options.__unknown__)
     let options.filenames = options.__unknown__
-  endif
-  if has_key(options, 'selection')
-    let options.selection = map(
-          \ split(options.selection, '-'),
-          \ 'str2nr(v:val)',
-          \)
-  elseif !empty(get(options, 'split'))
-    let options.selection = options.__range__
   endif
   " extend default options
   let options = extend(

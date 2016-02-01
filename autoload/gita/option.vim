@@ -20,6 +20,7 @@ function! gita#option#assign_commit(options) abort
     let a:options.commit = commit
   endif
 endfunction
+
 function! gita#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
@@ -29,5 +30,25 @@ function! gita#option#assign_filename(options) abort
   let filename = gita#expand('%')
   if !empty(filename)
     let a:options.filename = filename
+  endif
+endfunction
+
+function! gita#option#assign_selection(options) abort
+  if has_key(a:options, 'selection')
+    let a:options.selection = map(
+          \ split(a:options.selection, '-'),
+          \ 'str2nr(v:val)',
+          \)
+  else
+    let a:options.selection = a:options.__range__
+  endif
+
+  if gita#get_meta('content_type') =~# '^blame-\%(navi\|view\)%'
+    let line_start = get(a:options.selection, 0, 0)
+    let line_end = get(a:options.selection, 1, line_end)
+    let a:options.selection = [
+          \ gita#command#blame#get_pseudo_linenum(line_start),
+          \ gita#command#blame#get_pseudo_linenum(line_end),
+          \]
   endif
 endfunction

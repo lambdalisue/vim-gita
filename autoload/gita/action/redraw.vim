@@ -6,6 +6,7 @@ let s:MAPPING_TABLE = {
 function! gita#action#redraw#action(candidates, ...) abort
   if &filetype =~# '^gita-'
     let name = matchstr(&filetype, '^gita-\zs.*$')
+    let name = substitute(name, '-', '#', 'g')
     call call(function(printf('gita#command#%s#redraw', name)), [])
   endif
 endfunction

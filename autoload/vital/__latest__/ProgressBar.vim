@@ -4,8 +4,8 @@ function! s:_vital_loaded(V) abort
   let s:config = {
         \ 'default_barwidth': 80,
         \ 'default_nullchar': '.',
-        \ 'default_fillchar': '=',
-        \ 'default_format': '%(prefix)s|%(fill)s%(null)s| %(percent)s%%%(suffix)s',
+        \ 'default_fillchar': '|',
+        \ 'default_format': '%(prefix)s|%(fill)s%(null)s| %(percent)s%%(suffix)s',
         \}
 endfunction
 function! s:_vital_depends() abort
@@ -53,15 +53,29 @@ function! s:new(maxvalue, ...) abort
         \ 'alpha': alpha,
         \ 'nullchar': options.nullchar,
         \ 'fillchar': options.fillchar,
+        \ 'nullbar': repeat(options.nullchar, barwidth),
+        \ 'fillbar': repeat(options.fillchar, barwidth),
         \ 'format': options.format,
         \ 'prefix': options.prefix,
         \ 'suffix': options.suffix,
         \ 'statusline': options.statusline,
         \ 'current': 0,
         \})
-  if instance.statusline
-    let instance._guard = s:Guard.store('&statusline')
+  if instance.statusline && !has_key('vim_starting')
+    let instance._guard = s:Guard.store(
+          \ '&l:statusline',
+          \)
+  else
+    let instance._guard = s:Guard.store(
+          \ '&more',
+          \ '&showcmd',
+          \ '&ruler',
+          \)
+    set nomore
+    set noshowcmd
+    set noruler
   endif
+
   call instance.redraw()
   return instance
 endfunction
@@ -69,28 +83,26 @@ endfunction
 
 let s:instance = {}
 function! s:instance.construct() abort
-  let percent = float2nr(self.current / self.maxvalue * 100)
-  let fillwidth = float2nr(self.current * self.alpha)
+  let percent = float2nr(self.current / str2float(self.maxvalue) * 100)
+  let fillwidth = float2nr(ceil(self.current * self.alpha))
   let nullwidth = self.barwidth - fillwidth
-  let fillstr = repeat(self.fillchar, fillwidth)
-  let nullstr = repeat(self.nullchar, nullwidth)
+  let fillstr = fillwidth == 0 ? '' : self.fillbar[ : fillwidth-1]
+  let nullstr = nullwidth == 0 ? '' : self.nullbar[ : nullwidth-1]
   let indicator = self.format
-  let indicator = substitute(indicator, '%(prefix)s', self.prefix, 'g')
-  let indicator = substitute(indicator, '%(suffix)s', self.suffix, 'g')
-  let indicator = substitute(indicator, '%(fill)s', fillstr, 'g')
-  let indicator = substitute(indicator, '%(null)s', nullstr, 'g')
-  let indicator = substitute(indicator, '%(percent)s', percent, 'g')
-  let indicator = substitute(indicator, '%%', '%', 'g')
+  let indicator = substitute(indicator, '%(prefix)s', self.prefix, '')
+  let indicator = substitute(indicator, '%(suffix)s', self.suffix, '')
+  let indicator = substitute(indicator, '%(fill)s', fillstr, '')
+  let indicator = substitute(indicator, '%(null)s', nullstr, '')
+  let indicator = substitute(indicator, '%(percent)s', percent, '')
   return indicator
 endfunction
 function! s:instance.redraw() abort
   let indicator = self.construct()
   if self.statusline
-    let &statusline = indicator
+    let &l:statusline = indicator
     redrawstatus
   else
-    redraw
-    echo indicator
+    redraw | echo indicator
   endif
 endfunction
 function! s:instance.update(...) abort
@@ -99,6 +111,8 @@ function! s:instance.update(...) abort
   call self.redraw()
 endfunction
 function! s:instance.exit() abort
+  let self.current = self.maxvalue
+  call self.redraw()
   if has_key(self, '_guard')
     call self._guard.restore()
   endif
