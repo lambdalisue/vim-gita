@@ -18,24 +18,28 @@ function! gita#action#diff#action(candidates, ...) abort
         \ 'anchor': g:gita#action#diff#default_anchor,
         \ 'split': g:gita#action#diff#default_split,
         \}, get(a:000, 0, {}))
+  call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       if empty(options.split)
         call gita#command#diff#open({
               \ 'anchor': options.anchor,
               \ 'opener': options.opener,
-              \ 'commit': get(options, 'commit', ''),
+              \ 'selection': get(options, 'selection', []),
               \ 'cached': !get(candidate, 'is_unstaged', 1),
-              \ 'filenames': [candidate.path],
+              \ 'commit': get(options, 'commit', ''),
+              \ 'filename': candidate.path,
               \})
       else
         call gita#command#diff#open2({
               \ 'anchor': options.anchor,
               \ 'opener': options.opener,
+              \ 'selection': get(options, 'selection', []),
               \ 'split': options.split,
-              \ 'commit': get(options, 'commit', ''),
               \ 'cached': !get(candidate, 'is_unstaged', 1),
-              \ 'filenames': [candidate.path],
+              \ 'commit': get(options, 'commit', ''),
+              \ 'filename': candidate.path,
               \})
       endif
     endif

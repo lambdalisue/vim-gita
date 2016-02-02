@@ -17,17 +17,13 @@ function! gita#action#edit#action(candidates, ...) abort
         \ 'opener': g:gita#action#edit#default_opener,
         \ 'anchor': g:gita#action#edit#default_anchor,
         \}, get(a:000, 0, {}))
-  if !empty(a:candidates) && options.anchor
-    call s:Anchor.focus()
-  endif
   for candidate in a:candidates
     if has_key(candidate, 'path')
-      " NOTE:
-      " 'path' or 'path2' is a real absolute path
-      let bufname = get(candidate, 'path2', candidate.path)
-      let bufname = expand(s:Path.relpath(bufname))
-      call gita#util#buffer#open(bufname, {
+      call gita#command#show#open({
+            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
+            \ 'filename': candidate.path,
+            \ 'worktree': 1,
             \})
     endif
   endfor
@@ -64,6 +60,6 @@ function! gita#action#edit#get_mapping_table() abort
 endfunction
 
 call gita#util#define_variables('action#edit', {
-      \ 'default_opener': 'edit',
+      \ 'default_opener': '',
       \ 'default_anchor': 1,
       \})

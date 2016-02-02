@@ -145,13 +145,8 @@ function! gita#action#includes(enable_default_mappings, names) abort
 endfunction
 
 function! gita#action#smart_map(lhs, rhs) abort range
-  let action = gita#action#get()
   try
-    let candidates = map(
-          \ range(a:firstline, a:lastline),
-          \ 'action.get_entry(v:val - 1)'
-          \)
-    let candidates = filter(candidates, '!empty(v:val)')
+    let candidates = gita#action#get_candidates(a:firstline, a:lastline)
     return empty(candidates) ? a:lhs : a:rhs
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()

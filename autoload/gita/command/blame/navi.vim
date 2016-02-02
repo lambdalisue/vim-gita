@@ -12,7 +12,7 @@ function! s:define_actions() abort
 
   call gita#action#includes(
         \ g:gita#command#blame#navi#enable_default_mappings, [
-        \   'close', 'redraw',
+        \   'redraw',
         \   'edit', 'show', 'diff', 'browse',
         \])
 endfunction

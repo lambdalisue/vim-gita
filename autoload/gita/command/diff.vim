@@ -83,32 +83,16 @@ function! gita#command#diff#bufname(...) abort
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
-        \ 'filenames': [],
+        \ 'filename': '',
         \})
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  if !empty(options.filenames)
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  else
-    let filenames = []
-  endif
-  if len(filenames) == 1
-    return gita#autocmd#bufname(git, {
-          \ 'content_type': 'diff',
-          \ 'extra_options': [
-          \   options.patch ? 'patch' : '',
-          \   !options.patch && options.cached ? 'cached' : '',
-          \   !options.patch && options.reverse ? 'reverse' : '',
-          \ ],
-          \ 'commitish': commit,
-          \ 'path': filenames[0],
-          \})
-  else
+  let filename = empty(options.filename)
+        \ ? ''
+        \ : gita#variable#get_valid_filename(options.filename)
+  if empty(filename)
     return gita#autocmd#bufname(git, {
           \ 'content_type': 'diff',
           \ 'extra_options': [
@@ -119,6 +103,17 @@ function! gita#command#diff#bufname(...) abort
           \ 'commitish': commit,
           \ 'path': '',
           \})
+  else
+    return gita#autocmd#bufname(git, {
+          \ 'content_type': 'diff',
+          \ 'extra_options': [
+          \   options.patch ? 'patch' : '',
+          \   !options.patch && options.cached ? 'cached' : '',
+          \   !options.patch && options.reverse ? 'reverse' : '',
+          \ ],
+          \ 'commitish': commit,
+          \ 'path': filename,
+          \})
   endif
 endfunction
 function! gita#command#diff#call(...) abort
@@ -126,24 +121,19 @@ function! gita#command#diff#call(...) abort
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
-        \ 'filenames': [],
+        \ 'filename': '',
         \})
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  if !empty(options.filenames)
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  else
-    let filenames = []
-  endif
-  let content = s:get_diff_content(git, commit, filenames, options)
+  let filename = empty(options.filename)
+        \ ? ''
+        \ : gita#variable#get_valid_filename(options.filename)
+  let content = s:get_diff_content(git, commit, empty(filename) ? [] : [filename], options)
   let result = {
         \ 'commit': commit,
-        \ 'filenames': filenames,
+        \ 'filename': filename,
         \ 'content': content,
         \ 'options': options,
         \}
@@ -155,9 +145,16 @@ function! gita#command#diff#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let opener = empty(options.opener)
-        \ ? g:gita#command#diff#default_opener
-        \ : options.opener
+  if empty(options.opener)
+    let content_type = gita#get_meta('content_type', '')
+    if content_type =~# '^blame-\%(navi\|view\)$'
+      let opener = 'tabedit'
+    else
+      let opener = g:gita#command#diff#default_opener
+    endif
+  else
+    let opener = options.opener
+  endif
   let bufname = gita#command#diff#bufname(options)
   if !empty(bufname)
     if options.anchor
@@ -206,8 +203,7 @@ function! gita#command#diff#edit(...) abort
         \ 'force', 'opener', 'selection',
         \]))
   call gita#set_meta('commit', result.commit)
-  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#set_meta('filenames', result.filenames)
+  call gita#set_meta('filename', result.filename)
   call gita#util#buffer#edit_content(result.content)
   if options.patch
     augroup vim_gita_internal_diff_apply_diff
@@ -228,17 +224,12 @@ function! gita#command#diff#open2(...) abort
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
-        \ 'filenames': [],
+        \ 'filename': '',
         \ 'anchor'; 1,
         \ 'opener': '',
         \ 'split': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  if len(options.filenames) > 1
-    call gita#throw(
-          \ 'Warning: "Gita diff --split" cannot handle multiple filenames',
-          \)
-  endif
   if options.patch
     " 'patch' mode requires:
     " - Existence of INDEX, namely no commit or --cached
@@ -263,7 +254,7 @@ function! gita#command#diff#open2(...) abort
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = empty(options.filenames) ? '%' : options.filenames[0]
+  let filename = empty(options.filename) ? '%' : options.filename
   let filename = gita#variable#get_valid_filename(filename)
   let WORKTREE = '@'  " @ is not valid commit thus
   if empty(commit)
@@ -297,9 +288,16 @@ function! gita#command#diff#open2(...) abort
         \ 'commit': rhs,
         \ 'filename': filename,
         \})
-  let opener = empty(options.opener)
-        \ ? g:gita#command#diff#default_opener
-        \ : options.opener
+  if empty(options.opener)
+    let content_type = gita#get_meta('content_type', '')
+    if content_type =~# '^blame-\%(navi\|view\)$'
+      let opener = 'tabedit'
+    else
+      let opener = g:gita#command#diff#default_opener
+    endif
+  else
+    let opener = options.opener
+  endif
   let split = empty(options.split)
         \ ? g:gita#command#diff#default_split
         \ : options.split
@@ -351,7 +349,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita diff',
           \ 'description': 'Show a diff content of a commit or files',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
@@ -359,6 +357,10 @@ function! s:get_parser() abort
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
+    call s:parser.add_argument(
+          \ '--repository', '-r',
+          \ 'Show a diff of the repository instead of a file content',
+          \)
     call s:parser.add_argument(
           \ '--cached', '-c',
           \ 'Compare the changes you staged for the next commit rather than working tree', {
@@ -396,6 +398,13 @@ function! s:get_parser() abort
           \   'complete': function('gita#variable#complete_commit'),
           \})
     " TODO: Add more arguments
+    function! s:parser.hooks.post_validate(options) abort
+      if has_key(a:options, 'repository')
+        let a:options.filename = ''
+        unlet a:options.repository
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -406,10 +415,8 @@ function! gita#command#diff#command(...) abort
     return
   endif
   call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
-  if !empty(options.__unknown__)
-    let options.filenames = options.__unknown__
-  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#diff#default_options),
@@ -418,7 +425,6 @@ function! gita#command#diff#command(...) abort
   if empty(get(options, 'split'))
     call gita#command#diff#open(options)
   else
-    call gita#option#assign_filename(options)
     call gita#command#diff#open2(options)
   endif
 endfunction

@@ -15,11 +15,14 @@ function! gita#action#show#action(candidates, ...) abort
         \ 'opener': g:gita#action#show#default_opener,
         \ 'anchor': g:gita#action#show#default_anchor,
         \}, get(a:000, 0, {}))
+  call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
             \ 'anchor': options.anchor,
             \ 'opener': options.opener,
+            \ 'selection': get(options, 'selection', []),
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,
             \})
@@ -58,6 +61,6 @@ function! gita#action#show#get_mapping_table() abort
 endfunction
 
 call gita#util#define_variables('action#show', {
-      \ 'default_opener': 'edit',
+      \ 'default_opener': '',
       \ 'default_anchor': 1,
       \})

@@ -25,13 +25,18 @@ function! gita#action#browse#action(candidates, ...) abort
         \ 'scheme': g:gita#action#browse#default_scheme,
         \ 'method': g:gita#action#browse#default_method,
         \}, get(a:000, 0, {}))
-  let candidates = filter(copy(a:candidates), 's:is_available(v:val)')
-  let filenames = map(candidates, 'v:val.path')
-  call gita#command#browse#{options.method}({
-        \ 'scheme': options.scheme,
-        \ 'commit': get(options, 'commit', ''),
-        \ 'filenames': filenames,
-        \})
+  call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
+  for candidate in a:candidates
+    if has_key(candidate, 'path')
+      call gita#command#browse#{options.method}({
+            \ 'scheme': options.scheme,
+            \ 'commit': get(options, 'commit', ''),
+            \ 'selection': get(options, 'selection', []),
+            \ 'filename': candidate.path,
+            \})
+    endif
+  endfor
 endfunction
 
 function! gita#action#browse#define_plugin_mappings() abort

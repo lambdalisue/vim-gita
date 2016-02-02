@@ -9,6 +9,7 @@ function! gita#action#reset#action(candidates, ...) abort
   let options = extend({
         \ 'patch': 0,
         \}, get(a:000, 0, {}))
+  call gita#option#assign_commit(option)
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
@@ -24,6 +25,7 @@ function! gita#action#reset#action(candidates, ...) abort
             \})
     else
       let result = gita#command#reset#call({
+            \ 'commit': get(options, 'commit', ''),
             \ 'filenames': filenames,
             \ 'patch': options.patch,
             \ 'quiet': 1,

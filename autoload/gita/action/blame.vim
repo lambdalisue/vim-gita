@@ -8,11 +8,14 @@ function! gita#action#blame#action(candidates, ...) abort
         \ 'opener': g:gita#action#blame#default_opener,
         \ 'anchor': g:gita#action#blame#default_anchor,
         \}, get(a:000, 0, {}))
+  call gita#option#assign_commit(options)
+  call gita#option#assign_selection(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#blame#open({
             \ 'anchor': options.anchor,
             \ 'opener': options.opener,
+            \ 'selection': get(options, 'selection', []),
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,
             \})

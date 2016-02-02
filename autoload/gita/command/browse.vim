@@ -32,12 +32,13 @@ function! s:find_commit_meta(git, commit) abort
   let remote_url = s:GitInfo.get_remote_url(config, remote)
   return [lhs, rhs, remote, remote_url]
 endfunction
-function! s:translate_url(url, scheme_name, translation_patterns) abort
+function! s:translate_url(url, scheme_name, translation_patterns, repository) abort
+  let symbol = a:repository ? '^' : '_'
   for [domain, info] in items(a:translation_patterns)
     for pattern in info[0]
       let pattern = substitute(pattern, '\C' . '%domain', domain, 'g')
       if a:url =~# pattern
-        let scheme = get(info[1], a:scheme_name, info[1]['_'])
+        let scheme = get(info[1], a:scheme_name, info[1][symbol])
         let repl = substitute(a:url, '\C' . pattern, scheme, 'g')
         return repl
       endif
@@ -49,6 +50,11 @@ function! s:find_url(git, commit, filename, options) abort
   let relpath = s:Path.unixpath(
         \ s:Git.get_relative_path(a:git, a:filename),
         \)
+  " normalize commit to figure out remote, commit, and remote_url
+  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(a:git, a:commit)
+  let revision1 = s:GitInfo.get_remote_hash(a:git, remote, commit1)
+  let revision2 = s:GitInfo.get_remote_hash(a:git, remote, commit2)
+
   " get selected region
   if has_key(a:options, 'selection')
     let line_start = get(a:options.selection, 0, 0)
@@ -58,11 +64,6 @@ function! s:find_url(git, commit, filename, options) abort
     let line_end = 0
   endif
   let line_end   = line_start == line_end ? 0 : line_end
-
-  " normalize commit to figure out remote, commit, and remote_url
-  let [commit1, commit2, remote, remote_url] = s:find_commit_meta(a:git, a:commit)
-  let revision1 = s:GitInfo.get_remote_hash(a:git, remote, commit1)
-  let revision2 = s:GitInfo.get_remote_hash(a:git, remote, commit2)
 
   " create a URL
   let data = {
@@ -90,8 +91,9 @@ function! s:find_url(git, commit, filename, options) abort
         \)
   let url = s:translate_url(
         \ remote_url,
-        \ get(a:options, 'scheme', '_'),
-        \ translation_patterns
+        \ empty(a:filename) ? '^' : get(a:options, 'scheme', '_'),
+        \ translation_patterns,
+        \ empty(a:filename),
         \)
   if empty(url)
     call gita#throw(printf(
@@ -105,45 +107,39 @@ endfunction
 function! gita#command#browse#call(...) abort
   let options = gita#option#init('', get(a:000, 0, {}), {
         \ 'commit': '',
-        \ 'filenames': [],
+        \ 'filename': '',
         \})
   let git = gita#get_or_fail()
   let local_branch = s:GitInfo.get_local_branch(git)
   let commit = empty(options.commit) ? local_branch.name : options.commit
   let commit = gita#variable#get_valid_range(commit)
-  if empty(options.filenames)
-    let filenames = ['%']
+  if empty(options.filename)
+    let filename = ''
+  else
+    let filename = gita#variable#get_valid_filename(options.filename)
   endif
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
-        \)
-  let urls = map(copy(filenames), 's:find_url(git, commit, v:val, options)')
+  let url = s:find_url(git, commit, filename, options)
   return {
         \ 'commit': commit,
-        \ 'filenames': filenames,
-        \ 'urls': urls,
+        \ 'filename': filename,
+        \ 'url': url,
         \ 'options': options,
         \}
 endfunction
 function! gita#command#browse#open(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  for url in result.urls
-    call s:File.open(url)
-  endfor
+  call s:File.open(result.url)
 endfunction
 function! gita#command#browse#echo(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  for url in result.urls
-    echo url
-  endfor
+  echo result.url
 endfunction
 function! gita#command#browse#yank(...) abort
   let options = get(a:000, 0, {})
   let result = gita#command#browse#call(options)
-  call gita#util#clip(join(result.urls, "\n"))
+  call gita#util#clip(result.url)
 endfunction
 
 function! s:get_parser() abort
@@ -152,9 +148,13 @@ function! s:get_parser() abort
           \ 'name': 'Gita browse',
           \ 'description': 'Browse a content of the remote in a system default browser',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ '--repository', '-r',
+          \ 'Show a diff of the repository instead of a file content',
+          \)
     call s:parser.add_argument(
           \ '--open', '-o',
           \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
@@ -196,6 +196,12 @@ function! s:get_parser() abort
         let a:options.open = 1
       endif
     endfunction
+    function! s:parser.hooks.post_validate(options) abort
+      if has_key(a:options, 'repository')
+        let a:options.filename = ''
+        unlet a:options.repository
+      endif
+    endfunction
     call s:parser.hooks.validate()
   endif
   return s:parser
@@ -207,12 +213,8 @@ function! gita#command#browse#command(...) abort
     return
   endif
   call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
-  if empty(options.__unknown__)
-    let options.filenames = ['%']
-  else
-    let options.filenames = options.__unknown__
-  endif
 
   " extend default options
   let options = extend(
@@ -242,6 +244,7 @@ call gita#util#define_variables('command#browse', {
       \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
       \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
       \     ], {
+      \       '^':     'https://\1/\2/\3/tree/%c1/',
       \       '_':     'https://\1/\2/\3/blob/%c1/%pt%{#L|}ls%{-L|}le',
       \       'exact': 'https://\1/\2/\3/blob/%r1/%pt%{#L|}ls%{-L|}le',
       \       'blame': 'https://\1/\2/\3/blame/%c1/%pt%{#L|}ls%{-L|}le',
@@ -254,6 +257,7 @@ call gita#util#define_variables('command#browse', {
       \       '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
       \       '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
       \     ], {
+      \       '^':     'https://\1/\2/\3/branch/%c1/',
       \       '_':     'https://\1/\2/\3/src/%c1/%pt%{#cl-|}ls',
       \       'exact': 'https://\1/\2/\3/src/%r1/%pt%{#cl-|}ls',
       \       'blame': 'https://\1/\2/\3/annotate/%c1/%pt',

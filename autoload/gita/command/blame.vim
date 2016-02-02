@@ -232,19 +232,26 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
 endfunction
 
 function! s:get_entry(index) abort
+  let git = gita#get_or_fail()
   let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
   let lineinfo = get(blamemeta.lineinfos, a:index, {})
   if empty(lineinfo)
     return {}
   endif
-  return blamemeta.chunks[lineinfo.chunkref]
+  return deepcopy(blamemeta.chunks[lineinfo.chunkref])
 endfunction
 function! s:call_pseudo_command(...) abort
   let ret = s:Prompt.input('None', ':', get(a:000, 0, ''))
   if ret =~# '\v^[0-9]+$'
-    call gita#command#blame#_selection([ret])
+    call gita#command#blame#select([ret])
   elseif ret =~# '^q\%(\|u\|ui\|uit\)!\?$' || ret =~# '^clo\%(\|s\|se\)!\?$'
-    call gita#action#do('close', [])
+    let blameobj = gita#command#blame#_get_blameobj_or_fail()
+    if gita#get_meta('content_type') ==# 'blame-navi'
+      execute printf('%dclose', winbufnr(blameobj.view_bufnum))
+    else
+      execute printf('%dclose', winbufnr(blameobj.navi_bufnum))
+    endif
+    close
   else
     redraw
     execute ret
@@ -493,15 +500,6 @@ function! gita#command#blame#_define_actions() abort
     execute printf('%dwincmd w', winnum)
     redraw | echo
   endfunction
-  function! action.actions.close(candidates, ...) abort
-    let blameobj = gita#command#blame#_get_blameobj_or_fail()
-    if gita#get_meta('content_type') ==# 'blame-navi'
-      execute printf('%dclose', winbufnr(blameobj.view_bufnum))
-    else
-      execute printf('%dclose', winbufnr(blameobj.navi_bufnum))
-    endif
-    close
-  endfunction
 
   nnoremap <silent><buffer> <Plug>(gita-blame-command)
         \ :<C-u>call gita#action#call('blame_command')<CR>
@@ -522,6 +520,8 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita blame',
           \ 'description': 'Show what revision and author last modified each line of a file',
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
@@ -532,12 +532,6 @@ function! s:get_parser() abort
           \ ], {
           \   'complete': function('gita#variable#complete_commit'),
           \ })
-    call s:parser.add_argument(
-          \ 'filename', [
-          \   'A filename which you want to blame.',
-          \   'A filename of the current buffer is used when omited.',
-          \ ],
-          \)
     " TODO: Add more arguments
   endif
   return s:parser

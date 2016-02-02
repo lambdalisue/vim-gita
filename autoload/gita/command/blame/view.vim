@@ -8,7 +8,7 @@ function! s:define_actions() abort
 
   call gita#action#includes(
         \ g:gita#command#blame#view#enable_default_mappings, [
-        \   'close', 'redraw',
+        \   'redraw',
         \])
 endfunction
 

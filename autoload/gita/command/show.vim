@@ -122,8 +122,19 @@ function! gita#command#show#bufname(...) abort
         \ 'filename': '',
         \ 'patch': 0,
         \})
+  if has_key(options, 'worktree')
+    let options.commit = s:WORKTREE
+    unlet options.worktree
+  endif
   if options.commit ==# s:WORKTREE
-    return gita#variable#get_valid_filename(options.filename)
+    if !filereadable(options.filename)
+      call gita#throw(
+            \ printf(
+            \   'A file "%s" could not be found in the working tree',
+            \   options.filename,
+            \))
+    endif
+    return s:Path.relpath(gita#variable#get_valid_filename(options.filename))
   endif
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
@@ -146,16 +157,29 @@ function! gita#command#show#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
+  if has_key(options, 'worktree')
+    let options.commit = s:WORKTREE
+    unlet options.worktree
+  endif
   let git = gita#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
+  if options.commit ==# s:WORKTREE
+    let commit = options.commit
+  else
+    let commit = gita#variable#get_valid_range(options.commit, {
+          \ '_allow_empty': 1,
+          \})
+  endif
   if empty(options.filename)
     let filename = ''
+    if commit ==# s:WORKTREE
+      call hita#throw('Cannot show a summary of worktree')
+    endif
     let content = s:get_revision_content(git, commit, filename, options)
   else
     let filename = gita#variable#get_valid_filename(options.filename)
-    if commit =~# '^.\{-}\.\.\..*$'
+    if commit ==# s:WORKTREE
+      let content = readfile(filename)
+    elseif commit =~# '^.\{-}\.\.\..*$'
       let content = s:get_ancestor_content(git, commit, filename, options)
     elseif commit =~# '^.\{-}\.\..*$'
       let commit  = s:GitTerm.split_range(commit)[0]
@@ -178,9 +202,16 @@ function! gita#command#show#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let opener = empty(options.opener)
-        \ ? g:gita#command#show#default_opener
-        \ : options.opener
+  if empty(options.opener)
+    let content_type = gita#get_meta('content_type', '')
+    if content_type =~# '^blame-\%(navi\|view\)$'
+      let opener = 'tabedit'
+    else
+      let opener = g:gita#command#show#default_opener
+    endif
+  else
+    let opener = options.opener
+  endif
   let bufname = gita#command#show#bufname(options)
   if !empty(bufname)
     if options.anchor
@@ -236,11 +267,17 @@ function! gita#command#show#edit(...) abort
   endif
 endfunction
 
+function! gita#command#show#get_worktree_symbol() abort
+  return s:WORKTREE
+endfunction
+
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita show',
           \ 'description': 'Show a content of a commit or a file',
+          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
@@ -249,16 +286,9 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--summary', '-s',
-          \ 'Show a summary of the repository instead of a file content', {
-          \   'conflicts': ['filename'],
-          \})
-    call s:parser.add_argument(
-          \ '--filename', '-f',
-          \ 'A filename', {
-          \   'complete': function('gita#variable#complete_filename'),
-          \   'conflicts': ['summary'],
-          \})
+          \ '--repository', '-r',
+          \ 'Show a summary of the repository instead of a file content',
+          \)
     call s:parser.add_argument(
           \ '--worktree', '-w',
           \ 'Open a content of a file in working tree', {
@@ -284,13 +314,9 @@ function! s:get_parser() abort
           \   'complete': function('gita#variable#complete_commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
-      if has_key(a:options, 'summary')
+      if has_key(a:options, 'repository')
         let a:options.filename = ''
-        unlet a:options.summary
-      endif
-      if has_key(a:options, 'worktree')
-        let a:options.commit = s:WORKTREE
-        unlet a:options.worktree
+        unlet a:options.repository
       endif
     endfunction
     call s:parser.hooks.validate()

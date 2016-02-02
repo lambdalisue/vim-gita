@@ -17,12 +17,10 @@ function! gita#option#assign_commit(options) abort
   endif
 
   let content_type = gita#get_meta('content_type')
-  if content_type =~# '^\%(status\|commit\|blame-navi\|blame-view\)$'
+  if content_type =~# '^\%(status\|commit\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'commit')
       let a:options.commit = candidate.commit
-    elseif has_key(candidate, 'revision')
-      let a:options.commit = candidate.revision
     endif
   endif
   if empty(get(a:options, 'commit'))
@@ -35,16 +33,14 @@ endfunction
 function! gita#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
+  elseif len(get(a:options, '__unknown__')) > 0
+    let a:options.filename = a:options.__unknown__[0]
   endif
   let content_type = gita#get_meta('content_type')
-  if content_type =~# '^\%(status\|commit\|blame-navi\|blame-view\)$'
+  if content_type =~# '^\%(status\|commit\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'path')
       let a:options.filename = candidate.path
-      return
-    elseif has_key(candidate, 'filename')
-      let a:options.filename = candidate.filename
-      return
     endif
   endif
   if empty(get(a:options, 'filename'))
@@ -65,12 +61,21 @@ function! gita#option#assign_selection(options) abort
           \ 'str2nr(v:val)',
           \)
   else
-    let a:options.selection = a:options.__range__
+    let a:options.selection = get(
+          \ a:options,
+          \ '__range__',
+          \ mode() =~# '^\c\%(v\|CTRL-V\|s\)$'
+          \   ? [line("'<"), line("'>")]
+          \   : [line('.')],
+          \)
   endif
 
-  if gita#get_meta('content_type') =~# '^blame-\%(navi\|view\)%'
+  let content_type = gita#get_meta('content_type')
+  if content_type =~# '^\%(status\|commit\)%'
+    let a:options.selection = []
+  elseif content_type =~# '^blame-\%(navi\|view\)$'
     let line_start = get(a:options.selection, 0, 0)
-    let line_end = get(a:options.selection, 1, line_end)
+    let line_end = get(a:options.selection, 1, line_start)
     let a:options.selection = [
           \ gita#command#blame#get_pseudo_linenum(line_start),
           \ gita#command#blame#get_pseudo_linenum(line_end),
