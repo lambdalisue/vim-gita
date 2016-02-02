@@ -1,5 +1,9 @@
+let s:root = expand('<sfile>:p:h')
+
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
+  let s:Path = a:V.import('System.Filepath')
+  let s:Python = a:V.import('Vim.Python')
   let s:StringExt = a:V.import('Data.StringExt')
   " NOTE:
   " Support 'T' as well
@@ -41,6 +45,7 @@ function! s:_vital_depends() abort
   return [
         \ 'Prelude',
         \ 'Data.StringExt',
+        \ 'Vim.Python',
         \]
 endfunction
 
@@ -49,18 +54,51 @@ function! s:_throw(msg) abort
 endfunction
 
 " *** BlameParser ************************************************************
-function! s:parse_blame(blame, ...) abort
-  let progressbar = get(a:000, 0, {})
+function! s:parse_blame(content, ...) abort
+  let options = extend({
+        \ 'progressbar': {},
+        \ 'python': s:Python.is_enabled(),
+        \}, get(a:000, 0, {}))
+  let content = s:Prelude.is_string(a:content)
+        \ ? split(a:content, '\r\?\n', 1)
+        \ : a:content
+  if options.python > 0
+    return s:_parse_blame_python(a:content, options)
+  else
+    return s:_parse_blame_vim(a:content, options)
+  endif
+endfunction
+function! s:_parse_blame_python(content, ...) abort
+  let options = extend({
+        \ 'progressbar': {},
+        \ 'python': 1,
+        \}, get(a:000, 0, {}))
+  let progressbar = options.progressbar
+  let kwargs = {
+        \ 'content': a:content,
+        \}
+  let namespace = {}
+  execute s:Python.exec_file(
+        \ s:Path.join(s:root, 'Parser.py'),
+        \ options.python == 1 ? 0 : options.python,
+        \)
+  if has_key(namespace, 'exception')
+    call s:_throw(namespace.exception)
+  endif
+  return namespace.blameobj
+endfunction
+function! s:_parse_blame_vim(content, ...) abort
+  let options = extend({
+        \ 'progressbar': {},
+        \}, get(a:000, 0, {}))
+  let progressbar = options.progressbar
   let revisions = {}
   let chunks = []
   let current_revision = {}
   let current_chunk = {}
-  let lines = s:Prelude.is_string(a:blame)
-        \ ? split(a:blame, '\r\?\n', 1)
-        \ : a:blame
   let has_content = 0
   let chunk_index = -1
-  for line in lines
+  for line in a:content
     if !empty(progressbar)
       call progressbar.update()
     endif
@@ -91,16 +129,19 @@ function! s:parse_blame(blame, ...) abort
       continue
     elseif len(bits[0]) == 0
       let has_content = 1
-      call add(current_chunk.contents, substitute(line, '^\t', '', ''))
+      "call add(current_chunk.contents, substitute(line, '^\t', '', ''))
+      call add(current_chunk.contents, line[1:])
       continue
     elseif line ==# 'boundary'
-      call extend(current_revision, { 'boundary': 1 })
+      "call extend(current_revision, { 'boundary': 1 })
+      let current_revision.boundary = 1
       continue
     else
       let bits = split(line, ' ', 1)
       let key = substitute(bits[0], '-', '_', 'g')
       let val = join(bits[1:], ' ')
-      call extend(current_revision, { key : val })
+      "call extend(current_revision, { key : val })
+      let current_revision[key] = val
       continue
     endif
   endfor

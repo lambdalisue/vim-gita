@@ -14,3 +14,4 @@ Data.Dict
 Data.String
 DateTime
 ArgumentParser
+Vim.Python

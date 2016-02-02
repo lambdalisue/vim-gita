@@ -337,8 +337,10 @@ Describe Git.Parser
   Describe .parse_blame({blame}[, {progressbar}])
     " Blame content of the following
     " ebcc55bee6ed0237ff86e6dfe7364ab166791de1/autoload/gita/interface/status.vim
-    It should parse a blame output and return chunks (porcelain)
-      let blameobj = GitParser.parse_blame(blame_porcelain)
+    It should parse a blame output and return chunks (porcelain) without Python
+      let blameobj = GitParser.parse_blame(blame_porcelain, {
+            \ 'python': 0,
+            \})
       Assert KeyExists(blameobj, 'revisions')
       Assert KeyExists(blameobj, 'chunks')
       Assert KeyExists(blameobj, 'has_content')
@@ -435,8 +437,10 @@ Describe Git.Parser
             \})
       Assert Equals(len(chunk.contents), 37)
     End
-    It should parse a blame output and return chunks (incremental)
-      let blameobj = GitParser.parse_blame(blame_incremental)
+    It should parse a blame output and return chunks (incremental) without Python
+      let blameobj = GitParser.parse_blame(blame_incremental, {
+            \ 'python': 0,
+            \})
       Assert KeyExists(blameobj, 'revisions')
       Assert KeyExists(blameobj, 'chunks')
       Assert KeyExists(blameobj, 'has_content')
@@ -533,6 +537,208 @@ Describe Git.Parser
             \})
       Assert KeyNotExists(chunk, 'content')
     End
+    if has('python') || has('python3')
+      It should parse a blame output and return chunks (porcelain) with Python
+        let blameobj = GitParser.parse_blame(blame_porcelain, {
+              \ 'python': 1,
+              \})
+        Assert KeyExists(blameobj, 'revisions')
+        Assert KeyExists(blameobj, 'chunks')
+        Assert KeyExists(blameobj, 'has_content')
+        Assert Equals(blameobj.has_content, 1)
+        Assert Equals(len(blameobj.revisions), 3)
+        Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426187381',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426188804',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Building status interface',
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194280',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426194280',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Add commit interface',
+              \ 'previous': join([
+              \   '656465cef4559417a88e92f5235c4c43476fe963',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194460',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426210134',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Update syntax highlight',
+              \ 'previous': join([
+              \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(len(blameobj.chunks), 12)
+        let chunk = blameobj.chunks[0]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 0)
+        Assert Equals(chunk.nlines, 169)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 1,
+              \ 'final': 1,
+              \})
+        Assert Equals(len(chunk.contents), 169)
+        let chunk = blameobj.chunks[1]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 1)
+        Assert Equals(chunk.nlines, 6)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 170,
+              \ 'final': 170,
+              \})
+        Assert Equals(len(chunk.contents), 6)
+        let chunk = blameobj.chunks[2]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 2)
+        Assert Equals(chunk.nlines, 27)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 176,
+              \ 'final': 176,
+              \})
+        Assert Equals(len(chunk.contents), 27)
+        let chunk = blameobj.chunks[3]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 3)
+        Assert Equals(chunk.nlines, 1)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 203,
+              \ 'final': 203,
+              \})
+        Assert Equals(len(chunk.contents), 1)
+        let chunk = blameobj.chunks[-1]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 11)
+        Assert Equals(chunk.nlines, 37)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 254,
+              \ 'final': 258,
+              \})
+        Assert Equals(len(chunk.contents), 37)
+      End
+      It should parse a blame output and return chunks (incremental) with Python
+        let blameobj = GitParser.parse_blame(blame_incremental, {
+              \ 'python': 1,
+              \})
+        Assert KeyExists(blameobj, 'revisions')
+        Assert KeyExists(blameobj, 'chunks')
+        Assert KeyExists(blameobj, 'has_content')
+        Assert Equals(blameobj.has_content, 0)
+        Assert Equals(len(blameobj.revisions), 3)
+        Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426187381',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426188804',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Building status interface',
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194280',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426194280',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Add commit interface',
+              \ 'previous': join([
+              \   '656465cef4559417a88e92f5235c4c43476fe963',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194460',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426210134',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Update syntax highlight',
+              \ 'previous': join([
+              \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(len(blameobj.chunks), 12)
+        let chunk = blameobj.chunks[0]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 0)
+        Assert Equals(chunk.nlines, 169)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 1,
+              \ 'final': 1,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[1]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 1)
+        Assert Equals(chunk.nlines, 6)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 170,
+              \ 'final': 170,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[2]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 2)
+        Assert Equals(chunk.nlines, 27)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 176,
+              \ 'final': 176,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[3]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 3)
+        Assert Equals(chunk.nlines, 1)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 203,
+              \ 'final': 203,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[-1]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 11)
+        Assert Equals(chunk.nlines, 37)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 254,
+              \ 'final': 258,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+      End
+    endif
   End
 
   Describe .has_ours_makrer({buflines})
