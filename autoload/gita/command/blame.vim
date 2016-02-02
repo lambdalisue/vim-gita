@@ -5,6 +5,7 @@ let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:Guard = s:V.import('Vim.Guard')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
@@ -54,11 +55,14 @@ function! s:get_blameobj(git, commit, filename, options) abort
   endif
   let blameobj = s:format_content(result.content)
   if !get(options, 'porcelain')
-    let blameobj.file_content = gita#command#show#call({
-          \ 'commit': a:commit,
-          \ 'filename': a:filename,
-          \ 'worktree': empty(a:commit),
-          \}).content
+    if empty(a:commit)
+      let blameobj.file_content = readfile(a:filename)
+    else
+      let blameobj.file_content = gita#command#show#call({
+            \ 'commit': a:commit,
+            \ 'filename': a:filename,
+            \}).content
+    endif
   endif
   return blameobj
 endfunction
@@ -78,7 +82,9 @@ function! s:get_cached_blameobj(git, commit, filename, options) abort
   " constructing blameobj is really timeconsuming.
   let cached  = a:git._gita_blameobj_cache.get(cachename, {})
   let hashref = a:commit =~# '^[0-9a-zA-Z]\{40}$'
-  let uptime = s:Git.getftime(a:git, 'index')
+  let uptime = empty(a:commit)
+        \ ? getftime(a:filename)
+        \ : s:Git.getftime(a:git, 'index')
   if empty(cached) || (!hashref && (uptime == -1 || uptime > cached.uptime))
     let blameobj = s:get_blameobj(a:git, a:commit, a:filename, a:options)
     call a:git._gita_blameobj_cache.set(cachename, {
@@ -108,12 +114,12 @@ function! s:format_timestamp(timestamp, timezone, now) abort
   endif
 endfunction
 function! s:get_max_linenum(chunks) abort
-  let chunk = a:chunks[-1]
+  let chunk = a:chunks[len(a:chunks) - 1]
   return chunk.linenum.final + get(chunk.linenum, 'nlines', 1)
 endfunction
 function! s:build_chunkinfo(chunk, width, now, whitespaces) abort
   let summary = s:String.wrap(a:chunk.summary, a:width)
-  let revision = a:chunk.revision[:6]
+  let revision = (get(a:chunk, 'boundary') ? '^' : ' ') . a:chunk.revision[:6]
   let author = a:chunk.author
   let timestr = s:format_timestamp(
         \ a:chunk.author_time,
@@ -125,7 +131,7 @@ function! s:build_chunkinfo(chunk, width, now, whitespaces) abort
   else
     let author_info = author . ' authored ' . timestr
   endif
-  let epilogue = author_info . a:whitespaces[8+len(author_info):] . revision
+  let epilogue = author_info . a:whitespaces[9+len(author_info):] . revision
   return { 'nlines': len(summary), 'summary': summary, 'epilogue': epilogue }
 endfunction
 function! s:format_chunk(chunk, width, height, cache, now, whitespaces) abort
@@ -224,22 +230,24 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   return blame
 endfunction
 
-function! s:define_plugin_mappings() abort
-  nnoremap <silent><buffer> <Plug>(gita-pseudo-command)
-        \ :call gita#command#blame#perform_pseudo_command()<CR>
+function! s:get_entry(index) abort
+  let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
+  let lineinfo = get(blamemeta.lineinfos, a:index, {})
+  if empty(lineinfo)
+    return {}
+  endif
+  return blamemeta.chunks[lineinfo.chunkref]
 endfunction
-function! s:define_default_mappings() abort
-  nmap <buffer> : <Plug>(gita-pseudo-command)
-endfunction
-function! s:display_pseudo_separators(separators, expr) abort
-  let bufnum = bufnr(a:expr)
-  execute printf('sign unplace * buffer=%d', bufnum)
-  for linenum in a:separators
-    execute printf(
-          \ 'sign place %d line=%d name=GitaPseudoSeparatorSign buffer=%d',
-          \ linenum, linenum, bufnum,
-          \)
-  endfor
+function! s:call_pseudo_command(...) abort
+  let ret = s:Prompt.input('None', ':', get(a:000, 0, ''))
+  if ret =~# '\v^[0-9]+$'
+    call gita#command#blame#_selection([ret])
+  elseif ret =~# '^q\%(\|u\|ui\|uit\)!\?$' || ret =~# '^clo\%(\|s\|se\)!\?$'
+    call gita#action#do('close', [])
+  else
+    redraw
+    execute ret
+  endif
 endfunction
 
 function! gita#command#blame#call(...) abort
@@ -265,6 +273,7 @@ function! gita#command#blame#open(...) abort
   let options = extend({
         \ 'opener': '',
         \ 'selection': [],
+        \ 'backward': '',
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:gita#command#blame#default_opener
@@ -273,31 +282,35 @@ function! gita#command#blame#open(...) abort
   " NOTE:
   " In case, do not call autocmd to prevent infinity-loop while both buffers
   " define BufReadCmd when these are already constructed.
-  call gita#command#blame#view#_open(
-        \ result.blameobj, {
-        \   'opener': opener,
-        \   'commit': result.commit,
-        \   'filename': result.filename,
-        \})
-  call gita#command#blame#navi#_open(
-        \ result.blameobj, {
-        \   'opener': g:gita#command#blame#navi#default_opener,
-        \   'commit': result.commit,
-        \   'filename': result.filename,
-        \})
+  let guard = s:Guard.store('&eventignore')
+  try
+    set eventignore=BufWinEnter
+    call gita#command#blame#view#_open(
+          \ result.blameobj, {
+          \   'opener': opener,
+          \   'commit': result.commit,
+          \   'filename': result.filename,
+          \   'backward': options.backward,
+          \})
+    call gita#command#blame#navi#_open(
+          \ result.blameobj, {
+          \   'opener': g:gita#command#blame#navi#default_opener,
+          \   'commit': result.commit,
+          \   'filename': result.filename,
+          \   'backward': options.backward,
+          \})
+  finally
+    call guard.restore()
+  endtry
   " NOTE:
   " Order of appearance, navi#_edit -> view#_edit, is ciritical requirement.
   call gita#command#blame#navi#_edit()
   call gita#command#blame#select(options.selection)
-  call s:define_plugin_mappings()
-  call s:define_default_mappings()
   setlocal noscrollbind
   normal! z.
   wincmd p
   call gita#command#blame#view#_edit()
   call gita#command#blame#select(options.selection)
-  call s:define_plugin_mappings()
-  call s:define_default_mappings()
   setlocal noscrollbind
   normal! z.
   wincmd p
@@ -307,6 +320,8 @@ function! gita#command#blame#open(...) abort
   setlocal scrollbind
   setlocal cursorbind
   syncbind
+  " focus gita-blame-navi
+  wincmd p
 endfunction
 function! gita#command#blame#format(blameobj, width) abort
   let progressbar = s:ProgressBar.new(
@@ -321,29 +336,9 @@ function! gita#command#blame#format(blameobj, width) abort
     call progressbar.exit()
   endtry
 endfunction
-
-function! gita#command#blame#get_blameobj_or_fail() abort
-  let blameobj = gita#get_meta('blameobj')
-  if empty(blameobj)
-    call gita#throw(printf(
-          \ 'Fatal: "blameobj" is not found on %s', bufname('%'),
-          \))
-  endif
-  return blameobj
-endfunction
-function! gita#command#blame#get_blamemeta_or_fail() abort
-  let blameobj = gita#command#blame#get_blameobj_or_fail()
-  if !has_key(blameobj, 'blamemeta')
-    call gita#throw(printf(
-          \ 'Fatal: "blameobj" does not have "blamemeta" attribute on %s',
-          \ bufname('%'),
-          \))
-  endif
-  return blameobj.blamemeta
-endfunction
 function! gita#command#blame#get_pseudo_linenum(linenum) abort
   " actual -> pseudo
-  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+  let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
   let lineinfos = blamemeta.lineinfos
   if a:linenum > len(lineinfos)
     let lineinfo = lineinfos[-1]
@@ -356,7 +351,7 @@ function! gita#command#blame#get_pseudo_linenum(linenum) abort
 endfunction
 function! gita#command#blame#get_actual_linenum(linenum) abort
   " pseudo -> actual
-  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+  let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
   let linerefs = blamemeta.linerefs
   if a:linenum > len(linerefs)
     return linerefs[-1]
@@ -368,7 +363,6 @@ function! gita#command#blame#get_actual_linenum(linenum) abort
 endfunction
 function! gita#command#blame#select(selection) abort
   " pseudo -> actual
-  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
   let line_start = get(a:selection, 0, 1)
   let line_end = get(a:selection, 1, line_start)
   let actual_selection = [
@@ -377,16 +371,27 @@ function! gita#command#blame#select(selection) abort
         \]
   call gita#util#select(actual_selection)
 endfunction
-function! gita#command#blame#perform_pseudo_command(...) abort
-  let ret = s:Prompt.input('None', ':', get(a:000, 0, ''))
-  if ret =~# '\v^[0-9]+$'
-    call gita#command#blame#selection([ret])
-  else
-    redraw
-    execute ret
+
+function! gita#command#blame#_get_blameobj_or_fail() abort
+  let blameobj = gita#get_meta('blameobj')
+  if empty(blameobj)
+    call gita#throw(printf(
+          \ 'Fatal: "blameobj" is not found on %s', bufname('%'),
+          \))
   endif
+  return blameobj
 endfunction
-function! gita#command#blame#display_pseudo_separators(separators, ...) abort
+function! gita#command#blame#_get_blamemeta_or_fail() abort
+  let blameobj = gita#command#blame#_get_blameobj_or_fail()
+  if !has_key(blameobj, 'blamemeta')
+    call gita#throw(printf(
+          \ 'Fatal: "blameobj" does not have "blamemeta" attribute on %s',
+          \ bufname('%'),
+          \))
+  endif
+  return blameobj.blamemeta
+endfunction
+function! gita#command#blame#_set_pseudo_separators(separators, ...) abort
   let bufnum = bufnr('%')
   execute printf('sign unplace * buffer=%d', bufnum)
   for linenum in a:separators
@@ -395,6 +400,116 @@ function! gita#command#blame#display_pseudo_separators(separators, ...) abort
           \ linenum, linenum, bufnum,
           \)
   endfor
+endfunction
+function! gita#command#blame#_define_actions() abort
+  let action = gita#action#define(function('s:get_entry'))
+  function! action.actions.blame_command(candidates, ...) abort
+    call s:call_pseudo_command()
+  endfunction
+  function! action.actions.blame_echo(candidates, ...) abort
+    let candidate = get(a:candidates, 0, {})
+    if empty(candidate)
+      return
+    endif
+    let commit   = gita#get_meta('commit')
+    let filename = gita#get_meta('filename')
+    echo '=== Current ==='
+    echo 'Commit:   ' . commit
+    echo 'Filename: ' . filename
+    echo '===  Chunk  ==='
+    echo 'Summary:  ' . candidate.summary
+    echo 'Author:   ' . candidate.author
+    echo 'Boundary: ' . (get(candidate, 'boundary') ? 'boundary' : '')
+    echo 'Commit:   ' . candidate.revision
+    echo 'Previous: ' . get(candidate, 'previous', '')
+    echo 'Filename: ' . candidate.filename
+    echo 'Line (O): ' . candidate.linenum.original
+    echo 'Line (F): ' . candidate.linenum.final
+  endfunction
+  function! action.actions.blame_enter(candidates, ...) abort
+    let candidate = get(a:candidates, 0, {})
+    if empty(candidate)
+      return
+    endif
+    let commit = gita#get_meta('commit')
+    if candidate.revision ==# commit
+      if !has_key(candidate, 'previous')
+        call gita#throw(
+              \ 'Cancel:',
+              \ printf('A commit %s has no previous commit', candidate.revision),
+              \)
+      endif
+      let [revision, filename] = split(candidate.previous)
+      if revision ==# commit
+        call gita#throw(
+              \ 'Cancel:',
+              \ printf('A commit %s is a boundary commit', candidate.revision),
+              \)
+      endif
+    else
+      let revision = candidate.revision
+      let filename = candidate.filename
+    endif
+    let linenum = gita#command#blame#get_pseudo_linenum(line('.'))
+    let linenum = candidate.linenum.original + (linenum - candidate.linenum.final)
+    let winnum = winnr()
+    redraw | echo printf('Opening a blame content of "%s" in %s', filename, revision)
+    call gita#command#blame#open({
+          \ 'backward': join([
+          \   commit,
+          \   gita#get_meta('filename'),
+          \ ], ':'),
+          \ 'commit': revision,
+          \ 'filename': filename,
+          \ 'selection': [linenum],
+          \})
+    execute printf('%dwincmd w', winnum)
+    redraw | echo
+  endfunction
+  function! action.actions.blame_backward(candidates, ...) abort
+    let backward = gita#get_meta('backward')
+    let commit = gita#get_meta('commit')
+    if empty(backward)
+      call gita#throw(
+            \ 'Cancel:',
+            \ 'No backward blame found',
+            \)
+    endif
+    let [revision, filename] = split(backward, ':', 1)
+    let winnum = winnr()
+    redraw | echo printf('Opening a blame content of "%s" in %s', filename, revision)
+    call gita#command#blame#open({
+          \ 'commit': revision,
+          \ 'filename': filename,
+          \ 'selection': [
+          \   gita#command#blame#get_pseudo_linenum(line('.')),
+          \ ],
+          \})
+    execute printf('%dwincmd w', winnum)
+    redraw | echo
+  endfunction
+  function! action.actions.close(candidates, ...) abort
+    let blameobj = gita#command#blame#_get_blameobj_or_fail()
+    if gita#get_meta('content_type') ==# 'blame-navi'
+      execute printf('%dclose', winbufnr(blameobj.view_bufnum))
+    else
+      execute printf('%dclose', winbufnr(blameobj.navi_bufnum))
+    endif
+    close
+  endfunction
+
+  nnoremap <silent><buffer> <Plug>(gita-blame-command)
+        \ :<C-u>call gita#action#call('blame_command')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-blame-echo)
+        \ :<C-u>call gita#action#call('blame_echo')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-blame-enter)
+        \ :<C-u>call gita#action#call('blame_enter')<CR>
+  nnoremap <silent><buffer> <Plug>(gita-blame-backward)
+        \ :<C-u>call gita#action#call('blame_backward')<CR>
+
+  nmap <buffer> : <Plug>(gita-blame-command)
+
+  return action
 endfunction
 
 function! s:get_parser() abort
@@ -453,8 +568,5 @@ endif
 call gita#util#define_variables('command#blame', {
       \ 'default_options': {},
       \ 'default_opener': 'tabnew',
-      \ 'navigation_winwidth': 50,
-      \ 'enable_pseudo_separator': 1,
-      \ 'short_revision_length': 7,
       \ 'use_porcelain_instead': 0,
       \})

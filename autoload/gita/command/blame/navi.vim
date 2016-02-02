@@ -1,90 +1,26 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Guard = s:V.import('Vim.Guard')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
-function! s:get_entry(index) abort
-  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
-  let lineinfo = get(blamemeta.lineinfos, a:index, {})
-  if empty(lineinfo)
-    return {}
-  endif
-  return blamemeta.chunks[lineinfo.chunkref]
-endfunction
 function! s:define_actions() abort
-  let action = gita#action#define(function('s:get_entry'))
-  function! action.actions.blame_echo(candidates, ...) abort
-    let candidate = get(a:candidates, 0, {})
-    if empty(candidate)
-      return
-    endif
-    let commit   = gita#get_meta('commit')
-    let filename = gita#get_meta('filename')
-    echo '=== Current ==='
-    echo 'Commit:   ' . commit
-    echo 'Filename: ' . filename
-    echo '===  Chunk  ==='
-    echo 'Summary:  ' . candidate.summary
-    echo 'Author:   ' . candidate.author
-    echo 'Boundary: ' . (get(candidate, 'boundary') ? 'boundary' : '')
-    echo 'Commit:   ' . candidate.revision
-    echo 'Previous: ' . get(candidate, 'previous', '')
-    echo 'Filename: ' . candidate.filename
-    echo 'Line (O): ' . candidate.linenum.original
-    echo 'Line (F): ' . candidate.linenum.final
-  endfunction
-  function! action.actions.blame_enter(candidates, ...) abort
-    let candidate = get(a:candidates, 0, {})
-    if empty(candidate)
-      return
-    endif
-    let commit = gita#get_meta('commit')
-    if candidate.revision ==# commit
-      if !has_key(candidate, 'previous')
-        call gita#throw(
-              \ 'Cancel:',
-              \ printf('A commit %s has no previous commit', candidate.revision),
-              \)
-      endif
-      let [revision, filename] = split(candidate.previous)
-      if revision ==# commit
-        call gita#throw(
-              \ 'Cancel:',
-              \ printf('A commit %s is a boundary commit', candidate.revision),
-              \)
-      endif
-    else
-      let revision = candidate.revision
-      let filename = candidate.filename
-    endif
-    let winnum = winnr()
-    call gita#command#blame#open({
-          \ 'commit': revision,
-          \ 'filename': filename,
-          \ 'selection': [
-          \   gita#command#blame#get_pseudo_linenum(line('.')),
-          \ ],
-          \})
-    execute printf('%dwincmd w', winnum)
-  endfunction
-
-  nnoremap <silent><buffer> <Plug>(gita-blame-echo)
-        \ :<C-u>call gita#action#call('blame_echo')<CR>
-  nnoremap <silent><buffer> <Plug>(gita-blame-enter)
-        \ :<C-u>call gita#action#call('blame_enter')<CR>
+  let action = gita#command#blame#_define_actions()
 
   nmap <buffer> <C-g> <Plug>(gita-blame-echo)
   nmap <buffer> <CR> <Plug>(gita-blame-enter)
+  nmap <buffer> <Backspace> <Plug>(gita-blame-backward)
 
   call gita#action#includes(
         \ g:gita#command#blame#navi#enable_default_mappings, [
         \   'close', 'redraw',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
+        \   'edit', 'show', 'diff', 'browse',
         \])
 endfunction
 
 function! s:on_CursorMoved() abort
   try
     " Restrict cursor movement to mimic linenum columns
-    let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+    let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
     let linenum_width = blamemeta.linenum_width
     let column = col('.')
     if column <= linenum_width + 1
@@ -95,17 +31,22 @@ function! s:on_CursorMoved() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
+  let guard = s:Guard.store('&eventignore')
   try
     let winnum = winnr()
     let commit = gita#get_meta('commit')
     let filename = gita#get_meta('filename')
+    set eventignore=BufReadCmd,BufWinEnter
     call gita#command#blame#open({
           \ 'commit': commit,
           \ 'filename': filename,
           \})
+    syncbind
     execute printf('keepjumps %dwincmd w', winnum)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
+  finally
+    call guard.restore()
   endtry
 endfunction
 
@@ -135,6 +76,7 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
         \ 'opener': '',
         \ 'commit': '',
         \ 'filename': '',
+        \ 'backward': '',
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
         \ ? g:gita#command#blame#navi#default_opener
@@ -146,13 +88,15 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
         \})
   " gita#command#blame#navi#_edit() will be called by
   " gita#command#blame#open() later so store 'blameobj' reference into meta
+  let a:blameobj.navi_bufnum = bufnr('%')
   call gita#set_meta('content_type', 'blame-navi')
   call gita#set_meta('blameobj', a:blameobj)
   call gita#set_meta('commit', options.commit)
   call gita#set_meta('filename', options.filename)
+  call gita#set_meta('backward', options.backward)
 endfunction
 function! gita#command#blame#navi#_edit() abort
-  let blameobj = gita#command#blame#get_blameobj_or_fail()
+  let blameobj = gita#command#blame#_get_blameobj_or_fail()
   if !has_key(blameobj, 'blamemeta') || gita#get_meta('winwidth') != winwidth(0)
     " Construct 'blamemeta' from 'blameobj'. It is time-consuming process.
     " Store constructed 'blamemeta' in 'blameobj' so that blame-view buffer
@@ -166,6 +110,7 @@ function! gita#command#blame#navi#_edit() abort
     autocmd CursorMoved <buffer> call s:on_CursorMoved()
     autocmd BufEnter    <buffer> call s:on_CursorMoved()
     autocmd BufReadCmd  <buffer> call s:on_BufReadCmd()
+    autocmd BufWinEnter <buffer> call s:on_BufReadCmd()
   augroup END
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nowrap nofoldenable foldcolumn=0 colorcolumn=0
@@ -176,9 +121,9 @@ function! gita#command#blame#navi#_edit() abort
   call gita#command#blame#navi#redraw()
 endfunction
 function! gita#command#blame#navi#redraw() abort
-  let blamemeta = gita#command#blame#get_blamemeta_or_fail()
+  let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
   call gita#util#buffer#edit_content(blamemeta.navi_content)
-  call gita#command#blame#display_pseudo_separators(blamemeta.separators)
+  call gita#command#blame#_set_pseudo_separators(blamemeta.separators)
 endfunction
 
 function! gita#command#blame#navi#define_highlights() abort
@@ -204,6 +149,5 @@ endfunction
 
 call gita#util#define_variables('command#blame#navi', {
       \ 'default_opener': 'leftabove 50 vsplit',
-      \ 'default_action_mapping': '<Plug>(gita-blame-enter)',
       \ 'enable_default_mappings': 1,
       \})
