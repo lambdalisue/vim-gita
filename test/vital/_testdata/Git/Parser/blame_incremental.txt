@@ -1,0 +1,53 @@
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 246 246 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426194460
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426210134
+committer-tz +0900
+summary Update syntax highlight
+previous 0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim
+filename autoload/gita/interface/status.vim
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 255 255 3
+filename autoload/gita/interface/status.vim
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 170 170 6
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426194280
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426194280
+committer-tz +0900
+summary Add commit interface
+previous 656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim
+filename autoload/gita/interface/status.vim
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 203 203 1
+filename autoload/gita/interface/status.vim
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 222 222 1
+filename autoload/gita/interface/status.vim
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 249 250 5
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 1 1 169
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426187381
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426188804
+committer-tz +0900
+summary Building status interface
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 176 176 27
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 204 204 18
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 223 223 23
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 246 247 3
+filename autoload/gita/interface/status.vim
+656465cef4559417a88e92f5235c4c43476fe963 254 258 37
+filename autoload/gita/interface/status.vim

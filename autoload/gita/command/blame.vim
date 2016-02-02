@@ -14,6 +14,7 @@ let s:ProgressBar = s:V.import('ProgressBar')
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
         \ 'porcelain',
+        \ 'incremental',
         \])
   return options
 endfunction
@@ -25,7 +26,7 @@ function! s:format_content(content) abort
         \   'prefix': 'Parsing blame content: ',
         \})
   try
-    return s:GitParser.parse_blame_to_chunks(a:content, progressbar)
+    return s:GitParser.parse_blame(a:content, progressbar)
   finally
     call progressbar.exit()
   endtry
@@ -36,7 +37,11 @@ function! s:get_blameobj(git, commit, filename, options) abort
   " of blame is timeconsuming and the result requires to be cached so do not
   " return a raw content to reduce cache size
   let options = s:pick_available_options(a:options)
-  let options['porcelain'] = 1
+  if g:gita#command#blame#use_porcelain_instead
+    let options['porcelain'] = 1
+  else
+    let options['incremental'] = 1
+  endif
   let options['commit'] = a:commit
   let options['--'] = [
         \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
@@ -48,11 +53,19 @@ function! s:get_blameobj(git, commit, filename, options) abort
     call s:GitProcess.throw(result.stdout)
   endif
   let blameobj = s:format_content(result.content)
+  if !get(options, 'porcelain')
+    let blameobj.file_content = gita#command#show#call({
+          \ 'commit': a:commit,
+          \ 'filename': a:filename,
+          \ 'worktree': empty(a:commit),
+          \}).content
+  endif
   return blameobj
 endfunction
 function! s:get_cached_blameobj(git, commit, filename, options) abort
   let cachename = join([
         \ a:commit, a:filename,
+        \ g:gita#command#blame#use_porcelain_instead ? 'porcelain' : 'incremental',
         \ string(s:pick_available_options(a:options)),
         \])
   if !has_key(a:git, '_gita_blameobj_cache')
@@ -153,7 +166,7 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   let separators = []
   for chunk in chunks
     call extend(chunk, revisions[chunk.revision])
-    let n_contents = len(chunk.contents)
+    let n_contents = get(chunk, 'nlines', 1)
     let height = max([2, n_contents])
     let formatted_chunk = s:format_chunk(
           \ chunk, width, height-1, cache, now, whitespaces
@@ -166,7 +179,13 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
       call add(navi_content,
               \ linenum_spacer[len(linenum):] . linenum . ' ' . get(formatted_chunk, cursor, '')
               \)
-      call add(view_content, get(chunk.contents, cursor, ''))
+      if empty(linenum)
+        call add(view_content, '')
+      elseif len(chunk.contents) == n_contents
+        call add(view_content, chunk.contents[cursor])
+      else
+        call add(view_content, a:blameobj.file_content[linenum-1])
+      endif
       call add(lineinfos, {
             \ 'chunkref': chunk.index,
             \ 'linenum': {
@@ -290,7 +309,6 @@ function! gita#command#blame#open(...) abort
   syncbind
 endfunction
 function! gita#command#blame#format(blameobj, width) abort
-  let options = extend({}, get(a:000, 0, {}))
   let progressbar = s:ProgressBar.new(
         \ len(a:blameobj.chunks), {
         \   'barwidth': 80,
@@ -438,4 +456,5 @@ call gita#util#define_variables('command#blame', {
       \ 'navigation_winwidth': 50,
       \ 'enable_pseudo_separator': 1,
       \ 'short_revision_length': 7,
+      \ 'use_porcelain_instead': 0,
       \})
