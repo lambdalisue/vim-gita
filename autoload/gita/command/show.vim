@@ -3,6 +3,7 @@ let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
@@ -173,6 +174,7 @@ function! gita#command#show#call(...) abort
 endfunction
 function! gita#command#show#open(...) abort
   let options = extend({
+        \ 'anchor': 1,
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
@@ -181,6 +183,9 @@ function! gita#command#show#open(...) abort
         \ : options.opener
   let bufname = gita#command#show#bufname(options)
   if !empty(bufname)
+    if options.anchor
+      call s:Anchor.focus()
+    endif
     call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})

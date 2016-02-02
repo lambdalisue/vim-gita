@@ -1,5 +1,4 @@
 let s:V = gita#vital()
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
       \ '<Plug>(gita-blame)': 'Blame a content',
       \}
@@ -9,12 +8,10 @@ function! gita#action#blame#action(candidates, ...) abort
         \ 'opener': g:gita#action#blame#default_opener,
         \ 'anchor': g:gita#action#blame#default_anchor,
         \}, get(a:000, 0, {}))
-  if !empty(a:candidates) && options.anchor
-    call s:Anchor.focus()
-  endif
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#blame#open({
+            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,

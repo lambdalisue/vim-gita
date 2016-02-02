@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -150,6 +151,7 @@ function! gita#command#diff#call(...) abort
 endfunction
 function! gita#command#diff#open(...) abort
   let options = extend({
+        \ 'anchor': 1,
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
@@ -158,6 +160,9 @@ function! gita#command#diff#open(...) abort
         \ : options.opener
   let bufname = gita#command#diff#bufname(options)
   if !empty(bufname)
+    if options.anchor
+      call s:Anchor.focus()
+    endif
     call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \})
@@ -224,6 +229,7 @@ function! gita#command#diff#open2(...) abort
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filenames': [],
+        \ 'anchor'; 1,
         \ 'opener': '',
         \ 'split': '',
         \ 'selection': [],
@@ -299,6 +305,9 @@ function! gita#command#diff#open2(...) abort
         \ : options.split
   " NOTE:
   " Place main contant to visually rightbelow and focus
+  if options.anchor
+    call s:Anchor.focus()
+  endif
   if !options.reverse
     let rresult = gita#util#buffer#open(rbufname, {
           \ 'group': 'diff_rhs',

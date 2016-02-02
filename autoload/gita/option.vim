@@ -15,9 +15,20 @@ function! gita#option#assign_commit(options) abort
   if has_key(a:options, 'commit')
     return
   endif
-  let commit = gita#get_meta('commit')
-  if !empty(commit)
-    let a:options.commit = commit
+
+  let content_type = gita#get_meta('content_type')
+  if content_type =~# '^\%(status\|commit\|blame-navi\|blame-view\)$'
+    let candidate = get(gita#action#get_candidates(), 0, {})
+    if has_key(candidate, 'commit')
+      let a:options.commit = candidate.commit
+    elseif has_key(candidate, 'revision')
+      let a:options.commit = candidate.revision
+    endif
+  endif
+  if empty(get(a:options, 'commit'))
+    if !empty(gita#get_meta('commit'))
+      let a:options.commit = gita#get_meta('commit')
+    endif
   endif
 endfunction
 
@@ -25,11 +36,25 @@ function! gita#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
   endif
-  " NOTE:
-  " gita#expand() always return a real absolute path or ''
-  let filename = gita#expand('%')
-  if !empty(filename)
-    let a:options.filename = filename
+  let content_type = gita#get_meta('content_type')
+  if content_type =~# '^\%(status\|commit\|blame-navi\|blame-view\)$'
+    let candidate = get(gita#action#get_candidates(), 0, {})
+    if has_key(candidate, 'path')
+      let a:options.filename = candidate.path
+      return
+    elseif has_key(candidate, 'filename')
+      let a:options.filename = candidate.filename
+      return
+    endif
+  endif
+  if empty(get(a:options, 'filename'))
+    if !empty(gita#get_meta('filename'))
+      let a:options.filename = gita#get_meta('filename')
+    elseif !empty(gita#expand('%'))
+      " NOTE:
+      " gita#expand() always return a real absolute path or ''
+      let a:options.filename = gita#expand('%')
+    endif
   endif
 endfunction
 

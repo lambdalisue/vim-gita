@@ -6,6 +6,7 @@ let s:Path = s:V.import('System.Filepath')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
+let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
@@ -271,6 +272,7 @@ function! gita#command#blame#call(...) abort
 endfunction
 function! gita#command#blame#open(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'opener': '',
         \ 'selection': [],
         \ 'backward': '',
@@ -285,6 +287,9 @@ function! gita#command#blame#open(...) abort
   let guard = s:Guard.store('&eventignore')
   try
     set eventignore=BufWinEnter
+    if options.anchor
+      call s:Anchor.focus()
+    endif
     call gita#command#blame#view#_open(
           \ result.blameobj, {
           \   'opener': opener,

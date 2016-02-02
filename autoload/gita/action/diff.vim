@@ -1,5 +1,4 @@
 let s:V = gita#vital()
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
       \ '<Plug>(gita-diff)': 'Diff an (INDEX) content',
       \ '<Plug>(gita-diff-edit)': 'Diff an (INDEX) content in a window',
@@ -19,13 +18,11 @@ function! gita#action#diff#action(candidates, ...) abort
         \ 'anchor': g:gita#action#diff#default_anchor,
         \ 'split': g:gita#action#diff#default_split,
         \}, get(a:000, 0, {}))
-  if !empty(a:candidates) && options.anchor
-    call s:Anchor.focus()
-  endif
   for candidate in a:candidates
     if has_key(candidate, 'path')
       if empty(options.split)
         call gita#command#diff#open({
+              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'commit': get(options, 'commit', ''),
               \ 'cached': !get(candidate, 'is_unstaged', 1),
@@ -33,6 +30,7 @@ function! gita#action#diff#action(candidates, ...) abort
               \})
       else
         call gita#command#diff#open2({
+              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'split': options.split,
               \ 'commit': get(options, 'commit', ''),

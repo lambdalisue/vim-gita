@@ -1,5 +1,4 @@
 let s:V = gita#vital()
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
       \ '<Plug>(gita-show)': 'Show an INDEX content',
       \ '<Plug>(gita-show-edit)': 'Show an INDEX content in a window',
@@ -16,12 +15,10 @@ function! gita#action#show#action(candidates, ...) abort
         \ 'opener': g:gita#action#show#default_opener,
         \ 'anchor': g:gita#action#show#default_anchor,
         \}, get(a:000, 0, {}))
-  if !empty(a:candidates) && options.anchor
-    call s:Anchor.focus()
-  endif
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
+            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,

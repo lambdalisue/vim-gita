@@ -83,15 +83,23 @@ endfunction
 function! gita#action#call(name, ...) abort range
   let action = gita#action#get()
   try
-    let candidates = map(
-          \ range(a:firstline, a:lastline),
-          \ 'action.get_entry(v:val - 1)'
-          \)
-    call filter(candidates, '!empty(v:val)')
+    let candidates = gita#action#get_candidates(a:firstline, a:lastline)
     call call('gita#action#do', [a:name, candidates] + a:000)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry
+endfunction
+
+function! gita#action#get_candidates(...) abort
+  let start_line = get(a:000, 0, line('.'))
+  let end_line = get(a:000, 1, start_line)
+  let action = gita#action#get()
+  let candidates = map(
+        \ range(start_line, end_line),
+        \ 'action.get_entry(v:val - 1)'
+        \)
+  call filter(candidates, '!empty(v:val)')
+  return candidates
 endfunction
 
 function! gita#action#define(fn) abort
