@@ -238,7 +238,13 @@ function! gita#command#status#edit(...) abort
   setlocal filetype=gita-status
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
+  if exists('#BufReadPre')
+    doautocmd BufReadPre
+  endif
   call gita#command#status#redraw()
+  if exists('#BufReadPost')
+    doautocmd BufReadPost
+  endif
 endfunction
 function! gita#command#status#redraw() abort
   if &filetype !=# 'gita-status'

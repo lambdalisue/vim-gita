@@ -288,7 +288,13 @@ function! gita#command#commit#edit(...) abort
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
+  if exists('#BufReadPre')
+    doautocmd BufReadPre
+  endif
   call gita#command#commit#redraw()
+  if exists('#BufReadPost')
+    doautocmd BufReadPost
+  endif
 endfunction
 function! gita#command#commit#redraw() abort
   if &filetype !=# 'gita-commit'
@@ -311,7 +317,7 @@ function! gita#command#commit#redraw() abort
     let commitmsg = s:GitInfo.get_last_commitmsg(git)
     let commit_mode = 'amend'
   else
-    let commitmsg = ['']
+    let commitmsg = s:get_current_commitmsg()
   endif
 
   let prologue = s:List.flatten([

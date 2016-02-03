@@ -195,7 +195,13 @@ function! gita#command#ls#edit(...) abort
   setlocal filetype=gita-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
+  if exists('#BufReadPre')
+    doautocmd BufReadPre
+  endif
   call gita#command#ls#redraw()
+  if exists('#BufReadPost')
+    doautocmd BufReadPost
+  endif
 endfunction
 function! gita#command#ls#redraw() abort
   let git = gita#get_or_fail()

@@ -223,7 +223,13 @@ function! gita#command#diff_ls#edit(...) abort
   setlocal filetype=gita-diff-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
+  if exists('#BufReadPre')
+    doautocmd BufReadPre
+  endif
   call gita#command#diff_ls#redraw()
+  if exists('#BufReadPost')
+    doautocmd BufReadPost
+  endif
 endfunction
 function! gita#command#diff_ls#redraw() abort
   let git = gita#get_or_fail()
