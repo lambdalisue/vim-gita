@@ -249,6 +249,9 @@ let s:schemes['merge-base'] = {
       \ 'commit1': '%v',
       \ 'commit2': '%v',
       \}
+let s:schemes['ls-tree'] = {
+      \ 'commit': '%v',
+      \}
 let s:schemes.show = {
       \ 'object': '%v',
       \}
