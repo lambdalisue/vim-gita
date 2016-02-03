@@ -32,7 +32,7 @@ function! s:on_BufReadCmd() abort
   elseif content_type ==# 'diff'
     call gita#command#diff#edit({
           \ 'commit': info.commit,
-          \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'cached': index(info.extra_options, 'cached') >= 0,
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
@@ -63,7 +63,7 @@ function! s:on_FileReadCmd() abort
   elseif content_type ==# 'diff'
     call gita#command#diff#read({
           \ 'commit': info.commit,
-          \ 'filenames': empty(info.filename) ? [] : [info.filename],
+          \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
           \ 'cached': index(info.extra_options, 'cached') >= 0,
           \ 'reverse': index(info.extra_options, 'reverse') >= 0,
@@ -106,7 +106,9 @@ endfunction
 function! gita#autocmd#parse(expr) abort
   let git = gita#get_or_fail(a:expr)
   let result = s:parse_filename(expand(a:expr))
-  let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish)
+  let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish, {
+        \ 'allow_range': 1,
+        \})
   let result.commit = commit
   " NOTE:
   " filename is always a relative path from the repository root so convert

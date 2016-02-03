@@ -226,7 +226,7 @@ function! gita#command#diff#open2(...) abort
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
-        \ 'anchor'; 1,
+        \ 'anchor': 1,
         \ 'opener': '',
         \ 'split': '',
         \ 'selection': [],

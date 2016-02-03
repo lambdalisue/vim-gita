@@ -483,7 +483,7 @@ function! s:find_common_ancestor(git, commit1, commit2, ...) abort
       endif
       call s:GitProcess.throw(result)
     endif
-    let content = result.stdout
+    let content = substitute(result.stdout, '\r\?\n$', '', '')
     call s:Git.set_cache_content(a:git, 'index', slug, content)
   endif
   return content

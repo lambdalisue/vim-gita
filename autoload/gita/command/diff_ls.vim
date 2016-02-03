@@ -6,37 +6,31 @@ let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
+let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:get_statusline_string(git) abort
-  let local = s:GitInfo.get_local_branch(a:git)
-  let remote = s:GitInfo.get_remote_branch(a:git)
-  let mode = s:GitInfo.get_current_mode(a:git)
-  let is_connected = !empty(remote.remote)
-
-  let name = a:git.repository_name
-  let branchinfo = is_connected
-        \ ? printf('%s/%s <> %s/%s', name, local.name, remote.remote, remote.name)
-        \ : printf('%s/%s', name, local.name)
-  let connection = ''
-  if is_connected
-    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
-    let incoming = s:GitInfo.count_commits_behind_remote(a:git)
-    if outgoing > 0 && incoming > 0
-      let connection = printf(
-            \ '%d commit(s) ahead and %d commit(s) behind of remote',
-            \ outgoing, incoming,
-            \)
-    elseif outgoing > 0
-      let connection = printf('%d commit(s) ahead remote', outgoing)
-    elseif incoming > 0
-      let connection = printf('%d commit(s) behind of remote', incoming)
-    endif
+  let commit = gita#get_meta('commit', '')
+  let stats = gita#get_meta('stats', [])
+  let nstats = len(stats)
+  if commit =~# '^.\{-}\.\.\..\{-}$'
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let lhs = commit
+  elseif commit =~# '^.\{-}\.\..\{-}$'
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  else
+    let lhs = 'WORKTREE'
+    let rhs = empty(commit) ? 'INDEX' : commit
   endif
-  return printf('Gita status of %s%s%s',
-        \ branchinfo,
-        \ empty(connection) ? '' : printf(' (%s)', connection),
-        \ empty(mode) ? '' : printf(' [%s]', mode),
+  return printf(
+        \ 'File differences between <%s> and <%s> (%d file%s %s different)',
+        \ lhs, rhs, nstats,
+        \ nstats == 1 ? '' : 's',
+        \ nstats == 1 ? 'is' : 'are',
         \)
 endfunction
 function! s:extend_stat(git, commit, stat) abort
@@ -47,14 +41,14 @@ function! s:extend_stat(git, commit, stat) abort
   let a:stat.commit = a:commit
   return a:stat
 endfunction
-function! s:format_stat(stat, alpha, fpath, fadded, fdeleted) abort
-  let added   = repeat('+', float2nr(ceil(a:stat.added * a:alpha)))
-  let deleted = repeat('-', float2nr(ceil(a:stat.deleted * a:alpha)))
-  let status = printf('%s  +%s -%s  %s%s',
-        \ printf(a:fpath, a:stat.relpath),
-        \ printf(a:fadded, a:stat.added),
-        \ printf(a:fdeleted, a:stat.deleted),
-        \ added, deleted,
+function! s:format_stat(stat, alpha, format) abort
+  let added   = repeat('+', float2nr(a:stat.added * a:alpha))
+  let deleted = repeat('-', float2nr(a:stat.deleted * a:alpha))
+  let status = printf(a:format,
+        \ a:stat.relpath,
+        \ a:stat.added,
+        \ a:stat.deleted,
+        \ added . deleted,
         \)
   return status
 endfunction
@@ -76,13 +70,14 @@ function! s:format_stats(stats, width) abort
   " e.g.
   " autoload/gita.vim         35  0 +++++++++.............
   " autoload/gita/status.vim 100 30 +++++++++++++---------
-  let guide_width = a:width - max_path - len(max_added) - len(max_deleted) - 6
+  let format = printf(
+        \ '%%-%ds +%%-%dd -%%-%dd %%s',
+        \ max_path, len(max_added) + 1, len(max_deleted) + 1,
+        \)
+  let guide_width = a:width - len(printf(format, '0', 0, 0, ''))
   let alpha = guide_width / str2float(max([max_added, max_deleted]) * 2)
-  let fpath = printf('%%-%ds', max_path)
-  let fadded = printf('%%-%dd', len(max_added) + 1)
-  let fdeleted = printf('%%-%dd', len(max_deleted) + 1)
   let content = map(copy(a:stats),
-        \ 's:format_stat(v:val, alpha, fpath, fadded, fdeleted)'
+        \ 's:format_stat(v:val, alpha, format)'
         \)
   return content
 endfunction
@@ -159,7 +154,9 @@ function! gita#command#diff_ls#bufname(...) abort
         \ 'commit': '',
         \})
   let git = gita#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit)
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'diff-ls',
@@ -210,6 +207,7 @@ function! gita#command#diff_ls#edit(...) abort
   call gita#set_meta('options', s:Dict.omit(result.options, [
         \ 'force', 'opener', 'porcelain',
         \]))
+  call gita#set_meta('commit', result.commit)
   call gita#set_meta('stats', result.stats)
   call gita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
@@ -221,6 +219,7 @@ function! gita#command#diff_ls#edit(...) abort
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
   " the following options are required so overwrite everytime
+  setlocal nolist
   setlocal filetype=gita-diff-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
@@ -292,6 +291,19 @@ endfunction
 function! gita#command#diff_ls#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
+endfunction
+function! gita#command#diff_ls#define_highlights() abort
+  highlight default link GitaComment Comment
+  highlight default link GitaAdded   Special
+  highlight default link GitaDeleted Constant
+endfunction
+function! gita#command#diff_ls#define_syntax() abort
+  syntax match GitaDiffLs        /^.\{-} +\d\+\s\+-\d\+\s\++*-*$/
+        \ contains=GitaAdded,GitaDeleted
+  syntax match GitaAdded   /+[0-9+]*/ contained
+  syntax match GitaDeleted /-[0-9-]*/ contained
+  syntax match GitaComment /^.*$/
+        \ contains=ALLBUT,GitaAdded,GitaDeleted
 endfunction
 
 call gita#util#define_variables('command#diff_ls', {

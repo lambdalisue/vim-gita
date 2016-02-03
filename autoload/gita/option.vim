@@ -17,7 +17,7 @@ function! gita#option#assign_commit(options) abort
   endif
 
   let content_type = gita#get_meta('content_type')
-  if content_type =~# '^\%(status\|commit\)$'
+  if content_type =~# '^\%(status\|commit\|diff-ls\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'commit')
       let a:options.commit = candidate.commit
@@ -37,7 +37,7 @@ function! gita#option#assign_filename(options) abort
     let a:options.filename = a:options.__unknown__[0]
   endif
   let content_type = gita#get_meta('content_type')
-  if content_type =~# '^\%(status\|commit\)$'
+  if content_type =~# '^\%(status\|commit\|diff-ls\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'path')
       let a:options.filename = candidate.path

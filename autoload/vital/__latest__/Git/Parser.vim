@@ -298,8 +298,8 @@ function! s:parse_numstat(content, ...) abort
     if !empty(m)
       let [added, deleted, relpath] = m[1 : 3]
       call add(stats, {
-            \ 'added':   added,
-            \ 'deleted': deleted,
+            \ 'added':   str2nr(added),
+            \ 'deleted': str2nr(deleted),
             \ 'path':    relpath,
             \})
     endif

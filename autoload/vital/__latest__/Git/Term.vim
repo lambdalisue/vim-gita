@@ -90,7 +90,11 @@ function! s:_split_treeish(treeish, options) abort
     let commitish = a:treeish
     let path = ''
   endif
-  let errormsg = s:_is_valid_commitish(commitish, a:options)
+  if get(a:options, 'allow_range')
+    let errormsg = s:_is_valid_range(commitish, a:options)
+  else
+    let errormsg = s:_is_valid_commitish(commitish, a:options)
+  endif
   return empty(errormsg) ? [commitish, path] : errormsg
 endfunction
 function! s:_split_range(range, options) abort
