@@ -41,8 +41,7 @@ function! s:apply_command(name, options) abort
   if git.is_enabled
     let args = ['-C', git.worktree] + args
   endif
-  let config = s:GitProcess.get_config()
-  let args = [config.executable] + config.arguments + args
+  let args = [g:gita#executable] + g:gita#arguments + args
   execute printf('!%s', join(args))
   if !v:shell_error
     if a:name ==# 'init'

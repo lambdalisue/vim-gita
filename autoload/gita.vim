@@ -129,6 +129,10 @@ function! gita#clear() abort
 endfunction
 
 function! gita#execute(git, name, ...) abort
+  call s:GitProcess.set_config({
+        \ 'executable': g:gita#executable,
+        \ 'arguments':  g:gita#arguments,
+        \})
   let options = get(a:000, 0, {})
   let config  = get(a:000, 1, {})
   if !g:gita#debug
@@ -231,5 +235,8 @@ call gita#util#define_variables('', {
       \ 'test': 0,
       \ 'debug': 0,
       \ 'develop': 1,
+      \ 'executable': 'git',
+      \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'complete_threshold': 100,
       \})
+
