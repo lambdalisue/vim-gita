@@ -17,6 +17,7 @@ function! s:pick_available_options(options) abort
         \ 'histogram',
         \ 'cached',
         \ 'R', 'reverse',
+        \ 'numstat',
         \])
   return options
 endfunction

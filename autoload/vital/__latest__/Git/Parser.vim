@@ -284,6 +284,28 @@ function! s:parse_status(content, ...) abort
   return options.flatten ? result.conflicted : result
 endfunction
 
+function! s:parse_numstat(content, ...) abort
+  let options = extend({}, get(a:000, 0, {}))
+  let content = s:Prelude.is_string(a:content)
+        \ ? split(a:content, '\r\?\n', 1)
+        \ : a:content
+  let stats = []
+  for line in content
+    let m = matchlist(
+          \ line,
+          \ '^\(\d\+\)\s\+\(\d\+\)\s\+\(.\+\)$',
+          \)
+    if !empty(m)
+      let [added, deleted, relpath] = m[1 : 3]
+      call add(stats, {
+            \ 'added':   added,
+            \ 'deleted': deleted,
+            \ 'path':    relpath,
+            \})
+    endif
+  endfor
+  return stats
+endfunction
 
 " *** ConflictParser *********************************************************
 function! s:has_ours_marker(buflines) abort

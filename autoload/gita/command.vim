@@ -150,6 +150,10 @@ call gita#command#register('diff',
       \ 'gita#command#diff#command',
       \ 'gita#command#diff#complete',
       \)
+call gita#command#register('diff-ls',
+      \ 'gita#command#diff_ls#command',
+      \ 'gita#command#diff_ls#complete',
+      \)
 call gita#command#register('reset',
       \ 'gita#command#reset#command',
       \ 'gita#command#reset#complete',
