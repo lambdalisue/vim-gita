@@ -296,12 +296,16 @@ function! gita#command#diff_ls#define_highlights() abort
   highlight default link GitaComment Comment
   highlight default link GitaAdded   Special
   highlight default link GitaDeleted Constant
+  highlight default link GitaDiffZero Comment
 endfunction
 function! gita#command#diff_ls#define_syntax() abort
   syntax match GitaDiffLs        /^.\{-} +\d\+\s\+-\d\+\s\++*-*$/
-        \ contains=GitaAdded,GitaDeleted
+        \ contains=GitaDiffLsSuffix
+  syntax match GitaDiffLsSuffix  /+\d\+\s\+-\d\+\s\++*-*$/
+        \ contains=GitaAdded,GitaDeleted,GitaDiffZero
   syntax match GitaAdded   /+[0-9+]*/ contained
   syntax match GitaDeleted /-[0-9-]*/ contained
+  syntax match GitaDiffZero /[+-]0/ contained
   syntax match GitaComment /^.*$/
         \ contains=ALLBUT,GitaAdded,GitaDeleted
 endfunction
