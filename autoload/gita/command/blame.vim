@@ -288,15 +288,15 @@ function! gita#command#blame#open(...) abort
         \ ? g:gita#command#blame#default_opener
         \ : options.opener
   let result = gita#command#blame#call(options)
+  if options.anchor
+    call s:Anchor.focus()
+  endif
   " NOTE:
   " In case, do not call autocmd to prevent infinity-loop while both buffers
   " define BufReadCmd when these are already constructed.
   let guard = s:Guard.store('&eventignore')
   try
-    set eventignore=BufWinEnter
-    if options.anchor
-      call s:Anchor.focus()
-    endif
+    set eventignore=BufReadCmd
     call gita#command#blame#view#_open(
           \ result.blameobj, {
           \   'opener': opener,
@@ -317,13 +317,13 @@ function! gita#command#blame#open(...) abort
   " NOTE:
   " Order of appearance, navi#_edit -> view#_edit, is ciritical requirement.
   call gita#command#blame#navi#_edit()
-  call gita#command#blame#select(options.selection)
   setlocal noscrollbind
+  call gita#command#blame#select(options.selection)
   normal! z.
   wincmd p
   call gita#command#blame#view#_edit()
-  call gita#command#blame#select(options.selection)
   setlocal noscrollbind
+  call gita#command#blame#select(options.selection)
   normal! z.
   wincmd p
   setlocal scrollbind

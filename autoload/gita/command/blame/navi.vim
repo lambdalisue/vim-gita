@@ -31,22 +31,10 @@ function! s:on_CursorMoved() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
-  let guard = s:Guard.store('&eventignore')
   try
-    let winnum = winnr()
-    let commit = gita#get_meta('commit')
-    let filename = gita#get_meta('filename')
-    set eventignore=BufReadCmd,BufWinEnter
-    call gita#command#blame#open({
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \})
-    syncbind
-    execute printf('keepjumps %dwincmd w', winnum)
+    call gita#command#blame#navi#_edit()
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
-  finally
-    call guard.restore()
   endtry
 endfunction
 
@@ -82,7 +70,7 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
         \ ? g:gita#command#blame#navi#default_opener
         \ : options.opener
   let bufname = gita#command#blame#navi#bufname(options)
-  call gita#util#buffer#open(bufname, {
+  silent call gita#util#buffer#open(bufname, {
         \ 'group': 'blame_navi',
         \ 'opener': opener,
         \})
@@ -93,7 +81,9 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
   call gita#set_meta('blameobj', a:blameobj)
   call gita#set_meta('commit', options.commit)
   call gita#set_meta('filename', options.filename)
-  call gita#set_meta('backward', options.backward)
+  if !empty(options.backward) || empty(gita#get_meta('backward'))
+    call gita#set_meta('backward', options.backward)
+  endif
 endfunction
 function! gita#command#blame#navi#_edit() abort
   let blameobj = gita#command#blame#_get_blameobj_or_fail()
@@ -108,9 +98,7 @@ function! gita#command#blame#navi#_edit() abort
   augroup vim_gita_internal_blame_navi
     autocmd! * <buffer>
     autocmd CursorMoved <buffer> call s:on_CursorMoved()
-    autocmd BufEnter    <buffer> call s:on_CursorMoved()
-    autocmd BufReadCmd  <buffer> call s:on_BufReadCmd()
-    autocmd BufWinEnter <buffer> call s:on_BufReadCmd()
+    autocmd BufReadCmd  <buffer> nested call s:on_BufReadCmd()
   augroup END
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nowrap nofoldenable foldcolumn=0 colorcolumn=0
