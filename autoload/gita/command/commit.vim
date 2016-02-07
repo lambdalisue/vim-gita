@@ -333,9 +333,7 @@ function! gita#command#commit#redraw() abort
   endif
 
   let prologue = s:List.flatten([
-        \ g:gita#command#commit#show_status_string_in_prologue
-        \   ? ['# ' . gita#command#status#get_statusline_string() . ' | Press ? to toggle a mapping help']
-        \   : [],
+        \ ['# ' . gita#command#status#_get_header_string()],
         \ gita#action#mapping#get_visibility()
         \   ? map(gita#action#get_mapping_help(), '"# | " . v:val')
         \   : [],
@@ -449,5 +447,4 @@ call gita#util#define_variables('command#commit', {
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-diff)',
       \ 'enable_default_mappings': 1,
-      \ 'show_status_string_in_prologue': 1,
       \})

@@ -9,7 +9,7 @@ let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
-function! s:get_statusline_string(git) abort
+function! s:get_header_string(git) abort
   let commit = gita#get_meta('commit', '')
   let stats = gita#get_meta('stats', [])
   let nstats = len(stats)
@@ -27,10 +27,11 @@ function! s:get_statusline_string(git) abort
     let rhs = empty(commit) ? 'INDEX' : commit
   endif
   return printf(
-        \ 'File differences between <%s> and <%s> (%d file%s %s different)',
+        \ 'File differences between <%s> and <%s> (%d file%s %s different) %s',
         \ lhs, rhs, nstats,
         \ nstats == 1 ? '' : 's',
         \ nstats == 1 ? 'is' : 'are',
+        \ '| Press ? to toggle a mapping help',
         \)
 endfunction
 function! s:extend_stat(git, commit, stat) abort
@@ -234,9 +235,7 @@ endfunction
 function! gita#command#diff_ls#redraw() abort
   let git = gita#get_or_fail()
   let prologue = s:List.flatten([
-        \ g:gita#command#diff_ls#show_status_string_in_prologue
-        \   ? [s:get_statusline_string(git) . ' | Press ? to toggle a mapping help']
-        \   : [],
+        \ [s:get_header_string(git)],
         \ gita#action#mapping#get_visibility()
         \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
         \   : []
@@ -305,6 +304,7 @@ function! gita#command#diff_ls#define_highlights() abort
   highlight default link GitaDiffZero Comment
 endfunction
 function! gita#command#diff_ls#define_syntax() abort
+  syntax match GitaComment    /\%^.*$/
   syntax match GitaDiffLs        /^.\{-} +\d\+\s\+-\d\+\s\++*-*$/
         \ contains=GitaDiffLsSuffix
   syntax match GitaDiffLsSuffix  /+\d\+\s\+-\d\+\s\++*-*$/
@@ -312,8 +312,6 @@ function! gita#command#diff_ls#define_syntax() abort
   syntax match GitaAdded   /+[0-9+]*/ contained
   syntax match GitaDeleted /-[0-9-]*/ contained
   syntax match GitaDiffZero /[+-]0/ contained
-  syntax match GitaComment /^.*$/
-        \ contains=ALLBUT,GitaAdded,GitaDeleted
 endfunction
 
 call gita#util#define_variables('command#diff_ls', {
@@ -321,5 +319,4 @@ call gita#util#define_variables('command#diff_ls', {
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-edit)',
       \ 'enable_default_mappings': 1,
-      \ 'show_status_string_in_prologue': 1,
       \})

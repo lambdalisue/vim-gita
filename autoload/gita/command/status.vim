@@ -61,7 +61,7 @@ endfunction
 function! s:format_entry(entry) abort
   return a:entry.record
 endfunction
-function! s:get_statusline_string(git) abort
+function! s:get_header_string(git) abort
   let local = s:GitInfo.get_local_branch(a:git)
   let remote = s:GitInfo.get_remote_branch(a:git)
   let mode = s:GitInfo.get_current_mode(a:git)
@@ -86,10 +86,11 @@ function! s:get_statusline_string(git) abort
       let connection = printf('%d commit(s) behind of remote', incoming)
     endif
   endif
-  return printf('Gita status of %s%s%s',
+  return printf('Gita status of %s%s%s %s',
         \ branchinfo,
         \ empty(connection) ? '' : printf(' (%s)', connection),
         \ empty(mode) ? '' : printf(' [%s]', mode),
+        \ '| Press ? to toggle a mapping help',
         \)
 endfunction
 
@@ -252,9 +253,7 @@ function! gita#command#status#redraw() abort
   endif
   let git = gita#get_or_fail()
   let prologue = s:List.flatten([
-        \ g:gita#command#status#show_status_string_in_prologue
-        \   ? [s:get_statusline_string(git) . ' | Press ? to toggle a mapping help']
-        \   : [],
+        \ [s:get_header_string(git)],
         \ gita#action#mapping#get_visibility()
         \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
         \   : []
@@ -333,10 +332,10 @@ function! gita#command#status#define_syntax() abort
   syntax match GitaImportant  /AM\/REBASE \d\/\d/
   syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
-function! gita#command#status#get_statusline_string() abort
+function! gita#command#status#_get_header_string() abort
   let git = gita#get()
   if git.is_enabled
-    return s:get_statusline_string(git)
+    return s:get_header_string(git)
   else
     return ''
   endif
@@ -360,5 +359,4 @@ call gita#util#define_variables('command#status', {
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-edit)',
       \ 'enable_default_mappings': 1,
-      \ 'show_status_string_in_prologue': 1,
       \})

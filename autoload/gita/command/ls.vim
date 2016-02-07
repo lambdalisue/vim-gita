@@ -56,15 +56,16 @@ endfunction
 function! s:format_entry(entry) abort
   return a:entry.relpath
 endfunction
-function! s:get_statusline_string(git) abort
+function! s:get_header_string(git) abort
   let commit = gita#get_meta('commit', '')
   let candidates = gita#get_meta('candidates', [])
   let ncandidates = len(candidates)
   return printf(
-        \ 'Files in <%s> (%d file%s)',
+        \ 'Files in <%s> (%d file%s) %s',
         \ empty(commit) ? 'INDEX' : commit,
         \ ncandidates,
         \ ncandidates == 1 ? '' : 's',
+        \ '| Press ? to toggle a mapping help',
         \)
 endfunction
 
@@ -206,9 +207,7 @@ endfunction
 function! gita#command#ls#redraw() abort
   let git = gita#get_or_fail()
   let prologue = s:List.flatten([
-        \ g:gita#command#ls#show_status_string_in_prologue
-        \   ? [s:get_statusline_string(git) . ' | Press ? to toggle a mapping help']
-        \   : [],
+        \ [s:get_header_string(git)],
         \ gita#action#mapping#get_visibility()
         \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
         \   : []
@@ -278,5 +277,4 @@ call gita#util#define_variables('command#ls', {
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-show)',
       \ 'enable_default_mappings': 1,
-      \ 'show_status_string_in_prologue': 1,
       \})
