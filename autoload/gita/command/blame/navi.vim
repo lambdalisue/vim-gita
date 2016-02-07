@@ -102,7 +102,7 @@ function! gita#command#blame#navi#_edit() abort
   augroup END
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nowrap nofoldenable foldcolumn=0 colorcolumn=0
-  setlocal nonumber nolist
+  setlocal nonumber norelativenumber nolist
   setlocal nomodifiable
   setlocal scrollopt=ver
   setlocal filetype=gita-blame-navi

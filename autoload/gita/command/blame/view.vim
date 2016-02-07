@@ -75,7 +75,7 @@ function! gita#command#blame#view#_edit() abort
     autocmd BufReadCmd <buffer> nested call s:on_BufReadCmd()
   augroup END
   filetype detect
-  setlocal nonumber nowrap nofoldenable foldcolumn=0
+  setlocal nonumber norelativenumber nowrap nofoldenable foldcolumn=0
   setlocal buftype=nowrite noswapfile nobuflisted
   setlocal nomodifiable
   setlocal scrollopt=ver
