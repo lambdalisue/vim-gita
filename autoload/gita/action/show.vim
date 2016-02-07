@@ -22,7 +22,7 @@ function! gita#action#show#action(candidates, ...) abort
       call gita#command#show#open({
             \ 'anchor': options.anchor,
             \ 'opener': options.opener,
-            \ 'selection': get(options, 'selection', []),
+            \ 'selection': get(candidate, 'selection', get(options, 'selection', [])),
             \ 'commit': get(options, 'commit', ''),
             \ 'filename': candidate.path,
             \})

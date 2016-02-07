@@ -115,7 +115,7 @@ function! s:build_args(name, ...) abort
   let options = get(a:000, 0, {})
   let l:Scheme = get(s:schemes, a:name, {})
   if s:Prelude.is_funcref(l:Scheme)
-    let args = l:Scheme(a:name, options)
+    let args = call(l:Scheme, [a:name, options], s:schemes)
   else
     let args = s:translate_options(options, l:Scheme)
   endif
@@ -229,9 +229,59 @@ let s:schemes.branch = {
       \ 'set-upstream-to': '--%k %v',
       \ 'contains': '--%k %v',
       \}
+let s:schemes.commit = {
+      \ 'C': '-%k %v',
+      \ 'c': '-%k %v',
+      \ 'F': '-%k %v',
+      \ 'm': '-%k %v',
+      \ 't': '-%k %v',
+      \}
+function! s:schemes.clone(name, options) abort
+  let scheme = {
+        \ 'reference': '--%K %V',
+        \ 'o': '-%K %V',
+        \ 'origin': '--%K %V',
+        \ 'b': '-%K %V',
+        \ 'branch': '--%K %V',
+        \ 'u': '-%K %V',
+        \ 'upload-pack': '--%K %V',
+        \ 'c': '-%K %V',
+        \ 'configig': '--%K %V',
+        \ 'depth': '--%K %V',
+        \}
+  let args = s:translate_options(a:options, scheme)
+  return extend(args, [
+        \ '--',
+        \ get(a:options, 'repository', ''),
+        \ get(a:options, 'directory', ''),
+        \])
+endfunction
 let s:schemes.diff = {
       \ 'commit': '%v',
       \}
+function! s:schemes.grep(name, options) abort
+  let scheme = {
+        \ 'max-depth': '--%k %v',
+        \ 'A': '-%k %v',
+        \ 'B': '-%k %v',
+        \ 'C': '-%k %v',
+        \ 'f': '-%k %v',
+        \}
+  let options = s:Dict.omit(a:options, [
+        \ 'query',
+        \ 'commit',
+        \ 'directories',
+        \])
+  let args = s:translate_options(options, scheme)
+  let args = extend(args, [
+        \ get(a:options, 'query', ''),
+        \ get(a:options, 'commit', ''),
+        \])
+  if !empty(get(a:options, 'directories', []))
+    let args = args + ['--'] + a:options.directories
+  endif
+  return args
+endfunction
 let s:schemes.log = {
       \ 'revision-range': '%v',
       \}
@@ -277,31 +327,3 @@ let s:schemes.tag = {
 let s:schemes.reset = {
       \ 'commit': '%v',
       \}
-let s:schemes.commit = {
-      \ 'C': '-%k %v',
-      \ 'c': '-%k %v',
-      \ 'F': '-%k %v',
-      \ 'm': '-%k %v',
-      \ 't': '-%k %v',
-      \}
-function! s:schemes.clone(name, options) abort
-  let scheme = {
-        \ 'reference': '--%K %V',
-        \ 'o': '-%K %V',
-        \ 'origin': '--%K %V',
-        \ 'b': '-%K %V',
-        \ 'branch': '--%K %V',
-        \ 'u': '-%K %V',
-        \ 'upload-pack': '--%K %V',
-        \ 'c': '-%K %V',
-        \ 'configig': '--%K %V',
-        \ 'depth': '--%K %V',
-        \}
-  let args = s:translate_options(a:options, scheme)
-  return extend(args, [
-        \ '--',
-        \ get(a:options, 'repository', ''),
-        \ get(a:options, 'directory', ''),
-        \])
-endfunction
-

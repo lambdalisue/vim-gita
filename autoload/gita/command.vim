@@ -153,6 +153,10 @@ call gita#command#register('diff-ls',
       \ 'gita#command#diff_ls#command',
       \ 'gita#command#diff_ls#complete',
       \)
+call gita#command#register('grep',
+      \ 'gita#command#grep#command',
+      \ 'gita#command#grep#complete',
+      \)
 call gita#command#register('ls',
       \ 'gita#command#ls#command',
       \ 'gita#command#ls#complete',
