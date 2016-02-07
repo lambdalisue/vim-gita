@@ -62,7 +62,10 @@ function! s:parse_blame(content, ...) abort
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)
         \ : a:content
-  if options.python > 0
+  if options.python > 0 && !has('nvim')
+    " NOTE:
+    " neovim does not support 'vim.bindeval' yet so do not use Python
+    " implementation in neovim
     return s:_parse_blame_python(a:content, options)
   else
     return s:_parse_blame_vim(a:content, options)
