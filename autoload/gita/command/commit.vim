@@ -87,6 +87,7 @@ function! s:commit_commitmsg() abort
     call s:Prompt.echo('None', join(content, "\n"))
     call gita#remove_meta('commitmsg_saved', '')
     call gita#set_meta('options', {})
+    silent keepjumps %delete _
     call gita#util#doautocmd('StatusModified')
   finally
     call delete(tempfile)
