@@ -230,7 +230,7 @@ function! gita#command#status#edit(...) abort
   call s:Anchor.register()
   augroup vim_gita_internal_status
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer> call s:on_BufReadCmd()
+    autocmd BufReadCmd <buffer> nested call s:on_BufReadCmd()
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END

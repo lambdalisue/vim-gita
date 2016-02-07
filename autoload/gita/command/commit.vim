@@ -4,6 +4,7 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Guard = s:V.import('Vim.Guard')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
@@ -250,10 +251,16 @@ function! gita#command#commit#open(...) abort
         \ ? g:gita#command#commit#default_opener
         \ : options.opener
   let bufname = gita#command#commit#bufname(options)
-  call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'group': 'manipulation_panel',
-        \})
+  let guard = s:Guard.store('&eventignore')
+  try
+    set eventignore+=BufReadCmd
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \ 'group': 'manipulation_panel',
+          \})
+  finally
+    call guard.restore()
+  endtry
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git
   call gita#command#commit#edit(options)
@@ -274,11 +281,11 @@ function! gita#command#commit#edit(...) abort
   call s:define_actions()
   augroup vim_gita_internal_commit
     autocmd! * <buffer>
-    autocmd BufReadCmd  <buffer> call s:on_BufReadCmd()
+    autocmd BufReadCmd  <buffer> nested call s:on_BufReadCmd()
     autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
     autocmd VimResized  <buffer> call s:on_VimResized()
     autocmd WinEnter    <buffer> call s:on_WinEnter()
-    autocmd WinLeave    <buffer> call s:on_WinLeave()
+    autocmd WinLeave    <buffer> nested call s:on_WinLeave()
     autocmd QuitPre     <buffer> call s:on_QuitPre()
   augroup END
   " NOTE:
@@ -296,6 +303,10 @@ function! gita#command#commit#edit(...) abort
   if exists('#BufReadPost')
     doautocmd BufReadPost
   endif
+  " NOTE:
+  " Force filetype to gita-commit. Without the line below, somehow filetype
+  " re-assigned to 'conf'.
+  setlocal filetype=gita-commit
 endfunction
 function! gita#command#commit#redraw() abort
   if &filetype !=# 'gita-commit'
