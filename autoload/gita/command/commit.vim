@@ -57,9 +57,9 @@ function! s:commit_commitmsg() abort
   let options = gita#get_meta('options')
   let statuses = gita#get_meta('statuses')
   let staged_statuses = filter(copy(statuses), 'v:val.is_staged')
-  if !s:GitInfo.is_merging(git) && empty(staged_statuses) && get(options, 'allow-empty')
+  if !s:GitInfo.is_merging(git) && empty(staged_statuses) && !get(options, 'allow-empty')
     call gita#throw(
-          \ 'An empty commit is now allowed. Add --allow-empty option to allow.',
+          \ 'An empty commit is not allowed. Add --allow-empty option to allow.',
           \)
   elseif &modified
     call gita#throw(
@@ -204,6 +204,7 @@ endfunction
 
 function! gita#command#commit#bufname(...) abort
   let options = gita#option#init('^commit$', get(a:000, 0, {}), {
+        \ 'allow-empty': 0,
         \ 'filenames': [],
         \})
   let git = gita#get_or_fail()
@@ -211,6 +212,7 @@ function! gita#command#commit#bufname(...) abort
         \ 'filebase': 0,
         \ 'content_type': 'commit',
         \ 'extra_options': [
+        \   empty(options['allow-empty']) ? '' : 'allow-empty',
         \   empty(options.filenames) ? '' : 'partial',
         \ ],
         \ 'commitish': '',
