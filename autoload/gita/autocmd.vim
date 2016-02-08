@@ -1,4 +1,5 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
@@ -143,10 +144,14 @@ function! gita#autocmd#bufname(git, options) abort
         \]
   let domain = join(filter(bits, '!empty(v:val)'), ':')
   if options.filebase
-    return printf('gita://%s/%s', domain, treeish)
+    let bufname = printf('gita://%s/%s', domain, treeish)
   else
-    return printf('gita:%s:%s', domain, treeish)
+    let bufname = printf('gita:%s:%s', domain, treeish)
   endif
+  " NOTE:
+  " Windows does not allow a buffer name which ends with : so remove trailings
+  let bufname = substitute(bufname, ':\+$', '', '')
+  return bufname
 endfunction
 
 " gita://<repository>/<treeish>
@@ -164,11 +169,15 @@ endfunction
 " gita://vim-gita:diff:cached/HEAD:README.md    git diff --cached HEAD -- README.md
 " gita://vim-gita:diff:cached:reverse/HEAD:README.md    git diff --cached --reverse HEAD -- README.md
 function! s:parse_filename(filename) abort
+  let ncolons = len(substitute(a:filename, '[^:]', '', 'g'))
+  let filename = len(ncolons) < 3
+        \ ? a:filename . repeat(':', 3 - ncolons)
+        \ : a:filename
   for scheme in s:schemes
-    if a:filename !~# scheme[0]
+    if filename !~# scheme[0]
       continue
     endif
-    let m = matchlist(a:filename, scheme[0])
+    let m = matchlist(filename, scheme[0])
     let o = {}
     for [key, value] in items(scheme[1])
       if type(value) == type(0)
