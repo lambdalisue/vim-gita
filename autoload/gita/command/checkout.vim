@@ -179,6 +179,7 @@ function! gita#command#checkout#complete(...) abort
 endfunction
 
 call gita#util#define_variables('command#checkout', {
+      \ 'default_options': {},
       \})
 
 
