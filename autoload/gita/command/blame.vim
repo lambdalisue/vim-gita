@@ -242,25 +242,23 @@ function! s:get_entry(index) abort
 endfunction
 function! s:call_pseudo_command(...) abort
   let ret = s:Prompt.input('None', ':', get(a:000, 0, ''))
-  let winnum_partner = gita#get_meta('content_type') ==# 'blame-navi'
-        \ ? winbufnr(blameobj.view_bufnum)
-        \ : winbufnr(blameobj.navi_bufnum)
+  redraw | echo
   if ret =~# '\v^[0-9]+$'
     call gita#command#blame#select([ret])
-  elseif ret =~# '^q\%(\|u\|ui\|uit\)!\?$'
-    let blameobj = gita#command#blame#_get_blameobj_or_fail()
-    if winnum_partner != -1
-      execute printf('%dquit', winnum_partner)
-    endif
-    quit
-  elseif ret =~# '^clo\%(\|s\|se\)!\?$'
-    let blameobj = gita#command#blame#_get_blameobj_or_fail()
-    if winnum_partner != -1
-      execute printf('%dclose', winnum_partner)
-    endif
-    close
+  elseif ret =~# '^q\%(\|u\|ui\|uit\)!\?$' || ret =~# '^clo\%(\|s\|se\)!\?$'
+    try
+      let blameobj = gita#command#blame#_get_blameobj_or_fail()
+      let winnum_partner = gita#get_meta('content_type') ==# 'blame-navi'
+            \ ? winbufnr(blameobj.view_bufnum)
+            \ : winbufnr(blameobj.navi_bufnum)
+      if winnum_partner != -1
+        execute printf('%d%s', winnum_partner, ret)
+      endif
+    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+      call gita#util#handle_exception()
+    endtry
+    execute ret
   else
-    redraw
     execute ret
   endif
 endfunction
