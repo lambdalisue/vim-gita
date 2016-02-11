@@ -57,7 +57,6 @@ endfunction
 function! s:_split_commitish(commitish, options) abort
   " https://www.kernel.org/pub/software/scm/git/docs/gitrevisions.html#_specifying_revisions
   " http://stackoverflow.com/questions/4044368/what-does-tree-ish-mean-in-git
-  let options = get(a:000, 0, {})
   if a:commitish =~# '@{.*}$'
     let [commit, misc] = matchlist(a:commitish, '\(.\{-}\)\(@{.*}\)$')[1 : 2]
   elseif a:commitish =~# '\^[\^0-9]*$'

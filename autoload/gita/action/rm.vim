@@ -15,7 +15,7 @@ function! gita#action#rm#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = gita#command#rm#call({
+    call gita#command#rm#call({
           \ 'quiet': 1,
           \ 'filenames': filenames,
           \ 'force': options.force,

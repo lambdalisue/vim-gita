@@ -232,7 +232,6 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
 endfunction
 
 function! s:get_entry(index) abort
-  let git = gita#get_or_fail()
   let blamemeta = gita#command#blame#_get_blamemeta_or_fail()
   let lineinfo = get(blamemeta.lineinfos, a:index, {})
   if empty(lineinfo)
@@ -485,7 +484,6 @@ function! gita#command#blame#_define_actions() abort
   endfunction
   function! action.actions.blame_backward(candidates, ...) abort
     let backward = gita#get_meta('backward')
-    let commit = gita#get_meta('commit')
     if empty(backward)
       call gita#throw(
             \ 'Cancel:',

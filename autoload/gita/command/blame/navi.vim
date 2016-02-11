@@ -4,8 +4,6 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 function! s:define_actions() abort
-  let action = gita#command#blame#_define_actions()
-
   nmap <buffer> <C-g> <Plug>(gita-blame-echo)
   nmap <buffer> <CR> <Plug>(gita-blame-enter)
   nmap <buffer> <Backspace> <Plug>(gita-blame-backward)

@@ -267,7 +267,6 @@ function! gita#command#diff#open2(...) abort
       let options.reverse = 1
     endif
   endif
-  let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})

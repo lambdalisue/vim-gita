@@ -94,7 +94,6 @@ function! s:on_BufWriteCmd() abort
   " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try
-    let commit = gita#get_meta('commit', '')
     let options = gita#get_meta('options', {})
     let filename = gita#get_meta('filename', '')
     if exists('#BufWritePre')

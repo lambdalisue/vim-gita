@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -8,7 +9,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
+  return s:Dict.pick(a:options, [
         \ 'force',
         \ 'ours', 'theirs',
         \ 'b', 'B',
@@ -21,8 +22,9 @@ function! s:pick_available_options(options) abort
         \ 'conflict',
         \ 'ignore-other-worktrees',
         \])
-  return options
 endfunction
+
+" @vimlint(ELV102, 1, l:result)
 function! s:apply_command(git, commit, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
@@ -41,6 +43,7 @@ function! s:apply_command(git, commit, filenames, options) abort
   endif
   return result.content
 endfunction
+" @vimlint(ELV102, 0, l:result)
 
 function! gita#command#checkout#call(...) abort
   let options = gita#option#init('', get(a:000, 0, {}), {

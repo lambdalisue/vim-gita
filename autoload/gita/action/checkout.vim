@@ -15,7 +15,6 @@ function! gita#action#checkout#action(candidates, ...) abort
         \ 'theirs': 0,
         \}, get(a:000, 0, {}))
   call gita#option#assign_commit(options)
-  let git = gita#get_or_fail()
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
@@ -23,7 +22,7 @@ function! gita#action#checkout#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = gita#command#checkout#call({
+    call gita#command#checkout#call({
           \ 'quiet': 1,
           \ 'commit': get(options, 'commit', ''),
           \ 'filenames': filenames,

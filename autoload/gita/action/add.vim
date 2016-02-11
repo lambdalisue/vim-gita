@@ -20,13 +20,13 @@ function! gita#action#add#action(candidates, ...) abort
   if !empty(filenames)
     if options.patch
       call s:Anchor.focus()
-      let result = gita#command#add#patch({
+      call gita#command#add#patch({
             \ 'quiet': 1,
             \ 'filenames': filenames,
             \ 'patch': options.patch,
             \})
     else
-      let result = gita#command#add#call({
+      call gita#command#add#call({
             \ 'quiet': 1,
             \ 'filenames': filenames,
             \ 'force': options.force,

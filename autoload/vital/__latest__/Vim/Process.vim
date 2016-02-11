@@ -57,7 +57,7 @@ function! s:system(args, ...) abort
   if s:need_trans
     let cmdline = s:iconv(cmdline, &encoding, 'char')
   endif
-  if options.background && (options.use_vimproc || !s:Process.is_windows())
+  if options.background && (options.use_vimproc || !s:Prelude.is_windows())
     let cmdline = cmdline . '&'
   endif
   let args = [cmdline] + (s:Prelude.is_string(input) ? [input] : [])

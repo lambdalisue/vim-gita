@@ -47,6 +47,8 @@ endfunction
 function! s:compare(i1, i2) abort
   return a:i1[1] == a:i2[1] ? 0 : a:i1[1] > a:i2[1] ? 1 : -1
 endfunction
+" @vimlint(EVL102, 1, l:mode)
+" @vimlint(EVL102, 1, l:flag)
 function! s:build_mapping_help(table) abort
   let mappings = s:filter_mappings('<Plug>(gita-', {
         \ 'noremap': 0,
@@ -69,6 +71,8 @@ function! s:build_mapping_help(table) abort
   endfor
   return contents
 endfunction
+" @vimlint(EVL102, 0, l:mode)
+" @vimlint(EVL102, 0, l:flag)
 
 function! gita#action#do(name, candidates, ...) abort
   let action = gita#action#get()
@@ -81,7 +85,6 @@ function! gita#action#do(name, candidates, ...) abort
 endfunction
 
 function! gita#action#call(name, ...) abort range
-  let action = gita#action#get()
   try
     let candidates = gita#action#get_candidates(a:firstline, a:lastline)
     call call('gita#action#do', [a:name, candidates] + a:000)

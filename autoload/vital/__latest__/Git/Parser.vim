@@ -66,11 +66,13 @@ function! s:parse_blame(content, ...) abort
     " NOTE:
     " neovim does not support 'vim.bindeval' yet so do not use Python
     " implementation in neovim
-    return s:_parse_blame_python(a:content, options)
+    return s:_parse_blame_python(content, options)
   else
-    return s:_parse_blame_vim(a:content, options)
+    return s:_parse_blame_vim(content, options)
   endif
 endfunction
+" @vimlint(EVL102, 1, l:progressbar)
+" @vimlint(EVL102, 1, l:kwargs)
 function! s:_parse_blame_python(content, ...) abort
   let options = extend({
         \ 'progressbar': {},
@@ -90,6 +92,8 @@ function! s:_parse_blame_python(content, ...) abort
   endif
   return namespace.blameobj
 endfunction
+" @vimlint(EVL102, 0, l:progressbar)
+" @vimlint(EVL102, 0, l:kwargs)
 function! s:_parse_blame_vim(content, ...) abort
   let options = extend({
         \ 'progressbar': {},
@@ -288,7 +292,6 @@ function! s:parse_status(content, ...) abort
 endfunction
 
 function! s:parse_numstat(content, ...) abort
-  let options = extend({}, get(a:000, 0, {}))
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)
         \ : a:content

@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')

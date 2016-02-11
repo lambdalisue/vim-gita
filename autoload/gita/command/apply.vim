@@ -6,13 +6,13 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
+  return s:Dict.pick(a:options, [
         \ 'stat', 'numstat', 'summary', 'check',
         \ 'index', 'cached',
         \ 'build-fake-ancestor',
         \ 'reverse',
         \ 'reject',
-        \ 'p'
+        \ 'p',
         \ 'C',
         \ 'unidiff-zero',
         \ 'apply',
@@ -26,8 +26,9 @@ function! s:pick_available_options(options) abort
         \ 'unsafe-paths',
         \ 'allow-overlap',
         \])
-  return options
 endfunction
+
+" @vimlint(EVL102, 1, l:result)
 function! s:apply_patches(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
@@ -41,6 +42,7 @@ function! s:apply_patches(git, filenames, options) abort
   endif
   return result.content
 endfunction
+" @vimlint(EVL102, 0, l:result)
 
 function! gita#command#apply#call(...) abort
   let options = gita#option#init('', get(a:000, 0, {}), {

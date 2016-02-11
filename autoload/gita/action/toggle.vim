@@ -34,8 +34,8 @@ function! gita#action#toggle#action(candidates, ...) abort
       call add(stage_candidates, candidate)
     endif
   endfor
-  noautocmd call gita#action#do('stage', stage_candidates, {})
-  noautocmd call gita#action#do('unstage', unstage_candidates, {})
+  noautocmd call gita#action#do('stage', stage_candidates, options)
+  noautocmd call gita#action#do('unstage', unstage_candidates, options)
   call gita#util#doautocmd('StatusModified')
 endfunction
 

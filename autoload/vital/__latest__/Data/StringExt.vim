@@ -18,7 +18,6 @@ function! s:splitargs(str) abort
 endfunction
 
 function! s:smart_string(value) abort
-  let vtype = type(a:value)
   if s:Prelude.is_string(a:value)
     return a:value
   elseif s:Prelude.is_number(a:value)

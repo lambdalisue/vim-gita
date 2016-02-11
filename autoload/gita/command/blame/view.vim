@@ -4,8 +4,6 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 function! s:define_actions() abort
-  let action = gita#command#blame#_define_actions()
-
   call gita#action#includes(
         \ g:gita#command#blame#view#enable_default_mappings, [
         \   'redraw',

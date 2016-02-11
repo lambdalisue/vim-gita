@@ -6,7 +6,6 @@ let s:GitTerm = s:V.import('Git.Term')
 let s:GitInfo = s:V.import('Git.Info')
 
 function! s:validate_filename(filename, ...) abort
-  let options = get(a:000, 0, {})
   if empty(a:filename)
     call gita#throw(
           \ 'ValidationError: A filename cannot be empty'

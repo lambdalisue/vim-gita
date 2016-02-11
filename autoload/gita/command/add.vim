@@ -7,7 +7,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
+  return s:Dict.pick(a:options, [
         \ 'dry-run',
         \ 'force',
         \ 'update',
@@ -18,8 +18,9 @@ function! s:pick_available_options(options) abort
         \ 'ignore-errors',
         \ 'ignore-missing',
         \])
-  return options
 endfunction
+
+" @vimlint(EVL102, 1, l:result)
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
@@ -35,6 +36,7 @@ function! s:apply_command(git, filenames, options) abort
   endif
   return result.content
 endfunction
+" @vimlint(EVL102, 0, l:result)
 
 function! gita#command#add#call(...) abort
   let options = extend({

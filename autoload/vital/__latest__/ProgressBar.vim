@@ -61,7 +61,7 @@ function! s:new(maxvalue, ...) abort
         \ 'statusline': options.statusline,
         \ 'current': 0,
         \})
-  if instance.statusline && !has_key('vim_starting')
+  if instance.statusline && !has('vim_starting')
     let instance._guard = s:Guard.store(
           \ '&l:statusline',
           \)

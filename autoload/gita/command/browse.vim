@@ -26,8 +26,6 @@ function! s:find_commit_meta(git, commit) abort
     let rhs = ''
     let remote = s:GitInfo.get_branch_remote(config, lhs)
   endif
-  let lhs_remote = s:GitInfo.get_branch_merge(config, lhs, 1)
-  let rhs_remote = s:GitInfo.get_branch_merge(config, rhs, 1)
   let remote = empty(remote) ? 'origin' : remote
   let remote_url = s:GitInfo.get_remote_url(config, remote)
   return [lhs, rhs, remote, remote_url]

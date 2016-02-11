@@ -4,8 +4,6 @@ let s:MAPPING_TABLE = {
       \}
 
 function! gita#action#apply#action(candidates, ...) abort
-  let options = extend({
-        \}, get(a:000, 0, {}))
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
@@ -13,7 +11,7 @@ function! gita#action#apply#action(candidates, ...) abort
     endif
   endfor
   if !empty(filenames)
-    let result = gita#command#apply#call({
+    call gita#command#apply#call({
           \ 'quiet': 1,
           \ 'filenames': filenames,
           \})
