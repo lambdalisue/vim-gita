@@ -3,13 +3,13 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
 
-function! s:diffthis_on_BufWinLeave() abort
-  augroup vim_gita_internal_util_diffthis
-    autocmd! * <buffer>
-  augroup END
+function! s:diffoff() abort
   if !&diff
     return
   endif
+  augroup vim_gita_internal_util_diffthis
+    autocmd! * <buffer>
+  augroup END
   if maparg('<C-l>', 'n') ==# '<Plug>(gita-C-l)'
     unmap <buffer> <C-l>
   endif
@@ -50,7 +50,8 @@ function! gita#util#diffthis() abort
 
   augroup vim_gita_internal_util_diffthis
     autocmd! * <buffer>
-    autocmd BufWinLeave <buffer> noautocmd call s:diffthis_on_BufWinLeave()
+    autocmd BufWinLeave <buffer> call s:diffoff()
+    autocmd BufHidden <buffer>   call s:diffoff()
   augroup END
   diffthis
   keepjump normal! zM
