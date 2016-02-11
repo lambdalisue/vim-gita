@@ -12,7 +12,6 @@ let s:entry_offset = 0
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
-        \ 'porcelain',
         \ 'ignored',
         \ 'ignore-submodules',
         \ 'u', 'untracked-files',
@@ -25,6 +24,7 @@ function! s:pick_available_options(options) abort
 endfunction
 function! s:get_status_content(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
+  let options['porcelain'] = 1
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
@@ -58,8 +58,14 @@ function! s:compare_statuses(lhs, rhs) abort
     return -1
   endif
 endfunction
-function! s:format_entry(entry) abort
-  return a:entry.record
+function! s:format_status(status) abort
+  return a:status.record
+endfunction
+function! s:format_statuses(statuses) abort
+  let content = map(copy(a:statuses),
+        \ 's:format_status(v:val)',
+        \)
+  return content
 endfunction
 function! s:get_header_string(git) abort
   let local = s:GitInfo.get_local_branch(a:git)
@@ -259,10 +265,7 @@ function! gita#command#status#redraw() abort
         \   : []
         \])
   let statuses = gita#get_meta('statuses', [])
-  let contents = map(
-        \ copy(statuses),
-        \ 's:format_entry(v:val)'
-        \)
+  let contents = s:format_statuses(statuses)
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))
 endfunction

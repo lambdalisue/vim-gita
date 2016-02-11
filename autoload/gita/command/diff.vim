@@ -123,18 +123,33 @@ function! gita#command#diff#call(...) abort
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
+        \ 'filenames': [],
         \})
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = empty(options.filename)
-        \ ? ''
-        \ : gita#variable#get_valid_filename(options.filename)
-  let content = s:get_diff_content(git, commit, empty(filename) ? [] : [filename], options)
+  if empty(options.filenames)
+    let filenames = []
+  else
+    let filenames = map(
+          \ copy(options.filenames),
+          \ 'gita#variable#get_valid_filename(v:val)'
+          \)
+  endif
+  if !empty(options.filename)
+    call insert(
+          \ filenames,
+          \ gita#variable#get_valid_filename(options.filename)
+          \)
+    " remove duplicate filenames
+    let filenames = uniq(filenames)
+  endif
+  let content = s:get_diff_content(git, commit, filenames, options)
   let result = {
         \ 'commit': commit,
-        \ 'filename': filename,
+        \ 'filename': empty(filenames) ? '' : filenames[0],
+        \ 'filenames': filenames,
         \ 'content': content,
         \ 'options': options,
         \}
@@ -205,6 +220,7 @@ function! gita#command#diff#edit(...) abort
         \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
+  call gita#set_meta('filenames', result.filenames)
   call gita#util#buffer#edit_content(result.content)
   if options.patch
     augroup vim_gita_internal_diff_apply_diff
