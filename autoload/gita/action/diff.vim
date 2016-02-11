@@ -74,8 +74,8 @@ function! gita#action#diff#define_default_mappings() abort
   map <buffer><nowait><expr> DD gita#action#smart_map('DD', '<Plug>(gita-diff-right)')
   map <buffer><nowait><expr> dt gita#action#smart_map('dt', '<Plug>(gita-diff-tabnew)')
   map <buffer><nowait><expr> dp gita#action#smart_map('dp', '<Plug>(gita-diff-pedit)')
-  map <buffer><nowait><expr> ds gita#action#smart_map('ss', '<Plug>(gita-diff-vertical)')
-  map <buffer><nowait><expr> DS gita#action#smart_map('SS', '<Plug>(gita-diff-horizontal)')
+  map <buffer><nowait><expr> ds gita#action#smart_map('ds', '<Plug>(gita-diff-vertical)')
+  map <buffer><nowait><expr> DS gita#action#smart_map('DS', '<Plug>(gita-diff-horizontal)')
 endfunction
 
 function! gita#action#diff#get_mapping_table() abort
