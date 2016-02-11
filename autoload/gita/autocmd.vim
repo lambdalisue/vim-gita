@@ -19,9 +19,7 @@ function! s:on_SourceCmd() abort
 endfunction
 function! s:on_BufReadCmd() abort
   let info = gita#autocmd#parse(expand('<afile>'))
-  if exists('#BufReadPre')
-    doautocmd BufReadPre
-  endif
+  doautocmd BufReadPre
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#edit({
@@ -44,15 +42,11 @@ function! s:on_BufReadCmd() abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  if exists('#BufReadPost')
-    doautocmd BufReadPost
-  endif
+  doautocmd BufReadPost
 endfunction
 function! s:on_FileReadCmd() abort
   let info = gita#autocmd#parse(expand('<afile>'))
-  if exists('#FileReadPre')
-    doautocmd FileReadPre
-  endif
+  doautocmd FileReadPre
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#read({
@@ -75,9 +69,7 @@ function! s:on_FileReadCmd() abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  if exists('#FileReadPost')
-    doautocmd FileReadPost
-  endif
+  doautocmd FileReadPost
 endfunction
 function! s:on_BufWritePre() abort
   let b:_gita_autocmd_modified = &modified
@@ -214,3 +206,11 @@ let s:schemes = [
       \   'treeish': 2,
       \ }],
       \]
+
+augroup vim_gita_pseudo_autocmd
+  autocmd! *
+  autocmd BufReadPre  gita://* :
+  autocmd BufReadPost gita://* :
+  autocmd FileReadPre  gita://* :
+  autocmd FileReadPost gita://* :
+augroup END
