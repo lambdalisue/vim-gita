@@ -206,11 +206,3 @@ let s:schemes = [
       \   'treeish': 2,
       \ }],
       \]
-
-augroup vim_gita_pseudo_autocmd
-  autocmd! *
-  autocmd BufReadPre  gita://* :
-  autocmd BufReadPost gita://* :
-  autocmd FileReadPre  gita://* :
-  autocmd FileReadPost gita://* :
-augroup END
