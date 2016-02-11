@@ -20,18 +20,18 @@ function! gita#action#reset#action(candidates, ...) abort
     if options.patch
       call s:Anchor.focus()
       let result = gita#command#reset#patch({
+            \ 'quiet': 1,
             \ 'filenames': filenames,
             \ 'patch': options.patch,
             \})
     else
       let result = gita#command#reset#call({
+            \ 'quiet': 1,
             \ 'commit': get(options, 'commit', ''),
             \ 'filenames': filenames,
             \ 'patch': options.patch,
-            \ 'quiet': 1,
             \})
     endif
-    " TODO: Show some success mesage?
   endif
 endfunction
 

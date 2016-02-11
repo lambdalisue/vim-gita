@@ -9,7 +9,6 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'q', 'quiet',
         \ 'soft',
         \ 'mixed',
         \ 'N',
@@ -23,6 +22,8 @@ endfunction
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   if !empty(a:filenames)
+    " NOTE:
+    " git reset requires relative paths from repository root
     let options['--'] = map(
           \ copy(a:filenames),
           \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
@@ -31,6 +32,9 @@ function! s:apply_command(git, filenames, options) abort
   let result = gita#execute(a:git, 'reset', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
@@ -63,27 +67,71 @@ function! gita#command#reset#patch(...) abort
   let filename = len(options.filenames) > 0
         \ ? options.filenames[0]
         \ : '%'
-  call gita#command#diff#open2({
-        \ 'patch': 1,
-        \ 'commit': 'HEAD',
-        \ 'filenames': [filename],
-        \})
+  if get(options, 'split')
+    call gita#command#diff#open2({
+          \ 'patch': 1,
+          \ 'commit': 'HEAD',
+          \ 'filename': filename,
+          \})
+  else
+    call gita#command#diff#open({
+          \ 'patch': 1,
+          \ 'commit': 'HEAD',
+          \ 'filename': filename,
+          \})
+  endif
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita reset',
-          \ 'description': 'Reset changes on index',
+          \ 'description': 'Reset current HEAD to the specified state',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--patch', '-p', [
-          \ 'An alias option for ":Gita diff --patch HEAD -- %" to perform HEAD -> index patch',
-          \])
-    " TODO: Add more arguments
+          \ '--quiet', '-q',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
+          \ '--mixed',
+          \ 'reset HEAD and index',
+          \)
+    call s:parser.add_argument(
+          \ '--intent-to-add', '-N',
+          \ 'record only the fact that removed paths will be added later', {
+          \   'superordinates': ['mixed'],
+          \})
+    call s:parser.add_argument(
+          \ '--soft',
+          \ 'reset only HEAD',
+          \)
+    call s:parser.add_argument(
+          \ '--hard',
+          \ 'reset HEAD, index and working tree',
+          \)
+    call s:parser.add_argument(
+          \ '--merge',
+          \ 'reset HEAD, index and working tree',
+          \)
+    call s:parser.add_argument(
+          \ '--keep',
+          \ 'reset HEAD but keep local changes',
+          \)
+    call s:parser.add_argument(
+          \ '--patch', '-p',
+          \ 'An alias option for ":Gita diff --patch HEAD -- %" to perform HEAD -> index patch', {
+          \   'conflicts': [
+          \     'mixed', 'soft', 'hard', 'merge', 'keep',
+          \   ],
+          \})
+    call s:parser.add_argument(
+          \ '--split', '-s',
+          \ 'A subordinate option of --patch to show two buffers instead of a single diff.', {
+          \   'superordinates': ['patch'],
+          \})
   endif
   return s:parser
 endfunction
