@@ -3,6 +3,7 @@ let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Guard = s:V.import('Vim.Guard')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
@@ -168,10 +169,16 @@ function! gita#command#ls#open(...) abort
         \ ? g:gita#command#ls#default_opener
         \ : options.opener
   let bufname = gita#command#ls#bufname(options)
-  call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'group': 'manipulation_panel',
-        \})
+  let guard = s:Guard.store('&eventignore')
+  try
+    set eventignore+=BufReadCmd
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \ 'group': 'manipulation_panel',
+          \})
+  finally
+    call guard.restore()
+  endtry
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git
   call gita#command#ls#edit(options)
@@ -196,13 +203,7 @@ function! gita#command#ls#edit(...) abort
   setlocal filetype=gita-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  if exists('#BufReadPre')
-    doautocmd BufReadPre
-  endif
   call gita#command#ls#redraw()
-  if exists('#BufReadPost')
-    doautocmd BufReadPost
-  endif
 endfunction
 function! gita#command#ls#redraw() abort
   let git = gita#get_or_fail()
