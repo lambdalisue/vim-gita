@@ -4,6 +4,22 @@ let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 
+function! s:parse_cmdarg(cmdarg) abort
+  let options = {}
+  if a:cmdarg =~# '++enc='
+    let options.encoding = matchstr(a:cmdarg, '++enc=\zs[^ ]\+\ze')
+  endif
+  if a:cmdarg =~# '++ff='
+    let options.fileformat = matchstr(a:cmdarg, '++ff=\zs[^ ]\+\ze')
+  endif
+  if a:cmdarg =~# '++bad='
+    let options.bad = matchstr(a:cmdarg, '++bad=\zs[^ ]\+\ze')
+  endif
+  let options.binary = a:cmdarg =~# '++bin'
+  let options.nobinary = a:cmdarg =~# '++nobin'
+  let options.edit = a:cmdarg =~# '++edit'
+  return options
+endfunction
 
 function! s:on_SourceCmd() abort
   let content = getbufline(expand('<afile>'), 1, '$')
@@ -18,11 +34,17 @@ function! s:on_SourceCmd() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
+  let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('BufReadPre')
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#edit({
+          \ 'encoding': options.encoding,
+          \ 'fileformat': options.fileformat,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -30,6 +52,8 @@ function! s:on_BufReadCmd() abort
           \})
   elseif content_type ==# 'diff'
     call gita#command#diff#edit({
+          \ 'encoding': options.encoding,
+          \ 'fileformat': options.fileformat,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -50,6 +74,8 @@ function! s:on_FileReadCmd() abort
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#read({
+          \ 'encoding': options.encoding,
+          \ 'fileformat': options.fileformat,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -57,6 +83,8 @@ function! s:on_FileReadCmd() abort
           \})
   elseif content_type ==# 'diff'
     call gita#command#diff#read({
+          \ 'encoding': options.encoding,
+          \ 'fileformat': options.fileformat,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,

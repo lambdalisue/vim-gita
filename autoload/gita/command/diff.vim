@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:Guard = s:V.import('Vim.Guard')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
@@ -193,20 +194,34 @@ function! gita#command#diff#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \})
-    " BufReadCmd will call ...#edit to apply the content
+    let guard = s:Guard.store('&eventignore')
+    try
+      set eventignore+=BufReadCmd
+      call gita#util#buffer#open(bufname, {
+            \ 'opener': opener,
+            \})
+    finally
+      call guard.restore()
+    endtry
+    call gita#command#diff#edit(options)
     call gita#util#select(options.selection)
   endif
 endfunction
 function! gita#command#diff#read(...) abort
-  let options = extend({}, get(a:000, 0, {}))
+  let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \}, get(a:000, 0, {}))
   let result = gita#command#diff#call(options)
-  call gita#util#buffer#read_content(result.content)
+  call gita#util#buffer#read_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \})
 endfunction
 function! gita#command#diff#edit(...) abort
   let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
         \ 'patch': 0,
         \ 'force': 0,
         \}, get(a:000, 0, {}))
@@ -238,7 +253,10 @@ function! gita#command#diff#edit(...) abort
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
   call gita#set_meta('filenames', result.filenames)
-  call gita#util#buffer#edit_content(result.content)
+  call gita#util#buffer#edit_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \})
   if options.patch
     augroup vim_gita_internal_diff_apply_diff
       autocmd! * <buffer>
@@ -571,6 +589,16 @@ function! s:get_parser() abort
           \ '--no-prefix',
           \ 'do not show any source or destination prefix',
           \)
+    call s:parser.add_argument(
+          \ '--encoding',
+          \ 'encoding used to open the content', {
+          \   'pattern': '^[^ ]\+$',
+          \})
+    call s:parser.add_argument(
+          \ '--fileformat',
+          \ 'file format used to open the content', {
+          \   'choices': ['dos', 'unix', 'mac'],
+          \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {

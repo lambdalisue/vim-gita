@@ -4,6 +4,7 @@ let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Guard = s:V.import('Vim.Guard')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
@@ -213,21 +214,35 @@ function! gita#command#show#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \})
-    " BufReadCmd will call ...#edit to apply the content
+    let guard = s:Guard.store('&eventignore')
+    try
+      set eventignore+=BufReadCmd
+      call gita#util#buffer#open(bufname, {
+            \ 'opener': opener,
+            \})
+    finally
+      call guard.restore()
+    endtry
+    call gita#command#show#edit(options)
     call gita#util#select(options.selection)
   endif
 endfunction
 function! gita#command#show#read(...) abort
-  let options = extend({}, get(a:000, 0, {}))
+  let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \}, get(a:000, 0, {}))
   let result = gita#command#show#call(options)
-  call gita#util#buffer#read_content(result.content)
+  call gita#util#buffer#read_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \})
 endfunction
 function! gita#command#show#edit(...) abort
   let options = extend({
         \ 'patch': 0,
+        \ 'encoding': '',
+        \ 'fileformat': '',
         \}, get(a:000, 0, {}))
   if options.patch
     " 'patch' mode requires:
@@ -245,7 +260,10 @@ function! gita#command#show#edit(...) abort
         \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
-  call gita#util#buffer#edit_content(result.content)
+  call gita#util#buffer#edit_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \})
   if empty(result.filename)
     setfiletype git
     setlocal buftype=nowrite
@@ -275,6 +293,16 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \})
+    call s:parser.add_argument(
+          \ '--encoding',
+          \ 'encoding used to open the content', {
+          \   'pattern': '^[^ ]\+$',
+          \})
+    call s:parser.add_argument(
+          \ '--fileformat',
+          \ 'file format used to open the content', {
+          \   'choices': ['dos', 'unix', 'mac'],
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
