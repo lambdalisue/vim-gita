@@ -1,6 +1,6 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
-  let s:Process = a:V.import('Process')
+  let s:Process = a:V.import('Vim.Process')
   let s:Dict = a:V.import('Data.Dict')
   let s:StringExt = a:V.import('Data.StringExt')
   let s:config = {
@@ -12,7 +12,7 @@ endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
-        \ 'Process',
+        \ 'Vim.Process',
         \ 'Data.Dict',
         \ 'Data.StringExt',
         \]
