@@ -84,7 +84,6 @@ function! s:on_BufWriteCmd() abort
             \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
             \ 'whitespace': 'fix',
             \ 'allow-overlap': 1,
-            \ 'inaccurate-eof': 1,
             \ 'recount': 1,
             \})
     finally
