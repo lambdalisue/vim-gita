@@ -16,8 +16,11 @@ function! s:pick_available_options(options) abort
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
         \ 'delete',
+        \ 'D',
+        \ 'create-reflog',
         \ 'force',
         \ 'move',
+        \ 'M',
         \ 'remotes',
         \ 'all',
         \ 'list',
@@ -26,6 +29,10 @@ function! s:pick_available_options(options) abort
         \ 'contains',
         \ 'merged', 'no-merged',
         \ 'points-at',
+        \ 'commit',
+        \ 'branchname',
+        \ 'oldbranch',
+        \ 'newbranch',
         \])
   return options
 endfunction
@@ -338,5 +345,3 @@ call gita#util#define_variables('command#branch', {
       \ 'default_action_mapping': '<Plug>(gita-show)',
       \ 'enable_default_mappings': 1,
       \})
-
-
