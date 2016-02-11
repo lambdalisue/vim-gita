@@ -19,7 +19,7 @@ function! s:on_SourceCmd() abort
 endfunction
 function! s:on_BufReadCmd() abort
   let info = gita#autocmd#parse(expand('<afile>'))
-  doautocmd BufReadPre
+  call gita#util#doautocmd('BufReadPre')
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#edit({
@@ -42,11 +42,11 @@ function! s:on_BufReadCmd() abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  doautocmd BufReadPost
+  call gita#util#doautocmd('BufReadPost')
 endfunction
 function! s:on_FileReadCmd() abort
   let info = gita#autocmd#parse(expand('<afile>'))
-  doautocmd FileReadPre
+  call gita#util#doautocmd('FileReadPre')
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
     call gita#command#show#read({
@@ -69,7 +69,7 @@ function! s:on_FileReadCmd() abort
           \ 'Unknown content-type "%s" is specified', content_type,
           \))
   endif
-  doautocmd FileReadPost
+  call gita#util#doautocmd('FileReadPost')
 endfunction
 function! s:on_BufWritePre() abort
   let b:_gita_autocmd_modified = &modified
@@ -77,7 +77,7 @@ endfunction
 function! s:on_BufWritePost() abort
   if get(b:, '_gita_autocmd_modified', &modified) != &modified
     if gita#get().is_enabled
-      call gita#util#doautocmd('StatusModified')
+      call gita#util#doautocmd('User', 'GitaStatusModified')
     endif
   endif
   silent! unlet! b:_gita_autocmd_modified

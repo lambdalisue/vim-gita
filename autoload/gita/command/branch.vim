@@ -245,11 +245,11 @@ function! gita#command#branch#edit(...) abort
   setlocal cursorline
   setlocal nomodifiable
   if exists('#BufReadPre')
-    doautocmd BufReadPre
+    call gita#util#doautocmd('BufReadPre')
   endif
   call gita#command#branch#redraw()
   if exists('#BufReadPost')
-    doautocmd BufReadPost
+    call gita#util#doautocmd('BufReadPost')
   endif
 endfunction
 function! gita#command#branch#redraw() abort

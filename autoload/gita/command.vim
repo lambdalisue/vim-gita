@@ -49,7 +49,7 @@ function! s:apply_command(name, options) abort
       call gita#clear()
     else
       " Maybe status is modified
-      call gita#util#doautocmd('StatusModified')
+      call gita#util#doautocmd('User', 'GitaStatusModified')
     endif
   endif
 endfunction
@@ -94,7 +94,7 @@ function! gita#command#command(...) abort
       endtry
     else
       call s:apply_command(name, options)
-      call gita#util#doautocmd('StatusModified')
+      call gita#util#doautocmd('User', 'GitaStatusModified')
     endif
   endif
 endfunction

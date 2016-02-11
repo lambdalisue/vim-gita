@@ -68,7 +68,7 @@ function! gita#action#discard#action(candidates, ...) abort
         \ 'commit': 'HEAD',
         \ 'force': 1,
         \})
-  call gita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#discard#define_plugin_mappings() abort

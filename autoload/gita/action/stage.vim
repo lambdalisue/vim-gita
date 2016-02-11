@@ -29,7 +29,7 @@ function! gita#action#stage#action(candidates, ...) abort
   endfor
   noautocmd call gita#action#do('add', add_candidates, options)
   noautocmd call gita#action#do('rm', rm_candidates, options)
-  call gita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#stage#define_plugin_mappings() abort

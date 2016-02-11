@@ -25,20 +25,19 @@ function! gita#util#clip(content) abort
 endfunction
 
 function! gita#util#doautocmd(name, ...) abort
-  if !exists('#User#Gita' . a:name) || &eventignore ==# 'all'
+  let pattern = get(a:000, 0, '')
+  let expr = empty(pattern)
+        \ ? '#' . a:name
+        \ : '#' . a:name . '#' . pattern
+  let eis = split(&eventignore, ',')
+  if index(eis, a:name) >= 0 || index(eis, 'all') >= 0 || !exists(expr)
+    " the specified event is ignored or not exists
     return
   endif
-  let guard = s:Guard.store('g:gita#avars')
-  let g:gita#avars = extend(
-        \ get(g:, 'gita#avars', {}),
-        \ get(a:000, 0, {})
-        \)
-  try
-    let expr = printf('User Gita%s', a:name)
-    call s:Compat.doautocmd(expr, 1)
-  finally
-    call guard.restore()
-  endtry
+  let nomodeline = has('patch-7.4.438') && a:name ==# 'User'
+        \ ? '<nomodeline> '
+        \ : ''
+  execute printf('doautocmd %s%s %s', nomodeline, a:name, pattern)
 endfunction
 
 function! gita#util#diffthis() abort

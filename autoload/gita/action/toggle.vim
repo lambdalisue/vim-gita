@@ -36,7 +36,7 @@ function! gita#action#toggle#action(candidates, ...) abort
   endfor
   noautocmd call gita#action#do('stage', stage_candidates, options)
   noautocmd call gita#action#do('unstage', unstage_candidates, options)
-  call gita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#toggle#define_plugin_mappings() abort

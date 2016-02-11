@@ -49,7 +49,7 @@ function! gita#command#add#call(...) abort
           \)
   endif
   let content = s:apply_command(git, filenames, options)
-  call gita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,
         \ 'content': content,

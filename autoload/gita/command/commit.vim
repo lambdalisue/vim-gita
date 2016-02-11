@@ -89,7 +89,7 @@ function! s:commit_commitmsg() abort
     call gita#remove_meta('commitmsg_saved', '')
     call gita#set_meta('options', {})
     silent keepjumps %delete _
-    call gita#util#doautocmd('StatusModified')
+    call gita#util#doautocmd('User', 'GitaStatusModified')
   finally
     call delete(tempfile)
   endtry
@@ -299,7 +299,7 @@ function! gita#command#commit#edit(...) abort
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
   " Used for template system
-  doautocmd BufReadPre
+  call gita#util#doautocmd('BufReadPre')
   call gita#command#commit#redraw()
   " NOTE:
   " Force filetype to gita-commit. Without the line below, somehow filetype

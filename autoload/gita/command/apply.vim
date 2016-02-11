@@ -55,7 +55,7 @@ function! gita#command#apply#call(...) abort
         \ 'gita#variable#get_valid_filename(v:val)',
         \)
   let content = s:apply_patches(git, filenames, options)
-  call gita#util#doautocmd('StatusModified')
+  call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,
         \ 'content': content,
