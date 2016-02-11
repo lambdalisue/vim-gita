@@ -73,9 +73,6 @@ function! s:on_BufWriteCmd() abort
   " It is only called when PATCH mode is enabled
   try
     let options = gita#get_meta('options', {})
-    if exists('#BufWritePre')
-      doautocmd BufWritePre
-    endif
     let tempfile = tempname()
     try
       call writefile(getline(1, '$'), tempfile)
@@ -93,9 +90,6 @@ function! s:on_BufWriteCmd() abort
       call delete(tempfile)
     endtry
     setlocal nomodified
-    if exists('#BufWritePost')
-      doautocmd BufWritePost
-    endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry

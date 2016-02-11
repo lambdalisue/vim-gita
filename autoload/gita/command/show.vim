@@ -96,9 +96,6 @@ function! s:on_BufWriteCmd() abort
   try
     let options = gita#get_meta('options', {})
     let filename = gita#get_meta('filename', '')
-    if exists('#BufWritePre')
-      doautocmd BufWritePre
-    endif
     let git = gita#get_or_fail()
     let content = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
@@ -108,9 +105,6 @@ function! s:on_BufWriteCmd() abort
           \ 'cached': 1,
           \})
     setlocal nomodified
-    if exists('#BufWritePost')
-      doautocmd BufWritePost
-    endif
     diffupdate
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
@@ -280,39 +274,39 @@ function! s:get_parser() abort
           \ 'name': 'Gita show',
           \ 'description': 'Show a content of a commit or a file',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filename',
+          \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
-          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--repository', '-r',
-          \ 'Show a summary of the repository instead of a file content',
+          \ 'show a summary of the repository instead of a file content',
           \)
     call s:parser.add_argument(
           \ '--worktree', '-w',
-          \ 'Open a content of a file in working tree', {
+          \ 'open a content of a file in working tree', {
           \   'conflicts': ['summary'],
           \})
     call s:parser.add_argument(
           \ '--selection',
-          \ 'A line number or range of the selection', {
+          \ 'a line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
           \ '--patch',
-          \ 'Show a content of a file in PATCH mode. It force to open an INDEX file content',
+          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
           \)
     call s:parser.add_argument(
           \ 'commit', [
-          \   'A commit which you want to see.',
-          \   'If nothing is specified, it show a content of the index.',
-          \   'If <commit> is specified, it show a content of the named <commit>.',
-          \   'If <commit1>..<commit2> is specified, it show a content of the named <commit1>',
-          \   'If <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
+          \   'a commit which you want to see.',
+          \   'if nothing is specified, it show a content of the index.',
+          \   'if <commit> is specified, it show a content of the named <commit>.',
+          \   'if <commit1>..<commit2> is specified, it show a content of the named <commit1>',
+          \   'if <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
           \], {
           \   'complete': function('gita#variable#complete_commit'),
           \})
