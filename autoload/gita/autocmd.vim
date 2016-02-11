@@ -69,6 +69,10 @@ function! s:on_BufReadCmd() abort
   call gita#util#doautocmd('BufReadPost')
 endfunction
 function! s:on_FileReadCmd() abort
+  let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('FileReadPre')
   let content_type = get(info, 'content_type')
