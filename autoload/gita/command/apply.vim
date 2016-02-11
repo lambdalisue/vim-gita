@@ -28,8 +28,6 @@ function! s:pick_available_options(options) abort
         \ 'allow-overlap',
         \])
 endfunction
-
-" @vimlint(EVL102, 1, l:result)
 function! s:apply_patches(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
@@ -43,7 +41,6 @@ function! s:apply_patches(git, filenames, options) abort
   endif
   return result.content
 endfunction
-" @vimlint(EVL102, 0, l:result)
 
 function! gita#command#apply#call(...) abort
   let options = gita#option#init('', get(a:000, 0, {}), {

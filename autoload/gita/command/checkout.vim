@@ -23,8 +23,6 @@ function! s:pick_available_options(options) abort
         \ 'ignore-other-worktrees',
         \])
 endfunction
-
-" @vimlint(ELV102, 1, l:result)
 function! s:apply_command(git, commit, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['commit'] = a:commit
@@ -43,7 +41,6 @@ function! s:apply_command(git, commit, filenames, options) abort
   endif
   return result.content
 endfunction
-" @vimlint(ELV102, 0, l:result)
 
 function! gita#command#checkout#call(...) abort
   let options = gita#option#init('', get(a:000, 0, {}), {

@@ -19,8 +19,6 @@ function! s:pick_available_options(options) abort
         \ 'ignore-missing',
         \])
 endfunction
-
-" @vimlint(EVL102, 1, l:result)
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
@@ -36,7 +34,6 @@ function! s:apply_command(git, filenames, options) abort
   endif
   return result.content
 endfunction
-" @vimlint(EVL102, 0, l:result)
 
 function! gita#command#add#call(...) abort
   let options = extend({
