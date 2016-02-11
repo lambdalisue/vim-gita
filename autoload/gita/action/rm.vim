@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-rm)': 'Add (rm) changes into an index',
-      \ '<Plug>(gita-RM)': 'Add (rm) changes into an index (force)',
+      \ '<Plug>(gita-rm)': 'Remove files from the working tree and from the index',
+      \ '<Plug>(gita-RM)': 'Remove files from the working tree and from the index (force)',
       \}
 
 function! gita#action#rm#action(candidates, ...) abort
@@ -16,11 +16,10 @@ function! gita#action#rm#action(candidates, ...) abort
   endfor
   if !empty(filenames)
     let result = gita#command#rm#call({
+          \ 'quiet': 1,
           \ 'filenames': filenames,
           \ 'force': options.force,
-          \ 'quiet': 1,
           \})
-    " TODO: Show some success message?
   endif
 endfunction
 

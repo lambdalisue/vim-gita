@@ -7,21 +7,30 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'q', 'quiet',
-        \ 'f', 'force',
-        \ 'r', 'recursive',
+        \ 'force',
+        \ 'dry-run',
+        \ 'r',
         \ 'cached',
+        \ 'ignore-unmatch',
         \])
   return options
 endfunction
 function! s:apply_command(git, filenames, options) abort
-  let options = s:pick_available_options(a:options)
+  let options = a:options
+  " NOTE: git rm does not understand 'recursive' so translate
+  if has_key(options, 'recursive')
+    let options['r'] = options.recursive
+  endif
+  let options = s:pick_available_options(options)
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
   let result = gita#execute(a:git, 'rm', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
@@ -54,28 +63,33 @@ function! s:get_parser() abort
           \ 'name': 'Gita rm',
           \ 'description': 'Remove files from the working tree and from the index',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': '<file>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--quiet', '-q', [
-          \   'Gita rm normally outputs one line (in the form of an rm command) for each file removed.',
-          \   'This option suppresses that output.',
-          \])
+          \ '--quiet',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
+          \ '--dry-run', '-n',
+          \ 'dry run',
+          \)
     call s:parser.add_argument(
           \ '--force', '-f',
-          \ 'Override the up-to-date check.',
+          \ 'override the up-to-date check',
           \)
     call s:parser.add_argument(
           \ '--recursive', '-r',
-          \ 'Allow recursive removal when a leading directory name is given.',
+          \ 'allow recursive removal',
           \)
     call s:parser.add_argument(
-          \ '--cached', [
-          \   'Use this option to unstage and remove path only from the index.',
-          \   'Working tree files, whether modified or not, will be left alone.',
-          \])
-    " TODO: Add more arguments
+          \ '--cached',
+          \ 'only remove from the index',
+          \)
+    call s:parser.add_argument(
+          \ '--ignore-unmatch',
+          \ 'exit with a zero status even if nothing matched',
+          \)
   endif
   return s:parser
 endfunction
@@ -101,5 +115,6 @@ function! gita#command#rm#complete(...) abort
 endfunction
 
 call gita#util#define_variables('command#rm', {
+      \ 'default_options': {},
       \})
 
