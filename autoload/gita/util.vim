@@ -25,7 +25,7 @@ function! gita#util#clip(content) abort
 endfunction
 
 function! gita#util#doautocmd(name, ...) abort
-  if !exists('#User#Gita' . a:name)
+  if !exists('#User#Gita' . a:name) || &eventignore ==# 'all'
     return
   endif
   let guard = s:Guard.store('g:gita#avars')
