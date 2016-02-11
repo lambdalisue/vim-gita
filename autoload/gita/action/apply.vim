@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-apply)': 'Apply diff into an index',
+      \ '<Plug>(gita-apply)': 'Apply a patch to files and/or to the index',
       \}
 
 function! gita#action#apply#action(candidates, ...) abort
@@ -14,9 +14,9 @@ function! gita#action#apply#action(candidates, ...) abort
   endfor
   if !empty(filenames)
     let result = gita#command#apply#call({
+          \ 'quiet': 1,
           \ 'filenames': filenames,
           \})
-    " TODO: Show some success message?
   endif
 endfunction
 
@@ -34,4 +34,3 @@ function! gita#action#apply#get_mapping_table() abort
 endfunction
 
 call gita#util#define_variables('action#apply', {})
-

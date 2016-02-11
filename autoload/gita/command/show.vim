@@ -104,9 +104,9 @@ function! s:on_BufWriteCmd() abort
     let content = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
     call gita#command#apply#call({
+          \ 'quiet': 1,
           \ 'filenames': [tempfile],
           \ 'cached': 1,
-          \ 'verbose': 1,
           \})
     setlocal nomodified
     if exists('#BufWritePost')

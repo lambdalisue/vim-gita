@@ -209,7 +209,10 @@ endfunction
 
 
 let s:schemes = {}
-let s:schemes.apply = {}
+let s:schemes.apply = {
+      \ 'p': '-%k%v',
+      \ 'C': '-%k%v',
+      \}
 let s:schemes.blame = {
       \ 'L': '--%k %v',
       \ 'S': '--%k %v',

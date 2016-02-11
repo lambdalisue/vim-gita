@@ -57,9 +57,9 @@ function! s:on_BufWriteCmd() abort
     try
       call writefile(getline(1, '$'), tempfile)
       call gita#command#apply#call({
+            \ 'quiet': 1,
             \ 'filenames': [tempfile],
             \ 'cached': 1,
-            \ 'verbose': 1,
             \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
             \ 'whitespace': 'fix',
             \ 'allow-overlap': 1,
