@@ -1,9 +1,9 @@
 let s:V = gita#vital()
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-add)': 'Add changes into an index',
-      \ '<Plug>(gita-ADD)': 'Add changes into an index (force)',
-      \ '<Plug>(gita-add-p)': 'Add changes into an index with PATCH mode',
+      \ '<Plug>(gita-add)': 'Add file contents to the index',
+      \ '<Plug>(gita-ADD)': 'Add file contents to the index (force)',
+      \ '<Plug>(gita-add-p)': 'Add file contents to the index with PATCH mode',
       \}
 
 function! gita#action#add#action(candidates, ...) abort
@@ -21,18 +21,19 @@ function! gita#action#add#action(candidates, ...) abort
     if options.patch
       call s:Anchor.focus()
       let result = gita#command#add#patch({
+            \ 'quiet': 1,
             \ 'filenames': filenames,
             \ 'patch': options.patch,
             \})
     else
       let result = gita#command#add#call({
+            \ 'quiet': 1,
             \ 'filenames': filenames,
             \ 'force': options.force,
             \ 'patch': options.patch,
             \ 'ignore-errors': 1,
             \})
     endif
-    " TODO: Show some success message?
   endif
 endfunction
 

@@ -8,30 +8,38 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'f', 'force',
-        \ 'u', 'update',
-        \ 'A', 'all',
+        \ 'dry-run',
+        \ 'force',
+        \ 'update',
+        \ 'all',
         \ 'ignore-removal',
+        \ 'intent-to-add',
+        \ 'refresh',
         \ 'ignore-errors',
+        \ 'ignore-missing',
         \])
   return options
 endfunction
 function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
+  let options['verbose'] = 1
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
   let result = gita#execute(a:git, 'add', options)
   if result.status
     call s:GitProcess.throw(result)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
 
 function! gita#command#add#call(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#get_or_fail()
   if empty(options.filenames)
     let filenames = []
@@ -56,64 +64,92 @@ function! gita#command#add#patch(...) abort
   let filename = len(options.filenames) > 0
         \ ? options.filenames[0]
         \ : '%'
-  call gita#command#diff#open2({
-        \ 'patch': 1,
-        \ 'commit': '',
-        \ 'filenames': [filename],
-        \})
+  if get(options, 'split')
+    call gita#command#diff#open2({
+          \ 'patch': 1,
+          \ 'commit': '',
+          \ 'filename': filename,
+          \})
+  else
+    call gita#command#diff#open({
+          \ 'patch': 1,
+          \ 'commit': '',
+          \ 'filename': filename,
+          \})
+  endif
 endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita add',
-          \ 'description': 'Add changes into the index',
+          \ 'description': 'Add file contents to the index',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filenames',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
+          \ '--dry-run', '-n',
+          \ 'dry run', {
+          \   'conflicts': ['patch'],
+          \})
+    call s:parser.add_argument(
           \ '--force', '-f',
-          \ 'Allow adding otherwise ignored files.',
-          \)
-    call s:parser.add_argument(
-          \ '--update', '-u', [
-          \   'Update the index just where it already has an entry matching <pathspec>.',
-          \   'This removes as well as modifies index entries to match the working tree,',
-          \   'but adds no new files.',
-          \   'If no <pathspec> is given when -u option is used, all tracked files in the',
-          \   'entire working tree are updated.',
-          \ ]
-          \)
-    call s:parser.add_argument(
-          \ '--all', '-A', [
-          \   'Update the index not only where the working tree has a file matching <pathspec>',
-          \   'but also where the index already has an entry. This adds, modifies, and removes',
-          \   'index entries to match the working tree.',
-          \   'If no <pathspec> is given when -A option is used, all files in the entire working',
-          \   'tree are updated.',
-          \ ], {
-          \   'deniable': 1,
-          \   'conflicts': ['ignore-removal'],
+          \ 'allow adding otherwise ignored files', {
+          \   'conflicts': ['patch'],
           \})
     call s:parser.add_argument(
-          \ '--ignore-removal', [
-          \   'Update the index by adding new files that are unknown to the index and files modified',
-          \   'in the working tree, but ignore files that have been removed from the working tree.',
-          \   'This option is a no0op when no <pathspec> is used.',
-          \ ], {
-          \   'deniable': 1,
-          \   'conflicts': ['all'],
+          \ '--update', '-u',
+          \ 'update tracked files', {
+          \   'conflicts': ['patch'],
           \})
     call s:parser.add_argument(
-          \ '--ignore-errors', [
-          \ 'If some files could not be added because of errors indexing them, do not abort the operation,',
-          \ 'but continue adding the others. The command shall still exit with non-zero status.',
-          \])
+          \ '--intent-to-add', '-N',
+          \ 'record only the fact that the patch will be added later', {
+          \   'conflicts': ['patch'],
+          \})
     call s:parser.add_argument(
-          \ '--patch', '-p', [
-          \ 'An alias option for ":Gita diff --patch -- %" to perform working tree -> index patch',
-          \])
+          \ '--all', '-A',
+          \ 'add changes from all tracked and untracked files', {
+          \   'conflicts': ['ignore-removal', 'patch'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-removal',
+          \ 'ignore paths removed in the working tree (opposite to --all)', {
+          \   'conflicts': ['all', 'patch'],
+          \})
+    call s:parser.add_argument(
+          \ '--refresh',
+          \ 'don''t add, only refresh the index', {
+          \   'conflicts': ['patch'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-errors',
+          \ 'just skip files which cannot be added because of errors', {
+          \   'conflicts': ['patch'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-missing',
+          \ 'check if - even missing - files are ignored in dry run', {
+          \   'conflicts': ['patch'],
+          \})
+    call s:parser.add_argument(
+          \ '--patch', '-p',
+          \ 'An alias option for ":Gita diff --patch -- %" to perform working tree -> index patch', {
+          \   'conflicts': [
+          \     'dry-run', 'force', 'update', 'intent-to-add', 'all',
+          \     'ignore-removal', 'refresh', 'ignore-errors', 'ignore-missing',
+          \   ],
+          \})
+    call s:parser.add_argument(
+          \ '--split', '-s',
+          \ 'A subordinate option of --patch to show two buffers instead of a single diff.', {
+          \   'superordinates': ['patch'],
+          \})
   endif
   return s:parser
 endfunction
