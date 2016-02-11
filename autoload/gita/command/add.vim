@@ -85,7 +85,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita add',
           \ 'description': 'Add file contents to the index',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': '<pathspec>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
