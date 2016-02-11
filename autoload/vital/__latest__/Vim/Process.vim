@@ -1,4 +1,3 @@
-let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')
 " As of 7.4.122, the system()'s 1st argument is converted internally by Vim.
 " Note that Patch 7.4.122 does not convert system()'s 2nd argument and
 " return-value. We must convert them manually.
@@ -58,7 +57,7 @@ function! s:system(args, ...) abort
   if s:need_trans
     let cmdline = s:iconv(cmdline, &encoding, 'char')
   endif
-  if options.background && (options.use_vimproc || !s:is_windows)
+  if options.background && (options.use_vimproc || !s:Process.is_windows())
     let cmdline = cmdline . '&'
   endif
   let args = [cmdline] + (s:Prelude.is_string(input) ? [input] : [])
