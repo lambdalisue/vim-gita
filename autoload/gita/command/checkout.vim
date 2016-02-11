@@ -9,14 +9,17 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'q', 'quiet',
-        \ 'f', 'force',
+        \ 'force',
         \ 'ours', 'theirs',
         \ 'b', 'B',
-        \ 't', 'track', 'no-track',
+        \ 'track', 'no-track',
         \ 'l',
         \ 'detach',
         \ 'orphan',
+        \ 'ignore-skip-worktree-bits',
+        \ 'merge',
+        \ 'conflict',
+        \ 'ignore-other-worktrees',
         \])
   return options
 endfunction
@@ -32,6 +35,9 @@ function! s:apply_command(git, commit, filenames, options) abort
   let result = gita#execute(a:git, 'checkout', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
@@ -67,91 +73,80 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita checkout',
-          \ 'description': 'Checkout a branch or paths to the working tree',
+          \ 'description': 'Switch branches or restore working tree files',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--quiet', '-q',
-          \ 'Quiet, suppress feedback messages.',
+          \ 'be quiet',
           \)
     call s:parser.add_argument(
-          \ '--force', '-f', [
-          \   'When switching branches, proceed even if the index or the working',
-          \   'tree differs from HEAD. This is used to throw away local changes.',
-          \   'When checking out paths from the index, do not fail upon unmerged',
-          \   'entries; instead, unmerged entries are ignored.',
-          \])
-    call s:parser.add_argument(
-          \ '--ours', [
-          \   'When checking out paths from the index, check out stage #2 from',
-          \   'unmerged path.',
-          \ ]
-          \,{
-          \   'conflicts': ['theirs'],
-          \})
-    call s:parser.add_argument(
-          \ '--theirs', [
-          \   'When checking out paths from the index, check out stage #3 from',
-          \   'unmerged path.',
-          \ ]
-          \,{
-          \   'conflicts': ['ours'],
-          \})
-    call s:parser.add_argument(
-          \ '-b', [
-          \   'Create a new branch with a specified name and start it at <start_point>.',
-          \ ], {
-          \   'type': s:ArgumentParser.types.value,
+          \ '-b',
+          \ 'create and checkout a new branch', {
           \   'conflicts': ['B', 'orphan'],
           \})
     call s:parser.add_argument(
-          \ '-B', [
-          \   'Create a new branch with a specified name and start it at <start_point>.',
-          \   'If it already exists, then reset it to <start_point>.',
-          \ ], {
-          \   'type': s:ArgumentParser.types.value,
+          \ '-B',
+          \ 'create/reset and checkout a branch', {
           \   'conflicts': ['b', 'orphan'],
           \})
     call s:parser.add_argument(
-          \ '--track', '-t', [
-          \   'When creating a new branch set up "upstream" configuration.',
-          \ ], {
-          \   'conflicts': ['--no-track'],
-          \})
+          \ '-l',
+          \ 'create reflog for new branch',
+          \)
     call s:parser.add_argument(
-          \ '--no-track', [
-          \   'Do not set up "upstream" configuration, even if the branch.autosetupmerge',
-          \   'configuration variable is true.',
-          \ ], {
-          \   'conflicts': ['--track'],
-          \})
+          \ '--detach',
+          \ 'detach the HEAD at named commit',
+          \)
     call s:parser.add_argument(
-          \ '-l', [
-          \   'Create the new branch''s reflog.',
-          \])
+          \ '--track', '-t',
+          \ 'set upstream info for new branch',
+          \)
     call s:parser.add_argument(
-          \ '--detach', [
-          \   'Rather than checking out a branch to work on it, check out a commit for',
-          \   'inspection and discardable experiments.',
-          \   'This is the default behavior of "git checkout <commit>" when <commit>',
-          \   'is not a branch name.',
-          \])
+          \ '--no-track',
+          \ 'do not set upstream even if the branch.autosetupmerge is true',
+          \)
     call s:parser.add_argument(
-          \ '--orphan', [
-          \   'Create a new orphan branch, started from <start_point> and switch to it.',
-          \   'The first commit made on this new branch will have no parents',
-          \   'and it will be the root of a new history totally disconnected from all',
-          \   'the other branches and commits.',
-          \ ], {
-          \   'type': s:ArgumentParser.types.value,
+          \ '--orphan',
+          \ 'new unparented branch', {
           \   'conflicts': ['b', 'B'],
           \})
     call s:parser.add_argument(
-          \ 'commit', [
-          \   '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.',
-          \ ], {
+          \ '--ours', '-2',
+          \ 'checkout our version for unmerged files', {
+          \   'conflicts': ['theirs'],
+          \})
+    call s:parser.add_argument(
+          \ '--theirs', '-3',
+          \ 'checkout their version for unmerged files', {
+          \   'conflicts': ['ours'],
+          \})
+    call s:parser.add_argument(
+          \ '--force', '-f',
+          \ 'force checkout (throw away local modifications',
+          \)
+    call s:parser.add_argument(
+          \ '--merge', '-m',
+          \ 'perform a 3-way merge with the new branch',
+          \)
+    call s:parser.add_argument(
+          \ '--conflict',
+          \ 'conflict style (merge or diff3)', {
+          \   'choices': ['merge', 'diff3'],
+          \})
+    call s:parser.add_argument(
+          \ '--ignore-skip-worktree-bits',
+          \ 'do not limit pathspecs to sparse entries only',
+          \)
+    call s:parser.add_argument(
+          \ '--ignore-other-worktrees',
+          \ 'do not check if another worktree is holding the given ref',
+          \)
+    call s:parser.add_argument(
+          \ 'commit',
+          \ '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.', {
           \   'complete': function('gita#variable#complete_commit'),
           \ })
   endif
@@ -181,5 +176,3 @@ endfunction
 call gita#util#define_variables('command#checkout', {
       \ 'default_options': {},
       \})
-
-

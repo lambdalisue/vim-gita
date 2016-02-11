@@ -24,14 +24,13 @@ function! gita#action#checkout#action(candidates, ...) abort
   endfor
   if !empty(filenames)
     let result = gita#command#checkout#call({
+          \ 'quiet': 1,
           \ 'commit': get(options, 'commit', ''),
           \ 'filenames': filenames,
           \ 'force': options.force,
           \ 'ours': options.ours,
           \ 'theirs': options.theirs,
-          \ 'quiet': 1,
           \})
-    " TODO: Show some success message?
   endif
 endfunction
 
