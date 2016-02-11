@@ -298,13 +298,9 @@ function! gita#command#commit#edit(...) abort
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
-  if exists('#BufReadPre')
-    doautocmd BufReadPre
-  endif
+  " Used for template system
+  doautocmd BufReadPre
   call gita#command#commit#redraw()
-  if exists('#BufReadPost')
-    doautocmd BufReadPost
-  endif
   " NOTE:
   " Force filetype to gita-commit. Without the line below, somehow filetype
   " re-assigned to 'conf'.
@@ -439,6 +435,10 @@ function! gita#command#commit#define_syntax() abort
   syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
 
+augroup vim_gita_internal_pseudo_autocmd
+  autocmd!
+  autocmd BufReadPre gita:* :
+augroup END
 augroup vim_gita_internal_commit_update
   autocmd!
   autocmd User GitaStatusModified call s:on_GitaStatusModified()
