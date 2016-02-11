@@ -3,6 +3,7 @@ let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Guard = s:V.import('Vim.Guard')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
@@ -193,10 +194,16 @@ function! gita#command#diff_ls#open(...) abort
         \ ? g:gita#command#diff_ls#default_opener
         \ : options.opener
   let bufname = gita#command#diff_ls#bufname(options)
-  call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'group': 'manipulation_panel',
-        \})
+  let guard = s:Guard.store('&eventignore')
+  try
+    set eventignore+=BufReadCmd,WinEnter
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \ 'group': 'manipulation_panel',
+          \})
+  finally
+    call guard.restore()
+  endtry
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git
   call gita#command#diff_ls#edit(options)
@@ -215,7 +222,7 @@ function! gita#command#diff_ls#edit(...) abort
   call s:Anchor.register()
   augroup vim_gita_internal_diff_ls
     autocmd! * <buffer>
-    autocmd BufReadCmd <buffer> call s:on_BufReadCmd()
+    autocmd BufReadCmd <buffer> nested call s:on_BufReadCmd()
     autocmd VimResized <buffer> call s:on_VimResized()
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
@@ -224,13 +231,7 @@ function! gita#command#diff_ls#edit(...) abort
   setlocal filetype=gita-diff-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  if exists('#BufReadPre')
-    doautocmd BufReadPre
-  endif
   call gita#command#diff_ls#redraw()
-  if exists('#BufReadPost')
-    doautocmd BufReadPost
-  endif
 endfunction
 function! gita#command#diff_ls#redraw() abort
   let git = gita#get_or_fail()
