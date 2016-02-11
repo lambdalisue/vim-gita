@@ -5,6 +5,7 @@ let s:MAPPING_TABLE = {
       \ '<Plug>(gita-browse-diff)': 'Browse a (diff) URL of a remote content',
       \ '<Plug>(gita-browse-blame)': 'Browse a (blame) URL of a remote content',
       \ '<Plug>(gita-browse-exact)': 'Browse a (exact) URL of a remote content',
+      \ '<Plug>(gita-browse-repository)': 'Browse a URL of a repository of a remote',
       \ '<Plug>(gita-browse-open)': 'Open a URL of a remote content',
       \ '<Plug>(gita-browse-echo)': 'Echo a URL of a remote content',
       \ '<Plug>(gita-browse-yank)': 'Yank a URL of a remote content',
@@ -48,6 +49,8 @@ function! gita#action#browse#define_plugin_mappings() abort
         \ :call gita#action#call('browse', {'scheme': 'blame'})<CR>
   noremap <buffer><silent> <Plug>(gita-browse-exact)
         \ :call gita#action#call('browse', {'scheme': 'exact'})<CR>
+  noremap <buffer><silent> <Plug>(gita-browse-repository)
+        \ :call gita#action#call('browse', {'repository': 1})<CR>
   noremap <buffer><silent> <Plug>(gita-browse-open)
         \ :call gita#action#call('browse', {'method': 'open'})<CR>
   noremap <buffer><silent> <Plug>(gita-browse-echo)
@@ -61,6 +64,7 @@ function! gita#action#browse#define_default_mappings() abort
   map <buffer><nowait><expr> bd gita#action#smart_map('bd', '<Plug>(gita-browse-diff)')
   map <buffer><nowait><expr> bB gita#action#smart_map('bB', '<Plug>(gita-browse-blame)')
   map <buffer><nowait><expr> be gita#action#smart_map('be', '<Plug>(gita-browse-exact)')
+  map <buffer><nowait><expr> br gita#action#smart_map('br', '<Plug>(gita-browse-repository)')
   map <buffer><nowait><expr> yy gita#action#smart_map('yy', '<Plug>(gita-browse-yank)')
 endfunction
 

@@ -61,7 +61,7 @@ function! s:find_url(git, commit, filename, options) abort
     let line_start = 0
     let line_end = 0
   endif
-  let line_end   = line_start == line_end ? 0 : line_end
+  let line_end = line_start == line_end ? 0 : line_end
 
   " create a URL
   let data = {
@@ -144,14 +144,14 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita browse',
-          \ 'description': 'Browse a content of the remote in a system default browser',
+          \ 'description': 'Open/Yank/Echo a URL of a content of the remote',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filename',
+          \ 'unknown_description': '<path>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
           \ '--repository', '-r',
-          \ 'Show a diff of the repository instead of a file content',
+          \ 'Use a URL of the repository instead',
           \)
     call s:parser.add_argument(
           \ '--open', '-o',
@@ -182,7 +182,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to see.',
-          \   'If nothing is specified, it open a remote content of origin/HEAD.',
+          \   'If nothing is specified, it open a remote content of the current branch.',
           \   'If <commit> is specified, it open a remote content of the named <commit>.',
           \   'If <commit1>..<commit2> is specified, it try to open a diff page of the remote content',
           \   'If <commit1>...<commit2> is specified, it try to open a diff open of the remote content',
