@@ -2,6 +2,7 @@
 " Note that Patch 7.4.122 does not convert system()'s 2nd argument and
 " return-value. We must convert them manually.
 let s:need_trans = v:version < 704 || (v:version == 704 && !has('patch122'))
+let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')
 
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
@@ -39,6 +40,16 @@ function! s:get_last_status(...) abort
         \ : v:shell_error
 endfunction
 
+if s:is_windows
+  function! s:shellescape(command) abort
+    return substitute(a:command, '[&()[\]{}^=;!''+,`~]', '^\0', 'g')
+  endfunction
+else
+  function! s:shellescape(...) abort
+    return call('shellescape', a:000)
+  endfunction
+endif
+
 " system({args}[, {input}, {options}])
 function! s:system(args, ...) abort
   let input = get(a:000, 0, 0)
@@ -48,7 +59,7 @@ function! s:system(args, ...) abort
         \ 'background': 0,
         \}, get(a:000, 0, {}))
   if s:Prelude.is_list(a:args)
-    let cmdline = join(map(copy(a:args), 'shellescape(v:val)'), ' ')
+    let cmdline = join(map(copy(a:args), 's:shellescape(v:val)'), ' ')
   elseif s:Prelude.is_string(a:args)
     let cmdline = a:args
   else
