@@ -128,7 +128,7 @@ function! s:execute(...) abort
   if s:Prelude.is_dict(a:1)
     let worktree = get(a:1, 'worktree', '')
     let args = s:build_args(a:2, get(a:000, 2, {}))
-    let args = (empty(worktree) ? [] : ['-C', worktree]) + args
+    let args = (empty(worktree) ? [] : ['-C', fnameescape(worktree)]) + args
     let config = get(a:000, 4, {})
   else
     let args = s:build_args(a:1, get(a:000, 3, {}))
