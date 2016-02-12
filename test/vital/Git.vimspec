@@ -8,10 +8,10 @@ Describe Git
   Before all
     " Create a mock Git working tree
     let root = tempname()
-    let worktree = s:Path.join(root, 'inside')
+    let worktree = s:Path.join(root, 'i n s i d e')
     let repository = s:Path.join(worktree, '.git')
-    let inside = s:Path.join(worktree, 'foo', 'bar')
-    let outside = s:Path.join(root, 'outside', 'foo', 'bar')
+    let inside = s:Path.join(worktree, 'f o o', 'b a r')
+    let outside = s:Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
     lockvar root
     lockvar worktree
     lockvar repository

@@ -127,8 +127,8 @@ function! s:_fnamemodify(path, mods) abort
   return s:Path.remove_last_separator(fnamemodify(a:path, a:mods))
 endfunction
 function! s:_find_worktree(dirpath) abort
-  let dgit = s:_fnamemodify(finddir('.git', a:dirpath . ';'), ':p:h')
-  let fgit = s:_fnamemodify(findfile('.git', a:dirpath . ';'), ':p')
+  let dgit = s:_fnamemodify(finddir('.git',  fnameescape(a:dirpath) . ';'), ':p:h')
+  let fgit = s:_fnamemodify(findfile('.git', fnameescape(a:dirpath) . ';'), ':p')
   " inside '.git' directory is not a working directory
   let dgit = a:dirpath =~# '^' . s:StringExt.escape_regex(dgit) ? '' : dgit
   " use deepest dotgit found
