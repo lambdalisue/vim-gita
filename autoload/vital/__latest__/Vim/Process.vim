@@ -213,6 +213,10 @@ function! s:system(args, ...) abort
           \ 'system() expects 1-4 arguments but %d arguments were specified',
           \ a:0 + 1
           \))
+    " the following is not called but for lint
+    let options = {}
+    let timeout = 0
+    let input = 0
   endif
   " Validate variable types
   if !s:Prelude.is_dict(options)
