@@ -112,6 +112,12 @@ function! s:shellescape(string, ...) abort
 endfunction
 
 function! s:shellescape_vimproc(string, ...) abort
+  let string = call('s:shellescape', [a:string] + a:000)
+  " NOTE:
+  " Backslash in Windows should be escaped
+  if s:Prelude.is_windows()
+    let string = escape(string, '\')
+  endif
   " NOTE:
   " Somehow vimproc#system() parse 'cmdline' in a vimproc's mannor and some
   " special characters requires to be escaped additionally to builtin system()
@@ -123,13 +129,7 @@ function! s:shellescape_vimproc(string, ...) abort
   " Probably { is used in ${VARIABLE} context so escape { without leading $
   " is required I guess
   " https://github.com/Shougo/vimproc.vim/issues/239
-  let string = call('s:shellescape', [a:string] + a:000)
   let string = substitute(string, '[^$]\zs{', '\\{', 'g')
-  " NOTE:
-  " Backslash in Windows should be escaped
-  if s:Prelude.is_windows()
-    let string = escape(string, '\')
-  endif
   return string
 endfunction
 
