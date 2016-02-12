@@ -1,11 +1,10 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
-  " As of 7.4.122, the system()'s 1st argument is converted internally by Vim.
-  let s:require_encode_prior_to_system = v:version < 704 || (v:version == 704 && !has('patch122'))
+  let s:Guard = a:V.import('Vim.Guard')
 endfunction
 function! s:_vital_depends() abort
   return [
-        \ 'Prelude',
+        \ 'Prelude', 'Vim.Guard',
         \]
 endfunction
 
@@ -98,53 +97,39 @@ endfunction
 
 function! s:shellescape(string, ...) abort
   let special = get(a:000, 0, 0)
-  if a:string =~# '\s' && a:string !~# '^".*"$' && a:string !~# "^'.*'$"
-    " the string contains spaces but not enclosed yet
-    return shellescape(a:string, special)
+  let vimproc = get(a:000, 1, s:has_vimproc())
+  if vimproc
+    " vimproc use '' instead of '\'' thus do not use shellescape while '\''
+    " disrubt vimproc operations
+    let string = substitute(a:string, "'", "''", 'g')
+    let string = "'" . string . "'"
+    if special
+      let string = escape(string, '!%#')
+      let string = substitute(string, '<cword>', '\\<cword>', 'g')
+    endif
+  else
+    let string = shellescape(a:string, special)
   endif
-  " the string does not contains spaces or already enclosed
-  let string = a:string
-  if special
-    let string = substitute(string, '<cword>', '\\<cword>', 'g')
-    let string = escape(string, '!%#')
-  endif
-  return string
-endfunction
-
-function! s:shellescape_vimproc(string, ...) abort
-  let string = call('s:shellescape', [a:string] + a:000)
-  " NOTE:
-  " Backslash in Windows should be escaped
-  if s:Prelude.is_windows()
-    let string = escape(string, '\')
-  endif
-  " NOTE:
-  " Somehow vimproc#system() parse 'cmdline' in a vimproc's mannor and some
-  " special characters requires to be escaped additionally to builtin system()
-  " For example, the following @{upstream}.. will be converted into @u..
-  " without escape which works fine in builtin system()
-  "
-  "   git log --oneline @{upstream}..
-  "
-  " Probably { is used in ${VARIABLE} context so escape { without leading $
-  " is required I guess
-  " https://github.com/Shougo/vimproc.vim/issues/239
-  let string = substitute(string, '[^$]\zs{', '\\{', 'g')
   return string
 endfunction
 
 function! s:_system(args, options) abort
   if s:Prelude.is_list(a:args)
-    let cmdline = join(map(copy(a:args), a:options.use_vimproc
-          \ ? 's:shellescape_vimproc(v:val)'
-          \ : 's:shellescape(v:val)'
+    " Assume that user didn't escape arguments and that's why he/she use
+    " List {args}
+    let cmdline = join(map(
+          \ copy(a:args),
+          \ 's:shellescape(v:val, 0, a:options.use_vimproc)'
           \), ' ')
   else
+    " Do not escape while user may want some special characters
+    let cmdline = a:args
+  endif
+  if s:Prelude.is_windows() && a:options.use_vimproc
     " NOTE:
-    " vimproc eliminate '\' in Windows path ...
-    let cmdline = a:options.use_vimproc && s:Prelude.is_windows()
-          \ ? escape(a:args, '\')
-          \ : a:args
+    " cmd.exe does not eliminate '\' but vimproc in Windows so escape all \
+    " in Windows to keep compatiblity
+    let cmdline = escape(cmdline, '\')
   endif
   if a:options.background
         \ && (a:options.use_vimproc || !s:Prelude.is_windows())
@@ -167,7 +152,6 @@ function! s:_system(args, options) abort
   endif
   if !a:options.use_vimproc
         \ && (v:version < 704 || (v:version == 704 && !has('patch122')))
-    " XXX : Need information about what is 'char'
     " {cmdline} of system() before Vim 7.4.122 is not converted so convert
     " it manually from &encoding to 'char'
     let cmdline = s:iconv(cmdline, &encoding, 'char')
@@ -176,7 +160,7 @@ function! s:_system(args, options) abort
   let output = call(fname, args)
   if s:Prelude.is_windows() && !a:options.use_vimproc
     " A builtin system() add a trailing space in Windows.
-    " It is probably an issue of redirection in Windows so remove it.
+    " It is probably an issue of pipe in Windows so remove it.
     let output = substitute(output, '\s\n$', '\n', '')
   endif
   if !empty(a:options.encode_output)
@@ -269,5 +253,11 @@ function! s:system(args, ...) abort
         \ 'encode_input': 1,
         \ 'encode_output': 1,
         \}, options)
-  return s:_system(a:args, options)
+  let guard = s:Guard.store('&shell')
+  try
+    set shell&
+    return s:_system(a:args, options)
+  finally
+    call guard.restore()
+  endtry
 endfunction

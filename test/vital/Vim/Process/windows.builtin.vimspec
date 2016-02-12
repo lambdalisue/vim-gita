@@ -29,14 +29,16 @@ Describe Vim.Process
         It executes command with spaces
           let args = ['ECHO', 'h e l l o']
           " NOTE:
-          " Argument (%X) in Windows contains a leading and a trailing "
+          " In Windows, arguments enclosed by double quotes always have
+          " leading and trailing double quotes
           Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
         End
         It executes command with enclosed spaces
           let args = ['ECHO', '"h e l l o"']
-          " NOTE:
-          " Argument (%X) in Windows contains a leading and a trailing "
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          Assert Equal(Process.system(args, options), '""h e l l o""' . "\n")
+
+          let args = ['ECHO', "'h e l l o'"]
+          Assert Equal(Process.system(args, options), '"''h e l l o''"' . "\n")
         End
         It executes command with non ascii characters
           Skip No windows makes debugging too difficult. Fix me!
@@ -73,10 +75,12 @@ Describe Vim.Process
         It executes command with spaces
           let args = 'ECHO "h e l l o"'
           " NOTE:
-          " Argument (%X) in Windows contains a leading and a trailing "
-          " NOTE:
-          " But with vimproc, the result is more similar to unix somehow...
+          " In Windows, arguments enclosed by double quotes always have
+          " leading and trailing double quotes
           Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+
+          let args = "ECHO 'h e l l o'"
+          Assert Equal(Process.system(args, options), "'h e l l o'" . "\n")
         End
         It executes command with non ascii characters
           Skip No windows makes debugging too difficult. Fix me!

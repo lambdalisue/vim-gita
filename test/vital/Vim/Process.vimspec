@@ -209,62 +209,66 @@ Describe Vim.Process
     End
   End
 
-  Describe .shellescape({string}[, {special}])
-    Before
-      let is_shellslash = exists('&shellslash') && &shellslash
-      let quote = s:Prelude.is_windows() && !is_shellslash ? '"' : "'"
-    End
-
-    It enclose and escape {string} if the string contains spaces and special characters
-      let string = '!%#<cword>h e l l o!%#<cword>'
-      let exp = quote ==# '"'
-            \ ? '"!%#<cword>h e l l o!%#<cword>"'
-            \ : "'!%#<cword>h e l l o!%#<cword>'"
-      Assert Equals(Process.shellescape(string, 0), exp)
-
-      let string = '!%#<cword>h e l l o!%#<cword>'
-      let exp = quote ==# '"'
-            \ ? '"\!\%\#\<cword>h e l l o\!\%\#\<cword>"'
-            \ : "'\\!\\%\\#\\<cword>h e l l o\\!\\%\\#\\<cword>'"
-      Assert Equals(Process.shellescape(string, 1), exp)
-    End
-
-    It does not enclose but escape {string} if the string contains no spaces and special characters
-      let string = '!%#<cword>hello!%#<cword>'
-      let exp = '!%#<cword>hello!%#<cword>'
-      Assert Equals(Process.shellescape(string, 0), exp)
-
-      let string = '!%#<cword>hello!%#<cword>'
-      let exp = '\!\%\#\<cword>hello\!\%\#\<cword>'
-      Assert Equals(Process.shellescape(string, 1), exp)
-    End
-
-    It does not enclose but escape {string} if the string contains special characters and already enclosed
-      let string = '"!%#<cword>h e l l o!%#<cword>"'
-      let exp = '"!%#<cword>h e l l o!%#<cword>"'
-      Assert Equals(Process.shellescape(string, 0), exp)
-
-      let string = '"!%#<cword>h e l l o!%#<cword>"'
-      let exp = '"\!\%\#\<cword>h e l l o\!\%\#\<cword>"'
-      Assert Equals(Process.shellescape(string, 1), exp)
-
-      let string = "'!%#<cword>h e l l o!%#<cword>'"
-      let exp = "'!%#<cword>h e l l o!%#<cword>'"
-      Assert Equals(Process.shellescape(string, 0), exp)
-
-      let string = "'!%#<cword>h e l l o!%#<cword>'"
-      let exp = "'\\!\\%\\#\\<cword>h e l l o\\!\\%\\#\\<cword>'"
-      Assert Equals(Process.shellescape(string, 1), exp)
-    End
-  End
-
-  Describe .shellescape_vimproc({string}[, {special}])
-    It escape { without leading $
-      let string = '@{upstream}'
-      Assert Equals(Process.shellescape_vimproc(string, 0), '@\{upstream}')
-
-      let string = '${upstream}'
-      Assert Equals(Process.shellescape_vimproc(string, 0), '${upstream}')
+  Describe .shellescape({string}[, {special}, {use_vimproc})
+    if s:Process.has_vimproc()
+      Context [vimproc]
+        It enclose {string} with single quotes
+          Assert Equals(Process.shellescape('foobar', 0, 1), "'foobar'")
+        End
+        It replace single quotes in {string} into ''
+          Assert Equals(
+                \ Process.shellescape("C'mon Vim's shellslash", 0, 1),
+                \ "'C''mon Vim''s shellslash'"
+                \)
+        End
+        It escapes special characters such as ! % # <cword> if {special} is specified
+          Assert Equals(
+                \ Process.shellescape("! ! !", 1, 1),
+                \ "'\\! \\! \\!'"
+                \)
+          Assert Equals(
+                \ Process.shellescape("% % %", 1, 1),
+                \ "'\\% \\% \\%'"
+                \)
+          Assert Equals(
+                \ Process.shellescape("# # #", 1, 1),
+                \ "'\\# \\# \\#'"
+                \)
+          Assert Equals(
+                \ Process.shellescape("<cword> <cword> <cword>", 1, 1),
+                \ "'\\<cword> \\<cword> \\<cword>'"
+                \)
+        End
+      End
+    endif
+    Context [builtin]
+      It enclose {string} with single quotes
+        Assert Equals(Process.shellescape('foobar', 0, 0), "'foobar'")
+      End
+      It replace single quotes in {string} into '\''
+        Assert Equals(
+              \ Process.shellescape("C'mon Vim's shellslash", 0, 0),
+              \ "'C'\\''mon Vim'\\''s shellslash'"
+              \)
+      End
+      It escapes special characters such as ! % # <cword> if {special} is specified
+        Assert Equals(
+              \ Process.shellescape("! ! !", 1, 0),
+              \ "'\\! \\! \\!'"
+              \)
+        Assert Equals(
+              \ Process.shellescape("% % %", 1, 0),
+              \ "'\\% \\% \\%'"
+              \)
+        Assert Equals(
+              \ Process.shellescape("# # #", 1, 0),
+              \ "'\\# \\# \\#'"
+              \)
+        Assert Equals(
+              \ Process.shellescape("<cword> <cword> <cword>", 1, 0),
+              \ "'\\<cword> \\<cword> \\<cword>'"
+              \)
+      End
     End
   End
 
