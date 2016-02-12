@@ -125,6 +125,11 @@ function! s:shellescape_vimproc(string, ...) abort
   " https://github.com/Shougo/vimproc.vim/issues/239
   let string = call('s:shellescape', [a:string] + a:000)
   let string = substitute(string, '[^$]\zs{', '\\{', 'g')
+  " NOTE:
+  " Backslash in Windows should be escaped
+  if s:Prelude.is_windows()
+    let string = escape(string, '\')
+  endif
   return string
 endfunction
 
