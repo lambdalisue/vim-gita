@@ -148,7 +148,7 @@ function! s:_system(args, options) abort
         \ && (a:options.use_vimproc || !s:Prelude.is_windows())
     let cmdline = cmdline . '&'
   endif
-  if s:Prelude.is_string(a:options.input) && empty(a:options.encode_input)
+  if s:Prelude.is_string(a:options.input) && !empty(a:options.encode_input)
     let encoding = s:Prelude.is_string(a:options.encode_input)
           \ ? a:options.encode_input
           \ : &encoding
@@ -170,7 +170,7 @@ function! s:_system(args, options) abort
     " It is probably an issue of redirection in Windows so remove it.
     let output = substitute(output, '\s\n$', '\n', '')
   endif
-  if empty(a:options.encode_output)
+  if !empty(a:options.encode_output)
     let encoding = s:Prelude.is_string(a:options.encode_output)
           \ ? a:options.encode_output
           \ : &encoding
