@@ -4,7 +4,7 @@ let s:V = vital#of('vital')
 let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Process = s:V.import('Vim.Process')
-let s:testdata = './test/vital/_testdata/Vim/Process/'
+let s:testdata = 'test/vital/_testdata/Vim/Process/'
 
 if !s:Prelude.is_windows()
   finish
@@ -50,16 +50,10 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "あ い う え お\n")
         End
         It executes command without spaces (filename)
-          " NOTE:
-          " output should not be encoded while the file is utf-8
-          let options.encode_output = 0
           let args = ['TYPE', s:Path.realpath(s:testdata . 'test.txt')]
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with spaces (filename)
-          " NOTE:
-          " output should not be encoded while the file is utf-8
-          let options.encode_output = 0
           let args = ['TYPE', s:Path.realpath(s:testdata . 't e s t.txt')]
           Assert Equal(Process.system(args, options), "test\n")
         End
@@ -81,6 +75,10 @@ Describe Vim.Process
         End
         It executes command with spaces
           let args = 'ECHO "h e l l o"'
+          " NOTE:
+          " Argument (%X) in Windows contains a leading and a trailing "
+          " NOTE:
+          " But with vimproc, the result is more similar to unix somehow...
           Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
         End
         It executes command with non ascii characters
@@ -91,18 +89,12 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), '"あ い う え お"' . "\n")
         End
         It executes command without spaces (filename)
-          " NOTE:
-          " output should not be encoded while the file is utf-8
-          let options.encode_output = 0
           let args = printf('TYPE %s',
                 \ s:Path.realpath(s:testdata . 'test.txt')
                 \)
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with spaces (filename)
-          " NOTE:
-          " output should not be encoded while the file is utf-8
-          let options.encode_output = 0
           let args = printf('TYPE "%s"',
                 \ s:Path.realpath(s:testdata . 't e s t.txt')
                 \)

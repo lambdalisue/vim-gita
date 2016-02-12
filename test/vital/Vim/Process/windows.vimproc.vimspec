@@ -4,7 +4,7 @@ let s:V = vital#of('vital')
 let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Process = s:V.import('Vim.Process')
-let s:testdata = './test/vital/_testdata/Vim/Process/'
+let s:testdata = 'test/vital/_testdata/Vim/Process/'
 
 if !s:Prelude.is_windows() || !s:Process.has_vimproc()
   finish
@@ -30,13 +30,17 @@ Describe Vim.Process
           let args = ['ECHO', 'h e l l o']
           " NOTE:
           " Argument (%X) in Windows contains a leading and a trailing "
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          " NOTE:
+          " But with vimproc, the result is more similar to unix somehow...
+          Assert Equal(Process.system(args, options), 'h e l l o' . "\n")
         End
         It executes command with enclosed spaces
           let args = ['ECHO', '"h e l l o"']
           " NOTE:
           " Argument (%X) in Windows contains a leading and a trailing "
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          " NOTE:
+          " But with vimproc, the result is more similar to unix somehow...
+          Assert Equal(Process.system(args, options), 'h e l l o' . "\n")
         End
         It executes command with non ascii characters
           let args = ['ECHO', 'あいうえお']
@@ -69,8 +73,11 @@ Describe Vim.Process
         End
         It executes command with spaces
           let args = 'ECHO "h e l l o"'
-          "Assert Equal(Process.system(args, options), "h e l l o\n")
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          " NOTE:
+          " Argument (%X) in Windows contains a leading and a trailing "
+          " NOTE:
+          " But with vimproc, the result is more similar to unix somehow...
+          Assert Equal(Process.system(args, options), 'h e l l o' . "\n")
         End
         It executes command with non ascii characters
           let args = 'ECHO あいうえお'
