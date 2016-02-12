@@ -171,6 +171,11 @@ function! s:_system(args, options) abort
           \ : &encoding
     let output = s:iconv(output, 'char', encoding)
   endif
+  if s:Prelude.is_windows() && !a:options.use_vimproc
+    " A builtin system() add a trailing space in Windows.
+    " It is probably an issue of redirection in Windows so remove it.
+    let output = substitute(output, '\s$', '', '')
+  endif
   return output
 endfunction
 function! s:system(args, ...) abort

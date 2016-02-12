@@ -71,29 +71,29 @@ Describe Vim.Process
   Describe .get_last_status([{use_vimproc}])
     if s:Process.has_vimproc()
       It returns result of vimproc#get_last_status() if {use_vimproc} is omitted and vimproc is installed
-        call vimproc#system(s:TRUE)
+        call vimproc#system(escape(s:TRUE, '\'))
         call system(s:FALSE)
         Assert Equals(Process.get_last_status(), 0)
 
-        call vimproc#system(s:FALSE)
+        call vimproc#system(escape(s:FALSE, '\'))
         call system(s:TRUE)
         Assert Equals(Process.get_last_status(), 1)
       End
       It returns result of vimproc#get_last_status() if {use_vimproc} is 1
-        call vimproc#system(s:TRUE)
+        call vimproc#system(escape(s:TRUE, '\'))
         call system(s:FALSE)
         Assert Equals(Process.get_last_status(1), 0)
 
-        call vimproc#system(s:FALSE)
+        call vimproc#system(escape(s:FALSE, '\'))
         call system(s:TRUE)
         Assert Equals(Process.get_last_status(1), 1)
       End
       It returns v:shell_error if {use_vimproc} is 0
-        call vimproc#system(s:TRUE)
+        call vimproc#system(escape(s:TRUE, '\'))
         call system(s:FALSE)
         Assert Equals(Process.get_last_status(0), 1)
 
-        call vimproc#system(s:FALSE)
+        call vimproc#system(escape(s:FALSE, '\'))
         call system(s:TRUE)
         Assert Equals(Process.get_last_status(0), 0)
       End
