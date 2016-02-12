@@ -1,4 +1,16 @@
+if has('vim_starting') || !has('nvim')
+  set encoding=utf8
+endif
+
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
+call themis#log('***********************************************************')
+call themis#log('$LANG:          ' . $LANG)
+call themis#log('&encoding:      ' . &encoding)
+call themis#log('&termencoding:  ' . &termencoding)
+call themis#log('&fileencodings: ' . &fileencodings)
+call themis#log('&fileformats:   ' . &fileformats)
+call themis#log('&shellslash:    ' . (exists('&shellslash') ? &shellslash : 'DISABLED'))
+call themis#log('***********************************************************')
 source test/startup.vim
