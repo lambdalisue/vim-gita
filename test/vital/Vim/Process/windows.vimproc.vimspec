@@ -13,7 +13,7 @@ endif
 Describe Vim.Process
   Before
     let Process = s:Process
-    let newline = '\r\n'
+    let newline = "\r\n"
   End
   Describe .system({args}[, {input}, {timeout}, {options}])
     Context [vimproc]

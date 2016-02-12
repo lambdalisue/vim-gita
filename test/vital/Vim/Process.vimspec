@@ -10,8 +10,12 @@ let s:Process = s:V.import('Vim.Process')
 let s:testdata = './test/vital/_testdata/Vim/Process/'
 
 if s:Prelude.is_windows()
-  let s:TRUE = s:Path.realpath(s:testdata . 'TRUE.bat')
-  let s:FALSE = s:Path.realpath(s:testdata . 'FALSE.bat')
+  let s:TRUE = shellescape(
+        \ fnameescape(s:Path.realpath(s:testdata . 'TRUE.bat'))
+        \)
+  let s:FALSE = shellescape(
+        \ fnameescape(s:Path.realpath(s:testdata . 'FALSE.bat'))
+        \)
 else
   let s:TRUE = 'true'
   let s:FALSE = 'false'
