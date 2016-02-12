@@ -1,2 +1,2 @@
 @echo off
-exit \b 0
+exit 0

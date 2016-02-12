@@ -165,16 +165,16 @@ function! s:_system(args, options) abort
     echomsg printf('vital: Vim.Process: %s() : %s', fname, join(args, ' '))
   endif
   let output = call(fname, args)
+  if s:Prelude.is_windows() && !a:options.use_vimproc
+    " A builtin system() add a trailing space in Windows.
+    " It is probably an issue of redirection in Windows so remove it.
+    let output = substitute(output, '\s\n$', '\n', '')
+  endif
   if empty(a:options.encode_output)
     let encoding = s:Prelude.is_string(a:options.encode_output)
           \ ? a:options.encode_output
           \ : &encoding
     let output = s:iconv(output, 'char', encoding)
-  endif
-  if s:Prelude.is_windows() && !a:options.use_vimproc
-    " A builtin system() add a trailing space in Windows.
-    " It is probably an issue of redirection in Windows so remove it.
-    let output = substitute(output, '\s$', '', '')
   endif
   return output
 endfunction

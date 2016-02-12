@@ -65,7 +65,7 @@ Describe Vim.Process
           let args = ['cat', s:Path.realpath(s:testdata . 't e s t.txt')]
           Assert Equal(Process.system(args, options), "test\n")
         End
-        It executes command with non ascii characters
+        It executes command with non ascii characters (filename)
           let args = ['cat', s:Path.realpath(s:testdata . 'テスト.txt')]
           Assert Equal(Process.system(args, options), "テスト\n")
 
@@ -136,7 +136,7 @@ Describe Vim.Process
                 \)
           Assert Equal(Process.system(args, options), "test\n")
         End
-        It executes command with non ascii characters
+        It executes command with non ascii characters (filename)
           let args = printf('cat %s',
                 \ s:Path.realpath(s:testdata . 'テスト.txt')
                 \)
