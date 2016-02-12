@@ -7,13 +7,12 @@ let s:Path = s:V.import('System.Filepath')
 let s:Guard = s:V.import('Vim.Guard')
 let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 let s:Process = s:V.import('Vim.Process')
+let s:testdata = './test/vital/_testdata/Vim/Process/'
 
 if s:Prelude.is_windows()
-  let s:ECHO = 'echo'
-  let s:TRUE = 'true'
-  let s:FALSE = 'false'
+  let s:TRUE = '(exit 0)'
+  let s:FALSE = '(exit 1)'
 else
-  let s:ECHO = 'echo'
   let s:TRUE = 'true'
   let s:FALSE = 'false'
 endif
@@ -206,6 +205,75 @@ Describe Vim.Process
     End
   End
 
+  Describe .shellescape({string}[, {special}])
+    Before
+      let is_shellslash = exists('&shellslash') && &shellslash
+      let quote = s:Prelude.is_windows() && !is_shellslash ? '"' : "'"
+    End
+
+    It enclose and escape {string} if the string contains spaces and special characters
+      let string = '!%#<cword>h e l l o!%#<cword>'
+      let exp = quote ==# '"'
+            \ ? '"!%#<cword>h e l l o!%#<cword>"'
+            \ : "'!%#<cword>h e l l o!%#<cword>'"
+      Assert Equals(Process.shellescape(string, 0), exp)
+
+      let string = '!%#<cword>h e l l o!%#<cword>'
+      let exp = quote ==# '"'
+            \ ? '"\!\%\#\<cword>h e l l o\!\%\#\<cword>"'
+            \ : "'\\!\\%\\#\\<cword>h e l l o\\!\\%\\#\\<cword>'"
+      Assert Equals(Process.shellescape(string, 1), exp)
+    End
+
+    It does not enclose but escape {string} if the string contains no spaces and special characters
+      let string = '!%#<cword>hello!%#<cword>'
+      let exp = '!%#<cword>hello!%#<cword>'
+      Assert Equals(Process.shellescape(string, 0), exp)
+
+      let string = '!%#<cword>hello!%#<cword>'
+      let exp = '\!\%\#\<cword>hello\!\%\#\<cword>'
+      Assert Equals(Process.shellescape(string, 1), exp)
+    End
+
+    It does not enclose but escape {string} if the string contains escaped spaces and special characters
+      let string = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
+      let exp = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
+      Assert Equals(Process.shellescape(string, 0), exp)
+
+      let string = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
+      let exp = '\!\%\#\<cword>h\ e\ l\ l\ o\!\%\#\<cword>'
+      Assert Equals(Process.shellescape(string, 1), exp)
+    End
+
+    It does not enclose but escape {string} if the string contains special characters and already enclosed
+      let string = '"!%#<cword>h e l l o!%#<cword>"'
+      let exp = '"!%#<cword>h e l l o!%#<cword>"'
+      Assert Equals(Process.shellescape(string, 0), exp)
+
+      let string = '"!%#<cword>h e l l o!%#<cword>"'
+      let exp = '"\!\%\#\<cword>h e l l o\!\%\#\<cword>"'
+      Assert Equals(Process.shellescape(string, 1), exp)
+
+      let string = "'!%#<cword>h e l l o!%#<cword>'"
+      let exp = "'!%#<cword>h e l l o!%#<cword>'"
+      Assert Equals(Process.shellescape(string, 0), exp)
+
+      let string = "'!%#<cword>h e l l o!%#<cword>'"
+      let exp = "'\\!\\%\\#\\<cword>h e l l o\\!\\%\\#\\<cword>'"
+      Assert Equals(Process.shellescape(string, 1), exp)
+    End
+  End
+
+  Describe .shellescape_vimproc({string}[, {special}])
+    It escape { without leading $
+      let string = '@{upstream}'
+      Assert Equals(Process.shellescape_vimproc(string, 0), '@\{upstream}')
+
+      let string = '${upstream}'
+      Assert Equals(Process.shellescape_vimproc(string, 0), '${upstream}')
+    End
+  End
+
   Describe .system({args}[, {input}, {timeout}, {options}])
     It throws an exception when more than 4 arguments are specified
       Throws /expects 1-4 arguments/
@@ -285,6 +353,7 @@ Describe Vim.Process
       Throws /{args} of system() requires to be/
             \ Process.system({})
     End
+    " NOTE:
+    " Individual execution tests is in separated files
   End
-
 End

@@ -96,9 +96,44 @@ function! s:split_posix_text(text, ...) abort
   return split(text, newline, 1)
 endfunction
 
+function! s:shellescape(string, ...) abort
+  let special = get(a:000, 0, 0)
+  if substitute(a:string, '\\ ', '', 'g') =~# '\s' && a:string !~# '^".*"$' && a:string !~# "^'.*'$"
+    " the string contains unescaped spaces but not enclosed yet
+    return shellescape(a:string, special)
+  endif
+  " the string does not contains unescaped spaces or already enclosed
+  let string = a:string
+  if special
+    let string = substitute(string, '<cword>', '\\<cword>', 'g')
+    let string = escape(string, '!%#')
+  endif
+  return string
+endfunction
+
+function! s:shellescape_vimproc(string, ...) abort
+  " NOTE:
+  " Somehow vimproc#system() parse 'cmdline' in a vimproc's mannor and some
+  " special characters requires to be escaped additionally to builtin system()
+  " For example, the following @{upstream}.. will be converted into @u..
+  " without escape which works fine in builtin system()
+  "
+  "   git log --oneline @{upstream}..
+  "
+  " Probably { is used in ${VARIABLE} context so escape { without leading $
+  " is required I guess
+  " https://github.com/Shougo/vimproc.vim/issues/239
+  let string = call('s:shellescape', [a:string] + a:000)
+  let string = substitute(string, '[^$]\zs{', '\\{', 'g')
+  return string
+endfunction
+
 function! s:_system(args, options) abort
   if s:Prelude.is_list(a:args)
-    let cmdline = join(map(copy(a:args), 'shellescape(v:val)'), ' ')
+    let cmdline = join(map(copy(a:args), a:options.use_vimproc
+          \ ? 's:shellescape_vimproc(v:val)'
+          \ : 's:shellescape(v:val)'
+          \), ' ')
   else
     let cmdline = a:args
   endif
@@ -126,6 +161,9 @@ function! s:_system(args, options) abort
   endif
   let args = [cmdline] + (s:Prelude.is_string(a:options.input) ? [input] : [])
   let fname = a:options.use_vimproc ? 'vimproc#system' : 'system'
+  if &verbose > 0
+    echomsg printf('vital: Vim.Process: %s() : %s', fname, join(args, ' '))
+  endif
   let output = call(fname, args)
   if empty(a:options.encode_output)
     let encoding = s:Prelude.is_string(a:options.encode_output)
