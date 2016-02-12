@@ -143,13 +143,6 @@ function! s:_system(args, options) abort
   else
     let cmdline = a:args
   endif
-  if !a:options.use_vimproc
-        \ && (v:version < 704 || (v:version == 704 && !has('patch122')))
-    " XXX : Need information about what is 'char'
-    " {cmdline} of system() before Vim 7.4.122 is not converted so convert
-    " it manually from &encoding to 'char'
-    let cmdline = s:iconv(cmdline, &encoding, termencoding)
-  endif
   if a:options.background
         \ && (a:options.use_vimproc || !s:Prelude.is_windows())
     let cmdline = cmdline . '&'
@@ -165,11 +158,18 @@ function! s:_system(args, options) abort
   if a:options.repair_input
     let input = s:repair_posix_text(input)
   endif
-  let args = [cmdline] + (s:Prelude.is_string(a:options.input) ? [input] : [])
   let fname = a:options.use_vimproc ? 'vimproc#system' : 'system'
   if &verbose > 0
-    echomsg printf('vital: Vim.Process: %s() : %s', fname, join(args, ' '))
+    echomsg printf('vital: Vim.Process: %s() : %s', fname, cmdline)
   endif
+  if !a:options.use_vimproc
+        \ && (v:version < 704 || (v:version == 704 && !has('patch122')))
+    " XXX : Need information about what is 'char'
+    " {cmdline} of system() before Vim 7.4.122 is not converted so convert
+    " it manually from &encoding to 'char'
+    let cmdline = s:iconv(cmdline, &encoding, termencoding)
+  endif
+  let args = [cmdline] + (s:Prelude.is_string(a:options.input) ? [input] : [])
   let output = call(fname, args)
   if s:Prelude.is_windows() && !a:options.use_vimproc
     " A builtin system() add a trailing space in Windows.
