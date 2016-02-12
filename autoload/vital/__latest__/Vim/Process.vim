@@ -134,7 +134,6 @@ function! s:shellescape_vimproc(string, ...) abort
 endfunction
 
 function! s:_system(args, options) abort
-  let termencoding = empty(&termencoding) ? 'char' : &termencoding
   if s:Prelude.is_list(a:args)
     let cmdline = join(map(copy(a:args), a:options.use_vimproc
           \ ? 's:shellescape_vimproc(v:val)'
@@ -151,7 +150,7 @@ function! s:_system(args, options) abort
     let encoding = s:Prelude.is_string(a:options.encode_input)
           \ ? a:options.encode_input
           \ : &encoding
-    let input = s:iconv(a:options.input, encoding, termencoding)
+    let input = s:iconv(a:options.input, encoding, 'char')
   else
     let input = a:options.input
   endif
@@ -167,7 +166,7 @@ function! s:_system(args, options) abort
     " XXX : Need information about what is 'char'
     " {cmdline} of system() before Vim 7.4.122 is not converted so convert
     " it manually from &encoding to 'char'
-    let cmdline = s:iconv(cmdline, &encoding, termencoding)
+    let cmdline = s:iconv(cmdline, &encoding, 'char')
   endif
   let args = [cmdline] + (s:Prelude.is_string(a:options.input) ? [input] : [])
   let output = call(fname, args)
@@ -180,7 +179,7 @@ function! s:_system(args, options) abort
     let encoding = s:Prelude.is_string(a:options.encode_output)
           \ ? a:options.encode_output
           \ : &encoding
-    let output = s:iconv(output, termencoding, encoding)
+    let output = s:iconv(output, 'char', encoding)
   endif
   return output
 endfunction
