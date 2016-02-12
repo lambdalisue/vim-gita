@@ -140,7 +140,11 @@ function! s:_system(args, options) abort
           \ : 's:shellescape(v:val)'
           \), ' ')
   else
-    let cmdline = a:args
+    " NOTE:
+    " vimproc eliminate '\' in Windows path ...
+    let cmdline = a:options.use_vimproc && s:Prelude.is_windows()
+          \ ? escape(a:args, '\')
+          \ : a:args
   endif
   if a:options.background
         \ && (a:options.use_vimproc || !s:Prelude.is_windows())
