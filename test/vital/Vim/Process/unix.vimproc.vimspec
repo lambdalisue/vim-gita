@@ -36,13 +36,6 @@ Describe Vim.Process
           let args = ['echo', '-n', 'h e l l o']
           Assert Equal(Process.system(args, options), "h e l l o")
         End
-        It executes command with escaped spaces
-          let args = ['echo', 'h\ e\ l\ l\ o']
-          Assert Equal(Process.system(args, options), "h e l l o\n")
-
-          let args = ['echo', '-n', 'h\ e\ l\ l\ o']
-          Assert Equal(Process.system(args, options), "h e l l o")
-        End
         It executes command with enclosed spaces
           let args = ['echo', '"h e l l o"']
           Assert Equal(Process.system(args, options), "h e l l o\n")
@@ -89,16 +82,10 @@ Describe Vim.Process
           let args = "echo 'h e l l o'"
           Assert Equal(Process.system(args, options), "h e l l o\n")
 
-          let args = 'echo h\ e\ l\ l\ o'
-          Assert Equal(Process.system(args, options), "h e l l o\n")
-
           let args = 'echo -n "h e l l o"'
           Assert Equal(Process.system(args, options), "h e l l o")
 
           let args = "echo -n 'h e l l o'"
-          Assert Equal(Process.system(args, options), "h e l l o")
-
-          let args = 'echo -n h\ e\ l\ l\ o'
           Assert Equal(Process.system(args, options), "h e l l o")
         End
         It executes command with non ascii characters
@@ -109,9 +96,6 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "あ い う え お\n")
 
           let args = "echo 'あ い う え お'"
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
-
-          let args = 'echo あ\ い\ う\ え\ お'
           Assert Equal(Process.system(args, options), "あ い う え お\n")
         End
         It executes command without spaces (filename)
@@ -130,11 +114,6 @@ Describe Vim.Process
                 \ s:Path.realpath(s:testdata . 't e s t.txt')
                 \)
           Assert Equal(Process.system(args, options), "test\n")
-
-          let args = printf('cat %s',
-                \ fnameescape(s:Path.realpath(s:testdata . 't e s t.txt'))
-                \)
-          Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with non ascii characters (filename)
           let args = printf('cat %s',
@@ -149,11 +128,6 @@ Describe Vim.Process
 
           let args = printf("cat '%s'",
                 \ s:Path.realpath(s:testdata . 'テ ス ト.txt')
-                \)
-          Assert Equal(Process.system(args, options), "テスト\n")
-
-          let args = printf('cat %s',
-                \ fnameescape(s:Path.realpath(s:testdata . 'テ ス ト.txt'))
                 \)
           Assert Equal(Process.system(args, options), "テスト\n")
         End

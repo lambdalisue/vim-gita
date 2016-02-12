@@ -98,11 +98,11 @@ endfunction
 
 function! s:shellescape(string, ...) abort
   let special = get(a:000, 0, 0)
-  if substitute(a:string, '\\ ', '', 'g') =~# '\s' && a:string !~# '^".*"$' && a:string !~# "^'.*'$"
-    " the string contains unescaped spaces but not enclosed yet
+  if a:string =~# '\s' && a:string !~# '^".*"$' && a:string !~# "^'.*'$"
+    " the string contains spaces but not enclosed yet
     return shellescape(a:string, special)
   endif
-  " the string does not contains unescaped spaces or already enclosed
+  " the string does not contains spaces or already enclosed
   let string = a:string
   if special
     let string = substitute(string, '<cword>', '\\<cword>', 'g')

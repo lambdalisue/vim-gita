@@ -239,16 +239,6 @@ Describe Vim.Process
       Assert Equals(Process.shellescape(string, 1), exp)
     End
 
-    It does not enclose but escape {string} if the string contains escaped spaces and special characters
-      let string = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
-      let exp = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
-      Assert Equals(Process.shellescape(string, 0), exp)
-
-      let string = '!%#<cword>h\ e\ l\ l\ o!%#<cword>'
-      let exp = '\!\%\#\<cword>h\ e\ l\ l\ o\!\%\#\<cword>'
-      Assert Equals(Process.shellescape(string, 1), exp)
-    End
-
     It does not enclose but escape {string} if the string contains special characters and already enclosed
       let string = '"!%#<cword>h e l l o!%#<cword>"'
       let exp = '"!%#<cword>h e l l o!%#<cword>"'
