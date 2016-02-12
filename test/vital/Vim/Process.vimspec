@@ -224,7 +224,7 @@ Describe Vim.Process
         End
         It does not replace double quotes in {string}
           Assert Equals(
-                \ Process.shellescape('He said "I am Vimmer."', 0, 0),
+                \ Process.shellescape('He said "I am Vimmer."', 0, 1),
                 \ "'He said \"I am Vimmer.\"'"
                 \)
         End
@@ -262,7 +262,7 @@ Describe Vim.Process
         It replace double quotes in {string} into double double quotes ("")
           Assert Equals(
                 \ Process.shellescape('He said "I am Vimmer."', 0, 0),
-                \ '"He said ""I am Vimmer.""'
+                \ '"He said ""I am Vimmer."""'
                 \)
         End
         It escapes special characters such as ! % # <cword> if {special} is specified

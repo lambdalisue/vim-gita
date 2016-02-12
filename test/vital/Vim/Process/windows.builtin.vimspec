@@ -24,15 +24,15 @@ Describe Vim.Process
       Context with List {args}
         It executes command without spaces
           let args = ['ECHO', 'hello']
-          Assert Equal(Process.system(args, options), "hello\n")
+          Assert Equal(Process.system(args, options), '"hello"' . "\n")
         End
         It executes command with spaces
           let args = ['ECHO', 'h e l l o']
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
         End
         It executes command with enclosed spaces
           let args = ['ECHO', '"h e l l o"']
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          Assert Equal(Process.system(args, options), '"""h e l l o"""' . "\n")
 
           let args = ['ECHO', "'h e l l o'"]
           Assert Equal(Process.system(args, options), '"''h e l l o''"' . "\n")
