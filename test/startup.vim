@@ -1,4 +1,8 @@
 function! s:startup() abort
+  if !has('nvim')
+    set encoding=utf-8
+  endif
+
   let V = vital#of('vim_gita')
   let P = V.import('System.Filepath')
   let R = V.import('Process')

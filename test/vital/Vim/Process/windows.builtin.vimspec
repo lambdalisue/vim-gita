@@ -1,4 +1,4 @@
-scriptencoding cp932
+scriptencoding utf-8
 
 let s:V = vital#of('vital')
 let s:Prelude = s:V.import('Prelude')
@@ -39,11 +39,11 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
         End
         It executes command with non ascii characters
-          let args = ['ECHO', 'Ç†Ç¢Ç§Ç¶Ç®']
-          Assert Equal(Process.system(args, options), "Ç†Ç¢Ç§Ç¶Ç®\n")
+          let args = ['ECHO', '„ÅÇ„ÅÑ„ÅÜ„Åà„Åä']
+          Assert Equal(Process.system(args, options), "„ÅÇ„ÅÑ„ÅÜ„Åà„Åä\n")
 
-          let args = ['ECHO', 'Ç† Ç¢ Ç§ Ç¶ Ç®']
-          Assert Equal(Process.system(args, options), "Ç† Ç¢ Ç§ Ç¶ Ç®\n")
+          let args = ['ECHO', '„ÅÇ „ÅÑ „ÅÜ „Åà „Åä']
+          Assert Equal(Process.system(args, options), "„ÅÇ „ÅÑ „ÅÜ „Åà „Åä\n")
         End
         It executes command without spaces (filename)
           let args = ['TYPE', s:Path.realpath(s:testdata . 'test.txt')]
@@ -54,11 +54,11 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with non ascii characters (filename)
-          let args = ['TYPE', s:Path.realpath(s:testdata . 'ÉeÉXÉg.txt')]
-          Assert Equal(Process.system(args, options), "ÉeÉXÉg\n")
+          let args = ['TYPE', s:Path.realpath(s:testdata . '„ÉÜ„Çπ„Éà.txt')]
+          Assert Equal(Process.system(args, options), "„ÉÜ„Çπ„Éà\n")
 
-          let args = ['TYPE', s:Path.realpath(s:testdata . 'Ée ÉX Ég.txt')]
-          Assert Equal(Process.system(args, options), "ÉeÉXÉg\n")
+          let args = ['TYPE', s:Path.realpath(s:testdata . '„ÉÜ „Çπ „Éà.txt')]
+          Assert Equal(Process.system(args, options), "„ÉÜ„Çπ„Éà\n")
         End
       End
 
@@ -73,11 +73,11 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
         End
         It executes command with non ascii characters
-          let args = 'ECHO Ç†Ç¢Ç§Ç¶Ç®'
-          Assert Equal(Process.system(args, options), "Ç†Ç¢Ç§Ç¶Ç®\n")
+          let args = 'ECHO „ÅÇ„ÅÑ„ÅÜ„Åà„Åä'
+          Assert Equal(Process.system(args, options), "„ÅÇ„ÅÑ„ÅÜ„Åà„Åä\n")
 
-          let args = 'ECHO "Ç† Ç¢ Ç§ Ç¶ Ç®"'
-          Assert Equal(Process.system(args, options), '"Ç† Ç¢ Ç§ Ç¶ Ç®"' . "\n")
+          let args = 'ECHO "„ÅÇ „ÅÑ „ÅÜ „Åà „Åä"'
+          Assert Equal(Process.system(args, options), '"„ÅÇ „ÅÑ „ÅÜ „Åà „Åä"' . "\n")
         End
         It executes command without spaces (filename)
           let args = printf('TYPE %s',
@@ -93,14 +93,14 @@ Describe Vim.Process
         End
         It executes command with non ascii characters (filename)
           let args = printf('TYPE %s',
-                \ s:Path.realpath(s:testdata . 'ÉeÉXÉg.txt')
+                \ s:Path.realpath(s:testdata . '„ÉÜ„Çπ„Éà.txt')
                 \)
-          Assert Equal(Process.system(args, options), "ÉeÉXÉg\n")
+          Assert Equal(Process.system(args, options), "„ÉÜ„Çπ„Éà\n")
 
           let args = printf('TYPE "%s"',
-                \ s:Path.realpath(s:testdata . 'Ée ÉX Ég.txt')
+                \ s:Path.realpath(s:testdata . '„ÉÜ „Çπ „Éà.txt')
                 \)
-          Assert Equal(Process.system(args, options), "ÉeÉXÉg\n")
+          Assert Equal(Process.system(args, options), "„ÉÜ„Çπ„Éà\n")
         End
       End
     End
