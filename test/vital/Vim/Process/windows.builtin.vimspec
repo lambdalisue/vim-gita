@@ -28,14 +28,11 @@ Describe Vim.Process
         End
         It executes command with spaces
           let args = ['ECHO', 'h e l l o']
-          " NOTE:
-          " In Windows, arguments enclosed by double quotes always have
-          " leading and trailing double quotes
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          Assert Equal(Process.system(args, options), "h e l l o\n")
         End
         It executes command with enclosed spaces
           let args = ['ECHO', '"h e l l o"']
-          Assert Equal(Process.system(args, options), '""h e l l o""' . "\n")
+          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
 
           let args = ['ECHO', "'h e l l o'"]
           Assert Equal(Process.system(args, options), '"''h e l l o''"' . "\n")

@@ -125,11 +125,21 @@ function! s:_system(args, options) abort
     " Do not escape while user may want some special characters
     let cmdline = a:args
   endif
-  if s:Prelude.is_windows() && a:options.use_vimproc
-    " NOTE:
-    " cmd.exe does not eliminate '\' but vimproc in Windows so escape all \
-    " in Windows to keep compatiblity
-    let cmdline = escape(cmdline, '\')
+  if s:Prelude.is_windows()
+    if a:options.use_vimproc
+      " NOTE:
+      " cmd.exe does not eliminate '\' but vimproc in Windows so escape all \
+      " in Windows to keep compatiblity
+      let cmdline = escape(cmdline, '\')
+    else
+      " NOTE:
+      " it seems that cmd.exe does not understand double quote enclosed
+      " command so remove double quotes when the first argument does not
+      " contains space
+      if cmdline =~# '^"[^ ]\{-}"'
+        let cmdline = substitute(cmdline, '^"\([^ ]\{-}\)"', '\1', '')
+      endif
+    endif
   endif
   if a:options.background
         \ && (a:options.use_vimproc || !s:Prelude.is_windows())
