@@ -21,6 +21,7 @@ install:
   - 'reg copy HKLM\SOFTWARE\Python\PythonCore\2.7 HKLM\SOFTWARE\Python\PythonCore\2.7-32 /s /reg:64'
 build: off
 test_script:
-  - 'chcp 932'
+  - 'chcp'
+  - 'chcp 65001'
   - '%THEMIS_VIM% --version'
   - '%TEMP%\vim-themis\bin\themis.bat --runtimepath %TEMP%\vimproc --runtimepath %TEMP%\vital --reporter dot'
