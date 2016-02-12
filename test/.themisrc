@@ -12,5 +12,9 @@ call themis#log('&termencoding:  ' . &termencoding)
 call themis#log('&fileencodings: ' . &fileencodings)
 call themis#log('&fileformats:   ' . &fileformats)
 call themis#log('&shellslash:    ' . (exists('&shellslash') ? &shellslash : 'DISABLED'))
+call themis#log('&runtimepath:')
+for runtimepath in split(&runtimepath, ',')
+  call themis#log('  ' . runtimepath)
+endfor
 call themis#log('***********************************************************')
 source test/startup.vim
