@@ -22,6 +22,6 @@ install:
 build: off
 test_script:
   - 'chcp'
-    #- 'chcp 65001'
+  - 'chcp 65001'
   - '%THEMIS_VIM% --version'
   - '%TEMP%\vim-themis\bin\themis.bat --runtimepath %TEMP%\vimproc --runtimepath %TEMP%\vital --reporter dot'

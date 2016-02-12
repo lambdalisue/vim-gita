@@ -1,7 +1,9 @@
-"if has('vim_starting') || !has('nvim')
-"  set encoding=utf8
-"  set termencoding=
-"endif
+if has('win16') || has('win32') || has('win64') || has('win95')
+  if has('vim_starting') || !has('nvim')
+    set encoding=utf-8
+    set termencoding=cp65001
+  endif
+endif
 
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
