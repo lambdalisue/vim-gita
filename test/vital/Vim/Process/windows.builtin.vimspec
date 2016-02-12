@@ -24,73 +24,73 @@ Describe Vim.Process
       Context with List {args}
         It executes command without spaces
           let args = ['ECHO', 'hello']
-          Assert Equal(Process.system(args, options), "hello\n")
+          Assert Equal(Process.system(args, options), "hello\r\n")
 
           let args = ['ECHO', '-n', 'hello']
           Assert Equal(Process.system(args, options), "hello")
         End
         It executes command with spaces
           let args = ['ECHO', 'h e l l o']
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = ['ECHO', '-n', 'h e l l o']
           Assert Equal(Process.system(args, options), "h e l l o")
         End
         It executes command with escaped spaces
           let args = ['ECHO', 'h\ e\ l\ l\ o']
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = ['ECHO', '-n', 'h\ e\ l\ l\ o']
           Assert Equal(Process.system(args, options), "h e l l o")
         End
         It executes command with enclosed spaces
           let args = ['ECHO', '"h e l l o"']
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = ['ECHO', '-n', '"h e l l o"']
           Assert Equal(Process.system(args, options), "h e l l o")
         End
         It executes command with non ascii characters
           let args = ['ECHO', 'あいうえお']
-          Assert Equal(Process.system(args, options), "あいうえお\n")
+          Assert Equal(Process.system(args, options), "あいうえお\r\n")
 
           let args = ['ECHO', 'あ い う え お']
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
+          Assert Equal(Process.system(args, options), "あ い う え お\r\n")
         End
         It executes command without spaces (filename)
           let args = ['TYPE', s:Path.realpath(s:testdata . 'test.txt')]
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
         End
         It executes command with spaces (filename)
           let args = ['TYPE', s:Path.realpath(s:testdata . 't e s t.txt')]
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
         End
         It executes command with non ascii characters
           let args = ['TYPE', s:Path.realpath(s:testdata . 'テスト.txt')]
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
 
           let args = ['TYPE', s:Path.realpath(s:testdata . 'テ ス ト.txt')]
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
         End
       End
 
       Context with String {args}
         It executes command without spaces
           let args = 'ECHO hello'
-          Assert Equal(Process.system(args, options), "hello\n")
+          Assert Equal(Process.system(args, options), "hello\r\n")
 
           let args = 'ECHO -n hello'
           Assert Equal(Process.system(args, options), "hello")
         End
         It executes command with spaces
           let args = 'ECHO "h e l l o"'
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = "ECHO 'h e l l o'"
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = 'ECHO h\ e\ l\ l\ o'
-          Assert Equal(Process.system(args, options), "h e l l o\n")
+          Assert Equal(Process.system(args, options), "h e l l o\r\n")
 
           let args = 'ECHO -n "h e l l o"'
           Assert Equal(Process.system(args, options), "h e l l o")
@@ -103,59 +103,59 @@ Describe Vim.Process
         End
         It executes command with non ascii characters
           let args = 'ECHO あいうえお'
-          Assert Equal(Process.system(args, options), "あいうえお\n")
+          Assert Equal(Process.system(args, options), "あいうえお\r\n")
 
           let args = 'ECHO "あ い う え お"'
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
+          Assert Equal(Process.system(args, options), "あ い う え お\r\n")
 
           let args = "ECHO 'あ い う え お'"
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
+          Assert Equal(Process.system(args, options), "あ い う え お\r\n")
 
           let args = 'ECHO あ\ い\ う\ え\ お'
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
+          Assert Equal(Process.system(args, options), "あ い う え お\r\n")
         End
         It executes command without spaces (filename)
           let args = printf('TYPE %s',
                 \ s:Path.realpath(s:testdata . 'test.txt')
                 \)
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
         End
         It executes command with spaces (filename)
           let args = printf('TYPE "%s"',
                 \ s:Path.realpath(s:testdata . 't e s t.txt')
                 \)
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
 
           let args = printf("TYPE '%s'",
                 \ s:Path.realpath(s:testdata . 't e s t.txt')
                 \)
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
 
           let args = printf('TYPE %s',
                 \ fnameescape(s:Path.realpath(s:testdata . 't e s t.txt'))
                 \)
-          Assert Equal(Process.system(args, options), "test\n")
+          Assert Equal(Process.system(args, options), "test\r\n")
         End
         It executes command with non ascii characters
           let args = printf('TYPE %s',
                 \ s:Path.realpath(s:testdata . 'テスト.txt')
                 \)
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
 
           let args = printf('TYPE "%s"',
                 \ s:Path.realpath(s:testdata . 'テ ス ト.txt')
                 \)
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
 
           let args = printf("TYPE '%s'",
                 \ s:Path.realpath(s:testdata . 'テ ス ト.txt')
                 \)
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
 
           let args = printf('TYPE %s',
                 \ fnameescape(s:Path.realpath(s:testdata . 'テ ス ト.txt'))
                 \)
-          Assert Equal(Process.system(args, options), "テスト\n")
+          Assert Equal(Process.system(args, options), "テスト\r\n")
         End
       End
     End
