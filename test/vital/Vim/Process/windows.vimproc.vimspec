@@ -62,6 +62,9 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with non ascii characters (filename)
+          " NOTE:
+          " output should not be encoded while the file is utf-8
+          let options.encode_output = 0
           let args = ['TYPE', s:Path.realpath(s:testdata . 'テスト.txt')]
           Assert Equal(Process.system(args, options), "テスト\n")
 
@@ -103,6 +106,9 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with non ascii characters (filename)
+          " NOTE:
+          " output should not be encoded while the file is utf-8
+          let options.encode_output = 0
           let args = printf('TYPE %s',
                 \ s:Path.realpath(s:testdata . 'テスト.txt')
                 \)
