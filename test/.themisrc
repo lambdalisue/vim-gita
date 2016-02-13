@@ -1,8 +1,6 @@
-if has('win16') || has('win32') || has('win64') || has('win95')
-  if has('vim_starting') || !has('nvim')
-    set encoding=utf-8
-    set termencoding=cp65001
-  endif
+if !has('nvim')
+  let &termencoding=&encoding
+  set encoding=utf-8
 endif
 
 let s:assert = themis#helper('assert')

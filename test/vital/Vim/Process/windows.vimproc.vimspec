@@ -37,12 +37,11 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), "'h e l l o'" . "\n")
         End
         It executes command with non ascii characters
-          Skip Having no windows makes debugging too difficult. Fix me!
-          "let args = ['ECHO', 'あいうえお']
-          "Assert Equal(Process.system(args, options), "あいうえお\n")
+          let args = ['ECHO', 'あいうえお']
+          Assert Equal(Process.system(args, options), "あいうえお\n")
 
-          "let args = ['ECHO', 'あ い う え お']
-          "Assert Equal(Process.system(args, options), "あ い う え お\n")
+          let args = ['ECHO', 'あ い う え お']
+          Assert Equal(Process.system(args, options), "あ い う え お\n")
         End
         It executes command without spaces (filename)
           let args = ['TYPE', s:Path.realpath(s:testdata . 'test.txt')]
@@ -77,12 +76,11 @@ Describe Vim.Process
           Assert Equal(Process.system(args, options), 'h e l l o' . "\n")
         End
         It executes command with non ascii characters
-          Skip Having no windows makes debugging too difficult. Fix me!
-          "let args = 'ECHO あいうえお'
-          "Assert Equal(Process.system(args, options), "あいうえお\n")
+          let args = 'ECHO あいうえお'
+          Assert Equal(Process.system(args, options), "あいうえお\n")
 
-          "let args = 'ECHO "あ い う え お"'
-          "Assert Equal(Process.system(args, options), '"あ い う え お"' . "\n")
+          let args = 'ECHO "あ い う え お"'
+          Assert Equal(Process.system(args, options), '"あ い う え お"' . "\n")
         End
         It executes command without spaces (filename)
           let args = printf('TYPE %s',
