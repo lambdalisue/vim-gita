@@ -11,7 +11,7 @@ if !s:Prelude.is_windows() || !s:Process.has_vimproc()
 endif
 
 function! s:fnameescape(string) abort
-  return escape(fnameescape(a:string), '\')
+  return escape(a:string, '\')
 endfunction
 
 Describe Vim.Process
