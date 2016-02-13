@@ -5,7 +5,7 @@ function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
   let s:config = {
-        \ 'debug': 0,
+        \ 'debug': -1,
         \ 'batch': 0,
         \}
 endfunction
@@ -38,6 +38,8 @@ endfunction
 function! s:is_debug() abort
   if s:Prelude.is_funcref(s:config.debug)
     return s:config.debug()
+  elseif s:config.debug == -1
+    return &verbose
   else
     return s:config.debug
   endif
