@@ -10,6 +10,10 @@ if !s:Prelude.is_windows() || !s:Process.has_vimproc()
   finish
 endif
 
+function! s:fnameescape(string) abort
+  return escape(fnameescape(a:string), '\')
+endfunction
+
 Describe Vim.Process
   Before
     let Process = s:Process
@@ -91,13 +95,13 @@ Describe Vim.Process
         endif
         It executes command without spaces (filename)
           let args = printf('TYPE %s',
-                \ fnameescape(s:Path.realpath(s:testdata . 'test.txt')),
+                \ s:fnameescape(s:Path.realpath(s:testdata . 'test.txt')),
                 \)
           Assert Equal(Process.system(args, options), "test\n")
         End
         It executes command with spaces (filename)
           let args = printf('TYPE "%s"',
-                \ fnameescape(s:Path.realpath(s:testdata . 't e s t.txt')),
+                \ s:fnameescape(s:Path.realpath(s:testdata . 't e s t.txt')),
                 \)
           Assert Equal(Process.system(args, options), "test\n")
         End
@@ -106,12 +110,12 @@ Describe Vim.Process
           " output should not be encoded while the file is utf-8
           let options.encode_output = 0
           let args = printf('TYPE %s',
-                \ fnameescape(s:Path.realpath(s:testdata . 'テスト.txt')),
+                \ s:fnameescape(s:Path.realpath(s:testdata . 'テスト.txt')),
                 \)
           Assert Equal(Process.system(args, options), "テスト\n")
 
           let args = printf('TYPE "%s"',
-                \ fnameescape(s:Path.realpath(s:testdata . 'テ ス ト.txt')),
+                \ s:fnameescape(s:Path.realpath(s:testdata . 'テ ス ト.txt')),
                 \)
           Assert Equal(Process.system(args, options), "テスト\n")
         End
