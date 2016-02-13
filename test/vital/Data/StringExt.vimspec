@@ -179,6 +179,19 @@ Describe Data.StringExt
             \ StringExt.unescape('\\\^\*\a\b\[\]', '\^*[]'),
             \ '\^*\a\b[]',
             \)
+
+      Assert Equals(
+            \ StringExt.unescape('\*n\*n\*n', '*'),
+            \ '*n*n*n',
+            \)
+      Assert Equals(
+            \ StringExt.unescape('\\n\\n\\n', '\'),
+            \ '\n\n\n',
+            \)
+      Assert Equals(
+            \ StringExt.unescape('\\\\n\\\\n\\\\n', '\'),
+            \ '\\n\\n\\n',
+            \)
     End
   End
 

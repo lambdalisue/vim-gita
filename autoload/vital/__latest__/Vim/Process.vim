@@ -124,14 +124,15 @@ function! s:_system(args, options) abort
   else
     " Do not escape while user may want some special characters
     let cmdline = a:args
-  endif
-  if s:Prelude.is_windows()
     if a:options.use_vimproc
       " NOTE:
       " cmd.exe does not eliminate '\' but vimproc in Windows so escape all \
       " in Windows to keep compatiblity
       let cmdline = escape(cmdline, '\')
-    else
+    endif
+  endif
+  if s:Prelude.is_windows()
+    if !a:options.use_vimproc
       " NOTE:
       " it seems that cmd.exe does not understand double quote enclosed
       " command so remove double quotes when the first argument does not

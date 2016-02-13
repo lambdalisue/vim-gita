@@ -89,13 +89,6 @@ function! s:replace_filenames_in_diff(content, filename1, filename2, repl) abort
   "
   let src1 = s:StringExt.escape_regex(a:filename1)
   let src2 = s:StringExt.escape_regex(a:filename2)
-  " NOTE:
-  " It seems that '\' in {content} in Windows are escaped thus '\' in {src1}
-  " and {src2} requires to be double escaped for perfect match
-  if s:Prelude.is_windows()
-    let src1 = escape(src1, '\')
-    let src2 = escape(src2, '\')
-  endif
   let repl = (a:filename1 =~# '^/' ? '/' : '') . a:repl
   let content = copy(a:content)
   let content[0] = substitute(content[0], src1, repl, '')

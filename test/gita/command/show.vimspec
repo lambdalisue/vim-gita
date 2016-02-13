@@ -33,6 +33,7 @@ Describe gita#command#show
       if s:Prelude.is_windows()
         " NOTE:
         " All '\' characters in content generated from 'git diff' are escaped in Windows
+        " https://github.com/lambdalisue/vim-gita/pull/85#issuecomment-183611682
         call map(content, 'escape(v:val, "\\")')
       endif
       let repl = 'autoload/gita.vim'
