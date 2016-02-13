@@ -30,6 +30,11 @@ Describe gita#command#show
             \ ),
             \ ' brabrabra',
             \]
+      if s:Prelude.is_windows()
+        " NOTE:
+        " All '\' characters in content generated from 'git diff' are escaped in Windows
+        call map(content, 'escape(v:val, "\\")')
+      endif
       let repl = 'autoload/gita.vim'
       let result = sf.replace_filenames_in_diff(content, filename1, filename2, repl)
       Assert Equals(result, [
