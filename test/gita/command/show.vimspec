@@ -12,6 +12,21 @@ Describe gita#command#show
   End
 
   Describe s:replace_filenames_in_diff({content}, {filename1}, {filename2}, {repl})
+    Context substitute test
+      It is possible to substitute C:\Windows\Test.txt
+        let text = 'AAA C:\Windows\Test.txt BBB'
+        Assert Equals(
+              \ substitute(text, 'C:\\Windows\\Test\.txt', 'FOOBAR', 'g'),
+              \ 'AAA FOOBAR BBB',
+              \)
+
+        let text = 'AAA C:\\Windows\\Test.txt BBB'
+        Assert Equals(
+              \ substitute(text, 'C:\\\\Windows\\\\Test\.txt', 'FOOBAR', 'g'),
+              \ 'AAA FOOBAR BBB',
+              \)
+      End
+    End
     It replace {filename1} and {filename2} in the header of {content} into {repl}
       let tempfile = tempname()
       let filename1 = tempfile . '.index'

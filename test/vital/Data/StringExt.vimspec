@@ -179,7 +179,6 @@ Describe Data.StringExt
             \ StringExt.unescape('\\\^\*\a\b\[\]', '\^*[]'),
             \ '\^*\a\b[]',
             \)
-
       Assert Equals(
             \ StringExt.unescape('\*n\*n\*n', '*'),
             \ '*n*n*n',
@@ -194,7 +193,6 @@ Describe Data.StringExt
             \)
     End
   End
-
   Describe .escape_regex({string})
     It escape characters which may affect regex
       Assert Equals(StringExt.escape_regex('^\a\b.*$'), '\^\\a\\b\.\*\$')
@@ -203,6 +201,16 @@ Describe Data.StringExt
       Assert Equals(
             \ StringExt.escape_regex('^\a\b.*$'),
             \ StringExt.escape_regex(StringExt.escape_regex('^\a\b.*$')),
+            \)
+    End
+    It escape Windows like path well
+      Assert Equals(
+            \ StringExt.escape_regex('C:\Windows\Test.txt'),
+            \ 'C:\\Windows\\Test\.txt',
+            \)
+      Assert Equals(
+            \ StringExt.escape_regex('C:\\Windows\\Test.txt'),
+            \ 'C:\\Windows\\Test\.txt',
             \)
     End
   End
