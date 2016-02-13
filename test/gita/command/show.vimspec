@@ -1,0 +1,62 @@
+let s:V = vital#of('vital')
+let s:Prelude = s:V.import('Prelude')
+let s:Path = s:V.import('System.Filepath')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+
+Describe gita#command#show
+  Before
+    let scriptfile = s:Path.realpath(
+          \ 'autoload/gita/command/show.vim',
+          \)
+    let sf = s:ScriptLocal.sfuncs(scriptfile)
+  End
+
+  Describe s:replace_filenames_in_diff({content}, {filename1}, {filename2}, {repl})
+    if s:Prelude.is_windows()
+      It replace {filename1} and {filename2} in the header of {content} into {repl}
+        let content = [
+              \ 'diff --git a/C:\XXXXX\YYYYY.index b/C:\XXXXX\YYYYY.buffer',
+              \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+              \ '--- a/C:\XXXXX\YYYYY.index',
+              \ '+++ b/C:\XXXXX\YYYYY.buffer',
+              \ ' brabrabra',
+              \]
+        " NOTE:
+        " It seems that '\' in the content returned from git diff is escaped in Windows
+        call map(content, 'escape(v:val, "\\")')
+        let filename1 = 'C:\XXXXX\YYYYY.index'
+        let filename2 = 'C:\XXXXX\YYYYY.buffer'
+        let repl = 'autoload/gita.vim'
+        let result = sf.replace_filenames_in_diff(content, filename1, filename2, repl)
+        Assert Equals(result, [
+              \ 'diff --git a/autoload/gita.vim b/autoload/gita.vim', 
+              \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+              \ '--- a/autoload/gita.vim',
+              \ '+++ b/autoload/gita.vim',
+              \ ' brabrabra',
+              \])
+      End
+    else
+      It replace {filename1} and {filename2} in the header of {content} into {repl}
+        let content = [
+              \ 'diff --git a/tmp/XXXXX/YYYYY.index b/tmp/XXXXX/YYYYY.buffer',
+              \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+              \ '--- a/tmp/XXXXX/YYYYY.index',
+              \ '+++ b/tmp/XXXXX/YYYYY.buffer',
+              \ ' brabrabra',
+              \]
+        let filename1 = '/tmp/XXXXX/YYYYY.index'
+        let filename2 = '/tmp/XXXXX/YYYYY.buffer'
+        let repl = 'autoload/gita.vim'
+        let result = sf.replace_filenames_in_diff(content, filename1, filename2, repl)
+        Assert Equals(result, [
+              \ 'diff --git a/autoload/gita.vim b/autoload/gita.vim', 
+              \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+              \ '--- a/autoload/gita.vim',
+              \ '+++ b/autoload/gita.vim',
+              \ ' brabrabra',
+              \])
+      End
+    endif
+  End
+End
