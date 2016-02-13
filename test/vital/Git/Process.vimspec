@@ -229,6 +229,34 @@ Describe Git.Process
     End
   End
 
+  Describe .translate_extra_options({options})
+    It returns an empty list if {options} does not have entry for '--'
+      let options = {
+            \ 'foo': 1,
+            \ 'bar': 0,
+            \ 'hoge': 'hoge',
+            \ 'f': 1,
+            \ 'b': 0,
+            \ 'h': 'hoge',
+            \}
+      let ret = GitProcess.translate_extra_options(options)
+      Assert Empty(ret)
+    End
+    It append expanded entries in '--'
+      let options = {
+            \ 'foo': 1,
+            \ '--': ['foo', '~/bar', '$HOME/hoge'],
+            \}
+      let scheme = {}
+      let ret = GitProcess.translate_extra_options(options)
+      Assert Equals(sort(ret), sort([
+            \ 'foo',
+            \ expand('~/bar'),
+            \ expand('$HOME/hoge'),
+            \]))
+    End
+  End
+
   Describe .build_args({name}[, {options}])
     " TODO Write test
   End
