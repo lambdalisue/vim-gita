@@ -2,10 +2,10 @@ if !has('nvim')
   let &termencoding=&encoding
   set encoding=utf-8
 endif
-if $APPVEYOR ==# 'True'
-  set encoding=utf-8
-  set termencoding=
-endif
+"if $APPVEYOR ==# 'True'
+"  set encoding=utf-8
+"  set termencoding=
+"endif
 
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)

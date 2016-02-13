@@ -37,13 +37,15 @@ Describe Vim.Process
           let args = ['ECHO', "'h e l l o'"]
           Assert Equal(Process.system(args, options), '"''h e l l o''"' . "\n")
         End
-        It executes command with non ascii characters
-          let args = ['ECHO', 'あいうえお']
-          Assert Equal(Process.system(args, options), "あいうえお\n")
+        if $APPVEYOR !=# 'True'
+          It executes command with non ascii characters
+            let args = ['ECHO', 'あいうえお']
+            Assert Equal(Process.system(args, options), "あいうえお\n")
 
-          let args = ['ECHO', 'あ い う え お']
-          Assert Equal(Process.system(args, options), "あ い う え お\n")
-        End
+            let args = ['ECHO', 'あ い う え お']
+            Assert Equal(Process.system(args, options), "あ い う え お\n")
+          End
+        endif
         It executes command without spaces (filename)
           let args = ['TYPE', s:Path.realpath(s:testdata . 'test.txt')]
           Assert Equal(Process.system(args, options), "test\n")
@@ -78,13 +80,15 @@ Describe Vim.Process
           let args = "ECHO 'h e l l o'"
           Assert Equal(Process.system(args, options), "'h e l l o'" . "\n")
         End
-        It executes command with non ascii characters
-          let args = 'ECHO あいうえお'
-          Assert Equal(Process.system(args, options), "あいうえお\n")
+        if $APPVEYOR !=# 'True'
+          It executes command with non ascii characters
+            let args = 'ECHO あいうえお'
+            Assert Equal(Process.system(args, options), "あいうえお\n")
 
-          let args = 'ECHO "あ い う え お"'
-          Assert Equal(Process.system(args, options), '"あ い う え お"' . "\n")
-        End
+            let args = 'ECHO "あ い う え お"'
+            Assert Equal(Process.system(args, options), '"あ い う え お"' . "\n")
+          End
+        endif
         It executes command without spaces (filename)
           let args = printf('TYPE %s',
                 \ s:Path.realpath(s:testdata . 'test.txt')
