@@ -299,7 +299,7 @@ function! gita#command#commit#edit(...) abort
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
   " Used for template system
-  call gita#util#doautocmd('BufReadPre')
+  call gita#util#doautocmd('BufReadPre', 'gita:*')
   call gita#command#commit#redraw()
   " NOTE:
   " Force filetype to gita-commit. Without the line below, somehow filetype

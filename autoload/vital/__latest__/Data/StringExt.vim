@@ -62,7 +62,8 @@ endfunction
 function! s:unescape(string, chars) abort
   let string = a:string
   for char in split(a:chars, '\zs')
-    let string = substitute(string, '\' . char, char, 'g')
+    let escaped_char = escape(char, '^$~.*[]\')
+    let string = substitute(string, '\\' . escaped_char, char, 'g')
   endfor
   return string
 endfunction
