@@ -1,5 +1,7 @@
 if !has('nvim')
-  let &termencoding=&encoding
+  if &encoding !=# 'latin1'
+    let &termencoding=&encoding
+  endif
   set encoding=utf-8
 endif
 
