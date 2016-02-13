@@ -61,5 +61,26 @@ Describe gita#command#show
             \ ' brabrabra',
             \])
     End
+    It solves https://ci.appveyor.com/project/lambdalisue/vim-gita/build/306
+      let content = [
+            \ 'diff --git a/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.index b/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.buffer',
+            \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+            \ '--- a/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.index',
+            \ '+++ b/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.buffer',
+            \ ' brabrabra'
+            \]
+      let tempfile = 'C:\Users\appveyor\AppData\Local\Temp\1\VIUAF40.tmp'
+      let filename1 = tempfile . '.index'
+      let filename2 = tempfile . '.buffer'
+      let repl = 'autoload/gita.vim'
+      let result = sf.replace_filenames_in_diff(content, filename1, filename2, repl, 1)
+      Assert Equals(result, [
+            \ 'diff --git a/autoload/gita.vim b/autoload/gita.vim', 
+            \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',
+            \ '--- a/autoload/gita.vim',
+            \ '+++ b/autoload/gita.vim',
+            \ ' brabrabra',
+            \])
+    End
   End
 End

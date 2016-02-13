@@ -79,7 +79,8 @@ function! s:get_diff_content(git, content, filename, options) abort
     call delete(tempfile2)
   endtry
 endfunction
-function! s:replace_filenames_in_diff(content, filename1, filename2, repl) abort
+function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) abort
+  let is_windows = get(a:000, 0, s:Prelude.is_windows())
   " replace tempfile1/tempfile2 in the header to a:filename
   "
   "   diff --git a/<tempfile1> b/<tempfile2>
@@ -89,12 +90,15 @@ function! s:replace_filenames_in_diff(content, filename1, filename2, repl) abort
   "
   let src1 = s:StringExt.escape_regex(a:filename1)
   let src2 = s:StringExt.escape_regex(a:filename2)
-  if s:Prelude.is_windows()
+  if is_windows
     " NOTE:
     " '\' in {content} from 'git diff' are escaped so double escape is required
     " to substitute such path
-    let src1 = escape(src1, '\')
-    let src2 = escape(src2, '\')
+    " NOTE:
+    " escape(src1, '\') cannot be used while other characters such as '.' are
+    " already escaped as well
+    let src1 = substitute(src1, '\\\\', '\\\\\\\\', 'g')
+    let src2 = substitute(src2, '\\\\', '\\\\\\\\', 'g')
   endif
   let repl = (a:filename1 =~# '^/' ? '/' : '') . a:repl
   let content = copy(a:content)
