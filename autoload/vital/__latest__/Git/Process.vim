@@ -187,6 +187,7 @@ let s:schemes.blame = {
       \}
 function! s:schemes.branch(name, options) abort
   let scheme = {
+        \ 'list': '--%k %v',
         \ 'contains': '--%k %v',
         \ 'merged': '--%k %v',
         \ 'no-merged': '--%k %v',

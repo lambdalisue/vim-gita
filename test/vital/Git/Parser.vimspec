@@ -931,9 +931,9 @@ Describe Git.Parser
       Assert Equals(branch.is_remote, 0)
       Assert Equals(branch.is_selected, 0)
     End
-    It returns a candidate for '  remote/origin/HEAD -> origin/master'
+    It returns a candidate for '  remotes/origin/HEAD -> origin/master'
       let branch = GitParser.parse_branch_record(
-            \ '  remote/origin/HEAD -> origin/master'
+            \ '  remotes/origin/HEAD -> origin/master'
             \)
       Assert Equals(branch.name, 'origin/HEAD')
       Assert Equals(branch.remote, 'origin')
@@ -941,9 +941,9 @@ Describe Git.Parser
       Assert Equals(branch.is_remote, 1)
       Assert Equals(branch.is_selected, 0)
     End
-    It returns a candidate for '  remote/origin/master'
+    It returns a candidate for '  remotes/origin/master'
       let branch = GitParser.parse_branch_record(
-            \ '  remote/origin/master'
+            \ '  remotes/origin/master'
             \)
       Assert Equals(branch.name, 'origin/master')
       Assert Equals(branch.remote, 'origin')

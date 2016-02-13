@@ -432,17 +432,18 @@ endfunction
 " *** BranchParser ***********************************************************
 function! s:parse_branch_record(line) abort
   let candidate = {}
-  let candidate.is_remote   = a:line =~# '^..remote/'
+  let candidate.is_remote   = a:line =~# '^..remotes/'
   let candidate.is_selected = a:line =~# '^\*'
   let candidate.name = candidate.is_remote
-        \ ? matchstr(a:line, '^..remote/\zs[^ ]\+')
+        \ ? matchstr(a:line, '^..remotes/\zs[^ ]\+')
         \ : matchstr(a:line, '^..\zs[^ ]\+')
   let candidate.remote = candidate.is_remote
-        \ ? matchstr(a:line, '^..remote/\zs[^/]\+')
+        \ ? matchstr(a:line, '^..remotes/\zs[^/]\+')
         \ : ''
   let candidate.linkto = candidate.is_remote
-        \ ? matchstr(a:line, '^..remote/[^ ]\+ -> \zs[^ ]\+')
+        \ ? matchstr(a:line, '^..remotes/[^ ]\+ -> \zs[^ ]\+')
         \ : ''
+  let candidate.record = a:line
   return candidate
 endfunction
 function! s:parse_branch(content) abort

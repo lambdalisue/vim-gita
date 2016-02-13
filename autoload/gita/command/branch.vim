@@ -3,10 +3,12 @@ let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
+let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:entry_offset = 0
@@ -28,104 +30,48 @@ function! s:pick_available_options(options) abort
         \ 'set-upstream', 'set-upstream-to', 'unset-upstream',
         \ 'contains',
         \ 'merged', 'no-merged',
-        \ 'points-at',
-        \ 'commit',
         \ 'branchname',
+        \ 'start-point',
         \ 'oldbranch',
         \ 'newbranch',
         \])
   return options
 endfunction
-function! s:get_branch_content(git, query, commit, directories, options) abort
+function! s:get_branch_content(git, options) abort
   let options = s:pick_available_options(a:options)
   let options['no-column'] = 1
   let options['no-color'] = 1
   let options['no-abbrev'] = 1
-  let options['query'] = a:query
-  if !empty(a:commit)
-    let options['commit'] = a:commit
-  endif
-  if !empty(a:directories)
-    let options['--'] = a:directories
-  endif
   let result = gita#execute(a:git, 'branch', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
 
-function! s:extend_match(git, match) abort
-  let candidate = {}
-  let candidate.record = a:match
-  if a:match =~# '^[^:]\+:.\{-}:\d\+:.*$'
-    let m = matchlist(
-          \ a:match,
-          \ '^\([^:]\+\):\(.\{-}\):\(\d\+\):\(.*\)$',
-          \)
-    let candidate.commit = m[1]
-    let candidate.relpath = m[2]
-    let candidate.path = s:Git.get_absolute_path(
-          \ a:git, s:Path.realpath(m[2]),
-          \)
-    let candidate.selection = [m[3]]
-    let candidate.content = m[4]
-  else
-    let m = matchlist(
-          \ a:match,
-          \ '^\(.\{-}\):\(\d\+\):\(.*\)$',
-          \)
-    let candidate.commit = ''
-    let candidate.relpath = m[1]
-    let candidate.path = s:Git.get_absolute_path(
-          \ a:git, s:Path.realpath(m[1]),
-          \)
-    let candidate.selection = [m[2]]
-    let candidate.content = m[3]
-  endif
-  return candidate
+function! s:format_branch(branch) abort
+  return a:branch.record
 endfunction
-function! s:format_match(match, format) abort
-  return printf(a:format,
-        \ a:match.relpath . ':' . a:match.selection[0],
-        \ a:match.content,
-        \)
-endfunction
-function! s:format_matches(matches, width) abort
-  let max_path = 0
-  for candidate in a:matches
-    let prefix = candidate.relpath . ':' . candidate.selection[0]
-    if len(prefix) > max_path
-      let max_path = len(prefix)
-    endif
-  endfor
-  let format = printf(
-        \ '%%-%ds | %%s',
-        \ max_path,
-        \)
-  let content = map(copy(a:matches),
-        \ 's:format_match(v:val, format)',
-        \)
-  return content
+function! s:format_branches(branches) abort
+  return map(copy(a:branches), 's:format_branch(v:val)')
 endfunction
 function! s:get_header_string(git) abort
-  let commit = gita#get_meta('commit', '')
-  let query = gita#get_meta('query', '')
-  let candidates = gita#get_meta('candidates', [])
-  let ncandidates = len(candidates)
+  let branches = gita#get_meta('branches', [])
+  let nbranches = len(branches)
   return printf(
-        \ 'Files contain "%s" in <%s> (%d file%s) %s',
-        \ query,
-        \ empty(commit) ? 'INDEX' : commit,
-        \ ncandidates,
-        \ ncandidates == 1 ? '' : 's',
+        \ 'There are %d branch%s %s',
+        \ nbranches,
+        \ nbranches == 1 ? '' : 'es',
         \ '| Press ? to toggle a mapping help',
         \)
 endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let candidates = gita#get_meta('candidates', [])
+  let candidates = gita#get_meta('branches', [])
   return index >= 0 ? get(candidates, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -138,10 +84,6 @@ function! s:define_actions() abort
   call gita#action#includes(
         \ g:gita#command#branch#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
-        \   'add', 'rm', 'reset', 'checkout',
-        \   'stage', 'unstage', 'toggle', 'discard',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'commit',
         \])
 
   if g:gita#command#branch#enable_default_mappings
@@ -162,51 +104,40 @@ endfunction
 
 function! gita#command#branch#bufname(...) abort
   let options = gita#option#init('^branch$', get(a:000, 0, {}), {
-        \ 'query': '',
-        \ 'commit': '',
-        \ 'cached': 0,
-        \ 'no-index': 0,
-        \ 'untracked': 0,
+        \ 'list': '',
+        \ 'all': 0,
+        \ 'remotes': 0,
         \})
   let git = gita#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'branch',
         \ 'extra_options': [
-        \   empty(options.cached) ? '' : 'cached',
-        \   empty(options['no-index']) ? '' : 'no-index',
-        \   empty(options.untracked) ? '' : 'untracked',
-        \   options.query,
+        \   empty(options.list) ? '' : options.list,
+        \   empty(options.all) ? '' : 'all',
+        \   empty(options.remotes) ? '' : 'remotes',
         \ ],
-        \ 'commitish': commit,
+        \ 'commitish': '',
         \ 'path': '',
         \})
 endfunction
 function! gita#command#branch#call(...) abort
   let options = gita#option#init('^branch$', get(a:000, 0, {}), {
-        \ 'query': '',
-        \ 'commit': '',
-        \ 'directories': [],
+        \ 'all': 0,
+        \ 'remotes': 0,
         \})
   let git = gita#get_or_fail()
-  let commit = gita#variable#get_valid_commit(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let content = s:get_branch_content(
-        \ git, options.query, commit, options.directories, options
-        \)
-  let candidates = map(
-        \ copy(content),
-        \ 's:extend_match(git, v:val)'
-        \)
+  let content = s:get_branch_content(git, options)
+  if options.remotes
+    let content = map(
+          \ content,
+          \ 'substitute(v:val, "^\\(..\\)", "\\1remotes/", "")'
+          \)
+  endif
+  let branches = s:GitParser.parse_branch(content)
   let result = {
-        \ 'query': options.query,
-        \ 'commit': commit,
         \ 'content': content,
-        \ 'candidates': candidates,
+        \ 'branches': branches,
         \ 'options': options,
         \}
   return result
@@ -230,14 +161,13 @@ function! gita#command#branch#open(...) abort
 endfunction
 function! gita#command#branch#edit(...) abort
   let options = get(a:000, 0, {})
+  let options['quiet'] = 1
   let result = gita#command#branch#call(options)
   call gita#set_meta('content_type', 'branch')
   call gita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener',
+        \ 'force', 'opener', 'quiet',
         \]))
-  call gita#set_meta('query', result.query)
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('candidates', result.candidates)
+  call gita#set_meta('branches', result.branches)
   call gita#set_meta('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
@@ -251,13 +181,7 @@ function! gita#command#branch#edit(...) abort
   setlocal nowrap
   setlocal cursorline
   setlocal nomodifiable
-  if exists('#BufReadPre')
-    call gita#util#doautocmd('BufReadPre')
-  endif
   call gita#command#branch#redraw()
-  if exists('#BufReadPost')
-    call gita#util#doautocmd('BufReadPost')
-  endif
 endfunction
 function! gita#command#branch#redraw() abort
   let git = gita#get_or_fail()
@@ -267,8 +191,8 @@ function! gita#command#branch#redraw() abort
         \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
         \   : []
         \])
-  let candidates = gita#get_meta('candidates', [])
-  let contents = s:format_matches(candidates, winwidth(0))
+  let branches = gita#get_meta('branches', [])
+  let contents = s:format_branches(branches)
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))
 endfunction
@@ -277,34 +201,82 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita branch',
-          \ 'description': 'Print lines matching a pattern',
+          \ 'description': 'List, create, or delete branches',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \})
+    call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
+          \ '--track', '-t',
+          \ 'set up tracking mode (see git-pull(1))',
+          \)
+    call s:parser.add_argument(
+          \ '--set-upstream-to', '-u',
+          \ 'change the upstram info', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--unset-upstraem',
+          \ 'unset the upstream info',
+          \)
+    call s:parser.add_argument(
+          \ '--remotes', '-r',
+          \ 'act on remote-tracking branches',
+          \)
+    call s:parser.add_argument(
+          \ '--contains',
+          \ 'print only branches that contains the commit', {
+          \   'complete': function('gita#variable#complete_commit'),
+          \})
+    call s:parser.add_argument(
+          \ '--all', '-a',
+          \ 'list both remote-tracking and local branches',
+          \)
+    call s:parser.add_argument(
+          \ '--delete', '-d',
+          \ 'delete fully merged branch',
+          \)
+    call s:parser.add_argument(
+          \ '-D',
+          \ 'delete branch (even if not merged)',
+          \)
+    call s:parser.add_argument(
+          \ '--move', '-m',
+          \ 'move/rename a branch and its reflog',
+          \)
+    call s:parser.add_argument(
+          \ '-M',
+          \ 'move/rename a branch, even if target exists',
+          \)
+    call s:parser.add_argument(
+          \ '--list',
+          \ 'list branch names',
+          \)
+    call s:parser.add_argument(
+          \ '--create-reflog', '-l',
+          \ 'create the branch''s reflog',
+          \)
+    call s:parser.add_argument(
+          \ '--force', '-f',
+          \ 'force creation, mov/rename, deletion',
+          \)
+    call s:parser.add_argument(
+          \ '--no-merged',
+          \ 'print only not merged branches', {
+          \   'complete': function('gita#variable#complete_commit'),
+          \})
+    call s:parser.add_argument(
+          \ '--merged',
+          \ 'print only merged branches', {
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
-    call s:parser.add_argument(
-          \ 'commit', [
-          \   'A commit which you want to branch.',
-          \   'If nothing is specified, it branch a content in an index or working tree.',
-          \   'If <commit> is specified, it branch a content in the named <commit>.',
-          \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
-          \})
-    call s:parser.add_argument(
-          \ 'query', [
-          \   'A query.',
-          \ ], {
-          \})
-    " TODO: Add more arguments
-    function! s:parser.hooks.post_validate(options) abort
-      if !has_key(a:options, 'query')
-        let a:options.query = get(a:options, 'commit', '')
-        let a:options.commit = ''
-      endif
-    endfunction
   endif
   return s:parser
 endfunction
@@ -314,7 +286,6 @@ function! gita#command#branch#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#branch#default_options),
@@ -328,15 +299,13 @@ function! gita#command#branch#complete(...) abort
 endfunction
 function! gita#command#branch#define_highlights() abort
   highlight default link GitaComment    Comment
-  highlight default link GitaKeyword    Keyword
+  highlight default link GitaSelected   Special
+  highlight default link GitaRemote     Constant
 endfunction
 function! gita#command#branch#define_syntax() abort
   syntax match GitaComment    /\%^.*$/
-  let query = gita#get_meta('query')
-  execute printf(
-        \ 'syntax match GitaKeyword /%s/',
-        \ s:StringExt.escape_regex(query),
-        \)
+  syntax match GitaSelected   /^\* [^ ]\+/hs=s+2
+  syntax match GitaRemote     /^..remotes\/[^ ]\+/hs=s+2
 endfunction
 
 call gita#util#define_variables('command#branch', {
