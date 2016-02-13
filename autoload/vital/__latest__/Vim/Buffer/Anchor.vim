@@ -33,18 +33,18 @@ endfunction
 
 function! s:is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
-  if s:config.buflisted_required && !buflisted(bufnum)
+  if empty(bufname(bufnum))
+    " An initial buffer
+    return 1
+  elseif s:config.buflisted_required && !buflisted(bufnum)
     return 0
-  endif
-  if !empty(s:config.unsuitable_bufname_pattern)
+  elseif !empty(s:config.unsuitable_bufname_pattern)
         \ && bufname(bufnum) =~# s:config.unsuitable_bufname_pattern
     return 0
-  endif
-  if !empty(s:config.unsuitable_buftype_pattern)
+  elseif !empty(s:config.unsuitable_buftype_pattern)
         \ && s:Compat.getbufvar(bufnum, '&buftype') =~# s:config.unsuitable_buftype_pattern
     return 0
-  endif
-  if !empty(s:config.unsuitable_filetype_pattern)
+  elseif !empty(s:config.unsuitable_filetype_pattern)
         \ && s:Compat.getbufvar(bufnum, '&filetype') =~# s:config.unsuitable_filetype_pattern
     return 0
   endif

@@ -173,5 +173,46 @@ Describe Data.StringExt
     End
   End
 
+  Describe .unescape({string}, {chars})
+    It unescape escaped {chars} in {string}
+      Assert Equals(
+            \ StringExt.unescape('\\\^\*\a\b\[\]', '\^*[]'),
+            \ '\^*\a\b[]',
+            \)
+      Assert Equals(
+            \ StringExt.unescape('\*n\*n\*n', '*'),
+            \ '*n*n*n',
+            \)
+      Assert Equals(
+            \ StringExt.unescape('\\n\\n\\n', '\'),
+            \ '\n\n\n',
+            \)
+      Assert Equals(
+            \ StringExt.unescape('\\\\n\\\\n\\\\n', '\'),
+            \ '\\n\\n\\n',
+            \)
+    End
+  End
+  Describe .escape_regex({string})
+    It escape characters which may affect regex
+      Assert Equals(StringExt.escape_regex('^\a\b.*$'), '\^\\a\\b\.\*\$')
+    End
+    It won't escape characters when the characters are already escaped
+      Assert Equals(
+            \ StringExt.escape_regex('^\a\b.*$'),
+            \ StringExt.escape_regex(StringExt.escape_regex('^\a\b.*$')),
+            \)
+    End
+    It escape Windows like path well
+      Assert Equals(
+            \ StringExt.escape_regex('C:\Windows\Test.txt'),
+            \ 'C:\\Windows\\Test\.txt',
+            \)
+      Assert Equals(
+            \ StringExt.escape_regex('C:\\Windows\\Test.txt'),
+            \ 'C:\\Windows\\Test\.txt',
+            \)
+    End
+  End
 End
 

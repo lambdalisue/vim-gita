@@ -59,9 +59,24 @@ function! s:format(format, format_map, data) abort
   return substitute(str, '\v^\s+|\s+$', '', 'g')
 endfunction
 
+function! s:unescape(string, chars) abort
+  let string = a:string
+  for char in split(a:chars, '\zs')
+    let escaped_char = escape(char, '^$~.*[]\')
+    let string = substitute(
+          \ string,
+          \ '\\' . escaped_char, 
+          \ char,
+          \ 'g')
+  endfor
+  return string
+endfunction
+
 function! s:escape_regex(regex) abort
+  " unescape characters which is already escaped to prevent double escape
+  let regex = s:unescape(a:regex, '^$~.*[]\')
   " escape characters for no-magic
-  return escape(a:regex, '^$~.*[]\')
+  return escape(regex, '^$~.*[]\')
 endfunction
 
 function! s:ensure_eol(text) abort

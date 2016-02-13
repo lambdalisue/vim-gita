@@ -101,10 +101,13 @@ function! s:translate_options(options, scheme) abort
             \))
     endif
   endfor
+  return args
+endfunction
+function! s:translate_extra_options(options) abort
+  let args = []
   if has_key(a:options, '--')
-    call add(args, '--')
     for str in a:options['--']
-      call add(args, str ==# '-' ? '-' : escape(expand(str), '\'))
+      call add(args, expand(str))
     endfor
   endif
   return args
@@ -118,6 +121,8 @@ function! s:build_args(name, ...) abort
     let args = call(l:Scheme, [a:name, options], s:schemes)
   else
     let args = s:translate_options(options, l:Scheme)
+    let extra = s:translate_extra_options(options)
+    call extend(args, empty(extra) ? [] : ['--'] + extra)
   endif
   return filter(extend([a:name], args), '!empty(v:val)')
 endfunction
@@ -128,7 +133,7 @@ function! s:execute(...) abort
   if s:Prelude.is_dict(a:1)
     let worktree = get(a:1, 'worktree', '')
     let args = s:build_args(a:2, get(a:000, 2, {}))
-    let args = (empty(worktree) ? [] : ['-C', escape(worktree, '\')]) + args
+    let args = (empty(worktree) ? [] : ['-C', worktree]) + args
     let config = get(a:000, 4, {})
   else
     let args = s:build_args(a:1, get(a:000, 3, {}))
@@ -180,6 +185,27 @@ let s:schemes.blame = {
       \ 'date': '--%k %V',
       \ 'commit': '%v',
       \}
+function! s:schemes.branch(name, options) abort
+  let scheme = {
+        \ 'list': '--%k %v',
+        \ 'contains': '--%k %v',
+        \ 'merged': '--%k %v',
+        \ 'no-merged': '--%k %v',
+        \ 'branchname': '%v',
+        \ 'start-point': '%v',
+        \ 'oldbranch': '%v',
+        \ 'newbranch': '%v',
+        \}
+  let args = s:translate_options(a:options, scheme)
+  " NOTE:
+  " empty strings will be filtered at the end of s:build_args
+  return extend(args, [
+        \ get(a:options, 'branchname', ''),
+        \ get(a:options, 'start-point', ''),
+        \ get(a:options, 'oldbranch', ''),
+        \ get(a:options, 'newbranch', ''),
+        \])
+endfunction
 let s:schemes.checkout = {
       \ 'b': '-%k %v',
       \ 'B': '-%k %v',
@@ -199,26 +225,18 @@ let s:schemes.commit = {
       \ 'm': '-%k %v',
       \ 't': '-%k %v',
       \}
-function! s:schemes.clone(name, options) abort
-  let scheme = {
-        \ 'reference': '--%K %V',
-        \ 'o': '-%K %V',
-        \ 'origin': '--%K %V',
-        \ 'b': '-%K %V',
-        \ 'branch': '--%K %V',
-        \ 'u': '-%K %V',
-        \ 'upload-pack': '--%K %V',
-        \ 'c': '-%K %V',
-        \ 'configig': '--%K %V',
-        \ 'depth': '--%K %V',
-        \}
-  let args = s:translate_options(a:options, scheme)
-  return extend(args, [
-        \ '--',
-        \ get(a:options, 'repository', ''),
-        \ get(a:options, 'directory', ''),
-        \])
-endfunction
+let s:schemes.clone = {
+      \ 'reference': '--%K %V',
+      \ 'o': '-%K %V',
+      \ 'origin': '--%K %V',
+      \ 'b': '-%K %V',
+      \ 'branch': '--%K %V',
+      \ 'u': '-%K %V',
+      \ 'upload-pack': '--%K %V',
+      \ 'c': '-%K %V',
+      \ 'configig': '--%K %V',
+      \ 'depth': '--%K %V',
+      \}
 let s:schemes.diff = {
       \ 'commit': '%v',
       \}
@@ -240,9 +258,6 @@ function! s:schemes.grep(name, options) abort
         \ get(a:options, 'query', ''),
         \ get(a:options, 'commit', ''),
         \])
-  if !empty(get(a:options, 'directories', []))
-    let args = args + ['--'] + a:options.directories
-  endif
   return args
 endfunction
 let s:schemes.log = {

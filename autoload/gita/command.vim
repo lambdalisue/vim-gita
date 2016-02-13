@@ -133,6 +133,10 @@ call gita#command#register('blame',
       \ 'gita#command#blame#command',
       \ 'gita#command#blame#complete',
       \)
+call gita#command#register('branch',
+      \ 'gita#command#branch#command',
+      \ 'gita#command#branch#complete',
+      \)
 call gita#command#register('browse',
       \ 'gita#command#browse#command',
       \ 'gita#command#browse#complete',

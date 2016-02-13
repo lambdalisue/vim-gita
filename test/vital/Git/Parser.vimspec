@@ -913,4 +913,43 @@ Describe Git.Parser
       Assert Equals(ret, exp)
     End
   End
+
+  Describe .parse_branch_record({line})
+    It returns a candidate for '* master'
+      let branch = GitParser.parse_branch_record('* master')
+      Assert Equals(branch.name, 'master')
+      Assert Equals(branch.remote, '')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 0)
+      Assert Equals(branch.is_selected, 1)
+    End
+    It returns a candidate for '  develop'
+      let branch = GitParser.parse_branch_record('  develop')
+      Assert Equals(branch.name, 'develop')
+      Assert Equals(branch.remote, '')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 0)
+      Assert Equals(branch.is_selected, 0)
+    End
+    It returns a candidate for '  remotes/origin/HEAD -> origin/master'
+      let branch = GitParser.parse_branch_record(
+            \ '  remotes/origin/HEAD -> origin/master'
+            \)
+      Assert Equals(branch.name, 'origin/HEAD')
+      Assert Equals(branch.remote, 'origin')
+      Assert Equals(branch.linkto, 'origin/master')
+      Assert Equals(branch.is_remote, 1)
+      Assert Equals(branch.is_selected, 0)
+    End
+    It returns a candidate for '  remotes/origin/master'
+      let branch = GitParser.parse_branch_record(
+            \ '  remotes/origin/master'
+            \)
+      Assert Equals(branch.name, 'origin/master')
+      Assert Equals(branch.remote, 'origin')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 1)
+      Assert Equals(branch.is_selected, 0)
+    End
+  End
 End

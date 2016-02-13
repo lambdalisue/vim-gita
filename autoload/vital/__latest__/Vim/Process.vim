@@ -1,15 +1,42 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
+  let s:Dict = a:V.import('Data.Dict')
+  let s:Prompt = a:V.import('Vim.Prompt')
   let s:Guard = a:V.import('Vim.Guard')
+  let s:config = {
+        \ 'debug': -1,
+        \ 'strict': 1,
+        \}
 endfunction
+
 function! s:_vital_depends() abort
   return [
-        \ 'Prelude', 'Vim.Guard',
+        \ 'Prelude', 'Data.Dict', 'Vim.Guard',
         \]
 endfunction
 
 function! s:_throw(msg) abort
   throw printf('vital: Vim.Process: %s', a:msg)
+endfunction
+
+function! s:get_config() abort
+  return deepcopy(s:config)
+endfunction
+
+function! s:set_config(config) abort
+  let s:config = extend(s:config, s:Dict.pick(a:config, [
+        \ 'debug', 'strict',
+        \]))
+endfunction
+
+function! s:is_debug() abort
+  if s:Prelude.is_funcref(s:config.debug)
+    return s:config.debug()
+  elseif s:config.debug == -1
+    return &verbose
+  else
+    return s:config.debug
+  endif
 endfunction
 
 function! s:has_vimproc() abort
@@ -113,25 +140,42 @@ function! s:shellescape(string, ...) abort
   return string
 endfunction
 
+function! s:is_escaped(string) abort
+  let modified = a:string
+  " is shellescaped?
+  let modified = substitute(modified, '^''\(.*\)''$', '\1', 'g')
+  let modified = substitute(modified, '^"\(.*\)"$', '\1', 'g')
+  " is fnameescaped? (partial: ' or " is allowed to be escaped)
+  let modified = substitute(modified, '\\[*?[{`$%#|!<\ ]', '', 'g')
+  return len(a:string) != len(modified)
+endfunction
+
 function! s:_system(args, options) abort
   if s:Prelude.is_list(a:args)
-    " Assume that user didn't escape arguments and that's why he/she use
-    " List {args}
+    " Assume that non of element of a:args are escaped.
+    " Warn if any escaped element is found if v:verbose is set
+    if s:is_debug() || s:config.strict
+      for element in a:args
+        if s:is_escaped(element)
+          throw printf(
+                \ 'vital: Vim.Process: An element %s seems escaped in %s',
+                \ element, string(a:args),
+                \)
+        endif
+      endfor
+    endif
     let cmdline = join(map(
           \ copy(a:args),
           \ 's:shellescape(v:val, 0, a:options.use_vimproc)'
           \), ' ')
   else
-    " Do not escape while user may want some special characters
+    " Assume that everything is correctly escaped.
+    " So that even cmd.exe does not eliminate '\' but vimproc in Windows, do
+    " not touch the content of a:args
     let cmdline = a:args
   endif
   if s:Prelude.is_windows()
-    if a:options.use_vimproc
-      " NOTE:
-      " cmd.exe does not eliminate '\' but vimproc in Windows so escape all \
-      " in Windows to keep compatiblity
-      let cmdline = escape(cmdline, '\')
-    else
+    if !a:options.use_vimproc
       " NOTE:
       " it seems that cmd.exe does not understand double quote enclosed
       " command so remove double quotes when the first argument does not
@@ -181,6 +225,7 @@ function! s:_system(args, options) abort
   endif
   return output
 endfunction
+
 function! s:system(args, ...) abort
   if a:0 == 3
     " system({args}, {input}, {timeout}, {options})

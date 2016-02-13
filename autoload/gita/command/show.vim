@@ -1,4 +1,5 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
@@ -67,28 +68,45 @@ function! s:get_diff_content(git, content, filename, options) abort
       endif
       call gita#throw('Attention: No differences are detected')
     endif
-    " replace tempfile1/tempfile2 in the header to a:filename
-    "
-    "   diff --git a/<tempfile1> b/<tempfile2>
-    "   index XXXXXXX..XXXXXXX XXXXXX
-    "   --- a/<tempfile1>
-    "   +++ b/<tempfile2>
-    "
-    let src1 = s:StringExt.escape_regex(tempfile1)
-    let src2 = s:StringExt.escape_regex(tempfile2)
-    let repl = (tempfile =~# '^/' ? '/' : '') . s:Path.unixpath(
-          \ s:Git.get_relative_path(a:git, a:filename)
+    return s:replace_filenames_in_diff(
+          \ result.content,
+          \ tempfile1,
+          \ tempfile2,
+          \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
           \)
-    let content = result.content
-    let content[0] = substitute(content[0], src1, repl, '')
-    let content[0] = substitute(content[0], src2, repl, '')
-    let content[2] = substitute(content[2], src1, repl, '')
-    let content[3] = substitute(content[3], src2, repl, '')
-    return content
   finally
     call delete(tempfile1)
     call delete(tempfile2)
   endtry
+endfunction
+function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) abort
+  let is_windows = get(a:000, 0, s:Prelude.is_windows())
+  " replace tempfile1/tempfile2 in the header to a:filename
+  "
+  "   diff --git a/<tempfile1> b/<tempfile2>
+  "   index XXXXXXX..XXXXXXX XXXXXX
+  "   --- a/<tempfile1>
+  "   +++ b/<tempfile2>
+  "
+  let src1 = s:StringExt.escape_regex(a:filename1)
+  let src2 = s:StringExt.escape_regex(a:filename2)
+  if is_windows
+    " NOTE:
+    " '\' in {content} from 'git diff' are escaped so double escape is required
+    " to substitute such path
+    " NOTE:
+    " escape(src1, '\') cannot be used while other characters such as '.' are
+    " already escaped as well
+    let src1 = substitute(src1, '\\\\', '\\\\\\\\', 'g')
+    let src2 = substitute(src2, '\\\\', '\\\\\\\\', 'g')
+  endif
+  let repl = (a:filename1 =~# '^/' ? '/' : '') . a:repl
+  let content = copy(a:content)
+  let content[0] = substitute(content[0], src1, repl, '')
+  let content[0] = substitute(content[0], src2, repl, '')
+  let content[2] = substitute(content[2], src1, repl, '')
+  let content[3] = substitute(content[3], src2, repl, '')
+  return content
 endfunction
 
 function! s:on_BufWriteCmd() abort
