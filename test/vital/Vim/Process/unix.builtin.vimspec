@@ -36,12 +36,14 @@ Describe Vim.Process
           let args = ['echo', '-n', 'h e l l o']
           Assert Equal(Process.system(args, options), "h e l l o")
         End
-        It executes command with enclosed spaces
+        It throw exception with enclosed spaces (in strict mode)
           let args = ['echo', '"h e l l o"']
-          Assert Equal(Process.system(args, options), '"h e l l o"' . "\n")
+          Throws /An element "h e l l o" seems escaped/
+                \ Process.system(args, options)
 
           let args = ['echo', "'h e l l o'"]
-          Assert Equal(Process.system(args, options), "'h e l l o'" . "\n")
+          Throws /An element 'h e l l o' seems escaped/
+                \ Process.system(args, options)
         End
         It executes command with non ascii characters
           let args = ['echo', 'あいうえお']

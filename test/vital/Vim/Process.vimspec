@@ -323,6 +323,36 @@ Describe Vim.Process
     endif
   End
 
+  Describe .is_escaped({string})
+    It returns 1 if {string} is shellescaped
+      Assert True(Process.is_escaped("'foo'"))
+      Assert True(Process.is_escaped('"foo"'))
+    End
+    It returns 1 if {string} is fnameescaped
+      Assert True(Process.is_escaped('AAA\ BBB'))
+      Assert True(Process.is_escaped('AAA\*BBB'))
+      Assert True(Process.is_escaped('AAA\?BBB'))
+      Assert True(Process.is_escaped('AAA\[BBB'))
+      Assert True(Process.is_escaped('AAA\{BBB'))
+      Assert True(Process.is_escaped('AAA\`BBB'))
+      Assert True(Process.is_escaped('AAA\$BBB'))
+      Assert True(Process.is_escaped('AAA\%BBB'))
+      Assert True(Process.is_escaped('AAA\#BBB'))
+      Assert True(Process.is_escaped('AAA\|BBB'))
+      Assert True(Process.is_escaped('AAA\!BBB'))
+      Assert True(Process.is_escaped('AAA\<BBB'))
+      Assert True(Process.is_escaped('AAA\\BBB'))
+    End
+    It return 0 if {string} is fnameescaped but only for ' or " (exception)
+      Assert False(Process.is_escaped('AAA\''BBB'))
+      Assert False(Process.is_escaped('AAA\"BBB'))
+    End
+    It return 0 if {string} is not shellsecaped nor fnameescaped
+      Assert False(Process.is_escaped('AAA BBB'))
+      Assert False(Process.is_escaped('AAA BBB'))
+    End
+  End
+
   Describe .system({args}[, {input}, {timeout}, {options}])
     It throws an exception when more than 4 arguments are specified
       Throws /expects 1-4 arguments/
