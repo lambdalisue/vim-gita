@@ -36,7 +36,7 @@ function! gita#action#blame#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call gita#util#define_variables('apply#blame', {
+call gita#util#define_variables('action#blame', {
       \ 'default_opener': 'tabnew',
       \ 'default_anchor': 0,
       \})
