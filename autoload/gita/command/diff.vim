@@ -370,9 +370,7 @@ function! gita#command#diff#open2(...) abort
           \})
     call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(
-          \ options.patch ? lresult.bufnum : rresult.bufnum
-          \))
+    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
     call gita#util#select(options.selection)
   else
     let rresult = gita#util#buffer#open(rbufname, {
@@ -387,9 +385,7 @@ function! gita#command#diff#open2(...) abort
           \})
     call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(
-          \ options.patch ? rresult.bufnum : lresult.bufnum
-          \))
+    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
     call gita#util#select(options.selection)
   endif
 endfunction
