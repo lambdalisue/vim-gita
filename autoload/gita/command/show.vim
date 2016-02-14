@@ -232,16 +232,22 @@ function! gita#command#show#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    let guard = s:Guard.store('&eventignore')
-    try
-      set eventignore+=BufReadCmd
+    if bufname =~# '^gita://'
+      let guard = s:Guard.store('&eventignore')
+      try
+        set eventignore+=BufReadCmd
+        call gita#util#buffer#open(bufname, {
+              \ 'opener': opener,
+              \})
+      finally
+        call guard.restore()
+      endtry
+      call gita#command#show#edit(options)
+    else
       call gita#util#buffer#open(bufname, {
             \ 'opener': opener,
             \})
-    finally
-      call guard.restore()
-    endtry
-    call gita#command#show#edit(options)
+    endif
     call gita#util#select(options.selection)
   endif
 endfunction
