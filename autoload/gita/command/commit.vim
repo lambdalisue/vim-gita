@@ -364,8 +364,8 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--ammend',
-          \ 'Ammend',
+          \ '--amend',
+          \ 'Amend',
           \)
     call s:parser.add_argument(
           \ '--allow-empty',
