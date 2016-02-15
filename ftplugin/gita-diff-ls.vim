@@ -17,3 +17,5 @@ augroup vim_gita_commit_window_size
   autocmd! * <buffer>
   autocmd BufEnter <buffer> call s:keep_height()
 augroup END
+
+
