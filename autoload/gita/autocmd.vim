@@ -45,6 +45,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#show#edit({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -54,6 +55,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#diff#edit({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -80,6 +82,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#show#read({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -89,6 +92,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#diff#read({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,

@@ -255,11 +255,13 @@ function! gita#command#show#read(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   let result = gita#command#show#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
 endfunction
 function! gita#command#show#edit(...) abort
@@ -267,6 +269,7 @@ function! gita#command#show#edit(...) abort
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   if options.patch
     " 'patch' mode requires:
@@ -287,6 +290,7 @@ function! gita#command#show#edit(...) abort
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
   if empty(result.filename)
     setfiletype git
@@ -327,6 +331,11 @@ function! s:get_parser() abort
           \ '--fileformat',
           \ 'file format used to open the content', {
           \   'choices': ['dos', 'unix', 'mac'],
+          \})
+    call s:parser.add_argument(
+          \ '--bad',
+          \ 'behavior for illegal bytes (++bad option)', {
+          \   'pattern': '^\%(.\|keep\|drop\)$',
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',

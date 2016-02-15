@@ -211,17 +211,20 @@ function! gita#command#diff#read(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   let result = gita#command#diff#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
 endfunction
 function! gita#command#diff#edit(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \ 'patch': 0,
         \ 'force': 0,
         \}, get(a:000, 0, {}))
@@ -256,6 +259,7 @@ function! gita#command#diff#edit(...) abort
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
   if options.patch
     augroup vim_gita_internal_diff_apply_diff
@@ -594,6 +598,11 @@ function! s:get_parser() abort
           \ '--fileformat',
           \ 'file format used to open the content', {
           \   'choices': ['dos', 'unix', 'mac'],
+          \})
+    call s:parser.add_argument(
+          \ '--bad',
+          \ 'behavior for illegal bytes (++bad option)', {
+          \   'pattern': '^\%(.\|keep\|drop\)$',
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
