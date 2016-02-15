@@ -194,16 +194,10 @@ function! gita#command#diff#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    let guard = s:Guard.store('&eventignore')
-    try
-      set eventignore+=BufReadCmd
-      call gita#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    finally
-      call guard.restore()
-    endtry
-    call gita#command#diff#edit(options)
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \})
+    " BufReadCmd will apply content
     call gita#util#select(options.selection)
   endif
 endfunction
@@ -589,21 +583,6 @@ function! s:get_parser() abort
           \ '--no-prefix',
           \ 'do not show any source or destination prefix',
           \)
-    call s:parser.add_argument(
-          \ '--encoding',
-          \ 'encoding used to open the content', {
-          \   'pattern': '^[^ ]\+$',
-          \})
-    call s:parser.add_argument(
-          \ '--fileformat',
-          \ 'file format used to open the content', {
-          \   'choices': ['dos', 'unix', 'mac'],
-          \})
-    call s:parser.add_argument(
-          \ '--bad',
-          \ 'behavior for illegal bytes (++bad option)', {
-          \   'pattern': '^\%(.\|keep\|drop\)$',
-          \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
