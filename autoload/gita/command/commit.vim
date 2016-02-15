@@ -139,7 +139,7 @@ function! s:define_actions() abort
           \ 'map <buffer> <Return> %s',
           \ g:gita#command#commit#default_action_mapping
           \)
-    map <buffer> CC <Plug>(gita-commit-do)
+    map <buffer> <C-c><C-c> <Plug>(gita-commit-do)
   endif
 endfunction
 
@@ -364,8 +364,8 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--ammend',
-          \ 'Ammend',
+          \ '--amend',
+          \ 'Amend',
           \)
     call s:parser.add_argument(
           \ '--allow-empty',

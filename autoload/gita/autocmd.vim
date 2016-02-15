@@ -37,6 +37,7 @@ function! s:on_BufReadCmd() abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('BufReadPre')
@@ -45,6 +46,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#show#edit({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -54,6 +56,7 @@ function! s:on_BufReadCmd() abort
     call gita#command#diff#edit({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -72,6 +75,7 @@ function! s:on_FileReadCmd() abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('FileReadPre')
@@ -80,6 +84,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#show#read({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,
@@ -89,6 +94,7 @@ function! s:on_FileReadCmd() abort
     call gita#command#diff#read({
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
+          \ 'bad': options.bad,
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'patch': index(info.extra_options, 'patch') >= 0,

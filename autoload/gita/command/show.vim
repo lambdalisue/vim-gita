@@ -232,22 +232,10 @@ function! gita#command#show#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    if bufname =~# '^gita://'
-      let guard = s:Guard.store('&eventignore')
-      try
-        set eventignore+=BufReadCmd
-        call gita#util#buffer#open(bufname, {
-              \ 'opener': opener,
-              \})
-      finally
-        call guard.restore()
-      endtry
-      call gita#command#show#edit(options)
-    else
-      call gita#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    endif
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \})
+    " BufReadCmd will apply content
     call gita#util#select(options.selection)
   endif
 endfunction
@@ -255,11 +243,13 @@ function! gita#command#show#read(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   let result = gita#command#show#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
 endfunction
 function! gita#command#show#edit(...) abort
@@ -267,6 +257,7 @@ function! gita#command#show#edit(...) abort
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   if options.patch
     " 'patch' mode requires:
@@ -287,6 +278,7 @@ function! gita#command#show#edit(...) abort
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
   if empty(result.filename)
     setfiletype git
@@ -317,16 +309,6 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \})
-    call s:parser.add_argument(
-          \ '--encoding',
-          \ 'encoding used to open the content', {
-          \   'pattern': '^[^ ]\+$',
-          \})
-    call s:parser.add_argument(
-          \ '--fileformat',
-          \ 'file format used to open the content', {
-          \   'choices': ['dos', 'unix', 'mac'],
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',

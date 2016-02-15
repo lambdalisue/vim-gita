@@ -194,16 +194,10 @@ function! gita#command#diff#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    let guard = s:Guard.store('&eventignore')
-    try
-      set eventignore+=BufReadCmd
-      call gita#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    finally
-      call guard.restore()
-    endtry
-    call gita#command#diff#edit(options)
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \})
+    " BufReadCmd will apply content
     call gita#util#select(options.selection)
   endif
 endfunction
@@ -211,17 +205,20 @@ function! gita#command#diff#read(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, get(a:000, 0, {}))
   let result = gita#command#diff#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
 endfunction
 function! gita#command#diff#edit(...) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \ 'patch': 0,
         \ 'force': 0,
         \}, get(a:000, 0, {}))
@@ -256,6 +253,7 @@ function! gita#command#diff#edit(...) abort
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
         \})
   if options.patch
     augroup vim_gita_internal_diff_apply_diff
@@ -370,9 +368,7 @@ function! gita#command#diff#open2(...) abort
           \})
     call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(
-          \ options.patch ? lresult.bufnum : rresult.bufnum
-          \))
+    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
     call gita#util#select(options.selection)
   else
     let rresult = gita#util#buffer#open(rbufname, {
@@ -387,9 +383,7 @@ function! gita#command#diff#open2(...) abort
           \})
     call gita#util#diffthis()
     diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(
-          \ options.patch ? rresult.bufnum : lresult.bufnum
-          \))
+    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
     call gita#util#select(options.selection)
   endif
 endfunction
@@ -589,16 +583,6 @@ function! s:get_parser() abort
           \ '--no-prefix',
           \ 'do not show any source or destination prefix',
           \)
-    call s:parser.add_argument(
-          \ '--encoding',
-          \ 'encoding used to open the content', {
-          \   'pattern': '^[^ ]\+$',
-          \})
-    call s:parser.add_argument(
-          \ '--fileformat',
-          \ 'file format used to open the content', {
-          \   'choices': ['dos', 'unix', 'mac'],
-          \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
