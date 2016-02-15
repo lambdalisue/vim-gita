@@ -25,7 +25,7 @@ function! s:_is_valid_commit(commit, options) abort
     return 'cannot end with a dot .'
   elseif a:commit =~# '@{'
     return 'cannot contain a sequence @{'
-  elseif a:commit =~# '^@$'
+  elseif a:commit =~# '^@$' && !get(a:options, 'allow_atmark')
     return 'cannot be a single character @'
   elseif a:commit =~# '\'
     return 'cannot contain a backslash \'
@@ -74,7 +74,9 @@ function! s:_split_commitish(commitish, options) abort
     let commit = a:commitish
     let misc = ''
   endif
-  let errormsg = s:_is_valid_commit(commit, a:options)
+  let errormsg = s:_is_valid_commit(commit, extend(a:options, {
+        \ 'allow_atmark': !empty(misc),
+        \}))
   return empty(errormsg) ? [commit, misc] : errormsg
 endfunction
 function! s:_split_treeish(treeish, options) abort

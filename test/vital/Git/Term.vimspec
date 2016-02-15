@@ -276,6 +276,11 @@ Describe Git.Term
       call Term.validate_commitish('master~3', {})
       call Term.validate_commitish('develop~~', {})
     End
+    It does not fail if {commitish} is @~<n>
+      call Term.validate_commitish('@~', {})
+      call Term.validate_commitish('@~3', {})
+      call Term.validate_commitish('@~~', {})
+    End
     It does not fail if {commitish} is <rev>^{<type}, <rev>^{}
       call Term.validate_commitish('v0.99.8^{commit}', {})
       call Term.validate_commitish('v0.99.8^{}', {})
