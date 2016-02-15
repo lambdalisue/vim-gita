@@ -37,6 +37,7 @@ function! s:on_BufReadCmd() abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('BufReadPre')
@@ -74,6 +75,7 @@ function! s:on_FileReadCmd() abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
+        \ 'bad': '',
         \}, s:parse_cmdarg(v:cmdarg))
   let info = gita#autocmd#parse(expand('<afile>'))
   call gita#util#doautocmd('FileReadPre')
