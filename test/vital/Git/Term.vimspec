@@ -1,4 +1,11 @@
 let s:V = vital#of('vital')
+let s:GitInfo = s:V.import('Git.Info')
+let s:git_version = s:GitInfo.get_git_version()
+let s:major_version = str2nr(matchstr(s:git_version, '^\d\+'))
+let s:minor_version = str2float(matchstr(s:git_version, '^\d\+\.\zs\d\+\.\d\+'))
+let s:support_atmark_alias =
+      \ s:major_version >= 2 ||
+      \ (s:major_version == 1 && s:minor_version >= 8.5)
 
 Describe Git.Term
   Before
@@ -247,10 +254,12 @@ Describe Git.Term
       Throws /cannot contain a sequence/
             \ Term.validate_commit('foo@{bar', {})
     End
-    It fails when {commit} is a single character @
-      Throws /cannot be a single character @/
-            \ Term.validate_commit('@', {})
-    End
+    if !s:support_atmark_alias
+      It fails when {commit} is a single character @
+        Throws /cannot be a single character @/
+              \ Term.validate_commit('@', {})
+      End
+    endif
     It fails when {commit} contains a backslash
       Throws /cannot contain a backslash/
             \ Term.validate_commit('\', {})
