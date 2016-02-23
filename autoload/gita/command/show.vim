@@ -317,12 +317,28 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--repository', '-r',
-          \ 'show a summary of the repository instead of a file content',
-          \)
+          \ 'show a summary of the repository instead of a file content', {
+          \   'conflicts': ['worktree', 'ancestor', 'ours', 'theirs'],
+          \})
     call s:parser.add_argument(
           \ '--worktree', '-w',
           \ 'open a content of a file in working tree', {
-          \   'conflicts': ['summary'],
+          \   'conflicts': ['repository', 'ancestor', 'ours', 'theirs'],
+          \})
+    call s:parser.add_argument(
+          \ '--ancestor', '-1',
+          \ 'open a content of a file in a common ancestor during merge', {
+          \   'conflicts': ['repository', 'worktree', 'ours', 'theirs'],
+          \})
+    call s:parser.add_argument(
+          \ '--ours', '-2',
+          \ 'open a content of a file in our side during merge', {
+          \   'conflicts': ['repository', 'worktree', 'ancestor', 'theirs'],
+          \})
+    call s:parser.add_argument(
+          \ '--theirs', '-3',
+          \ 'open a content of a file in thier side during merge', {
+          \   'conflicts': ['repository', 'worktree', 'ancestor', 'ours'],
           \})
     call s:parser.add_argument(
           \ '--selection',
@@ -344,9 +360,18 @@ function! s:get_parser() abort
           \   'complete': function('gita#variable#complete_commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
-      if has_key(a:options, 'repository')
+      if get(a:options, 'repository')
         let a:options.filename = ''
         unlet a:options.repository
+      elseif get(a:options, 'ancestor')
+        let a:options.commit = ':1'
+        unlet a:options.commit
+      elseif get(a:options, 'ours')
+        let a:options.commit = ':2'
+        unlet a:options.commit
+      elseif get(a:options, 'theirs')
+        let a:options.commit = ':3'
+        unlet a:options.commit
       endif
     endfunction
     call s:parser.hooks.validate()
