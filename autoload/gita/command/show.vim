@@ -11,7 +11,7 @@ let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-let s:WORKTREE = '@'
+let s:WORKTREE = '@@'
 
 function! s:pick_available_options(options) abort
   " Note:

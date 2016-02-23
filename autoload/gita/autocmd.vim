@@ -138,7 +138,7 @@ function! gita#autocmd#parse(expr) abort
   let git = gita#get_or_fail(a:expr)
   let result = s:parse_filename(expand(a:expr))
   let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish, {
-        \ 'allow_range': 1,
+        \ '_allow_range': 1,
         \})
   let result.commit = commit
   " NOTE:
