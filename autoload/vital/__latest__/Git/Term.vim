@@ -1,12 +1,12 @@
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
-  let s:GitInfo = a:V.import('GitInfo')
+  let s:GitInfo = a:V.import('Git.Info')
 
   let git_version = s:GitInfo.get_git_version()
-  let major_version = str2nr(matchstr(git_version, '^\d+'))
-  let minor_version = str2float(matchstr(git_version, '^\d+\.\zs\d+\.\d+'))
+  let major_version = str2nr(matchstr(git_version, '^\d\+'))
+  let minor_version = str2float(matchstr(git_version, '^\d\+\.\zs\d\+\.\d\+'))
   let s:support_atmark_alias =
-        \ major_version > 2 ||
+        \ major_version >= 2 ||
         \ (major_version == 1 && minor_version >= 8.5)
 endfunction
 function! s:_vital_depends() abort
@@ -33,7 +33,7 @@ function! s:_is_valid_commit(commit, options) abort
     return 'cannot end with a dot .'
   elseif a:commit =~# '@{'
     return 'cannot contain a sequence @{'
-  elseif a:commit =~# '^@$' && !get(a:options, '_allow_atmark')
+  elseif a:commit =~# '^@$' && !get(a:options, '_allow_atmark', s:support_atmark_alias)
     return 'cannot be a single character @'
   elseif a:commit =~# '\'
     return 'cannot contain a backslash \'
@@ -82,9 +82,7 @@ function! s:_split_commitish(commitish, options) abort
     let commit = a:commitish
     let misc = ''
   endif
-  let errormsg = s:_is_valid_commit(commit, extend(a:options, {
-        \ '_allow_atmark': s:support_atmark_alias,
-        \}))
+  let errormsg = s:_is_valid_commit(commit, a:options)
   return empty(errormsg) ? [commit, misc] : errormsg
 endfunction
 function! s:_split_treeish(treeish, options) abort
