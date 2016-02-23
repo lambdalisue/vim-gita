@@ -181,8 +181,8 @@ let s:schemes.apply = {
 let s:schemes.blame = {
       \ 'L': '--%k %v',
       \ 'S': '--%k %v',
-      \ 'contents': '--%k %V',
-      \ 'date': '--%k %V',
+      \ 'contents': '--%k %v',
+      \ 'date': '--%k %v',
       \ 'commit': '%v',
       \}
 function! s:schemes.branch(name, options) abort
@@ -226,16 +226,16 @@ let s:schemes.commit = {
       \ 't': '-%k %v',
       \}
 let s:schemes.clone = {
-      \ 'reference': '--%K %V',
-      \ 'o': '-%K %V',
-      \ 'origin': '--%K %V',
-      \ 'b': '-%K %V',
-      \ 'branch': '--%K %V',
-      \ 'u': '-%K %V',
-      \ 'upload-pack': '--%K %V',
-      \ 'c': '-%K %V',
-      \ 'configig': '--%K %V',
-      \ 'depth': '--%K %V',
+      \ 'reference': '--%k %v',
+      \ 'o': '-%k %v',
+      \ 'origin': '--%k %v',
+      \ 'b': '-%k %v',
+      \ 'branch': '--%k %v',
+      \ 'u': '-%k %v',
+      \ 'upload-pack': '--%k %v',
+      \ 'c': '-%k %v',
+      \ 'configig': '--%k %v',
+      \ 'depth': '--%k %v',
       \}
 let s:schemes.diff = {
       \ 'commit': '%v',
@@ -272,7 +272,7 @@ let s:schemes['ls-files'] = {
       \ 'with-tree': '--%k %v',
       \}
 let s:schemes['merge-base'] = {
-      \ 'fork_point': '--%K %v',
+      \ 'fork-point': '--%k %v',
       \ 'commit': '%v',
       \ 'commit1': '%v',
       \ 'commit2': '%v',
@@ -284,9 +284,9 @@ let s:schemes.show = {
       \ 'object': '%v',
       \}
 let s:schemes['rev-parse'] = {
-      \ 'default': '--%K %V',
-      \ 'prefix': '--%K %V',
-      \ 'resolve_git_dir': '--%K %V',
+      \ 'default': '--%k %v',
+      \ 'prefix': '--%k %v',
+      \ 'resolve_git_dir': '--%k %v',
       \ 'args': '%v',
       \}
 let s:schemes.tag = {

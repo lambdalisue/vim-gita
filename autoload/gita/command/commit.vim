@@ -16,14 +16,20 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'file',
-        \ 'porcelain',
-        \ 'dry-run',
-        \ 'u', 'untracked-files',
-        \ 'a', 'all',
+        \ 'all',
         \ 'reset-author',
+        \ 'file',
+        \ 'author',
+        \ 'date',
+        \ 'message',
         \ 'allow-empty',
+        \ 'allow-empty-message',
         \ 'amend',
+        \ 'untracked-files',
+        \ 'dry-run',
+        \ 'gpg-sign',
+        \ 'no-gpg-sign',
+        \ 'porcelain',
         \])
   if s:GitInfo.get_git_version() =~# '^-\|^1\.[1-3]\.'
     " remove -u/--untracked-files which requires Git >= 1.4
@@ -33,6 +39,7 @@ function! s:pick_available_options(options) abort
 endfunction
 function! s:get_commit_content(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
+  let options['verbose'] = 1
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
@@ -43,6 +50,9 @@ function! s:get_commit_content(git, filenames, options) abort
     retur result.content
   elseif result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
@@ -68,10 +78,9 @@ function! s:commit_commitmsg() abort
           \)
   endif
   let commitmsg = s:get_current_commitmsg()
-  if join(commitmsg) =~# '^\s*$'
+  if join(commitmsg) =~# '^\s*$' && !get(options, 'allow-empty-message')
     call gita#throw(
-          \ 'Warning:',
-          \ 'No commit message is written. Write a commit message first',
+          \ 'An empty commit message is not allowed. Add --allow-empty-message option to allow.',
           \)
   endif
 
@@ -271,6 +280,7 @@ function! gita#command#commit#edit(...) abort
   let options = get(a:000, 0, {})
   let options['porcelain'] = 1
   let options['dry-run'] = 1
+  let options['quiet'] = 1
   let result = gita#command#commit#call(options)
   call gita#set_meta('content_type', 'commit')
   call gita#set_meta('options', s:Dict.omit(options, [
@@ -355,35 +365,70 @@ function! s:get_parser() abort
           \ 'name': 'Gita commit',
           \ 'description': 'Show a status of the repository',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
-          \ 'unknown_description': 'filenames',
+          \ 'unknown_description': 'files to index for commit',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
           \ '--opener', '-o',
-          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
+          \ '--author',
+          \ 'override author for commit', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--date',
+          \ 'override date for commit', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--message', '-m',
+          \ 'commit message', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--gpg-sign', '-S',
+          \ 'GPG sign commit', {
+          \   'type': s:ArgumentParser.types.any,
+          \   'conflicts': ['no-gpg-sign'],
+          \})
+    call s:parser.add_argument(
+          \ '--no-gpg-sign',
+          \ 'no GPG sign commit', {
+          \   'conflicts': ['gpg-sign'],
+          \})
+    call s:parser.add_argument(
           \ '--amend',
-          \ 'Amend',
-          \)
-    call s:parser.add_argument(
-          \ '--allow-empty',
-          \ 'Allow an empty commit',
-          \)
-    call s:parser.add_argument(
-          \ '--reset-author',
-          \ 'Allow an empty commit',
+          \ 'amend previous commit',
           \)
     call s:parser.add_argument(
           \ '--all', '-a',
-          \ 'Allow an empty commit',
+          \ 'commit all changed files',
+          \)
+    call s:parser.add_argument(
+          \ '--allow-empty',
+          \ 'allow an empty commit',
+          \)
+    call s:parser.add_argument(
+          \ '--allow-empty-message',
+          \ 'allow an empty commit message',
+          \)
+    call s:parser.add_argument(
+          \ '--reset-author',
+          \ 'reset author for commit',
           \)
     call s:parser.add_argument(
           \ '--untracked-files', '-u',
-          \ 'Allow an empty commit',
-          \)
-    " TODO: Add more arguments
+          \ 'show untracked files, optional modes: all, normal, no', {
+          \   'choices': ['all', 'normal', 'no'],
+          \   'on_default': 'all',
+          \})
   endif
   return s:parser
 endfunction
@@ -398,7 +443,11 @@ function! gita#command#commit#command(...) abort
         \ deepcopy(g:gita#command#commit#default_options),
         \ options,
         \)
-  call gita#command#commit#open(options)
+  if has_key(options, 'message')
+    call gita#command#commit#call(options)
+  else
+    call gita#command#commit#open(options)
+  endif
 endfunction
 function! gita#command#commit#complete(...) abort
   let parser = s:get_parser()
