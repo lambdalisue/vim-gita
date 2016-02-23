@@ -133,6 +133,14 @@ function! s:get_parser() abort
           \ 'A subordinate option of --patch to show two buffers instead of a single diff.', {
           \   'superordinates': ['patch'],
           \})
+    call s:parser.add_argument(
+          \ 'commit', [
+          \   'a commit of reset target.',
+          \   'if nothing is specified, it reset a content of the index to HEAD.',
+          \   'if <commit> is specified, it reset a content of the index to the named <commit>.',
+          \], {
+          \   'complete': function('gita#variable#complete_commit'),
+          \})
   endif
   return s:parser
 endfunction
