@@ -16,28 +16,31 @@ function! s:pick_available_options(options) abort
   " Note:
   " Let me know or send me a PR if you need options not listed below
   let options = s:Dict.pick(a:options, [
-        \ 'cached', 'no-index', 'untracked',
-        \ 'no-exclude-standard', 'exclude-standard',
-        \ 'a', 'text',
-        \ 'i', 'ignore-case',
+        \ 'cached',
+        \ 'no-index',
+        \ 'untracked',
+        \ 'no-exclude-standard',
+        \ 'exclude-standard',
+        \ 'text',
+        \ 'ignore-case',
         \ 'I',
         \ 'max-depth',
-        \ 'w', 'word-regexp',
-        \ 'v', 'invert-match',
-        \ 'E', 'extended-regexp',
-        \ 'G', 'basic-regexp',
-        \ 'P', 'perl-regexp',
-        \ 'F', 'fixed-strings',
+        \ 'word-regexp',
+        \ 'invert-match',
+        \ 'extended-regexp',
+        \ 'basic-regexp',
+        \ 'perl-regexp',
+        \ 'fixed-strings',
         \ 'all-match',
         \])
   return options
 endfunction
-function! s:get_grep_content(git, query, commit, directories, options) abort
+function! s:get_grep_content(git, pattern, commit, directories, options) abort
   let options = s:pick_available_options(a:options)
   let options['full-name'] = 1
   let options['no-color'] = 1
   let options['line-number'] = 1
-  let options['query'] = a:query
+  let options['pattern'] = a:pattern
   if !empty(a:commit)
     let options['commit'] = a:commit
   endif
@@ -106,12 +109,12 @@ function! s:format_matches(matches, width) abort
 endfunction
 function! s:get_header_string(git) abort
   let commit = gita#get_meta('commit', '')
-  let query = gita#get_meta('query', '')
+  let pattern = gita#get_meta('pattern', '')
   let candidates = gita#get_meta('candidates', [])
   let ncandidates = len(candidates)
   return printf(
         \ 'Files contain "%s" in <%s> (%d file%s) %s',
-        \ query,
+        \ pattern,
         \ empty(commit) ? 'INDEX' : commit,
         \ ncandidates,
         \ ncandidates == 1 ? '' : 's',
@@ -158,7 +161,7 @@ endfunction
 
 function! gita#command#grep#bufname(...) abort
   let options = gita#option#init('^grep$', get(a:000, 0, {}), {
-        \ 'query': '',
+        \ 'pattern': '',
         \ 'commit': '',
         \ 'cached': 0,
         \ 'no-index': 0,
@@ -175,7 +178,7 @@ function! gita#command#grep#bufname(...) abort
         \   empty(options.cached) ? '' : 'cached',
         \   empty(options['no-index']) ? '' : 'no-index',
         \   empty(options.untracked) ? '' : 'untracked',
-        \   options.query,
+        \   options.pattern,
         \ ],
         \ 'commitish': commit,
         \ 'path': '',
@@ -183,7 +186,7 @@ function! gita#command#grep#bufname(...) abort
 endfunction
 function! gita#command#grep#call(...) abort
   let options = gita#option#init('^grep$', get(a:000, 0, {}), {
-        \ 'query': '',
+        \ 'pattern': '',
         \ 'commit': '',
         \ 'directories': [],
         \})
@@ -192,14 +195,14 @@ function! gita#command#grep#call(...) abort
         \ '_allow_empty': 1,
         \})
   let content = s:get_grep_content(
-        \ git, options.query, commit, options.directories, options
+        \ git, options.pattern, commit, options.directories, options
         \)
   let candidates = map(
         \ copy(content),
         \ 's:extend_match(git, v:val)'
         \)
   let result = {
-        \ 'query': options.query,
+        \ 'pattern': options.pattern,
         \ 'commit': commit,
         \ 'content': content,
         \ 'candidates': candidates,
@@ -237,7 +240,7 @@ function! gita#command#grep#edit(...) abort
   call gita#set_meta('options', s:Dict.omit(result.options, [
         \ 'force', 'opener',
         \]))
-  call gita#set_meta('query', result.query)
+  call gita#set_meta('pattern', result.pattern)
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('candidates', result.candidates)
   call gita#set_meta('winwidth', winwidth(0))
@@ -277,27 +280,91 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
+    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
+          \ '--cached',
+          \ 'search in index instead of in the work tree',
+          \)
+    call s:parser.add_argument(
+          \ '--no-index',
+          \ 'find in contents not managed by git',
+          \)
+    call s:parser.add_argument(
+          \ '--untracked',
+          \ 'search in both tracked and untracked files',
+          \)
+    call s:parser.add_argument(
+          \ '--exclude-standard',
+          \ 'ignore files specified via ".gitignore"',
+          \)
+    call s:parser.add_argument(
+          \ '--invert-match', '-v',
+          \ 'show non-matching lines',
+          \)
+    call s:parser.add_argument(
+          \ '--ignore-case', '-i',
+          \ 'case insensitive matching',
+          \)
+    call s:parser.add_argument(
+          \ '--word-regexp', '-w',
+          \ 'match patterns only at word boundaries',
+          \)
+    call s:parser.add_argument(
+          \ '--text', '-a',
+          \ 'process binary files as text',
+          \)
+    call s:parser.add_argument(
+          \ '-I',
+          \ 'don''t match patterns in binary files',
+          \)
+    call s:parser.add_argument(
+          \ '--textconv',
+          \ 'process binary files with textconv filters',
+          \)
+    call s:parser.add_argument(
+          \ '--max-depth',
+          \ 'descend at most DEPTH levels', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--extended-regexp', '-E',
+          \ 'use extended POSIX regular expressions',
+          \)
+    call s:parser.add_argument(
+          \ '--basic-regexp', '-G',
+          \ 'use basic POSIX regular expressions (default)',
+          \)
+    call s:parser.add_argument(
+          \ '--fixed-strings', '-F',
+          \ 'interpret patterns as fixed strings',
+          \)
+    call s:parser.add_argument(
+          \ '--perl-regexp', '-P',
+          \ 'use Perl-compatible regular expressions',
+          \)
+    call s:parser.add_argument(
           \ 'commit', [
-          \   'A commit which you want to grep.',
+          \   'a commit which you want to grep.',
           \   'If nothing is specified, it grep a content in an index or working tree.',
           \   'If <commit> is specified, it grep a content in the named <commit>.',
           \ ], {
           \   'complete': function('gita#variable#complete_commit'),
           \})
     call s:parser.add_argument(
-          \ 'query', [
-          \   'A query.',
+          \ 'pattern', [
+          \   'a match pattern',
           \ ], {
           \})
-    " TODO: Add more arguments
     function! s:parser.hooks.post_validate(options) abort
-      if !has_key(a:options, 'query')
-        let a:options.query = get(a:options, 'commit', '')
+      if !has_key(a:options, 'pattern')
+        let a:options.pattern = get(a:options, 'commit', '')
         let a:options.commit = ''
       endif
     endfunction
@@ -328,10 +395,10 @@ function! gita#command#grep#define_highlights() abort
 endfunction
 function! gita#command#grep#define_syntax() abort
   syntax match GitaComment    /\%^.*$/
-  let query = gita#get_meta('query')
+  let pattern = gita#get_meta('pattern')
   execute printf(
         \ 'syntax match GitaKeyword /%s/',
-        \ s:StringExt.escape_regex(query),
+        \ s:StringExt.escape_regex(pattern),
         \)
 endfunction
 

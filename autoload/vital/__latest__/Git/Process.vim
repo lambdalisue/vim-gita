@@ -249,13 +249,13 @@ function! s:schemes.grep(name, options) abort
         \ 'f': '-%k %v',
         \}
   let options = s:Dict.omit(a:options, [
-        \ 'query',
+        \ 'pattern',
         \ 'commit',
         \ 'directories',
         \])
   let args = s:translate_options(options, scheme)
   let args = extend(args, [
-        \ get(a:options, 'query', ''),
+        \ get(a:options, 'pattern', ''),
         \ get(a:options, 'commit', ''),
         \])
   return args

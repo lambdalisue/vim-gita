@@ -13,9 +13,9 @@ let s:entry_offset = 0
 
 function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [
-        \ 'ignored',
+        \ 'untracked-files',
         \ 'ignore-submodules',
-        \ 'u', 'untracked-files',
+        \ 'ignored',
         \])
   if s:GitInfo.get_git_version() =~# '^-\|^1\.[1-3]\.'
     " remove -u/--untracked-files which requires Git >= 1.4
@@ -26,6 +26,7 @@ endfunction
 function! s:get_status_content(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['porcelain'] = 1
+  let options['no-column'] = 1
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
@@ -285,7 +286,6 @@ function! s:get_parser() abort
           \ 'A way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
-    " TODO: Add more arguments
   endif
   return s:parser
 endfunction

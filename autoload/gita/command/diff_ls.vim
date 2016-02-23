@@ -269,7 +269,6 @@ function! s:get_parser() abort
           \ ], {
           \   'complete': function('gita#variable#complete_commit'),
           \})
-    " TODO: Add more arguments
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'repository')
         let a:options.filename = ''
