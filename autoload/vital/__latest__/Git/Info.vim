@@ -125,14 +125,9 @@ endfunction
 
 " *** Time consuming *********************************************************
 function! s:get_repository_config(git) abort
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, 'config', slug, {})
-  if empty(content)
-    let filename = s:Path.join(a:git.repository, 'config')
-    if filereadable(filename)
-      let content = s:INI.parse_file(filename)
-    endif
-    call s:Git.set_cache_content(a:git, 'config', slug, content)
+  let filename = s:Path.join(a:git.repository, 'config')
+  if filereadable(filename)
+    let content = s:INI.parse_file(filename)
   endif
   return content
 endfunction
@@ -181,27 +176,22 @@ endfunction
 
 
 function! s:resolve_ref(git, ref) abort
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, a:ref, slug, '')
-  if empty(content)
-    let content = s:Git.readline(a:git, a:ref)
-    if content =~# '^ref:\s'
-      " recursively resolve ref
-      return s:resolve_ref(a:git, substitute(content, '^ref:\s', '', ''))
-    elseif empty(content)
-      " ref is missing in traditional directory, the ref should be written in
-      " packed-ref then
-      let filter_code = printf(
-            \ 'v:val[0] !=# "#" && v:val[-%d:] ==# a:ref',
-            \ len(a:ref)
-            \)
-      let packed_refs = filter(
-            \ s:Git.readfile(a:git, 'packed-refs'),
-            \ filter_code
-            \)
-      let content = get(split(get(packed_refs, 0, '')), 0, '')
-    endif
-    call s:Git.set_cache_content(a:git, a:ref, slug, content)
+  let content = s:Git.readline(a:git, a:ref)
+  if content =~# '^ref:\s'
+    " recursively resolve ref
+    return s:resolve_ref(a:git, substitute(content, '^ref:\s', '', ''))
+  elseif empty(content)
+    " ref is missing in traditional directory, the ref should be written in
+    " packed-ref then
+    let filter_code = printf(
+          \ 'v:val[0] !=# "#" && v:val[-%d:] ==# a:ref',
+          \ len(a:ref)
+          \)
+    let packed_refs = filter(
+          \ s:Git.readfile(a:git, 'packed-refs'),
+          \ filter_code
+          \)
+    let content = get(split(get(packed_refs, 0, '')), 0, '')
   endif
   return content
 endfunction
@@ -253,111 +243,84 @@ endfunction
 
 " *** External process *******************************************************
 function! s:get_git_version() abort
-  if !exists('s:_git_version')
-    let result = s:GitProcess.system(['--version'])
-    if result.status
-      let s:_git_version = '0.0.0'
-    else
-      let s:_git_version = matchstr(result.stdout, '^git version \zs.*$')
-    endif
+  let result = s:GitProcess.system(['--version'])
+  if result.status
+    return '0.0.0'
+  else
+    return matchstr(result.stdout, '^git version \zs.*$')
   endif
-  return s:_git_version
 endfunction
 
 function! s:get_last_commitmsg(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, 'index', slug, [])
-  if options.force || empty(content)
-    let result = s:GitProcess.execute(a:git, 'log', {
-          \ '1': 1,
-          \ 'pretty': '%B',
-          \})
-    if result.status
-      if options.fail_silently
-        return []
-      endif
-      call s:GitProcess.throw(result)
+  let result = s:GitProcess.execute(a:git, 'log', {
+        \ '1': 1,
+        \ 'pretty': '%B',
+        \})
+  if result.status
+    if options.fail_silently
+      return []
     endif
-    let content = result.content
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = result.content
   return content
 endfunction
 
 function! s:count_commits_ahead_of_remote(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, 'index', slug, -1)
-  if options.force || content == -1
-    let result = s:GitProcess.execute(a:git, 'log', {
-          \ 'oneline': 1,
-          \ 'revision-range': '@{upstream}..',
-          \})
-    if result.status
-      if options.fail_silently
-        return 0
-      endif
-      call s:GitProcess.throw(result)
+  let result = s:GitProcess.execute(a:git, 'log', {
+        \ 'oneline': 1,
+        \ 'revision-range': '@{upstream}..',
+        \})
+  if result.status
+    if options.fail_silently
+      return 0
     endif
-    let content = len(filter(result.content, '!empty(v:val)'))
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = len(filter(result.content, '!empty(v:val)'))
   return content
 endfunction
 function! s:count_commits_behind_remote(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, 'index', slug, -1)
-  if options.force || content == -1
-    let result = s:GitProcess.execute(a:git, 'log', {
-          \ 'oneline': 1,
-          \ 'revision-range': '..@{upstream}',
-          \})
-    if result.status
-      if options.fail_silently
-        return 0
-      endif
-      call s:GitProcess.throw(result)
+  let result = s:GitProcess.execute(a:git, 'log', {
+        \ 'oneline': 1,
+        \ 'revision-range': '..@{upstream}',
+        \})
+  if result.status
+    if options.fail_silently
+      return 0
     endif
-    let content = len(filter(result.content, '!empty(v:val)'))
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = len(filter(result.content, '!empty(v:val)'))
   return content
 endfunction
 
 function! s:get_available_tags(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'force': 0,
         \}, get(a:000, 0, {}))
   let execute_options = s:Dict.pick(options, [
           \ 'l', 'list',
           \ 'sort',
           \ 'contains', 'points-at',
           \])
-  let slug = expand('<sfile>') . string(execute_options)
-  let content = s:Git.get_cache_content(a:git, 'index', slug, [])
-  if options.force || empty(content)
-    let result = s:GitProcess.execute(a:git, 'tag', execute_options)
-    if result.status
-      if options.fail_silently
-        return []
-      endif
-      call s:GitProcess.throw(result)
+  let result = s:GitProcess.execute(a:git, 'tag', execute_options)
+  if result.status
+    if options.fail_silently
+      return []
     endif
-    let content = result.content
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = result.content
   return content
 endfunction
 function! s:get_available_branches(git, ...) abort
@@ -371,20 +334,15 @@ function! s:get_available_branches(git, ...) abort
         \ 'merged', 'no-merged',
         \ 'color',
         \])
-  let slug = expand('<sfile>') . string(execute_options)
-  let content = s:Git.get_cache_content(a:git, 'index', slug, [])
-  if options.force || empty(content)
-    let execute_options['color'] = 'never'
-    let result = s:GitProcess.execute(a:git, 'branch', execute_options)
-    if result.status
-      if options.fail_silently
-        return []
-      endif
-      call s:GitProcess.throw(result)
+  let execute_options['color'] = 'never'
+  let result = s:GitProcess.execute(a:git, 'branch', execute_options)
+  if result.status
+    if options.fail_silently
+      return []
     endif
-    let content = map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
   return content
 endfunction
 function! s:get_available_commits(git, ...) abort
@@ -398,20 +356,15 @@ function! s:get_available_commits(git, ...) abort
         \ 'until', 'before',
         \ 'pretty',
         \])
-  let slug = expand('<sfile>') . string(execute_options)
-  let content = s:Git.get_cache_content(a:git, 'index', slug, [])
-  if options.force || empty(content)
-    let execute_options['pretty'] = '%h'
-    let result = s:GitProcess.execute(a:git, 'log', execute_options)
-    if result.status
-      if options.fail_silently
-        return []
-      endif
-      call s:GitProcess.throw(result)
+  let execute_options['pretty'] = '%h'
+  let result = s:GitProcess.execute(a:git, 'log', execute_options)
+  if result.status
+    if options.fail_silently
+      return []
     endif
-    let content = result.content
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = result.content
   return content
 endfunction
 function! s:get_available_filenames(git, ...) abort
@@ -443,48 +396,37 @@ function! s:get_available_filenames(git, ...) abort
         \ 'with-tree',
         \ 'abbrev',
         \])
-  let slug = expand('<sfile>') . string(execute_options)
-  let content = s:Git.get_cache_content(a:git, 'index', slug, [])
-  if options.force || empty(content)
-    " NOTE:
-    " git -C <rep> ls-files returns unix relative paths from the repository
-    let result = s:GitProcess.execute(a:git, 'ls-files', execute_options)
-    if result.status
-      if options.fail_silently
-        return []
-      endif
-      call s:GitProcess.throw(result)
+  " NOTE:
+  " git -C <rep> ls-files returns unix relative paths from the repository
+  let result = s:GitProcess.execute(a:git, 'ls-files', execute_options)
+  if result.status
+    if options.fail_silently
+      return []
     endif
-    " return real absolute paths
-    let prefix = expand(a:git.worktree) . s:Path.separator()
-    let content = map(result.content, 's:Path.realpath(prefix . v:val)')
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  " return real absolute paths
+  let prefix = expand(a:git.worktree) . s:Path.separator()
+  let content = map(result.content, 's:Path.realpath(prefix . v:val)')
   return content
 endfunction
 
 function! s:find_common_ancestor(git, commit1, commit2, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
-        \ 'force': 0,
         \}, get(a:000, 0, {}))
-  let slug = expand('<sfile>')
-  let content = s:Git.get_cache_content(a:git, 'index', slug, '')
-  if options.force || empty(content)
-    let lhs = empty(a:commit1) ? 'HEAD' : a:commit1
-    let rhs = empty(a:commit2) ? 'HEAD' : a:commit2
-    let result = s:GitProcess.execute(a:git, 'merge-base', {
-          \ 'commit1': lhs,
-          \ 'commit2': rhs,
-          \})
-    if result.status
-      if options.fail_silently
-        return ''
-      endif
-      call s:GitProcess.throw(result)
+  let lhs = empty(a:commit1) ? 'HEAD' : a:commit1
+  let rhs = empty(a:commit2) ? 'HEAD' : a:commit2
+  let result = s:GitProcess.execute(a:git, 'merge-base', {
+        \ 'commit1': lhs,
+        \ 'commit2': rhs,
+        \})
+  if result.status
+    if options.fail_silently
+      return ''
     endif
-    let content = substitute(result.stdout, '\r\?\n$', '', '')
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
+    call s:GitProcess.throw(result)
   endif
+  let content = substitute(result.stdout, '\r\?\n$', '', '')
   return content
 endfunction
