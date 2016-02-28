@@ -140,7 +140,7 @@ function! s:define_actions() abort
         \ g:gita#command#commit#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
         \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'status',
+        \   'commit', 'status',
         \])
 
   if g:gita#command#commit#enable_default_mappings
@@ -148,7 +148,10 @@ function! s:define_actions() abort
           \ 'map <buffer> <Return> %s',
           \ g:gita#command#commit#default_action_mapping
           \)
-    map <buffer> <C-c><C-c> <Plug>(gita-commit-do)
+    nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
+    nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
+    nmap <buffer> <C-c><C-a> <Plug>(gita-commit-amend)
+    nmap <buffer> <C-^> <Plug>(gita-status)
   endif
 endfunction
 

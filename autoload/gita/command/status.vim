@@ -128,6 +128,7 @@ function! s:define_actions() abort
           \ 'map <buffer> <Return> %s',
           \ g:gita#command#status#default_action_mapping
           \)
+    nmap <buffer> <C-^> <Plug>(gita-commit)
   endif
 endfunction
 
