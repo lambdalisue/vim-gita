@@ -230,7 +230,7 @@ function! gita#command#status#open(...) abort
   call gita#command#status#edit(options)
 endfunction
 function! gita#command#status#edit(...) abort
-  let options = get(a:000, 0, {})
+  let options = gita#option#init('status', get(a:000, 0, {}))
   let options['porcelain'] = 1
   let result = gita#command#status#call(options)
   call gita#set_meta('content_type', 'status')
