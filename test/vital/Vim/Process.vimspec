@@ -69,57 +69,6 @@ Describe Vim.Process
     End
   End
 
-  Describe .get_last_status([{use_vimproc}])
-    if s:Process.has_vimproc()
-      It returns result of vimproc#get_last_status() if {use_vimproc} is omitted and vimproc is installed
-        call vimproc#system(escape(s:TRUE, '\'))
-        call system(s:FALSE)
-        Assert Equals(Process.get_last_status(), 0)
-
-        call vimproc#system(escape(s:FALSE, '\'))
-        call system(s:TRUE)
-        Assert Equals(Process.get_last_status(), 1)
-      End
-      It returns result of vimproc#get_last_status() if {use_vimproc} is 1
-        call vimproc#system(escape(s:TRUE, '\'))
-        call system(s:FALSE)
-        Assert Equals(Process.get_last_status(1), 0)
-
-        call vimproc#system(escape(s:FALSE, '\'))
-        call system(s:TRUE)
-        Assert Equals(Process.get_last_status(1), 1)
-      End
-      It returns v:shell_error if {use_vimproc} is 0
-        call vimproc#system(escape(s:TRUE, '\'))
-        call system(s:FALSE)
-        Assert Equals(Process.get_last_status(0), 1)
-
-        call vimproc#system(escape(s:FALSE, '\'))
-        call system(s:TRUE)
-        Assert Equals(Process.get_last_status(0), 0)
-      End
-    else
-      It returns v:shell_error if {use_vimproc} is omitted and vimproc is not installed
-        call system(s:TRUE)
-        Assert Equals(Process.get_last_status(), 0)
-
-        call system(s:FALSE)
-        Assert Equals(Process.get_last_status(), 1)
-      End
-      It throws an exception if {use_vimproc} is 1
-        Throws /{use_vimproc} is specified but vimproc is not available/
-              \ Process.get_last_status(1)
-      End
-      It returns v:shell_error if {use_vimproc} is 0
-        call system(s:TRUE)
-        Assert Equals(Process.get_last_status(0), 0)
-
-        call system(s:FALSE)
-        Assert Equals(Process.get_last_status(0), 1)
-      End
-    endif
-  End
-
   Describe .repair_posix_text({text})
     It append a trailing "\n" if no trailing newline (\r?\n) is found
       let text = "abcdefg\nhijklmn\nopqrstu"
