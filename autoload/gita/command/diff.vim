@@ -266,7 +266,7 @@ function! gita#command#diff#edit(...) abort
     setlocal buftype=nowrite
     setlocal readonly
   endif
-  setfiletype diff
+  setlocal filetype=diff
 endfunction
 function! gita#command#diff#open2(...) abort
   let options = extend({
