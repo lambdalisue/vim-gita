@@ -228,7 +228,7 @@ function! gita#statusline#get_current_mode(git) abort
   return s:GitInfo.get_current_mode(a:git)
 endfunction
 function! gita#statusline#get_local_branch(git) abort
-  let slug = expand('<sfile>')
+  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
   let content = s:Git.get_cache_content(a:git, 'HEAD', slug, {})
   if empty(content)
     let content = s:GitInfo.get_local_branch(a:git)
@@ -237,7 +237,7 @@ function! gita#statusline#get_local_branch(git) abort
   return content
 endfunction
 function! gita#statusline#get_remote_branch(git) abort
-  let slug = expand('<sfile>')
+  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
   let content = s:Git.get_cache_content(a:git, 'HEAD', slug, {})
   if empty(content)
     let content = s:GitInfo.get_remote_branch(a:git)
@@ -246,7 +246,7 @@ function! gita#statusline#get_remote_branch(git) abort
   return content
 endfunction
 function! gita#statusline#get_status_count(git) abort
-  let slug = expand('<sfile>')
+  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
   let content = s:Git.get_cache_content(a:git, 'index', slug, {})
   if empty(content)
     let status_count = {
@@ -295,7 +295,7 @@ function! gita#statusline#get_status_count(git) abort
   return content
 endfunction
 function! gita#statusline#get_traffic_count(git) abort
-  let slug = expand('<sfile>')
+  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
   let content = s:Git.get_cache_content(a:git, 'index', slug, {})
   if empty(content)
     let content = {
