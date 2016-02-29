@@ -234,7 +234,7 @@ function! gita#command#grep#open(...) abort
   call gita#command#grep#edit(options)
 endfunction
 function! gita#command#grep#edit(...) abort
-  let options = get(a:000, 0, {})
+  let options = gita#option#init('^grep$', {}, get(a:000, 0, {}))
   let result = gita#command#grep#call(options)
   call gita#set_meta('content_type', 'grep')
   call gita#set_meta('options', s:Dict.omit(result.options, [

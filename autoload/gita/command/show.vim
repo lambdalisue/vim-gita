@@ -259,7 +259,7 @@ function! gita#command#show#read(...) abort
         \})
 endfunction
 function! gita#command#show#edit(...) abort
-  let options = extend({
+  let options = gita#option#init('^show$', {
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',

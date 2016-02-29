@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Prelude = s:V.import('Prelude')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
@@ -221,13 +222,20 @@ function! gita#command#diff#read(...) abort
         \})
 endfunction
 function! gita#command#diff#edit(...) abort
-  let options = extend({
+  let options = gita#option#init('^diff$', {
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
         \ 'patch': 0,
         \ 'force': 0,
         \}, get(a:000, 0, {}))
+  " check &diffopt
+  if &diffopt =~# 'iwhite' && !has_key(options, 'ignore-space-change')
+    let options['ignore-space-change'] = 1
+  endif
+  if &diffopt =~# 'context:\d\+' && !s:Prelude.is_string(get(options, 'unified')) " NOTE: unified=1 should be overwritten
+    let options['unified'] = matchstr(&diffopt, 'context:\zs\d\+')
+  endif
   if options.patch
     " 'patch' mode requires:
     " - Existence of INDEX, namely no commit or --cached

@@ -209,7 +209,7 @@ function! gita#command#diff_ls#open(...) abort
   call gita#command#diff_ls#edit(options)
 endfunction
 function! gita#command#diff_ls#edit(...) abort
-  let options = get(a:000, 0, {})
+  let options = gita#option#init('^diff-ls$', {}, get(a:000, 0, {}))
   let result = gita#command#diff_ls#call(options)
   call gita#set_meta('content_type', 'diff-ls')
   call gita#set_meta('options', s:Dict.omit(result.options, [
