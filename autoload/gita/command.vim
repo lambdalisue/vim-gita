@@ -161,6 +161,10 @@ call gita#command#register('grep',
       \ 'gita#command#grep#command',
       \ 'gita#command#grep#complete',
       \)
+call gita#command#register('merge',
+      \ 'gita#command#merge#command',
+      \ 'gita#command#merge#complete',
+      \)
 call gita#command#register('ls',
       \ 'gita#command#ls#command',
       \ 'gita#command#ls#complete',

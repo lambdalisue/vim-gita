@@ -264,6 +264,11 @@ function! s:schemes.grep(name, options) abort
         \])
   return args
 endfunction
+let s:schemes.merge = {
+      \ 's': '-%k %v',
+      \ 'X': '-%k %v',
+      \ 'commit': '%v',
+      \}
 let s:schemes.log = {
       \ 'revision-range': '%v',
       \}
