@@ -25,6 +25,7 @@ endfunction
 function! s:apply_command(git, commits, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
+  let options['no-edit'] = 1
   if !empty(a:commits)
     let options['commit'] = a:commits
   endif
