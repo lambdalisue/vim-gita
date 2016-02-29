@@ -28,7 +28,7 @@ function! s:pick_available_options(options) abort
         \ 'committer-date-is-author-date', 'ignore-date',
         \ 'preserve-merges',
         \ 'exec',
-        \ 'root'
+        \ 'root',
         \ 'autosquash', 'no-autosquash',
         \ 'autostash', 'no-autostash',
         \ 'rerere-autoupdate',
