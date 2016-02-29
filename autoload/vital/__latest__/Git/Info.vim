@@ -127,9 +127,9 @@ endfunction
 function! s:get_repository_config(git) abort
   let filename = s:Path.join(a:git.repository, 'config')
   if filereadable(filename)
-    let content = s:INI.parse_file(filename)
+    return s:INI.parse_file(filename)
   endif
-  return content
+  return {}
 endfunction
 function! s:get_branch_remote(config, local_branch) abort
   " a name of remote which the {local_branch} connect
