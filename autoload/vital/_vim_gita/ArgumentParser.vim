@@ -15,6 +15,7 @@ function! s:_vital_created(module) abort " {{{
     let s:const.types.value = 'VALUE'
     let s:const.types.switch = 'SWITCH'
     let s:const.types.choice = 'CHOICE'
+    let s:const.types.multiple = 'MULTIPLE'
     lockvar s:const
   endif
   call extend(a:module, s:const)
@@ -479,9 +480,23 @@ function! s:parser._parse_args(args, ...) abort " {{{
       let name = get(self.alias, m[1], m[1])
       if name =~# arguments_pattern
         if !empty(m[2])
-          let options[name] = s:strip_quotes(m[2])
+          if self.arguments[name].type ==# s:const.types.multiple
+            let options[name] = extend(
+                  \ get(options, name, []),
+                  \ [s:strip_quotes(m[2])],
+                  \)
+          else
+            let options[name] = s:strip_quotes(m[2])
+          endif
         elseif get(self, 'enable_positional_assign', 0) && !empty(nword) && nword !~# '^--\?'
-          let options[name] = s:strip_quotes(nword)
+          if self.arguments[name].type ==# s:const.types.multiple
+            let options[name] = extend(
+                  \ get(options, name, []),
+                  \ [s:strip_quotes(nword)],
+                  \)
+          else
+            let options[name] = s:strip_quotes(nword)
+          endif
           let cursor += 1
         else
           let options[name] = get(self.arguments[name], 'on_default', 1)
@@ -571,6 +586,11 @@ function! s:parser._validate_types(options) abort " {{{
               \ 'Argument "%s" is VALUE argument but no value is specified',
               \ name,
               \))
+      elseif type == s:const.types.multiple && s:P.is_number(value)
+        call s:_throw(printf(
+              \ 'Argument "%s" is MULTIPLE argument but no value is specified',
+              \ name,
+              \))
       elseif type == s:const.types.switch && s:P.is_string(value)
         call s:_throw(printf(
               \ 'Argument "%s" is SWITCH argument but "%s" is specified',
@@ -645,11 +665,22 @@ function! s:parser._validate_pattern(options) abort " {{{
   for [name, value] in items(a:options)
     if name !~# '\v^__.*__$'
       let pattern = self.arguments[name].pattern
-      if !empty(pattern) && value !~# pattern
-        call s:_throw(printf(
-              \ 'A value of argument "%s" does not follow a specified pattern "%s".',
-              \ name, pattern,
-              \))
+      if !empty(pattern)
+        if s:P.is_string(value) && value !~# pattern
+          call s:_throw(printf(
+                \ 'A value of argument "%s" does not follow a specified pattern "%s".',
+                \ name, pattern,
+                \))
+        elseif s:P.is_list(value)
+          for _value in value
+            if _value !~# pattern
+              call s:_throw(printf(
+                    \ 'One of value "%s" of argument "%s" does not follow a specified pattern "%s".',
+                    \ _value, name, pattern,
+                    \))
+            endif
+          endfor
+        endif
       endif
     endif
     silent! unlet name
@@ -737,7 +768,7 @@ endfunction " }}}
 function! s:parser._complete_optional_argument(arglead, cmdline, cursorpos, options) abort " {{{
   let candidates = []
   for argument in values(self.arguments)
-    if has_key(a:options, argument.name) || argument.positional
+    if (has_key(a:options, argument.name) && argument.type !=# s:const.types.multiple) || argument.positional
       continue
     elseif !empty(argument.conflicts) && !empty(self.get_conflicted_arguments(argument.name, a:options))
       continue
