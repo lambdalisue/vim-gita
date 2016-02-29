@@ -132,7 +132,7 @@ function! s:get_parser() abort
           \   'conflicts': ['no-stat'],
           \})
     call s:parser.add_argument(
-          \ '--no-stat', '-n'
+          \ '--no-stat', '-n',
           \ 'do not show diffstat of what changed upstrem', {
           \   'conflicts': ['stat'],
           \})
@@ -201,12 +201,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'upstream',
           \ 'upstream branch to compare against', {
-          \   'complete': function('gita#variable#complete_commit'), 
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     call s:parser.add_argument(
           \ 'branch',
           \ 'working branch; defaults to HEAD', {
-          \   'complete': function('gita#variable#complete_commit'), 
+          \   'complete': function('gita#variable#complete_commit'),
           \})
   endif
   return s:parser
