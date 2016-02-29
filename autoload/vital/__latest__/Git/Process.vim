@@ -62,9 +62,15 @@ function! s:throw(msg) abort
 endfunction
 
 function! s:translate_option(key, val, pattern) abort
-  if s:Prelude.is_number(a:val)
+  if s:Prelude.is_list(a:val)
+    let args = []
+    for val in a:val
+      call extend(args, s:translate_option(a:key, val, a:pattern))
+    endfor
+    return args
+  elseif s:Prelude.is_number(a:val)
     if a:val == 0
-      return ''
+      return []
     endif
     let val = ''
   else
@@ -89,16 +95,14 @@ function! s:translate_option(key, val, pattern) abort
         \   ? s:_shellescape(val)
         \   : '',
         \}
-  return s:StringExt.format(format, format_map, data)
+  return s:StringExt.splitargs(s:StringExt.format(format, format_map, data))
 endfunction
 function! s:translate_options(options, scheme) abort
   let args = []
   for key  in sort(keys(a:options))
     if key !~# '^__.\+__$' && key !=# '--'
       let pattern = get(a:scheme, key, '')
-      call extend(args, s:StringExt.splitargs(
-            \ s:translate_option(key, a:options[key], pattern)
-            \))
+      call extend(args, s:translate_option(key, a:options[key], pattern))
     endif
   endfor
   return args
