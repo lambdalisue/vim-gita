@@ -82,18 +82,18 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--fork-point',
-          \ 'use "merge-base --fork-point" to refine upstream',
+          \ 'use "merge-base --fork-point" to refine upstream', {
           \   'conflicts': ['no-fork-point'],
           \})
     call s:parser.add_argument(
           \ '--no-fork-point',
-          \ 'do not use "merge-base --fork-point" to refine upstream',
+          \ 'do not use "merge-base --fork-point" to refine upstream', {
           \   'conflicts': ['fork-point'],
           \})
     call s:parser.add_argument(
           \ '--onto',
-          \ 'rebase onto given branch instead of upstream',
-          \   'complete': function('gita#variable#complete_commit'), 
+          \ 'rebase onto given branch instead of upstream', {
+          \   'complete': function('gita#variable#complete_commit'),
           \})
     call s:parser.add_argument(
           \ '--preserve-merges', '-p',
