@@ -354,7 +354,7 @@ function! gita#command#diff#open2(...) abort
     let opener = options.opener
   endif
   let split = empty(options.split)
-        \ ? g:gita#command#diff#default_split
+        \ ? matchstr(&diffopt, 'vertical')
         \ : options.split
   " NOTE:
   " Place main contant to visually rightbelow and focus
@@ -597,7 +597,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--split', '-s',
           \ 'open two buffer to compare by vimdiff rather than to open a single diff file. most of options will be disabled', {
-          \   'on_default': g:gita#command#diff#default_split,
+          \   'on_default': &diffopt =~# 'vertical' ? 'vertical' : 'horizontal',
           \   'choices': ['vertical', 'horizontal'],
           \})
     call s:parser.add_argument(
@@ -666,5 +666,4 @@ endfunction
 call gita#util#define_variables('command#diff', {
       \ 'default_options': {},
       \ 'default_opener': 'edit',
-      \ 'default_split': 'vertical',
       \})
