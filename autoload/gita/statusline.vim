@@ -9,22 +9,63 @@ let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
 
-let s:format_map = {
-      \ 'ln': 'local_name',
-      \ 'lb': 'local_branch',
-      \ 'rn': 'remote_name',
-      \ 'rb': 'remote_branch',
-      \ 'md': 'mode',
-      \}
+let s:format_map = {}
+function! s:format_map.md(data) abort
+  " mode name
+  return gita#statusline#get_current_mode(a:data._git)
+endfunction
+function! s:format_map.ln(data) abort
+  " local repository name
+  return a:data._git.repository_name
+endfunction
+function! s:format_map.lb(data) abort
+  " local branch name
+  if !has_key(a:data, 'local_branch')
+    call s:extend_local_branch(a:data)
+  endif
+  return a:data.local_branch.name
+endfunction
+function! s:format_map.lh(data) abort
+  " local branch hashref
+  if !has_key(a:data, 'local_branch')
+    call s:extend_local_branch(a:data)
+  endif
+  return a:data.local_branch.hash
+endfunction
+function! s:format_map.rn(data) abort
+  " remote repository name
+  if !has_key(a:data, 'remote_branch')
+    call s:extend_remote_branch(a:data)
+  endif
+  return a:data.remote_branch.remote
+endfunction
+function! s:format_map.rb(data) abort
+  " local branch name
+  if !has_key(a:data, 'remote_branch')
+    call s:extend_remote_branch(a:data)
+  endif
+  return a:data.remote_branch.name
+endfunction
+function! s:format_map.rh(data) abort
+  " local branch hashref
+  if !has_key(a:data, 'remote_branch')
+    call s:extend_remote_branch(a:data)
+  endif
+  return a:data.remote_branch.hash
+endfunction
 function! s:format_map.og(data) abort
   " outgoing
-  let git = a:data._gita
-  return s:GitInfo.count_commits_ahead_of_remote(git)
+  if !has_key(a:data, 'outgoing')
+    call s:extend_traffic_count(a:data)
+  endif
+  return a:data.outgoing
 endfunction
 function! s:format_map.ic(data) abort
-  " outgoing
-  let git = a:data._gita
-  return s:GitInfo.count_commits_behind_remote(git)
+  " incoming
+  if !has_key(a:data, 'incoming')
+    call s:extend_traffic_count(a:data)
+  endif
+  return a:data.incoming
 endfunction
 function! s:format_map.nc(data) abort
   " number of conflicted
@@ -76,6 +117,23 @@ function! s:format_map.nm(data) abort
   return a:data.modified
 endfunction
 
+function! s:extend_local_branch(data) abort
+  call extend(a:data, {
+        \ 'local_branch': gita#statusline#get_local_branch(a:data._git),
+        \})
+endfunction
+function! s:extend_remote_branch(data) abort
+  call extend(a:data, {
+        \ 'remote_branch': gita#statusline#get_remote_branch(a:data._git),
+        \})
+endfunction
+function! s:extend_status_count(data) abort
+  call extend(a:data, gita#statusline#get_status_count(a:data._git))
+endfunction
+function! s:extend_traffic_count(data) abort
+  call extend(a:data, gita#statusline#get_traffic_count(a:data._git))
+endfunction
+
 let s:preset = {}
 let s:preset.branch = '%{|/}ln%lb%{ <> |}rn%{/|}rb%{ *|*}md'
 let s:preset.branch_fancy = '⭠ %{|/}ln%lb%{ ⇄ |}rn%{/|}rb%{ *|*}md'
@@ -84,51 +142,6 @@ let s:preset.branch_short_fancy = '⭠ %{|/}ln%lb%{ ⇄ |}rn'
 let s:preset.status = '%{!| }nc%{+| }na%{-| }nd%{"| }nr%{*| }nm%{@|}nu'
 let s:preset.traffic = '%{<| }ic%{>|}og'
 let s:preset.traffic_fancy = '%{￩| }ic%{￫}og'
-
-function! s:extend_status_count(data) abort
-  let git = a:data._gita
-  let status_count = {
-        \ 'conflicted': 0,
-        \ 'unstaged': 0,
-        \ 'staged': 0,
-        \ 'added': 0,
-        \ 'deleted': 0,
-        \ 'renamed': 0,
-        \ 'modified': 0,
-        \}
-  try
-    let result = s:GitProcess.execute(git, 'status', {
-          \ 'porcelain': 1,
-          \ 'ignore_submodules': 1,
-          \})
-    let result = s:GitParser.parse_status(result.content)
-    let status_count.conflicted = len(result.conflicted)
-    let status_count.unstaged = len(result.unstaged)
-    let status_count.staged = len(result.staged)
-    for status in result.staged
-      if status.index ==# 'A'
-        let status_count.added += 1
-      elseif status.index ==# 'D'
-        let status_count.deleted += 1
-      elseif status.index ==# 'R'
-        let status_count.renamed += 1
-      else
-        let status_count.modified += 1
-      endif
-    endfor
-    call extend(a:data, status_count)
-  catch /^vital: Git[:.]/
-    call extend(a:data, {
-          \ 'conflicted': 0,
-          \ 'unstaged': 0,
-          \ 'staged': 0,
-          \ 'added': 0,
-          \ 'deleted': 0,
-          \ 'renamed': 0,
-          \ 'modified': 0,
-          \})
-  endtry
-endfunction
 
 function! s:get_format_cache(git) abort
   if !has_key(a:git, '_statusline_format_cache')
@@ -142,7 +155,6 @@ function! s:get_uptime_cache(git) abort
   endif
   return a:git._statusline_uptime_cache
 endfunction
-
 function! s:is_repository_updated(git) abort
   let uptime_cache = s:get_uptime_cache(a:git)
   let watched = [
@@ -179,6 +191,9 @@ function! s:on_GitaStatusModified() abort
   let git = gita#get()
   if git.is_enabled
     call s:get_format_cache(git).clear()
+    for key in filter(git.repository_cache.keys(), 'v:val =~# "^gita#statusline"')
+      call git.repository_cache.remove(key)
+    endfor
   endif
 endfunction
 
@@ -190,18 +205,7 @@ function! gita#statusline#format(format) abort
       return format_cache.get(a:format)
     endif
     call format_cache.remove(a:format)
-    let local_branch = s:GitInfo.get_local_branch(git)
-    let remote_branch = s:GitInfo.get_remote_branch(git)
-    let info = {
-          \ 'local_name': git.repository_name,
-          \ 'local_branch': local_branch.name,
-          \ 'local_hashref': local_branch.hash,
-          \ 'remote_name': remote_branch.remote,
-          \ 'remote_branch': remote_branch.name,
-          \ 'remote_hashref': remote_branch.hash,
-          \ 'mode': s:GitInfo.get_current_mode(git),
-          \ '_gita': git,
-          \}
+    let info = { '_git': git }
     let text = s:StringExt.format(a:format, s:format_map, info)
     call format_cache.set(a:format, text)
     return text
@@ -209,7 +213,6 @@ function! gita#statusline#format(format) abort
     return ''
   endtry
 endfunction
-
 function! gita#statusline#preset(name) abort
   if !has_key(s:preset, a:name)
     call s:Prompt.error(printf(
@@ -219,6 +222,95 @@ function! gita#statusline#preset(name) abort
     return ''
   endif
   return gita#statusline#format(s:preset[a:name])
+endfunction
+
+function! gita#statusline#get_current_mode(git) abort
+  return s:GitInfo.get_current_mode(a:git)
+endfunction
+function! gita#statusline#get_local_branch(git) abort
+  let slug = expand('<sfile>')
+  let content = s:Git.get_cache_content(a:git, 'HEAD', slug, {})
+  if empty(content)
+    let content = s:GitInfo.get_local_branch(a:git)
+    call s:Git.set_cache_content(a:git, 'HEAD', slug, content)
+  endif
+  return content
+endfunction
+function! gita#statusline#get_remote_branch(git) abort
+  let slug = expand('<sfile>')
+  let content = s:Git.get_cache_content(a:git, 'HEAD', slug, {})
+  if empty(content)
+    let content = s:GitInfo.get_remote_branch(a:git)
+    call s:Git.set_cache_content(a:git, 'HEAD', slug, content)
+  endif
+  return content
+endfunction
+function! gita#statusline#get_status_count(git) abort
+  let slug = expand('<sfile>')
+  let content = s:Git.get_cache_content(a:git, 'index', slug, {})
+  if empty(content)
+    let status_count = {
+          \ 'conflicted': 0,
+          \ 'unstaged': 0,
+          \ 'staged': 0,
+          \ 'added': 0,
+          \ 'deleted': 0,
+          \ 'renamed': 0,
+          \ 'modified': 0,
+          \}
+    try
+      let result = s:GitProcess.execute(a:git, 'status', {
+            \ 'porcelain': 1,
+            \ 'ignore_submodules': 1,
+            \})
+      let result = s:GitParser.parse_status(result.content)
+      let status_count.conflicted = len(result.conflicted)
+      let status_count.unstaged = len(result.unstaged)
+      let status_count.staged = len(result.staged)
+      for status in result.staged
+        if status.index ==# 'A'
+          let status_count.added += 1
+        elseif status.index ==# 'D'
+          let status_count.deleted += 1
+        elseif status.index ==# 'R'
+          let status_count.renamed += 1
+        else
+          let status_count.modified += 1
+        endif
+      endfor
+      let content = status_count
+    catch /^vital: Git[:.]/
+      let content = {
+            \ 'conflicted': 0,
+            \ 'unstaged': 0,
+            \ 'staged': 0,
+            \ 'added': 0,
+            \ 'deleted': 0,
+            \ 'renamed': 0,
+            \ 'modified': 0,
+            \}
+    endtry
+    call s:Git.set_cache_content(a:git, 'index', slug, content)
+  endif
+  return content
+endfunction
+function! gita#statusline#get_traffic_count(git) abort
+  let slug = expand('<sfile>')
+  let content = s:Git.get_cache_content(a:git, 'index', slug, {})
+  if empty(content)
+    let content = {
+          \ 'incoming': 0,
+          \ 'outgoing': 0,
+          \}
+    try
+      let content.incoming = s:GitInfo.count_commits_behind_remote(a:git)
+      let content.outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
+    catch /^vital: Git[:.]/
+      " fail silently
+    endtry
+    call s:Git.set_cache_content(a:git, 'index', slug, content)
+  endif
+  return content
 endfunction
 
 augroup vim_gita_internal_statusline_clear_cache

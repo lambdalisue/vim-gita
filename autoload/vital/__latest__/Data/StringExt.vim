@@ -43,20 +43,22 @@ function! s:format(format, format_map, data) abort
   if empty(a:data)
     return ''
   endif
-  let pattern_base = '\v\%%%%(\{([^\}\|]*)%%(\|([^\}\|]*)|)\}|)%s'
+  let pattern_base = '\C%\%({\([^|}]*\)\%(|\([^}]*\)\)\?}\)\?'
   let str = copy(a:format)
   for [key, Value] in items(a:format_map)
-    if s:Prelude.is_funcref(Value)
-      let result = s:smart_string(call(Value, [a:data], a:format_map))
-    else
-      let result = s:smart_string(get(a:data, Value, ''))
+    let pattern = pattern_base . key
+    if str =~# pattern
+      if s:Prelude.is_funcref(Value)
+        let result = s:smart_string(call(Value, [a:data], a:format_map))
+      else
+        let result = s:smart_string(get(a:data, Value, ''))
+      endif
+      let repl = strlen(result) ? '\1' . escape(result, '\') . '\2' : ''
+      let str = substitute(str, pattern, repl, 'g')
     endif
-    let pattern = printf(pattern_base, key)
-    let repl = strlen(result) ? printf('\1%s\2', escape(result, '\')) : ''
-    let str = substitute(str, '\C' . pattern, repl, 'g')
     unlet! Value
   endfor
-  return substitute(str, '\v^\s+|\s+$', '', 'g')
+  return substitute(str, '^\s\+\|\s\+$', '', 'g')
 endfunction
 
 function! s:unescape(string, chars) abort
