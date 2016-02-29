@@ -289,14 +289,23 @@ let s:schemes['merge-base'] = {
 let s:schemes['ls-tree'] = {
       \ 'commit': '%v',
       \}
-let s:schemes.show = {
-      \ 'object': '%v',
+let s:schemes.rebase = {
+      \ 'onto': '--%k %v',
+      \ 's': '-%k %v',
+      \ 'X': '-%k %v',
+      \ 'x': '-%k %v',
+      \ 'exec': '--%k %v',
+      \ 'upstream': '%v',
+      \ 'branch': '%v',
       \}
 let s:schemes['rev-parse'] = {
       \ 'default': '--%k %v',
       \ 'prefix': '--%k %v',
       \ 'resolve_git_dir': '--%k %v',
       \ 'args': '%v',
+      \}
+let s:schemes.show = {
+      \ 'object': '%v',
       \}
 let s:schemes.tag = {
       \ 'n': '-%k%v',

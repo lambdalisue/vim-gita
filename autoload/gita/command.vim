@@ -169,6 +169,10 @@ call gita#command#register('ls',
       \ 'gita#command#ls#command',
       \ 'gita#command#ls#complete',
       \)
+call gita#command#register('rebase',
+      \ 'gita#command#rebase#command',
+      \ 'gita#command#rebase#complete',
+      \)
 call gita#command#register('reset',
       \ 'gita#command#reset#command',
       \ 'gita#command#reset#complete',
