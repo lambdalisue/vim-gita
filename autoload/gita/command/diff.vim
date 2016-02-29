@@ -194,9 +194,15 @@ function! gita#command#diff#open(...) abort
     if options.anchor
       call s:Anchor.focus()
     endif
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \})
+    try
+      " for cascading options
+      let g:gita#var = options
+      call gita#util#buffer#open(bufname, {
+            \ 'opener': opener,
+            \})
+    finally
+      unlet! g:gita#var
+    endtry
     " BufReadCmd will apply content
     call gita#util#select(options.selection)
   endif
