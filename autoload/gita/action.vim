@@ -155,3 +155,27 @@ function! gita#action#smart_map(lhs, rhs) abort range
     call gita#util#handle_exception()
   endtry
 endfunction
+
+
+function! gita#action#register(name, fn, options) abort
+  let options = extend({
+        \ 'mapping': printf('<Plug>(gita-%s)', a:name),
+        \ 'mapping_mode': 'nv',
+        \ 'description': printf('Perform %s action', a:name),
+        \ 'kwargs': {},
+        \}, a:options)
+  let action = gita#action#get()
+  let action.actions[a:name] = {
+        \ 'description': options.description,
+        \ 'fn': a:fn,
+        \}
+  if !empty(options.mapping)
+    let action.mapping_table[options.mapping] = options.description
+    for c in options.mapping_mode
+      execute printf(
+            \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
+            \ c, options.mapping, c ==# '[ni]' ? '<C-u>' : '', a:name,
+            \)
+    endfor
+  endif
+endfunction

@@ -56,4 +56,32 @@ function! gita#action#add#get_mapping_table() abort
   return s:MAPPING_TABLE
 endfunction
 
-call gita#util#define_variables('action#add', {})
+function! gita#action#add#define_action(...) abort
+  call gita#action#register('add', function('s:action'), {
+        \ 'description': 'Add file contents to the index',
+        \ 'kwargs': {},
+        \})
+  call gita#action#register('add-force', function('s:action'), {
+        \ 'description': 'Add file contents to the index (force)',
+        \ 'kwargs': {
+        \   'force': 1,
+        \ },
+        \})
+  call gita#action#register('add-patch', function('s:action'), {
+        \ 'description': 'Add file contents to the index with PATCH mode',
+        \ 'mapping_mode': 'n',
+        \ 'kwargs': {
+        \   'patch': 1,
+        \ },
+        \})
+endfunction
+
+function! gita#action#add#define_mapping(enable_default) abort
+  if a:enable_default
+    nmap <buffer><nowait><expr> -a gita#action#smart_map('-a', '<Plug>(gita-add)')
+    nmap <buffer><nowait><expr> -A gita#action#smart_map('-A', '<Plug>(gita-add-force)')
+    vmap <buffer><nowait><expr> -a gita#action#smart_map('-a', '<Plug>(gita-add)')
+    vmap <buffer><nowait><expr> -A gita#action#smart_map('-A', '<Plug>(gita-add-force)')
+    nmap <buffer><nowait><expr> -p gita#action#smart_map('-p', '<Plug>(gita-add-patch)')
+  endif
+endfunction
