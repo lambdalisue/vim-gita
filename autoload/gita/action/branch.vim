@@ -1,36 +1,32 @@
-function! s:is_available(candidate) abort
-  let necessary_attributes = [
-      \ 'is_remote',
-      \ 'is_selected',
-      \ 'name',
-      \ 'remote',
-      \ 'linkto',
-      \ 'record',
-      \]
-  for attribute in necessary_attributes
-    if !has_key(a:candidate, attribute)
-      return 0
-    endif
-  endfor
-  return 1
-endfunction
-
-function! s:action(candidates, options) abort
-  let branch_names = []
-  for candidate in a:candidates
-    if s:is_available(candidate)
-      call add(branch_names, candidate.name)
-    endif
-  endfor
-  if empty(branch_names)
-    return
-  endif
-  call gita#throw('Not implemented yet')
+function! s:action_checkout(candidate, options) abort
+  let options = extend({
+        \ 'force': 0,
+        \ 'no-track': 0,
+        \}, a:options)
+  call gita#command#checkout#call({
+        \ 'force': options.force,
+        \ 'no-track': options['no-track'],
+        \ 'commit': a:candidate.name,
+        \})
 endfunction
 
 function! gita#action#branch#define(disable_mapping) abort
+  call gita#action#define('branch:checkout', function('s:action_checkout'), {
+        \ 'description': 'Checkout a branch',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': {},
+        \})
+  call gita#action#define('branch:checkout:no-track', function('s:action_checkout'), {
+        \ 'description': 'Checkout a branch (no-tracking)',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': { 'no-track': 1 },
+        \})
   if a:disable_mapping
     return
   endif
+  nmap <buffer> ct <Plug>(gita-branch-checkout)
+  nmap <buffer> cn <Plug>(gita-branch-checkout-no-track)
 endfunction
 

@@ -11,7 +11,6 @@ function! s:action(candidates, options) abort
         \ 'v:val.path',
         \)
   call gita#command#checkout#call({
-        \ 'quiet': 1,
         \ 'force': options.force,
         \ 'ours': options.ours,
         \ 'theirs': options.theirs,

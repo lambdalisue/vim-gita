@@ -39,13 +39,14 @@ function! s:pick_available_options(options) abort
 endfunction
 function! s:get_branch_content(git, options) abort
   let options = s:pick_available_options(a:options)
+  let options['verbose'] = 1
   let options['no-column'] = 1
   let options['no-color'] = 1
   let options['no-abbrev'] = 1
   let result = gita#execute(a:git, 'branch', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
-  elseif !get(a:options, 'quiet', 0)
+  elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")
   endif
@@ -92,6 +93,18 @@ endfunction
 function! s:on_BufReadCmd() abort
   try
     call gita#command#branch#edit()
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+function! s:on_GitaStatusModified() abort
+  try
+    let winnum = winnr()
+    keepjump windo
+          \ if &filetype ==# 'gita-branch' |
+          \   call gita#command#branch#edit() |
+          \ endif
+    execute printf('keepjump %dwincmd w', winnum)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry
@@ -298,9 +311,14 @@ function! gita#command#branch#define_syntax() abort
   syntax match GitaRemote     /^..remotes\/[^ ]\+/hs=s+2
 endfunction
 
+augroup vim_gita_internal_branch_update
+  autocmd!
+  autocmd User GitaStatusModified call s:on_GitaStatusModified()
+augroup END
+
 call gita#util#define_variables('command#branch', {
       \ 'default_options': {},
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-show)',
+      \ 'default_action_mapping': '<Plug>(gita-branch-checkout)',
       \ 'disable_default_mappings': 0,
       \})
