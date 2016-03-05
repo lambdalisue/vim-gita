@@ -108,28 +108,21 @@ function! s:get_entry(index) abort
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:define_actions() abort
-  let action = gita#action#define(function('s:get_entry'))
-  " Override 'redraw' action
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#status#edit()
-  endfunction
+  call gita#action#attach(function('s:get_entry'))
+  call gita#action#include([
+        \ 'common', 'index', 'blame', 'browse', 'checkout',
+        \ 'commit', 'diff', 'discard', 'edit', 'patch',
+        \ 'show',
+        \], g:gita#command#status#disable_default_mappings)
 
-  call gita#action#includes(
-        \ g:gita#command#status#enable_default_mappings, [
-        \   'close', 'redraw', 'mapping',
-        \   'add', 'rm', 'reset', 'checkout',
-        \   'stage', 'unstage', 'toggle', 'discard', 'patch',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'commit',
-        \])
-
-  if g:gita#command#status#enable_default_mappings
-    execute printf(
-          \ 'map <buffer> <Return> %s',
-          \ g:gita#command#status#default_action_mapping
-          \)
-    nmap <buffer> <C-^> <Plug>(gita-commit)
+  if g:gita#command#status#disable_default_mappings
+    return
   endif
+  execute printf(
+        \ 'nmap <buffer> <Return> %s',
+        \ g:gita#command#status#default_action_mapping
+        \)
+  nmap <buffer> <C-^> <Plug>(gita-commit)
 endfunction
 
 function! s:on_BufReadCmd() abort
@@ -261,12 +254,7 @@ function! gita#command#status#redraw() abort
     call gita#throw('redraw() requires to be called in a gita-status buffer')
   endif
   let git = gita#get_or_fail()
-  let prologue = s:List.flatten([
-        \ [s:get_header_string(git)],
-        \ gita#action#mapping#get_visibility()
-        \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
-        \   : []
-        \])
+  let prologue = [s:get_header_string(git)]
   let statuses = gita#get_meta('statuses', [])
   let contents = s:format_statuses(statuses)
   let s:entry_offset = len(prologue)
@@ -363,5 +351,5 @@ call gita#util#define_variables('command#status', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-edit)',
-      \ 'enable_default_mappings': 1,
+      \ 'disable_default_mappings': 0,
       \})

@@ -1,149 +1,87 @@
-function! s:get_action_function(name) abort
-  return function(printf('gita#action#%s#action', a:name))
-endfunction
-function! s:get_define_plugin_mappings_function(name) abort
-  return function(printf('gita#action#%s#define_plugin_mappings', a:name))
-endfunction
-function! s:get_define_default_mappings_function(name) abort
-  return function(printf('gita#action#%s#define_default_mappings', a:name))
-endfunction
-function! s:get_get_mapping_table_function(name) abort
-  return function(printf('gita#action#%s#get_mapping_table', a:name))
+let s:V = gita#vital()
+
+function! gita#action#attach(fn) abort
+  let action_holder = {
+        \ 'get_candidates': a:fn,
+        \ 'actions': {},
+        \}
+  let b:_gita_action_holder = action_holder
+
 endfunction
 
-function! s:parse_mapping(raw, rhs) abort
-  " Note:
-  " :help map-listing
-  let pattern = printf(
-        \ '\(...\)\s*\(\S\+\)\s*\([*&@]\{,3}\)\s*.*\(%s[^''" ]\+\)',
-        \ a:rhs,
-        \)
-  let m = matchlist(a:raw, pattern)
-  return m[1 : 4]
-endfunction
-function! s:filter_mappings(rhs, ...) abort
-  let options = extend({
-        \ 'noremap': 0,
-        \ 'buffer': 0,
-        \}, get(a:000, 0, {})
-        \)
-  let flag = join([
-        \ options.noremap ? '*' : '',
-        \ options.buffer ? '@' : '',
-        \], '')
-  let rhs = flag . '.*\zs' . a:rhs . '\ze\S*$'
-  try
-    redir => content
-    silent execute 'map'
-  finally
-    redir END
-  endtry
-  return map(filter(
-        \ split(content, "\r\\?\n"),
-        \ 'v:val =~# rhs'
-        \), 's:parse_mapping(v:val, a:rhs)'
-        \)
-endfunction
-function! s:compare(i1, i2) abort
-  return a:i1[1] == a:i2[1] ? 0 : a:i1[1] > a:i2[1] ? 1 : -1
-endfunction
-" @vimlint(EVL102, 1, l:mode)
-" @vimlint(EVL102, 1, l:flag)
-function! s:build_mapping_help(table) abort
-  let mappings = s:filter_mappings('<Plug>(gita-', {
-        \ 'noremap': 0,
-        \ 'buffer': 1,
-        \})
-  let longest = 0
-  let precursors = []
-  for [mode, lhs, flag, rhs] in mappings
-    if len(lhs) > longest
-      let longest = len(lhs)
-    endi
-    call add(precursors, [lhs, get(a:table, rhs, rhs)])
-  endfor
-  let contents = []
-  for [lhs, rhs] in sort(precursors, 's:compare')
-    call add(contents, printf(
-          \ printf('%%-%ds : %%s', longest),
-          \ lhs, rhs
+function! gita#action#get_holder() abort
+  if !exists('b:_gita_action_holder')
+    call gita#throw(printf(
+          \ 'No action has attached on a buffer %s', bufname('%')
           \))
-  endfor
-  return contents
-endfunction
-" @vimlint(EVL102, 0, l:mode)
-" @vimlint(EVL102, 0, l:flag)
-
-function! gita#action#do(name, candidates, ...) abort
-  let action = gita#action#get()
-  let args = [a:candidates] + a:000
-  if has_key(action.actions, a:name)
-    call call(action.actions[a:name], args, action.actions)
-  else
-    call call(s:get_action_function(a:name), args)
   endif
+  return b:_gita_action_holder
 endfunction
 
-function! gita#action#call(name, ...) abort range
-  try
-    let candidates = gita#action#get_candidates(a:firstline, a:lastline)
-    call call('gita#action#do', [a:name, candidates] + a:000)
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
+function! gita#action#get_action(name) abort
+  let action_holder = gita#action#get_holder()
+  if !has_key(action_holder.actions, a:name)
+    call gita#throw(printf(
+          \ 'An action "%s" is not defined on a buffer %s', a:name, bufname('%'),
+          \))
+  endif
+  return action_holder.actions[a:name]
 endfunction
 
 function! gita#action#get_candidates(...) abort
+  let action_holder = gita#action#get_holder()
   let start_line = get(a:000, 0, line('.'))
   let end_line = get(a:000, 1, start_line)
-  let action = gita#action#get()
   let candidates = map(
         \ range(start_line, end_line),
-        \ 'action.get_entry(v:val - 1)'
+        \ 'action_holder.get_candidates(v:val - 1)'
         \)
   call filter(candidates, '!empty(v:val)')
   return candidates
 endfunction
 
-function! gita#action#define(fn) abort
-  let action = {
-        \ 'get_entry': a:fn,
-        \ 'actions': {},
-        \ 'mapping_table': {},
+function! gita#action#do(name, candidates) abort
+  let action = gita#action#get_action(a:name)
+  call call(action.fn, [a:candidates, action.options])
+endfunction
+
+function! gita#action#call(name) abort range
+  try
+    let candidates = gita#action#get_candidates(a:firstline, a:lastline)
+    call gita#action#do(a:name, candidates)
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+
+function! gita#action#define(name, fn, ...) abort
+  let options = extend({
+        \ 'description': printf('Perform %s action', a:name),
+        \ 'mapping': printf('<Plug>(gita-%s)', substitute(a:name, ':', '-', 'g')),
+        \ 'mapping_mode': 'nv',
+        \ 'options': {},
+        \}, get(a:000, 0, {}))
+  let action_holder = gita#action#get_holder()
+  let action_holder.actions[a:name] = {
+        \ 'fn': a:fn,
+        \ 'description': options.description,
+        \ 'mapping': options.mapping,
+        \ 'mapping_mode': options.mapping_mode,
+        \ 'options': options.options,
         \}
-  let b:_gita_action = action
-  return action
-endfunction
-
-function! gita#action#get() abort
-  if !exists('b:_gita_action')
-    call gita#throw(printf(
-          \ '"b:_gita_action on %s is not defined.', bufname('%')
-          \))
+  if !empty(options.mapping)
+    for mode in split(options.mapping_mode, '\zs')
+      execute printf(
+            \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
+            \ mode, options.mapping, mode ==# '[ni]' ? '<C-u>' : '', a:name,
+            \)
+    endfor
   endif
-  return b:_gita_action
 endfunction
 
-function! gita#action#get_mapping_help() abort
-  let action = gita#action#get()
-  return s:build_mapping_help(action.mapping_table)
-endfunction
-
-function! gita#action#include(enable_default_mappings, name) abort
-  let action = gita#action#get()
-  call call(s:get_define_plugin_mappings_function(a:name), [])
-  if a:enable_default_mappings
-    call call(s:get_define_default_mappings_function(a:name), [])
-  endif
-  call extend(
-        \ action.mapping_table,
-        \ call(s:get_get_mapping_table_function(a:name), [])
-        \)
-endfunction
-
-function! gita#action#includes(enable_default_mappings, names) abort
+function! gita#action#include(names, ...) abort
   for name in a:names
-    call gita#action#include(a:enable_default_mappings, name)
+    call call(printf('gita#action#%s#define', name), [get(a:000, 0)])
   endfor
 endfunction
 
@@ -157,25 +95,3 @@ function! gita#action#smart_map(lhs, rhs) abort range
 endfunction
 
 
-function! gita#action#register(name, fn, options) abort
-  let options = extend({
-        \ 'mapping': printf('<Plug>(gita-%s)', a:name),
-        \ 'mapping_mode': 'nv',
-        \ 'description': printf('Perform %s action', a:name),
-        \ 'kwargs': {},
-        \}, a:options)
-  let action = gita#action#get()
-  let action.actions[a:name] = {
-        \ 'description': options.description,
-        \ 'fn': a:fn,
-        \}
-  if !empty(options.mapping)
-    let action.mapping_table[options.mapping] = options.description
-    for c in options.mapping_mode
-      execute printf(
-            \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
-            \ c, options.mapping, c ==# '[ni]' ? '<C-u>' : '', a:name,
-            \)
-    endfor
-  endif
-endfunction

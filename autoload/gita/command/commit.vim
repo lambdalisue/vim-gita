@@ -103,6 +103,10 @@ function! s:commit_commitmsg() abort
     call delete(tempfile)
   endtry
 endfunction
+  function! s:action_commit_do(candidates, options) abort
+    call s:commit_commitmsg()
+    call gita#action#call('status')
+  endfunction
 
 function! s:format_entry(entry) abort
   return '# ' . a:entry.record
@@ -121,38 +125,27 @@ function! s:get_entry(index) abort
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:define_actions() abort
-  let action = gita#action#define(function('s:get_entry'))
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#commit#edit()
-  endfunction
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#commit#edit()
-  endfunction
-  function! action.actions.commit_do(candidates, ...) abort
-    call s:commit_commitmsg()
-    call gita#action#call('status')
-  endfunction
-
-  nnoremap <buffer><silent> <Plug>(gita-commit-do)
-        \ :<C-u>call gita#action#call('commit_do')<CR>
-
-  call gita#action#includes(
-        \ g:gita#command#commit#enable_default_mappings, [
-        \   'close', 'redraw', 'mapping',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'commit', 'status',
-        \])
-
-  if g:gita#command#commit#enable_default_mappings
-    execute printf(
-          \ 'map <buffer> <Return> %s',
-          \ g:gita#command#commit#default_action_mapping
-          \)
-    nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
-    nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
-    nmap <buffer> <C-c><C-a> <Plug>(gita-commit-amend)
-    nmap <buffer> <C-^> <Plug>(gita-status)
+  call gita#action#attach(function('s:get_entry'))
+  call gita#action#include([
+        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
+        \ 'status', 'commit',
+        \], g:gita#command#commit#disable_default_mappings)
+  call gita#action#define('commit:do', function('s:action_commit_do'), {
+        \ 'description': 'Commit changes',
+        \ 'mapping_mode': 'n',
+        \ 'options': {},
+        \})
+  if g:gita#command#commit#disable_default_mappings
+    return
   endif
+  execute printf(
+        \ 'nmap <buffer> <Return> %s',
+        \ g:gita#command#commit#default_action_mapping
+        \)
+  nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
+  nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
+  nmap <buffer> <C-c><C-a> <Plug>(gita-commit-amend)
+  nmap <buffer> <C-^> <Plug>(gita-status)
 endfunction
 
 function! s:on_BufReadCmd() abort
@@ -345,9 +338,6 @@ function! gita#command#commit#redraw() abort
 
   let prologue = s:List.flatten([
         \ ['# ' . gita#command#status#_get_header_string()],
-        \ gita#action#mapping#get_visibility()
-        \   ? map(gita#action#get_mapping_help(), '"# | " . v:val')
-        \   : [],
         \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
         \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \])
@@ -496,5 +486,5 @@ call gita#util#define_variables('command#commit', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-diff)',
-      \ 'enable_default_mappings': 1,
+      \ 'disable_default_mappings': 0,
       \})

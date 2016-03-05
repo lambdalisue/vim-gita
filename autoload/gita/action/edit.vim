@@ -1,63 +1,72 @@
-let s:V = gita#vital()
-let s:Path = s:V.import('System.Filepath')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-edit)': 'Open for editing a content',
-      \ '<Plug>(gita-edit-edit)': 'Open for editing a content in a window',
-      \ '<Plug>(gita-edit-above)': 'Open for editing a content in an above window',
-      \ '<Plug>(gita-edit-below)': 'Open for editing a content in a below window',
-      \ '<Plug>(gita-edit-left)': 'Open for editing a content in a left window',
-      \ '<Plug>(gita-edit-right)': 'Open for editing a content in a right window',
-      \ '<Plug>(gita-edit-tabnew)': 'Open for editing a content in a new tab',
-      \ '<Plug>(gita-edit-pedit)': 'Open for editing a content in a preview window',
-      \}
-
-function! gita#action#edit#action(candidates, ...) abort
+function! s:action(candidates, options) abort
   let options = extend({
         \ 'anchor': 1,
-        \ 'opener': g:gita#action#edit#default_opener,
-        \}, get(a:000, 0, {}))
-  call gita#option#assign_opener(options)
+        \ 'opener': '',
+        \}, a:options)
+  call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options, g:gita#action#edit#default_opener)
+  let options.selection = get(options, 'selection', [])
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
+            \ 'worktree': 1,
             \ 'anchor': options.anchor,
             \ 'opener': options.opener,
-            \ 'filename': candidate.path,
-            \ 'worktree': 1,
+            \ 'filename': get(candidate, 'path2', candidate.path),
+            \ 'selection': get(candidate, 'selection', options.selection),
             \})
     endif
   endfor
 endfunction
 
-function! gita#action#edit#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(gita-edit)
-        \ :call gita#action#call('edit')<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-edit)
-        \ :call gita#action#call('edit', {'opener': 'edit'})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-above)
-        \ :call gita#action#call('edit', {'opener': 'leftabove new'})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-below)
-        \ :call gita#action#call('edit', {'opener': 'rightbelow new'})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-left)
-        \ :call gita#action#call('edit', {'opener': 'leftabove vnew'})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-right)
-        \ :call gita#action#call('edit', {'opener': 'rightbelow vnew'})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-tabnew)
-        \ :call gita#action#call('edit', {'opener': 'tabnew', 'anchor': 0})<CR>
-  noremap <buffer><silent> <Plug>(gita-edit-pedit)
-        \ :call gita#action#call('edit', {'opener': 'pedit', 'anchor': 0})<CR>
-endfunction
-
-function! gita#action#edit#define_default_mappings() abort
-  map <buffer><nowait><expr> ee gita#action#smart_map('ee', '<Plug>(gita-edit)')
-  map <buffer><nowait><expr> EE gita#action#smart_map('EE', '<Plug>(gita-edit-right)')
-  map <buffer><nowait><expr> et gita#action#smart_map('et', '<Plug>(gita-edit-tabnew)')
-  map <buffer><nowait><expr> ep gita#action#smart_map('ep', '<Plug>(gita-edit-pedit)')
-endfunction
-
-function! gita#action#edit#get_mapping_table() abort
-  return s:MAPPING_TABLE
+function! gita#action#edit#define(disable_mapping) abort
+  call gita#action#define('edit', function('s:action'), {
+        \ 'description': 'Open a content',
+        \ 'mapping_mode': 'n',
+        \ 'options': {},
+        \})
+  call gita#action#define('edit:edit', function('s:action'), {
+        \ 'description': 'Open a content (edit)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'edit' },
+        \})
+  call gita#action#define('edit:above', function('s:action'), {
+        \ 'description': 'Open a content (above)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'leftabove new' },
+        \})
+  call gita#action#define('edit:below', function('s:action'), {
+        \ 'description': 'Open a content (below)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'rightbelow new' },
+        \})
+  call gita#action#define('edit:left', function('s:action'), {
+        \ 'description': 'Open a content (left)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'leftabove vnew' },
+        \})
+  call gita#action#define('edit:right', function('s:action'), {
+        \ 'description': 'Open a content (right)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'rightbelow vnew' },
+        \})
+  call gita#action#define('edit:tab', function('s:action'), {
+        \ 'description': 'Open a content (tab)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'tabnew' },
+        \})
+  call gita#action#define('edit:preview', function('s:action'), {
+        \ 'description': 'Open a content (preview)',
+        \ 'mapping_mode': 'n',
+        \ 'options': { 'opener': 'pedit' },
+        \})
+  if a:disable_mapping
+    return
+  endif
+  nmap <buffer><nowait><expr> ee gita#action#smart_map('ee', '<Plug>(gita-edit)')
+  nmap <buffer><nowait><expr> EE gita#action#smart_map('EE', '<Plug>(gita-edit-right)')
+  nmap <buffer><nowait><expr> et gita#action#smart_map('et', '<Plug>(gita-edit-tab)')
+  nmap <buffer><nowait><expr> ep gita#action#smart_map('ep', '<Plug>(gita-edit-preview)')
 endfunction
 
 call gita#util#define_variables('action#edit', {

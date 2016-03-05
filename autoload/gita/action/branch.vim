@@ -17,7 +17,6 @@ endfunction
 
 function! s:action(candidates, options) abort
   let options = extend({
-        \ 'merge': 0,
         \}, a:options)
   let branch_names = []
   for candidate in a:candidates
@@ -28,25 +27,12 @@ function! s:action(candidates, options) abort
   if empty(branch_names)
     return
   endif
-  call gita#command#rebase#call({
-        \ 'quiet': 0,
-        \ 'commits': branch_names,
-        \ 'merge': options.merge,
-        \})
+  call gita#throw('Not implemented yet')
 endfunction
 
-function! gita#action#rebase#define(disable_mapping) abort
-  call gita#action#define('rebase', function('s:action'), {
-        \ 'description': 'Rebase HEAD from the commit (fast-forward)',
-        \ 'mapping_mode': 'n',
-        \ 'options': {},
-        \})
-  call gita#action#define('rebase:merge', function('s:action'), {
-        \ 'description': 'Rebase HEAD by merging the commit',
-        \ 'mapping_mode': 'n',
-        \ 'options': { 'merge': 1 },
-        \})
+function! gita#action#branch#define(disable_mapping) abort
   if a:disable_mapping
     return
   endif
 endfunction
+

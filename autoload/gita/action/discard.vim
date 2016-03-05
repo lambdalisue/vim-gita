@@ -2,10 +2,6 @@ let s:V = gita#vital()
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-discard)': 'Discard changes on the working tree',
-      \ '<Plug>(gita-DISCARD)': 'Discard changes on the working tree (force)',
-      \}
 
 function! s:is_available(candidate) abort
   let necessary_attributes = [
@@ -21,10 +17,10 @@ function! s:is_available(candidate) abort
   return 1
 endfunction
 
-function! gita#action#discard#action(candidates, ...) abort
+function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
-        \}, get(a:000, 0, {}))
+        \}, a:options)
   let delete_candidates = []
   let checkout_candidates = []
   let candidates = filter(copy(a:candidates), 's:is_available(v:val)')
@@ -64,26 +60,22 @@ function! gita#action#discard#action(candidates, ...) abort
     endif
   endfor
   " checkout tracked files from HEAD
-  noautocmd call gita#action#do('checkout', checkout_candidates, {
-        \ 'commit': 'HEAD',
-        \ 'force': 1,
-        \})
+  noautocmd call gita#action#do('checkout:HEAD:force', checkout_candidates)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
-function! gita#action#discard#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(gita-discard)
-        \ :call gita#action#call('discard')<CR>
-  noremap <buffer><silent> <Plug>(gita-DISCARD)
-        \ :call gita#action#call('discard', { 'force': 1 })<CR>
+function! gita#action#discard#define(disable_mapping) abort
+  call gita#action#define('discard', function('s:action'), {
+        \ 'description': 'Discard changes on the working tree',
+        \ 'options': {},
+        \})
+  call gita#action#define('discard:force', function('s:action'), {
+        \ 'description': 'Discard changes on the working tree (force)',
+        \ 'options': { 'force': 1 },
+        \})
+  if a:disable_mapping
+    return
+  endif
+  nmap <buffer><nowait><expr> == gita#action#smart_map('==', '<Plug>(gita-discard)')
+  vmap <buffer><nowait><expr> == gita#action#smart_map('==', '<Plug>(gita-discard)')
 endfunction
-
-function! gita#action#discard#define_default_mappings() abort
-  map <buffer><nowait><expr> == gita#action#smart_map('==', '<Plug>(gita-discard)')
-endfunction
-
-function! gita#action#discard#get_mapping_table() abort
-  return s:MAPPING_TABLE
-endfunction
-
-call gita#util#define_variables('action#discard', {})

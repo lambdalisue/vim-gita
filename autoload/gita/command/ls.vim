@@ -76,27 +76,17 @@ function! s:get_entry(index) abort
   return index >= 0 ? get(candidates, index, {}) : {}
 endfunction
 function! s:define_actions() abort
-  let action = gita#action#define(function('s:get_entry'))
-  " Override 'redraw' action
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#ls#edit()
-  endfunction
-
-  call gita#action#includes(
-        \ g:gita#command#ls#enable_default_mappings, [
-        \   'close', 'redraw', 'mapping',
-        \   'add', 'rm', 'reset', 'checkout',
-        \   'stage', 'unstage', 'toggle', 'discard',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'commit',
-        \])
-
-  if g:gita#command#ls#enable_default_mappings
-    execute printf(
-          \ 'map <buffer> <Return> %s',
-          \ g:gita#command#ls#default_action_mapping
-          \)
+  call gita#action#attach(function('s:get_entry'))
+  call gita#action#include([
+        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
+        \], g:gita#command#ls#disable_default_mappings)
+  if g:gita#command#ls#disable_default_mappings
+    return
   endif
+  execute printf(
+        \ 'nmap <buffer> <Return> %s',
+        \ g:gita#command#ls#default_action_mapping
+        \)
 endfunction
 
 function! s:on_BufReadCmd() abort
@@ -207,12 +197,7 @@ function! gita#command#ls#edit(...) abort
 endfunction
 function! gita#command#ls#redraw() abort
   let git = gita#get_or_fail()
-  let prologue = s:List.flatten([
-        \ [s:get_header_string(git)],
-        \ gita#action#mapping#get_visibility()
-        \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
-        \   : []
-        \])
+  let prologue = [s:get_header_string(git)]
   let candidates = gita#get_meta('candidates', [])
   let contents = map(
         \ copy(candidates),
@@ -277,5 +262,5 @@ call gita#util#define_variables('command#ls', {
       \ 'default_options': {},
       \ 'default_opener': 'botright 10 split',
       \ 'default_action_mapping': '<Plug>(gita-show)',
-      \ 'enable_default_mappings': 1,
+      \ 'disable_default_mappings': 0,
       \})

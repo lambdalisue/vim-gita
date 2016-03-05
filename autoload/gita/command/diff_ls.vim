@@ -90,27 +90,17 @@ function! s:get_entry(index) abort
   return index >= 0 ? get(stats, index, {}) : {}
 endfunction
 function! s:define_actions() abort
-  let action = gita#action#define(function('s:get_entry'))
-  " Override 'redraw' action
-  function! action.actions.redraw(candidates, ...) abort
-    call gita#command#diff_ls#edit()
-  endfunction
-
-  call gita#action#includes(
-        \ g:gita#command#diff_ls#enable_default_mappings, [
-        \   'close', 'redraw', 'mapping',
-        \   'add', 'rm', 'reset', 'checkout',
-        \   'stage', 'unstage', 'toggle', 'discard',
-        \   'edit', 'show', 'diff', 'blame', 'browse',
-        \   'commit',
-        \])
-
-  if g:gita#command#diff_ls#enable_default_mappings
-    execute printf(
-          \ 'map <buffer> <Return> %s',
-          \ g:gita#command#diff_ls#default_action_mapping
-          \)
+  call gita#action#attach(function('s:get_entry'))
+  call gita#action#include([
+        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
+        \], g:gita#command#diff_ls#disable_default_mappings)
+  if g:gita#command#diff_ls#disable_default_mappings
+    return
   endif
+  execute printf(
+        \ 'nmap <buffer> <Return> %s',
+        \ g:gita#command#diff_ls#default_action_mapping
+        \)
 endfunction
 
 function! s:on_BufReadCmd() abort
@@ -235,12 +225,7 @@ function! gita#command#diff_ls#edit(...) abort
 endfunction
 function! gita#command#diff_ls#redraw() abort
   let git = gita#get_or_fail()
-  let prologue = s:List.flatten([
-        \ [s:get_header_string(git)],
-        \ gita#action#mapping#get_visibility()
-        \   ? map(gita#action#get_mapping_help(), '"| " . v:val')
-        \   : []
-        \])
+  let prologue = [s:get_header_string(git)]
   let stats = gita#get_meta('stats', [])
   let contents = s:format_stats(stats, winwidth(0))
   let s:entry_offset = len(prologue)
@@ -317,6 +302,6 @@ endfunction
 call gita#util#define_variables('command#diff_ls', {
       \ 'default_options': { 'untracked-files': 1 },
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-edit)',
-      \ 'enable_default_mappings': 1,
+      \ 'default_action_mapping': '<Plug>(gita-diff)',
+      \ 'disable_default_mappings': 0,
       \})

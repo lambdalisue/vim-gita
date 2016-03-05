@@ -1,26 +1,17 @@
-let s:V = gita#vital()
-let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-status)': 'Open gita-status window',
-      \}
-
-function! gita#action#status#action(candidates, ...) abort
+function! s:action(candidates, options) abort
   let filenames = gita#get_meta('filenames', [])
   call gita#command#status#open({
         \ 'filenames': filenames,
         \})
 endfunction
 
-function! gita#action#status#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(gita-status)
-        \ :call gita#action#call('status')<CR>
+function! gita#action#status#define(disable_mapping) abort
+  call gita#action#define('status', function('s:action'), {
+        \ 'description': 'Open gita-status window',
+        \ 'mapping_mode': 'n',
+        \ 'options': {},
+        \})
+  if a:disable_mapping
+    return
+  endif
 endfunction
-
-function! gita#action#status#define_default_mappings() abort
-endfunction
-
-function! gita#action#status#get_mapping_table() abort
-  return s:MAPPING_TABLE
-endfunction
-
-call gita#util#define_variables('action#status', {})
-

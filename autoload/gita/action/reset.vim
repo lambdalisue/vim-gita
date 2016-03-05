@@ -1,11 +1,7 @@
-let s:V = gita#vital()
-let s:MAPPING_TABLE = {
-      \ '<Plug>(gita-reset)': 'Reset changes on an index',
-      \}
-
-function! gita#action#reset#action(candidates, ...) abort
-  let options = extend({}, get(a:000, 0, {}))
+function! s:action(candidates, options) abort
+  let options = deepcopy(a:options)
   call gita#option#assign_commit(options)
+  let options.commit = get(options, 'commit', '')
   let filenames = []
   for candidate in a:candidates
     if has_key(candidate, 'path')
@@ -15,21 +11,18 @@ function! gita#action#reset#action(candidates, ...) abort
   if !empty(filenames)
     call gita#command#reset#call({
           \ 'quiet': 1,
-          \ 'commit': get(options, 'commit', ''),
+          \ 'commit': get(candidate, 'commit', options.commit),
           \ 'filenames': filenames,
           \})
   endif
 endfunction
 
-function! gita#action#reset#define_plugin_mappings() abort
-  noremap <buffer><silent> <Plug>(gita-reset)
-        \ :call gita#action#call('reset')<CR>
-endfunction
-
-function! gita#action#reset#define_default_mappings() abort
-  map <buffer><nowait><expr> -r gita#action#smart_map('-r', '<Plug>(gita-reset)')
-endfunction
-
-function! gita#action#reset#get_mapping_table() abort
-  return s:MAPPING_TABLE
+function! gita#action#reset#define(disable_mappings) abort
+  call gita#action#define('reset', function('s:action'), {
+        \ 'description': 'Reset changes on the index',
+        \ 'options': {},
+        \})
+  if a:disable_mappings
+    return
+  endif
 endfunction
