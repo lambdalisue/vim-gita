@@ -68,15 +68,15 @@ function! gita#option#assign_selection(options) abort
   endif
 
   let content_type = gita#get_meta('content_type')
-  if content_type =~# '^\%(status\|commit\)%'
-    let a:options.selection = []
-  elseif content_type =~# '^blame-\%(navi\|view\)$'
+  if content_type =~# '^blame-\%(navi\|view\)$'
     let line_start = get(a:options.selection, 0, 0)
     let line_end = get(a:options.selection, 1, line_start)
     let a:options.selection = [
           \ gita#command#blame#get_pseudo_linenum(line_start),
           \ gita#command#blame#get_pseudo_linenum(line_end),
           \]
+  elseif !empty(content_type)
+    let a:options.selection = []
   endif
 endfunction
 
