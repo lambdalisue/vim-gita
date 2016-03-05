@@ -60,7 +60,7 @@ function! gita#command#add#patch(...) abort
   let options = extend({
         \ 'filenames': [],
         \ 'split': 0,
-        \})
+        \}, get(a:000, 0, {}))
   let filename = len(options.filenames) > 0
         \ ? options.filenames[0]
         \ : '%'
