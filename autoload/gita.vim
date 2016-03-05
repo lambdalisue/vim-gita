@@ -156,16 +156,6 @@ function! gita#execute(git, name, ...) abort
     return result
   endif
 endfunction
-function! gita#get_relative_path(git, path) abort
-  " NOTE:
-  " Return a unix relative path from the repository for git command.
-  " The {path} requires to be a (real) absolute paht.
-  if empty(a:path)
-    return ''
-  endif
-  let relpath = s:Git.get_relative_path(a:git, a:path)
-  return s:Path.unixpath(relpath)
-endfunction
 
 function! gita#get_meta(name, ...) abort
   " WARNING:

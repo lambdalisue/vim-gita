@@ -21,28 +21,36 @@ function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
+function! s:apply_command(git, object, options) abort
+  let options = s:pick_available_options(a:options)
+  let options['object'] = a:object
+  let result = gita#execute(a:git, 'show', options)
+  if result.status
+    call s:GitProcess.throw(result)
+  elseif !get(a:options, 'quiet', 0)
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
+  endif
+  return result.content
+endfunction
+function! s:get_revision_content(git, commit, filename, options) abort
+  if empty(a:filename)
+    let object = a:commit
+  else
+    let object = join([
+          \ a:commit,
+          \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
+          \], ':')
+  endif
+  let a:options['quiet'] = 1
+  return s:apply_command(a:git, object, extend({ 'quiet': 1 }, a:options))
+endfunction
 function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
   let rhs = empty(rhs) ? 'HEAD' : rhs
   let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
   return s:get_revision_content(a:git, commit, a:filename, a:options)
-endfunction
-function! s:get_revision_content(git, commit, filename, options) abort
-  let options = s:pick_available_options(a:options)
-  if empty(a:filename)
-    let options['object'] = a:commit
-  else
-    let options['object'] = printf('%s:%s',
-          \ a:commit,
-          \ gita#get_relative_path(a:git, a:filename),
-          \)
-  endif
-  let result = gita#execute(a:git, 'show', options)
-  if result.status
-    call s:GitProcess.throw(result.stdout)
-  endif
-  return result.content
 endfunction
 function! s:get_diff_content(git, content, filename, options) abort
   let tempfile  = tempname()
@@ -113,10 +121,10 @@ function! s:on_BufWriteCmd() abort
   " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try
-    let options = gita#get_meta('options', {})
-    let filename = gita#get_meta('filename', '')
     let git = gita#get_or_fail()
-    let content = s:get_diff_content(git, getline(1, '$'), filename, options)
+    let filename = gita#get_meta('filename', '')
+    let options  = gita#get_meta('options', {})
+    let content  = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
     call gita#command#apply#call({
           \ 'filenames': [tempfile],
@@ -228,22 +236,19 @@ function! gita#command#show#open(...) abort
     let opener = options.opener
   endif
   let bufname = gita#command#show#bufname(options)
-  if !empty(bufname)
-    if options.anchor
-      call s:Anchor.focus()
-    endif
-    try
-      " for cascading options
-      let g:gita#var = options
-      call gita#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    finally
-      unlet! g:gita#var
-    endtry
-    " BufReadCmd will apply content
-    call gita#util#select(options.selection)
+  if empty(bufname)
+    return
   endif
+  if options.anchor
+    call s:Anchor.focus()
+  endif
+  try
+    let gita#var = options
+    call gita#util#buffer#open(bufname, { 'opener': opener })
+  finally
+    unlet! gita#var
+  endtry
+  call gita#util#select(options.selection)
 endfunction
 function! gita#command#show#read(...) abort
   let options = extend({
@@ -303,10 +308,6 @@ function! gita#command#show#edit(...) abort
   endif
 endfunction
 
-function! gita#command#show#get_worktree_symbol() abort
-  return s:WORKTREE
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
@@ -315,11 +316,6 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \})
-    call s:parser.add_argument(
-          \ '--opener', '-o',
-          \ 'a way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
           \ '--repository', '-r',
@@ -347,14 +343,19 @@ function! s:get_parser() abort
           \   'conflicts': ['repository', 'worktree', 'ancestor', 'ours'],
           \})
     call s:parser.add_argument(
+          \ '--patch',
+          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
+          \)
+    call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
           \ '--selection',
           \ 'a line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
-    call s:parser.add_argument(
-          \ '--patch',
-          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
-          \)
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to see.',
