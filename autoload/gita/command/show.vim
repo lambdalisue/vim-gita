@@ -262,7 +262,7 @@ function! gita#command#show#BufReadCmd(options) abort
   let result = gita#command#show#call(options)
   call gita#set_meta('content_type', 'show')
   call gita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'quiet', 'opener', 'selection',
+        \ 'opener', 'selection',
         \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
