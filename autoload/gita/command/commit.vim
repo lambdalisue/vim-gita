@@ -270,7 +270,7 @@ function! gita#command#commit#open(...) abort
     set eventignore+=BufReadCmd
     call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
-          \ 'group': 'manipulation_panel',
+          \ 'window': 'manipulation_panel',
           \})
   finally
     call guard.restore()

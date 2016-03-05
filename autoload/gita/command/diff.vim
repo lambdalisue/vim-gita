@@ -176,8 +176,7 @@ function! gita#command#diff#call(...) abort
 endfunction
 function! gita#command#diff#open(...) abort
   let options = extend({
-        \ 'anchor': 1,
-        \ 'opener': '',
+        \ 'opener': 'edit',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   if empty(options.opener)
@@ -192,7 +191,7 @@ function! gita#command#diff#open(...) abort
   endif
   let bufname = gita#command#diff#bufname(options)
   if !empty(bufname)
-    if options.anchor
+    if s:Anchor.is_available(opener)
       call s:Anchor.focus()
     endif
     try
@@ -289,8 +288,7 @@ function! gita#command#diff#open2(...) abort
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
-        \ 'anchor': 1,
-        \ 'opener': '',
+        \ 'opener': 'edit',
         \ 'split': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
@@ -371,7 +369,7 @@ function! gita#command#diff#open2(...) abort
   endif
   if !options.reverse
     let rresult = gita#util#buffer#open(rbufname, {
-          \ 'group': 'diff_rhs',
+          \ 'window': 'diff_rhs',
           \ 'opener': opener,
           \})
     call gita#util#diffthis()
@@ -386,7 +384,7 @@ function! gita#command#diff#open2(...) abort
     call gita#util#select(options.selection)
   else
     let rresult = gita#util#buffer#open(rbufname, {
-          \ 'group': 'diff_lhs',
+          \ 'window': 'diff_lhs',
           \ 'opener': opener,
           \})
     call gita#util#diffthis()

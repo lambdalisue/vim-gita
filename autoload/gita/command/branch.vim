@@ -153,7 +153,7 @@ function! gita#command#branch#open(...) abort
   let bufname = gita#command#branch#bufname(options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
-        \ 'group': 'manipulation_panel',
+        \ 'window': 'manipulation_panel',
         \})
   " cascade git instance of previous buffer which open this buffer
   let b:_git = git

@@ -52,7 +52,7 @@ function! gita#command#blame#view#_open(blameobj, ...) abort
         \ : options.opener
   let bufname = gita#command#blame#view#bufname(options)
   silent call gita#util#buffer#open(bufname, {
-        \ 'group': 'blame_view',
+        \ 'window': 'blame_view',
         \ 'opener': opener,
         \})
   " gita#command#blame#view#_edit() will be called by

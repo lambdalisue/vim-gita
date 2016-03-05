@@ -5,8 +5,8 @@ let s:BufferManager = s:V.import('Vim.BufferManager')
 
 function! gita#util#buffer#open(name, ...) abort
   let config = get(a:000, 0, {})
-  let group  = get(config, 'group', '')
-  if empty(group)
+  let window  = get(config, 'window', '')
+  if empty(window)
     let loaded = s:Buffer.open(a:name, get(config, 'opener', 'edit'))
     let bufnum = bufnr('%')
     return {
@@ -14,7 +14,7 @@ function! gita#util#buffer#open(name, ...) abort
           \ 'bufnum': bufnum,
           \}
   else
-    let vname = printf('_buffer_manager_%s', group)
+    let vname = printf('_buffer_manager_%s', window)
     if !has_key(s:, vname)
       let s:{vname} = s:BufferManager.new()
     endif

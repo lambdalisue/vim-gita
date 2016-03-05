@@ -199,7 +199,7 @@ function! gita#command#diff_ls#open(...) abort
     set eventignore+=BufReadCmd,WinEnter
     call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
-          \ 'group': 'manipulation_panel',
+          \ 'window': 'manipulation_panel',
           \})
   finally
     call guard.restore()

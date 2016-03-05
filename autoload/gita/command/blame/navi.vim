@@ -70,7 +70,7 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
         \ : options.opener
   let bufname = gita#command#blame#navi#bufname(options)
   silent call gita#util#buffer#open(bufname, {
-        \ 'group': 'blame_navi',
+        \ 'window': 'blame_navi',
         \ 'opener': opener,
         \})
   " gita#command#blame#navi#_edit() will be called by
