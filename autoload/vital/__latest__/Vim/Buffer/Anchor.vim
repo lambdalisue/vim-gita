@@ -31,6 +31,10 @@ function! s:set_config(config) abort
         \]))
 endfunction
 
+function! s:is_available(opener) abort
+  return a:opener !~# '\%(pedit\|tabedit\|tabnew\)'
+endfunction
+
 function! s:is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
   if empty(bufname(bufnum))
@@ -50,6 +54,7 @@ function! s:is_suitable(winnum) abort
   endif
   return 1
 endfunction
+
 function! s:find_suitable(winnum) abort
   if winnr('$') == 1
     return 0
@@ -71,6 +76,7 @@ function! s:find_suitable(winnum) abort
   " no suitable window is found.
   return 0
 endfunction
+
 function! s:focus() abort
   " find suitable window from the previous window
   let previous_winnum = winnr('#')
@@ -102,6 +108,7 @@ function! s:register() abort
     endif
   augroup END
 endfunction
+
 function! s:_ac_QuitPre() abort
   let w:_vital_Vim_Buffer_Anchor_QuitPre = 1
 endfunction
