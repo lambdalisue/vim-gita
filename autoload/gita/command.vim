@@ -161,13 +161,17 @@ call gita#command#register('grep',
       \ 'gita#command#grep#command',
       \ 'gita#command#grep#complete',
       \)
+call gita#command#register('ls',
+      \ 'gita#command#ls#command',
+      \ 'gita#command#ls#complete',
+      \)
 call gita#command#register('merge',
       \ 'gita#command#merge#command',
       \ 'gita#command#merge#complete',
       \)
-call gita#command#register('ls',
-      \ 'gita#command#ls#command',
-      \ 'gita#command#ls#complete',
+call gita#command#register('patch',
+      \ 'gita#command#patch#command',
+      \ 'gita#command#patch#complete',
       \)
 call gita#command#register('rebase',
       \ 'gita#command#rebase#command',
