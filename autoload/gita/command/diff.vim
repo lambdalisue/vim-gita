@@ -198,6 +198,16 @@ function! gita#command#diff#call(...) abort
 endfunction
 function! gita#command#diff#open(...) abort
   let options = extend({
+        \ 'split': 0,
+        \}, get(a:000, 0, {}))
+  if options.split
+    call gita#command#diff#open2(options)
+  else
+    call gita#command#diff#open1(options)
+  endif
+endfunction
+function! gita#command#diff#open1(...) abort
+  let options = extend({
         \ 'anchor': 0,
         \ 'opener': 'edit',
         \ 'selection': [],
@@ -217,6 +227,73 @@ function! gita#command#diff#open(...) abort
     silent! unlet! g:gita#var
   endtry
   call gita#util#select(options.selection)
+endfunction
+function! gita#command#diff#open2(...) abort
+  let options = extend({
+        \ 'anchor': 0,
+        \ 'patch': 0,
+        \ 'cached': 0,
+        \ 'reverse': 0,
+        \ 'commit': '',
+        \ 'filename': '',
+        \ 'opener': 'edit',
+        \ 'selection': [],
+        \}, get(a:000, 0, {}))
+  call s:configure_options(options)
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = empty(options.filename) ? '%' : options.filename
+  let filename = gita#variable#get_valid_filename(filename)
+  if empty(commit)
+    " git diff          : INDEX vs TREE
+    " git diff --cached :  HEAD vs INDEX
+    let lhs = options.cached ? 'HEAD' : ''
+    let rhs = options.cached ? '' : s:WORKTREE
+  elseif commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = commit
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  elseif commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  else
+    " git diff <ref>          : <ref> vs TREE
+    " git diff --cached <ref> : <ref> vs INDEX
+    let lhs = commit
+    let rhs = options.cached ? '' : s:WORKTREE
+  endif
+  let loptions = {
+        \ 'patch': !options.reverse && options.patch,
+        \ 'commit': lhs,
+        \ 'filename': filename,
+        \ 'worktree': lhs ==# s:WORKTREE,
+        \}
+  let roptions = {
+        \ 'patch': options.reverse && options.patch,
+        \ 'commit': rhs,
+        \ 'filename': filename,
+        \ 'worktree': rhs ==# s:WORKTREE,
+        \}
+  let vertical = matchstr(&diffopt, 'vertical')
+  call gita#command#show#open(extend(options.reverse ? loptions : roptions, {
+        \ 'anchor': options.anchor,
+        \ 'opener': options.opener,
+        \ 'window': 'diff2_rhs',
+        \}))
+  call gita#util#diffthis()
+  call gita#command#show#open(extend(options.reverse ? roptions : loptions, {
+        \ 'opener': vertical ==# 'vertical'
+        \   ? 'leftabove vertical split'
+        \   : 'leftabove split',
+        \ 'window': 'diff2_lhs',
+        \}))
+  call gita#util#diffthis()
+  call gita#util#select(options.selection)
+  diffupdate
 endfunction
 function! gita#command#diff#BufReadCmd(options) abort
   let options = gita#option#init('^diff$', a:options, {
@@ -273,77 +350,6 @@ function! gita#command#diff#FileReadCmd(options) abort
         \ 'fileformat': options.fileformat,
         \ 'bad': options.bad,
         \})
-endfunction
-
-function! gita#command#diff#open2(...) abort
-  let options = extend({
-        \ 'anchor': 0,
-        \ 'patch': 0,
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'opener': 'edit',
-        \ 'split': '',
-        \ 'selection': [],
-        \}, get(a:000, 0, {}))
-  call s:configure_options(options)
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = empty(options.filename) ? '%' : options.filename
-  let filename = gita#variable#get_valid_filename(filename)
-  if empty(commit)
-    " git diff          : INDEX vs TREE
-    " git diff --cached :  HEAD vs INDEX
-    let lhs = options.cached ? 'HEAD' : ''
-    let rhs = options.cached ? '' : s:WORKTREE
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = commit
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  else
-    " git diff <ref>          : <ref> vs TREE
-    " git diff --cached <ref> : <ref> vs INDEX
-    let lhs = commit
-    let rhs = options.cached ? '' : s:WORKTREE
-  endif
-  let loptions = {
-        \ 'patch': !options.reverse && options.patch,
-        \ 'commit': lhs,
-        \ 'filename': filename,
-        \ 'worktree': lhs ==# s:WORKTREE,
-        \}
-  let roptions = {
-        \ 'patch': options.reverse && options.patch,
-        \ 'commit': rhs,
-        \ 'filename': filename,
-        \ 'worktree': rhs ==# s:WORKTREE,
-        \}
-  let split = empty(options.split)
-        \ ? matchstr(&diffopt, 'vertical')
-        \ : options.split
-  call gita#command#show#open(extend(options.reverse ? loptions : roptions, {
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'window': 'diff_rhs',
-        \}))
-  call gita#util#diffthis()
-  call gita#command#show#open(extend(options.reverse ? roptions : loptions, {
-        \ 'opener': split ==# 'vertical'
-        \   ? 'leftabove vertical split'
-        \   : 'leftabove split',
-        \ 'window': 'diff_lhs',
-        \}))
-  call gita#util#diffthis()
-  call gita#util#select(options.selection)
-  diffupdate
 endfunction
 
 function! s:get_parser() abort
@@ -564,11 +570,10 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
-          \ '--split', '-s',
-          \ 'open two buffer to compare by vimdiff rather than to open a single diff file. most of options will be disabled', {
-          \   'on_default': &diffopt =~# 'vertical' ? 'vertical' : 'horizontal',
-          \   'choices': ['vertical', 'horizontal'],
-          \})
+          \ '--split', '-s', [
+          \   'open two buffer to compare by vimdiff rather than to open a single diff file.',
+          \   'see ":help &diffopt" if you would like to control default split direction',
+          \])
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to diff.',
@@ -605,11 +610,7 @@ function! gita#command#diff#command(...) abort
         \ deepcopy(g:gita#command#diff#default_options),
         \ options,
         \)
-  if empty(get(options, 'split'))
-    call gita#command#diff#open(options)
-  else
-    call gita#command#diff#open2(options)
-  endif
+  call gita#command#diff#open(options)
 endfunction
 function! gita#command#diff#complete(...) abort
   let parser = s:get_parser()
