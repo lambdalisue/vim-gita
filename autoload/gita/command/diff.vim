@@ -2,11 +2,11 @@ let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prelude = s:V.import('Prelude')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Guard = s:V.import('Vim.Guard')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
+let s:WORKTREE = '@@'  " @@ is not valid commit thus
 
 function! s:pick_available_options(options) abort
   " Note:
@@ -71,6 +71,28 @@ function! s:get_diff_content(git, commit, filenames, options) abort
     call s:GitProcess.throw(result.stdout)
   endif
   return result.content
+endfunction
+function! s:configure_options(options) abort
+  if a:options.patch
+    " 'patch' mode requires:
+    " - Existence of INDEX, namely no commit or --cached
+    let commit = get(a:options, 'commit', '')
+    if empty(commit)
+      " INDEX vs HEAD
+      let a:options.cached = 0
+      let a:options.reverse = 0
+    elseif commit =~# '^.\{-}\.\.\.?.*$'
+      " RANGE is not allowed
+      call gita#throw(printf(
+            \ 'A commit range "%s" is not allowed for PATCH mode.',
+            \ commit,
+            \))
+    else
+      " COMMIT vs INDEX
+      let a:options.cached = 1
+      let a:options.reverse = 1
+    endif
+  endif
 endfunction
 
 function! s:on_BufWriteCmd() abort
@@ -179,86 +201,38 @@ function! gita#command#diff#open(...) abort
         \ 'opener': 'edit',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  if empty(options.opener)
-    let content_type = gita#get_meta('content_type', '')
-    if content_type =~# '^blame-\%(navi\|view\)$'
-      let opener = 'tabedit'
-    else
-      let opener = g:gita#command#diff#default_opener
-    endif
-  else
-    let opener = options.opener
-  endif
   let bufname = gita#command#diff#bufname(options)
-  if !empty(bufname)
-    if s:Anchor.is_available(opener)
-      call s:Anchor.focus()
-    endif
-    try
-      " for cascading options
-      let g:gita#var = options
-      call gita#util#buffer#open(bufname, {
-            \ 'opener': opener,
-            \})
-    finally
-      unlet! g:gita#var
-    endtry
-    " BufReadCmd will apply content
-    call gita#util#select(options.selection)
+  if empty(bufname)
+    return
   endif
+  if s:Anchor.is_available(options.opener)
+    call s:Anchor.focus()
+  endif
+  try
+    " for cascading options
+    let g:gita#var = options
+    call gita#util#buffer#open(bufname, { 'opener': options.opener })
+  finally
+    unlet! g:gita#var
+  endtry
+  call gita#util#select(options.selection)
 endfunction
-function! gita#command#diff#read(...) abort
-  let options = extend({
+function! gita#command#diff#BufReadCmd(options) abort
+  let options = gita#option#init('^diff$', a:options, {
         \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \}, get(a:000, 0, {}))
-  let result = gita#command#diff#call(options)
-  call gita#util#buffer#read_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-function! gita#command#diff#edit(...) abort
-  let options = gita#option#init('^diff$', {
-        \ 'encoding': '',
-        \ 'fileformat': '',
+        \ 'filefcrmat': '',
         \ 'bad': '',
         \ 'patch': 0,
-        \ 'force': 0,
-        \}, get(a:000, 0, {}))
-  " check &diffopt
-  if &diffopt =~# 'iwhite' && !has_key(options, 'ignore-space-change')
-    let options['ignore-space-change'] = 1
-  endif
-  if &diffopt =~# 'context:\d\+' && !s:Prelude.is_string(get(options, 'unified')) " NOTE: unified=1 should be overwritten
-    let options['unified'] = matchstr(&diffopt, 'context:\zs\d\+')
-  endif
-  if options.patch
-    " 'patch' mode requires:
-    " - Existence of INDEX, namely no commit or --cached
-    let commit = get(options, 'commit', '')
-    if empty(commit)
-      " INDEX vs HEAD
-      let options.cached = 0
-      let options.reverse = 0
-    elseif commit =~# '^.\{-}\.\.\.?.*$'
-      " RANGE is not allowed
-      call gita#throw(printf(
-            \ 'A commit range "%s" is not allowed for PATCH mode.',
-            \ commit,
-            \))
-    else
-      " COMMIT vs INDEX
-      let options.cached = 1
-      let options.reverse = 1
-    endif
-  endif
+        \ 'ignore-space-change': &diffopt =~# 'iwhite',
+        \ 'unified': &diffopt =~# 'context:\d\+'
+        \   ? matchstr(&diffopt, 'context:\zs\d\+')
+        \   : 0,
+        \})
+  call s:configure_options(options)
   let result = gita#command#diff#call(options)
   call gita#set_meta('content_type', 'diff')
   call gita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'selection',
+        \ 'opener', 'selection',
         \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
@@ -281,6 +255,25 @@ function! gita#command#diff#edit(...) abort
   endif
   setlocal filetype=diff
 endfunction
+function! gita#command#diff#FileReadCmd(options) abort
+  let options = gita#option#init('^diff$', a:options, {
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \ 'bad': '',
+        \ 'patch': 0,
+        \ 'ignore-space-change': &diffopt =~# 'iwhite',
+        \ 'unified': &diffopt =~# 'context:\d\+'
+        \   ? matchstr(&diffopt, 'context:\zs\d\+')
+        \   : 0,
+        \})
+  let result = gita#command#diff#call(options)
+  call gita#util#buffer#read_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
+        \})
+endfunction
+
 function! gita#command#diff#open2(...) abort
   let options = extend({
         \ 'patch': 0,
@@ -292,37 +285,17 @@ function! gita#command#diff#open2(...) abort
         \ 'split': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  if options.patch
-    " 'patch' mode requires:
-    " - Existence of INDEX, namely no commit or --cached
-    let commit = get(options, 'commit', '')
-    if empty(commit)
-      " INDEX vs HEAD
-      let options.cached = 0
-      let options.reverse = 0
-    elseif commit =~# '^.\{-}\.\.\.?.*$'
-      " RANGE is not allowed
-      call gita#throw(printf(
-            \ 'A commit range "%s" is not allowed for PATCH mode.',
-            \ commit,
-            \))
-    else
-      " COMMIT vs INDEX
-      let options.cached = 1
-      let options.reverse = 1
-    endif
-  endif
+  call s:configure_options(options)
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filename) ? '%' : options.filename
   let filename = gita#variable#get_valid_filename(filename)
-  let WORKTREE = '@'  " @ is not valid commit thus
   if empty(commit)
     " git diff          : INDEX vs TREE
     " git diff --cached :  HEAD vs INDEX
     let lhs = options.cached ? 'HEAD' : ''
-    let rhs = options.cached ? '' : WORKTREE
+    let rhs = options.cached ? '' : s:WORKTREE
   elseif commit =~# '^.\{-}\.\.\..*$'
     " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
     let [lhs, rhs] = s:GitTerm.split_range(commit)
@@ -337,67 +310,40 @@ function! gita#command#diff#open2(...) abort
     " git diff <ref>          : <ref> vs TREE
     " git diff --cached <ref> : <ref> vs INDEX
     let lhs = commit
-    let rhs = options.cached ? '' : WORKTREE
+    let rhs = options.cached ? '' : s:WORKTREE
   endif
-  let lbufname = gita#command#show#bufname({
+  let loptions = {
         \ 'patch': !options.reverse && options.patch,
         \ 'commit': lhs,
         \ 'filename': filename,
-        \})
-  let rbufname = rhs ==# WORKTREE ? filename : gita#command#show#bufname({
+        \ 'worktree': lhs ==# s:WORKTREE,
+        \}
+  let roptions = {
         \ 'patch': options.reverse && options.patch,
         \ 'commit': rhs,
         \ 'filename': filename,
-        \})
-  if empty(options.opener)
-    let content_type = gita#get_meta('content_type', '')
-    if content_type =~# '^blame-\%(navi\|view\)$'
-      let opener = 'tabedit'
-    else
-      let opener = g:gita#command#diff#default_opener
-    endif
-  else
-    let opener = options.opener
-  endif
+        \ 'worktree': rhs ==# s:WORKTREE,
+        \}
   let split = empty(options.split)
         \ ? matchstr(&diffopt, 'vertical')
         \ : options.split
-  " NOTE:
-  " Place main contant to visually rightbelow and focus
-  if options.anchor
+  if s:Anchor.is_available(options.opener)
     call s:Anchor.focus()
   endif
-  if !options.reverse
-    let rresult = gita#util#buffer#open(rbufname, {
-          \ 'window': 'diff_rhs',
-          \ 'opener': opener,
-          \})
-    call gita#util#diffthis()
-    let lresult = gita#util#buffer#open(lbufname, {
-          \ 'opener': split ==# 'vertical'
-          \   ? 'leftabove vertical split'
-          \   : 'leftabove split',
-          \})
-    call gita#util#diffthis()
-    diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(lresult.bufnum))
-    call gita#util#select(options.selection)
-  else
-    let rresult = gita#util#buffer#open(rbufname, {
-          \ 'window': 'diff_lhs',
-          \ 'opener': opener,
-          \})
-    call gita#util#diffthis()
-    let lresult = gita#util#buffer#open(lbufname, {
-          \ 'opener': split ==# 'vertical'
-          \   ? 'rightbelow vertical split'
-          \   : 'rightbelow split',
-          \})
-    call gita#util#diffthis()
-    diffupdate
-    execute printf('keepjump %dwincmd w', bufwinnr(rresult.bufnum))
-    call gita#util#select(options.selection)
-  endif
+  call gita#command#show#open(extend(options.reverse ? loptions : roptions, {
+        \ 'opener': options.opener,
+        \ 'window': 'diff_rhs',
+        \}))
+  call gita#util#diffthis()
+  call gita#command#show#open(extend(options.reverse ? roptions : loptions, {
+        \ 'opener': split ==# 'vertical'
+        \   ? 'leftabove vertical split'
+        \   : 'leftabove split',
+        \ 'window': 'diff_lhs',
+        \}))
+  call gita#util#diffthis()
+  call gita#util#select(options.selection)
+  diffupdate
 endfunction
 
 function! s:get_parser() abort
@@ -596,17 +542,6 @@ function! s:get_parser() abort
           \ 'do not show any source or destination prefix',
           \)
     call s:parser.add_argument(
-          \ '--opener', '-o',
-          \ 'a way to open a new buffer such as "edit", "split", etc.', {
-          \   'type': s:ArgumentParser.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--split', '-s',
-          \ 'open two buffer to compare by vimdiff rather than to open a single diff file. most of options will be disabled', {
-          \   'on_default': &diffopt =~# 'vertical' ? 'vertical' : 'horizontal',
-          \   'choices': ['vertical', 'horizontal'],
-          \})
-    call s:parser.add_argument(
           \ '--repository',
           \ 'show a diff of the repository instead of a file content',
           \)
@@ -623,6 +558,17 @@ function! s:get_parser() abort
           \ '--patch',
           \ 'diff a content in PATCH mode. most of options will be disabled',
           \)
+    call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--split', '-s',
+          \ 'open two buffer to compare by vimdiff rather than to open a single diff file. most of options will be disabled', {
+          \   'on_default': &diffopt =~# 'vertical' ? 'vertical' : 'horizontal',
+          \   'choices': ['vertical', 'horizontal'],
+          \})
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to diff.',
@@ -653,6 +599,7 @@ function! gita#command#diff#command(...) abort
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options, g:gita#command#diff#default_opener)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#diff#default_options),
@@ -671,5 +618,5 @@ endfunction
 
 call gita#util#define_variables('command#diff', {
       \ 'default_options': {},
-      \ 'default_opener': 'edit',
+      \ 'default_opener': '',
       \})

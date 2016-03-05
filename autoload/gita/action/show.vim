@@ -13,14 +13,13 @@ let s:MAPPING_TABLE = {
 function! gita#action#show#action(candidates, ...) abort
   let options = extend({
         \ 'opener': g:gita#action#show#default_opener,
-        \ 'anchor': g:gita#action#show#default_anchor,
         \}, get(a:000, 0, {}))
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
-            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'selection': get(candidate, 'selection', get(options, 'selection', [])),
             \ 'commit': get(options, 'commit', ''),
@@ -34,19 +33,19 @@ function! gita#action#show#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-show)
         \ :call gita#action#call('show')<CR>
   noremap <buffer><silent> <Plug>(gita-show-edit)
-        \ :call gita#action#call('show', {'opener': 'edit', 'anchor': 1})<CR>
+        \ :call gita#action#call('show', {'opener': 'edit'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-above)
-        \ :call gita#action#call('show', {'opener': 'leftabove new', 'anchor': 1})<CR>
+        \ :call gita#action#call('show', {'opener': 'leftabove new'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-below)
-        \ :call gita#action#call('show', {'opener': 'rightbelow new', 'anchor': 1})<CR>
+        \ :call gita#action#call('show', {'opener': 'rightbelow new'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-left)
-        \ :call gita#action#call('show', {'opener': 'leftabove vnew', 'anchor': 1})<CR>
+        \ :call gita#action#call('show', {'opener': 'leftabove vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-right)
-        \ :call gita#action#call('show', {'opener': 'rightbelow vnew', 'anchor': 1})<CR>
+        \ :call gita#action#call('show', {'opener': 'rightbelow vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-tabnew)
-        \ :call gita#action#call('show', {'opener': 'tabnew', 'anchor': 0})<CR>
+        \ :call gita#action#call('show', {'opener': 'tabnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-pedit)
-        \ :call gita#action#call('show', {'opener': 'pedit', 'anchor': 0})<CR>
+        \ :call gita#action#call('show', {'opener': 'pedit'})<CR>
 endfunction
 
 function! gita#action#show#define_default_mappings() abort
@@ -62,5 +61,4 @@ endfunction
 
 call gita#util#define_variables('action#show', {
       \ 'default_opener': '',
-      \ 'default_anchor': 1,
       \})

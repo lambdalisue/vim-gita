@@ -15,16 +15,15 @@ let s:MAPPING_TABLE = {
 function! gita#action#diff#action(candidates, ...) abort
   let options = extend({
         \ 'opener': g:gita#action#diff#default_opener,
-        \ 'anchor': g:gita#action#diff#default_anchor,
         \ 'split': g:gita#action#diff#default_split,
         \}, get(a:000, 0, {}))
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       if empty(options.split)
         call gita#command#diff#open({
-              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'selection': get(options, 'selection', []),
               \ 'cached': !get(candidate, 'is_unstaged', 1),
@@ -33,7 +32,6 @@ function! gita#action#diff#action(candidates, ...) abort
               \})
       else
         call gita#command#diff#open2({
-              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'selection': get(options, 'selection', []),
               \ 'split': options.split,
@@ -50,23 +48,23 @@ function! gita#action#diff#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-diff)
         \ :call gita#action#call('diff')<CR>
   noremap <buffer><silent> <Plug>(gita-diff-edit)
-        \ :call gita#action#call('diff', {'opener': 'edit', 'anchor': 1, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'edit', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-above)
-        \ :call gita#action#call('diff', {'opener': 'leftabove new', 'anchor': 1, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'leftabove new', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-below)
-        \ :call gita#action#call('diff', {'opener': 'rightbelow new', 'anchor': 1, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'rightbelow new', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-left)
-        \ :call gita#action#call('diff', {'opener': 'leftabove vnew', 'anchor': 1, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'leftabove vnew', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-right)
-        \ :call gita#action#call('diff', {'opener': 'rightbelow vnew', 'anchor': 1, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'rightbelow vnew', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-tabnew)
-        \ :call gita#action#call('diff', {'opener': 'tabnew', 'anchor': 0, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'tabnew', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-pedit)
-        \ :call gita#action#call('diff', {'opener': 'pedit', 'anchor': 0, 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'pedit', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-vertical)
-        \ :call gita#action#call('diff', {'opener': 'edit', 'anchor': 1, 'split': 'vertical'})<CR>
+        \ :call gita#action#call('diff', {'opener': 'edit', 'split': 'vertical'})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-horizontal)
-        \ :call gita#action#call('diff', {'opener': 'edit', 'anchor': 1, 'split': 'horizontal'})<CR>
+        \ :call gita#action#call('diff', {'opener': 'edit', 'split': 'horizontal'})<CR>
 endfunction
 
 function! gita#action#diff#define_default_mappings() abort
@@ -84,6 +82,5 @@ endfunction
 
 call gita#util#define_variables('action#diff', {
       \ 'default_opener': 'edit',
-      \ 'default_anchor': 1,
       \ 'default_split': '',
       \})

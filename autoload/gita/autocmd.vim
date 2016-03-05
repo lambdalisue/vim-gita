@@ -55,7 +55,7 @@ function! s:on_BufReadCmd() abort
           \ 'patch': get(options, 'patch'),
           \})
   elseif content_type ==# 'diff'
-    call gita#command#diff#edit({
+    call gita#command#diff#BufReadCmd({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'encoding': options.encoding,
@@ -94,7 +94,7 @@ function! s:on_FileReadCmd() abort
           \ 'patch': get(options, 'patch'),
           \})
   elseif content_type ==# 'diff'
-    call gita#command#diff#read({
+    call gita#command#diff#FileReadCmd({
           \ 'commit': info.commit,
           \ 'filename': info.filename,
           \ 'encoding': options.encoding,

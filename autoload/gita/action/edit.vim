@@ -15,12 +15,11 @@ let s:MAPPING_TABLE = {
 function! gita#action#edit#action(candidates, ...) abort
   let options = extend({
         \ 'opener': g:gita#action#edit#default_opener,
-        \ 'anchor': g:gita#action#edit#default_anchor,
         \}, get(a:000, 0, {}))
+  call gita#option#assign_opener(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
-            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'filename': candidate.path,
             \ 'worktree': 1,
@@ -33,19 +32,19 @@ function! gita#action#edit#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-edit)
         \ :call gita#action#call('edit')<CR>
   noremap <buffer><silent> <Plug>(gita-edit-edit)
-        \ :call gita#action#call('edit', {'opener': 'edit', 'anchor': 1})<CR>
+        \ :call gita#action#call('edit', {'opener': 'edit'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-above)
-        \ :call gita#action#call('edit', {'opener': 'leftabove new', 'anchor': 1})<CR>
+        \ :call gita#action#call('edit', {'opener': 'leftabove new'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-below)
-        \ :call gita#action#call('edit', {'opener': 'rightbelow new', 'anchor': 1})<CR>
+        \ :call gita#action#call('edit', {'opener': 'rightbelow new'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-left)
-        \ :call gita#action#call('edit', {'opener': 'leftabove vnew', 'anchor': 1})<CR>
+        \ :call gita#action#call('edit', {'opener': 'leftabove vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-right)
-        \ :call gita#action#call('edit', {'opener': 'rightbelow vnew', 'anchor': 1})<CR>
+        \ :call gita#action#call('edit', {'opener': 'rightbelow vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-tabnew)
-        \ :call gita#action#call('edit', {'opener': 'tabnew', 'anchor': 0})<CR>
+        \ :call gita#action#call('edit', {'opener': 'tabnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-pedit)
-        \ :call gita#action#call('edit', {'opener': 'pedit', 'anchor': 0})<CR>
+        \ :call gita#action#call('edit', {'opener': 'pedit'})<CR>
 endfunction
 
 function! gita#action#edit#define_default_mappings() abort
@@ -61,5 +60,4 @@ endfunction
 
 call gita#util#define_variables('action#edit', {
       \ 'default_opener': '',
-      \ 'default_anchor': 1,
       \})

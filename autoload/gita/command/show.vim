@@ -137,7 +137,7 @@ function! gita#command#show#bufname(...) abort
         \ 'filename': '',
         \ 'patch': 0,
         \})
-  if has_key(options, 'worktree')
+  if get(options, 'worktree')
     let options.commit = s:WORKTREE
     unlet options.worktree
   endif
@@ -217,16 +217,6 @@ function! gita#command#show#open(...) abort
         \ 'window': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  if empty(options.opener)
-    let content_type = gita#get_meta('content_type', '')
-    if content_type =~# '^blame-\%(navi\|view\)$'
-      let opener = 'tabedit'
-    else
-      let opener = g:gita#command#show#default_opener
-    endif
-  else
-    let opener = options.opener
-  endif
   let bufname = gita#command#show#bufname(options)
   if empty(bufname)
     return
@@ -237,7 +227,7 @@ function! gita#command#show#open(...) abort
   try
     let gita#var = options
     call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
+          \ 'opener': options.opener,
           \ 'window': options.window,
           \})
   finally
@@ -390,6 +380,7 @@ function! gita#command#show#command(...) abort
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options, g:gita#command#show#default_opener)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#show#default_options),
@@ -404,5 +395,5 @@ endfunction
 
 call gita#util#define_variables('command#show', {
       \ 'default_options': {},
-      \ 'default_opener': 'edit',
+      \ 'default_opener': '',
       \})
