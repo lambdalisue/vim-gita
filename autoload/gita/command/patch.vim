@@ -77,11 +77,11 @@ function! gita#command#patch#open2(...) abort
         \   : 'leftabove split',
         \}))
   call gita#util#diffthis()
+  call gita#util#select(options.selection)
+  diffupdate
   if options.reverse
     keepjumps wincmd p
   endif
-  call gita#util#select(options.selection)
-  diffupdate
 endfunction
 
 function! gita#command#patch#open3(...) abort
@@ -138,7 +138,7 @@ function! gita#command#patch#open3(...) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffput) :diffput %d<BAR>diffupdate<CR>',
         \ chs_bufnum,
         \)
-  if g:gita#command#patch#enable_default_mappings
+  if !g:gita#command#patch#disable_default_mappings
     nmap <buffer> dp <Plug>(gita-diffput)
   endif
 
@@ -147,7 +147,7 @@ function! gita#command#patch#open3(...) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffput) :diffput %d<BAR>diffupdate<CR>',
         \ chs_bufnum,
         \)
-  if g:gita#command#patch#enable_default_mappings
+  if !g:gita#command#patch#disable_default_mappings
     nmap <buffer> dp <Plug>(gita-diffput)
   endif
 
@@ -160,7 +160,7 @@ function! gita#command#patch#open3(...) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffget-r) :diffget %d<BAR>diffupdate<CR>',
         \ rhs_bufnum,
         \)
-  if g:gita#command#patch#enable_default_mappings
+  if !g:gita#command#patch#disable_default_mappings
     nmap <buffer> dol <Plug>(gita-diffget-l)
     nmap <buffer> dor <Plug>(gita-diffget-r)
   endif
@@ -244,6 +244,6 @@ call gita#util#define_variables('command#patch', {
       \ 'default_options': {},
       \ 'default_opener': '',
       \ 'default_method': 'three',
-      \ 'enable_default_mappings': 1,
+      \ 'disable_default_mappings': 0,
       \})
 
