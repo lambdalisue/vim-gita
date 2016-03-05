@@ -159,14 +159,14 @@ function! s:on_BufReadCmd() abort
   endtry
 endfunction
 
-function! gita#command#grep#bufname(...) abort
-  let options = gita#option#init('^grep$', get(a:000, 0, {}), {
+function! gita#command#grep#bufname(options) abort
+  let options = extend({
         \ 'pattern': '',
         \ 'commit': '',
         \ 'cached': 0,
         \ 'no-index': 0,
         \ 'untracked': 0,
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

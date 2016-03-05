@@ -214,11 +214,11 @@ function! s:on_GitaStatusModified() abort
   endtry
 endfunction
 
-function! gita#command#commit#bufname(...) abort
-  let options = gita#option#init('^commit$', get(a:000, 0, {}), {
+function! gita#command#commit#bufname(options) abort
+  let options = extend({
         \ 'allow-empty': 0,
         \ 'filenames': [],
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,

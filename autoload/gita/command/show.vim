@@ -131,12 +131,12 @@ function! s:on_BufWriteCmd() abort
   endtry
 endfunction
 
-function! gita#command#show#bufname(...) abort
-  let options = gita#option#init('^show$', get(a:000, 0, {}), {
+function! gita#command#show#bufname(options) abort
+  let options = extend({
         \ 'commit': '',
         \ 'filename': '',
         \ 'patch': 0,
-        \})
+        \}, a:options)
   if get(options, 'worktree')
     let options.commit = s:WORKTREE
     unlet options.worktree

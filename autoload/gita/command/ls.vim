@@ -107,10 +107,10 @@ function! s:on_BufReadCmd() abort
   endtry
 endfunction
 
-function! gita#command#ls#bufname(...) abort
-  let options = gita#option#init('^ls$', get(a:000, 0, {}), {
+function! gita#command#ls#bufname(options) abort
+  let options = extend({
         \ 'commit': '',
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

@@ -168,10 +168,10 @@ function! s:on_GitaStatusModified() abort
   endtry
 endfunction
 
-function! gita#command#status#bufname(...) abort
-  let options = gita#option#init('^status$', get(a:000, 0, {}), {
+function! gita#command#status#bufname(options) abort
+  let options = extend({
         \ 'filenames': [],
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,

@@ -37,11 +37,11 @@ function! s:on_BufReadCmd() abort
   endtry
 endfunction
 
-function! gita#command#blame#navi#bufname(...) abort
-  let options = gita#option#init('blame-navi', get(a:000, 0, {}), {
+function! gita#command#blame#navi#bufname(options) abort
+  let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

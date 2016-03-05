@@ -151,10 +151,10 @@ function! s:on_GitaStatusModified() abort
   endtry
 endfunction
 
-function! gita#command#diff_ls#bufname(...) abort
-  let options = gita#option#init('^diff-ls$', get(a:000, 0, {}), {
+function! gita#command#diff_ls#bufname(options) abort
+  let options = extend({
         \ 'commit': '',
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

@@ -102,12 +102,12 @@ function! s:on_BufReadCmd() abort
   endtry
 endfunction
 
-function! gita#command#branch#bufname(...) abort
-  let options = gita#option#init('^branch$', get(a:000, 0, {}), {
+function! gita#command#branch#bufname(options) abort
+  let options = extend({
         \ 'list': '',
         \ 'all': 0,
         \ 'remotes': 0,
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
