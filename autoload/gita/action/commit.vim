@@ -1,4 +1,4 @@
-function! s:action(candidates, options) abort
+function! s:action(candidate, options) abort
   let options = extend({
         \ 'amend': -1,
         \}, a:options)

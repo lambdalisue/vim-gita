@@ -6,15 +6,10 @@ function! s:action(candidates, options) abort
         \}, a:options)
   call gita#option#assign_commit(options)
   let options.commit = get(options, 'commit', '')
-  let filenames = []
-  for candidate in a:candidates
-    if has_key(candidate, 'path')
-      call add(filenames, candidate.path)
-    endif
-  endfor
-  if empty(filenames)
-    return
-  endif
+  let filenames = map(
+        \ copy(a:candidates),
+        \ 'v:val.path',
+        \)
   call gita#command#checkout#call({
         \ 'quiet': 1,
         \ 'force': options.force,
@@ -28,34 +23,42 @@ endfunction
 function! gita#action#checkout#define(disable_mappings) abort
   call gita#action#define('checkout', function('s:action'), {
         \ 'description': 'Checkout a contents',
+        \ 'requirements': ['path'],
         \ 'options': {},
         \})
   call gita#action#define('checkout:force', function('s:action'), {
         \ 'description': 'Checkout a contents (force)',
+        \ 'requirements': ['path'],
         \ 'options': { 'force': 1 },
         \})
   call gita#action#define('checkout:ours', function('s:action'), {
         \ 'description': 'Checkout a contents',
+        \ 'requirements': ['path'],
         \ 'options': { 'ours': 1 },
         \})
   call gita#action#define('checkout:ours:force', function('s:action'), {
         \ 'description': 'Checkout a contents (force)',
+        \ 'requirements': ['path'],
         \ 'options': { 'ours': 1, 'force': 1 },
         \})
   call gita#action#define('checkout:theirs', function('s:action'), {
         \ 'description': 'Checkout a contents',
+        \ 'requirements': ['path'],
         \ 'options': { 'theirs': 1 },
         \})
   call gita#action#define('checkout:theirs:force', function('s:action'), {
         \ 'description': 'Checkout a contents (force)',
+        \ 'requirements': ['path'],
         \ 'options': { 'theirs': 1, 'force': 1 },
         \})
   call gita#action#define('checkout:HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD',
+        \ 'requirements': ['path'],
         \ 'options': { 'commit': 'HEAD' },
         \})
   call gita#action#define('checkout:HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD (force)',
+        \ 'requirements': ['path'],
         \ 'options': { 'commit': 'HEAD', 'force': 1 },
         \})
   if a:disable_mappings

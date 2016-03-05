@@ -1,4 +1,11 @@
-let s:V = gita#vital()
+function! s:is_satisfied(candidate, requirements) abort
+  for requirement in a:requirements
+    if !has_key(a:candidate, requirement)
+      return 0
+    endif
+  endfor
+  return 1
+endfunction
 
 function! gita#action#attach(fn) abort
   let action_holder = {
@@ -6,7 +13,6 @@ function! gita#action#attach(fn) abort
         \ 'actions': {},
         \}
   let b:_gita_action_holder = action_holder
-
 endfunction
 
 function! gita#action#get_holder() abort
@@ -42,7 +48,18 @@ endfunction
 
 function! gita#action#do(name, candidates) abort
   let action = gita#action#get_action(a:name)
-  call call(action.fn, [a:candidates, action.options])
+  let candidates = filter(
+        \ copy(a:candidates),
+        \ 's:is_satisfied(v:val, action.requirements)',
+        \)
+  if !empty(action.requirements) && empty(candidates)
+    return
+  endif
+  if action.mapping_mode =~# '[vx]'
+    call call(action.fn, [candidates, action.options])
+  else
+    call call(action.fn, [get(candidates, 0, {}), action.options])
+  endif
 endfunction
 
 function! gita#action#call(name) abort range
@@ -59,6 +76,7 @@ function! gita#action#define(name, fn, ...) abort
         \ 'description': printf('Perform %s action', a:name),
         \ 'mapping': printf('<Plug>(gita-%s)', substitute(a:name, ':', '-', 'g')),
         \ 'mapping_mode': 'nv',
+        \ 'requirements': [],
         \ 'options': {},
         \}, get(a:000, 0, {}))
   let action_holder = gita#action#get_holder()
@@ -67,6 +85,7 @@ function! gita#action#define(name, fn, ...) abort
         \ 'description': options.description,
         \ 'mapping': options.mapping,
         \ 'mapping_mode': options.mapping_mode,
+        \ 'requirements': options.requirements,
         \ 'options': options.options,
         \}
   if !empty(options.mapping)

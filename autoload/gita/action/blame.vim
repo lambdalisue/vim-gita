@@ -1,4 +1,4 @@
-function! s:action(candidates, options) abort
+function! s:action(candidate, options) abort
   let options = extend({
         \ 'anchor': 1,
         \ 'opener': '',
@@ -8,23 +8,20 @@ function! s:action(candidates, options) abort
   call gita#option#assign_opener(options, g:gita#action#blame#default_opener)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  for candidate in a:candidates
-    if has_key(candidate, 'path')
-      call gita#command#blame#open({
-            \ 'anchor': options.anchor,
-            \ 'opener': options.opener,
-            \ 'filename': candidate.path,
-            \ 'commit': get(candidate, 'commit', options.commit),
-            \ 'selection': get(candidate, 'selection', options.selection),
-            \})
-    endif
-  endfor
+  call gita#command#blame#open({
+        \ 'anchor': options.anchor,
+        \ 'opener': options.opener,
+        \ 'filename': a:candidate.path,
+        \ 'commit': get(a:candidate, 'commit', options.commit),
+        \ 'selection': get(a:candidate, 'selection', options.selection),
+        \})
 endfunction
 
 function! gita#action#blame#define(disable_mappings) abort
   call gita#action#define('blame', function('s:action'), {
         \ 'description': 'Blame a content',
         \ 'mapping_mode': 'n',
+        \ 'requirements': ['path'],
         \ 'options': {},
         \})
   if a:disable_mappings

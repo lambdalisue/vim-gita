@@ -1,4 +1,4 @@
-function! s:action(candidates, options) abort
+function! s:action(candidate, options) abort
   let options = extend({
         \ 'anchor': 1,
         \ 'opener': '',
@@ -6,38 +6,38 @@ function! s:action(candidates, options) abort
         \}, a:options)
   call gita#option#assign_selection(options, g:gita#action#patch#default_opener)
   let options.selection = get(options, 'selection', [])
-  for candidate in a:candidates
-    if has_key(candidate, 'path')
-      call gita#command#patch#open({
-            \ 'method': options.method,
-            \ 'anchor': options.anchor,
-            \ 'opener': options.opener,
-            \ 'filename': candidate.path,
-            \ 'selection': get(candidate, 'selection', options.selection)
-            \})
-    endif
-  endfor
+  call gita#command#patch#open({
+        \ 'method': options.method,
+        \ 'anchor': options.anchor,
+        \ 'opener': options.opener,
+        \ 'filename': a:candidate.path,
+        \ 'selection': get(a:candidate, 'selection', options.selection)
+        \})
 endfunction
 
 function! gita#action#patch#define(disable_mapping) abort
   call gita#action#define('patch', function('s:action'), {
         \ 'description': 'Patch file contents to the index',
         \ 'mapping_mode': 'n',
+        \ 'requirements': ['path'],
         \ 'options': {},
         \})
   call gita#action#define('patch:one', function('s:action'), {
         \ 'description': 'Patch file contents to the index (one way)',
         \ 'mapping_mode': 'n',
+        \ 'requirements': ['path'],
         \ 'options': { 'method': 'one' },
         \})
   call gita#action#define('patch:two', function('s:action'), {
         \ 'description': 'Patch file contents to the index (two way)',
         \ 'mapping_mode': 'n',
+        \ 'requirements': ['path'],
         \ 'options': { 'method': 'two' },
         \})
   call gita#action#define('patch:three', function('s:action'), {
         \ 'description': 'Patch file contents to the index (three way)',
         \ 'mapping_mode': 'n',
+        \ 'requirements': ['path'],
         \ 'options': { 'method': 'three' },
         \})
   if a:disable_mapping

@@ -65,7 +65,7 @@ function! s:build_help(action_holder) abort
   return content
 endfunction
 
-function! s:action_help(candidates, options) abort
+function! s:action_help(candidate, options) abort
   let action_holder = gita#action#get_holder()
   echo join(s:build_help(action_holder), "\n")
 endfunction
@@ -94,13 +94,13 @@ function! s:action_choice(candidates, options) abort
   call gita#action#do(name, a:candidates)
 endfunction
 
-function! s:action_close(candidates, options) abort
+function! s:action_close(candidate, options) abort
   let winnum = winnr()
   call s:Anchor.focus()
   execute printf('%dclose', winnum)
 endfunction
 
-function! s:action_redraw(candidates, options) abort
+function! s:action_redraw(candidate, options) abort
   if &filetype =~# '^gita-'
     let name = matchstr(&filetype, '^gita-\zs.*$')
     let name = substitute(name, '-', '#', 'g')
