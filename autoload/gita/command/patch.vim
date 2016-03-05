@@ -3,27 +3,64 @@ let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! gita#command#patch#open(...) abort
-  let options = copy(get(a:000, 0, {}))
-  let options['patch'] = 1
+  let options = extend({
+        \ 'method': '',
+        \}, get(a:000, 0, {}))
+  let method = empty(options.method)
+        \ ? g:gita#command#patch#default_method
+        \ : options.method
+  if method ==# 'one'
+    call gita#command#patch#open1(options)
+  elseif method ==# 'two'
+    call gita#command#patch#open2(options)
+  else
+    call gita#command#patch#open3(options)
+  endif
+endfunction
+
+function! gita#command#patch#open1(...) abort
+  let options = extend({
+        \ 'reverse': 0,
+        \ 'filename': '',
+        \ 'opener': 'edit',
+        \ 'selection': [],
+        \}, get(a:000, 0, {}))
+  if options.reverse
+    let options.cached = 1
+  endif
+  let options['commit'] = ''
+  let options['split'] = 0
   call gita#command#diff#open(options)
 endfunction
 
 function! gita#command#patch#open2(...) abort
   let options = extend({
+        \ 'reverse': 0,
         \ 'filename': '',
         \ 'opener': 'edit',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let filename = empty(options.filename) ? '%' : options.filename
   let filename = gita#variable#get_valid_filename(filename)
-  let loptions = {
-        \ 'patch': 1,
-        \ 'filename': filename,
-        \}
-  let roptions = {
-        \ 'filename': filename,
-        \ 'worktree': 1,
-        \}
+  if options.reverse
+    let loptions = {
+          \ 'commit': 'HEAD',
+          \ 'filename': filename,
+          \}
+    let roptions = {
+          \ 'patch': 1,
+          \ 'filename': filename,
+          \}
+  else
+    let loptions = {
+          \ 'patch': 1,
+          \ 'filename': filename,
+          \}
+    let roptions = {
+          \ 'filename': filename,
+          \ 'worktree': 1,
+          \}
+  endif
   let vertical = matchstr(&diffopt, 'vertical')
   if s:Anchor.is_available(options.opener)
     call s:Anchor.focus()
@@ -40,6 +77,9 @@ function! gita#command#patch#open2(...) abort
         \   : 'leftabove split',
         \}))
   call gita#util#diffthis()
+  if options.reverse
+    keepjumps wincmd p
+  endif
   call gita#util#select(options.selection)
   diffupdate
 endfunction
@@ -142,6 +182,11 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
+          \ '--reverse',
+          \ 'compare difference from HEAD instead of working tree', {
+          \   'superordinates': ['one', 'two'],
+          \})
+    call s:parser.add_argument(
           \ '--one', '-1',
           \ 'open a patchable diff buffer', {
           \   'conflicts': ['two', 'three'],
@@ -161,6 +206,15 @@ function! s:get_parser() abort
           \ 'a filename going to be patched. if omited, the current buffer is used', {
           \   'complete': function('gita#variable#complete_filename'),
           \})
+    function! s:parser.hooks.post_validate(options) abort
+      if get(a:options, 'one')
+        let a:options.method = 'one'
+      elseif get(a:options, 'two')
+        let a:options.method = 'two'
+      else
+        let a:options.method = 'three'
+      endif
+    endfunction
     call s:parser.hooks.validate()
   endif
   return s:parser
@@ -179,13 +233,7 @@ function! gita#command#patch#command(...) abort
         \ deepcopy(g:gita#command#patch#default_options),
         \ options,
         \)
-  if get(options, 'one')
-    call gita#command#patch#open(options)
-  elseif get(options, 'two')
-    call gita#command#patch#open2(options)
-  else
-    call gita#command#patch#open3(options)
-  endif
+  call gita#command#patch#open(options)
 endfunction
 function! gita#command#patch#complete(...) abort
   let parser = s:get_parser()
@@ -195,6 +243,7 @@ endfunction
 call gita#util#define_variables('command#patch', {
       \ 'default_options': {},
       \ 'default_opener': '',
+      \ 'default_method': 'three',
       \ 'enable_default_mappings': 1,
       \})
 

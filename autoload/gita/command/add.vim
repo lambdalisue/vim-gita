@@ -57,25 +57,17 @@ function! gita#command#add#call(...) abort
         \}
 endfunction
 function! gita#command#add#patch(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
+        \ 'split': 0,
         \})
   let filename = len(options.filenames) > 0
         \ ? options.filenames[0]
         \ : '%'
-  if get(options, 'split')
-    call gita#command#diff#open2({
-          \ 'patch': 1,
-          \ 'commit': '',
-          \ 'filename': filename,
-          \})
-  else
-    call gita#command#diff#open({
-          \ 'patch': 1,
-          \ 'commit': '',
-          \ 'filename': filename,
-          \})
-  endif
+  call gita#command#patch#open({
+        \ 'method': options.split ? 'two' : 'one',
+        \ 'filename': filename,
+        \})
 endfunction
 
 function! s:get_parser() abort
@@ -138,7 +130,7 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--patch', '-p',
-          \ 'An alias option for ":Gita diff --patch -- %" to perform working tree -> index patch', {
+          \ 'An alias option for ":Gita patch --one %" to perform working tree -> index patch', {
           \   'conflicts': [
           \     'dry-run', 'force', 'update', 'intent-to-add', 'all',
           \     'ignore-removal', 'refresh', 'ignore-errors', 'ignore-missing',

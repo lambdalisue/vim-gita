@@ -62,25 +62,18 @@ function! gita#command#reset#call(...) abort
         \}
 endfunction
 function! gita#command#reset#patch(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
+        \ 'split': 0,
         \})
   let filename = len(options.filenames) > 0
         \ ? options.filenames[0]
         \ : '%'
-  if get(options, 'split')
-    call gita#command#diff#open2({
-          \ 'patch': 1,
-          \ 'commit': 'HEAD',
-          \ 'filename': filename,
-          \})
-  else
-    call gita#command#diff#open({
-          \ 'patch': 1,
-          \ 'commit': 'HEAD',
-          \ 'filename': filename,
-          \})
-  endif
+  call gita#command#patch#open({
+        \ 'reverse': 1,
+        \ 'method': options.split ? 'two' : 'one',
+        \ 'filename': filename,
+        \})
 endfunction
 
 function! s:get_parser() abort
@@ -123,7 +116,7 @@ function! s:get_parser() abort
           \)
     call s:parser.add_argument(
           \ '--patch', '-p',
-          \ 'An alias option for ":Gita diff --patch HEAD -- %" to perform HEAD -> index patch', {
+          \ 'An alias option for ":Gita patch --one --reverse %" to perform HEAD -> index patch', {
           \   'conflicts': [
           \     'mixed', 'soft', 'hard', 'merge', 'keep',
           \   ],

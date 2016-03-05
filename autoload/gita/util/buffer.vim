@@ -4,10 +4,13 @@ let s:Buffer = s:V.import('Vim.Buffer')
 let s:BufferManager = s:V.import('Vim.BufferManager')
 
 function! gita#util#buffer#open(name, ...) abort
-  let config = get(a:000, 0, {})
+  let config = extend({
+        \ 'opener': '',
+        \}, get(a:000, 0, {}))
+  let config.opener = empty(config.opener) ? 'edit' : config.opener
   let window  = get(config, 'window', '')
   if empty(window)
-    let loaded = s:Buffer.open(a:name, get(config, 'opener', 'edit'))
+    let loaded = s:Buffer.open(a:name, config.opener)
     let bufnum = bufnr('%')
     return {
           \ 'loaded': loaded,

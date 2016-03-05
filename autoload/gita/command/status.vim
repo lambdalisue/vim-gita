@@ -118,7 +118,7 @@ function! s:define_actions() abort
         \ g:gita#command#status#enable_default_mappings, [
         \   'close', 'redraw', 'mapping',
         \   'add', 'rm', 'reset', 'checkout',
-        \   'stage', 'unstage', 'toggle', 'discard',
+        \   'stage', 'unstage', 'toggle', 'discard', 'patch',
         \   'edit', 'show', 'diff', 'blame', 'browse',
         \   'commit',
         \])
