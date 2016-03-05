@@ -21,29 +21,21 @@ function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
-function! s:apply_command(git, object, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['object'] = a:object
-  let result = gita#execute(a:git, 'show', options)
-  if result.status
-    call s:GitProcess.throw(result)
-  elseif !get(a:options, 'quiet', 0)
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
-endfunction
 function! s:get_revision_content(git, commit, filename, options) abort
+  let options = s:pick_available_options(a:options)
   if empty(a:filename)
-    let object = a:commit
+    let options['object'] = a:commit
   else
-    let object = join([
+    let options['object'] = join([
           \ a:commit,
           \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
           \], ':')
   endif
-  let a:options['quiet'] = 1
-  return s:apply_command(a:git, object, extend({ 'quiet': 1 }, a:options))
+  let result = gita#execute(a:git, 'show', options)
+  if result.status
+    call s:GitProcess.throw(result)
+  endif
+  return result.content
 endfunction
 function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
@@ -250,26 +242,14 @@ function! gita#command#show#open(...) abort
   endtry
   call gita#util#select(options.selection)
 endfunction
-function! gita#command#show#read(...) abort
-  let options = extend({
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \}, get(a:000, 0, {}))
-  let result = gita#command#show#call(options)
-  call gita#util#buffer#read_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-function! gita#command#show#edit(...) abort
-  let options = gita#option#init('^show$', {
+
+function! gita#command#show#BufReadCmd(options) abort
+  let options = gita#option#init('^show$', a:options, {
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
-        \}, get(a:000, 0, {}))
+        \})
   if options.patch
     " 'patch' mode requires:
     " - INDEX content, naemly 'commit' should be an empty value
@@ -282,7 +262,7 @@ function! gita#command#show#edit(...) abort
   let result = gita#command#show#call(options)
   call gita#set_meta('content_type', 'show')
   call gita#set_meta('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'selection',
+        \ 'quiet', 'opener', 'selection',
         \]))
   call gita#set_meta('commit', result.commit)
   call gita#set_meta('filename', result.filename)
@@ -291,11 +271,7 @@ function! gita#command#show#edit(...) abort
         \ 'fileformat': options.fileformat,
         \ 'bad': options.bad,
         \})
-  if empty(result.filename)
-    setfiletype git
-    setlocal buftype=nowrite
-    setlocal readonly
-  elseif options.patch
+  if options.patch
     setlocal buftype=acwrite
     augroup vim_gita_internal_show_apply_diff
       autocmd! * <buffer>
@@ -303,9 +279,26 @@ function! gita#command#show#edit(...) abort
     augroup END
     setlocal noreadonly
   else
+    if empty(result.filename)
+      setfiletype git
+    endif
     setlocal buftype=nowrite
     setlocal readonly
   endif
+endfunction
+function! gita#command#show#FileReadCmd(options) abort
+  let options = gita#option#init('^show$', a:options, {
+        \ 'patch': 0,
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \ 'bad': '',
+        \})
+  let result = gita#command#show#call(options)
+  call gita#util#buffer#read_content(result.content, {
+        \ 'encoding': options.encoding,
+        \ 'fileformat': options.fileformat,
+        \ 'bad': options.bad,
+        \})
 endfunction
 
 function! s:get_parser() abort

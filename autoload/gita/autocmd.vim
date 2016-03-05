@@ -34,36 +34,36 @@ function! s:on_SourceCmd() abort
   endtry
 endfunction
 function! s:on_BufReadCmd() abort
-  let options = extend({
+  call gita#util#doautocmd('BufReadPre')
+  let info = gita#autocmd#parse(expand('<afile>'))
+  let options = {
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
-        \}, get(g:, 'gita#var', {}))
+        \}
+  let options = extend(options, get(g:, 'gita#var', {}))
   let options = extend(options, s:parse_cmdarg(v:cmdarg))
-  let info = gita#autocmd#parse(expand('<afile>'))
-  call gita#util#doautocmd('BufReadPre')
+  let options = extend(options, info.extra_options)
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
-    call gita#command#show#edit({
+    call gita#command#show#BufReadCmd({
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
           \ 'bad': options.bad,
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'patch': index(info.extra_options, 'patch') >= 0,
-          \ 'force': v:cmdbang && !&modified,
+          \ 'patch': get(options, 'patch'),
           \})
   elseif content_type ==# 'diff'
     call gita#command#diff#edit({
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
           \ 'bad': options.bad,
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'patch': index(info.extra_options, 'patch') >= 0,
-          \ 'cached': index(info.extra_options, 'cached') >= 0,
-          \ 'reverse': index(info.extra_options, 'reverse') >= 0,
-          \ 'force': v:cmdbang && !&modified,
+          \ 'patch': get(options, 'patch'),
+          \ 'cached': get(options, 'cached'),
+          \ 'reverse': get(options, 'reverse'),
           \})
   else
     call gita#throw(printf(
@@ -73,36 +73,36 @@ function! s:on_BufReadCmd() abort
   call gita#util#doautocmd('BufReadPost')
 endfunction
 function! s:on_FileReadCmd() abort
-  let options = extend({
+  call gita#util#doautocmd('FileReadPre')
+  let info = gita#autocmd#parse(expand('<afile>'))
+  let options = {
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
-        \}, get(g:, 'gita#var', {}))
+        \}
+  let options = extend(options, get(g:, 'gita#var', {}))
   let options = extend(options, s:parse_cmdarg(v:cmdarg))
-  let info = gita#autocmd#parse(expand('<afile>'))
-  call gita#util#doautocmd('FileReadPre')
+  let options = extend(options, info.extra_options)
   let content_type = get(info, 'content_type')
   if content_type ==# 'show'
-    call gita#command#show#read({
+    call gita#command#show#FileReadCmd({
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
           \ 'bad': options.bad,
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'patch': index(info.extra_options, 'patch') >= 0,
-          \ 'force': v:cmdbang && !&modified,
+          \ 'patch': get(options, 'patch'),
           \})
   elseif content_type ==# 'diff'
     call gita#command#diff#read({
+          \ 'commit': info.commit,
+          \ 'filename': info.filename,
           \ 'encoding': options.encoding,
           \ 'fileformat': options.fileformat,
           \ 'bad': options.bad,
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'patch': index(info.extra_options, 'patch') >= 0,
-          \ 'cached': index(info.extra_options, 'cached') >= 0,
-          \ 'reverse': index(info.extra_options, 'reverse') >= 0,
-          \ 'force': v:cmdbang && !&modified,
+          \ 'patch': get(options, 'patch'),
+          \ 'cached': get(options, 'cached'),
+          \ 'reverse': get(options, 'reverse'),
           \})
   else
     call gita#throw(printf(
@@ -149,7 +149,10 @@ function! gita#autocmd#parse(expr) abort
   let result.filename = empty(unixpath)
         \ ? ''
         \ : s:Git.get_absolute_path(git, unixpath)
-  let result.extra_options = split(result.extra_option, ':')
+  let result.extra_options = {}
+  for extra_option in split(result.extra_option, ':')
+    let result.extra_options[extra_option] = 1
+  endfor
   return result
 endfunction
 function! gita#autocmd#bufname(git, options) abort

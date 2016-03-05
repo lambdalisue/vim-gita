@@ -164,6 +164,12 @@ function! gita#get_meta(name, ...) abort
   let meta = s:get_meta_instance(bufnr(expr))
   return get(meta, a:name, get(a:000, 0, ''))
 endfunction
+function! gita#get_meta_for(content_type, name, ...) abort
+  if a:content_type !~# gita#get_meta('content_type', '')
+    return get(a:000, 0, '')
+  endif
+  return call('gita#get_meta', [a:name] + a:000)
+endfunction
 function! gita#set_meta(name, value, ...) abort
   " WARNING:
   " DO NOT USE 'gita' instance in this method.

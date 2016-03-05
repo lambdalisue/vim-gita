@@ -2,12 +2,9 @@ let s:V = gita#vital()
 let s:Prompt = s:V.import('Vim.Prompt')
 
 function! gita#option#init(content_type, options, ...) abort
-  let options = deepcopy(a:options)
-  let content_type = gita#get_meta('content_type', '')
-  if !empty(a:content_type) && content_type =~# a:content_type
-    call extend(options, gita#get_meta('options', {}), 'keep')
-  endif
-  call extend(options, get(a:000, 0, {}), 'keep')
+  let options = get(a:000, 0, {})
+  let options = extend(options, gita#get_meta_for(a:content_type, 'options', {}))
+  let options = extend(options, a:options)
   return options
 endfunction
 
