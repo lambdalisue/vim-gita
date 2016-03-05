@@ -22,9 +22,6 @@ function! s:is_available_for_toggle(candidate) abort
 endfunction
 
 function! s:action_stage(candidates, options) abort
-  let options = extend({
-        \ 'force': 0,
-        \}, a:options)
   let rm_candidates = []
   let add_candidates = []
   let candidates = filter(copy(a:candidates), 's:is_available_for_stage(v:val)')
@@ -45,7 +42,6 @@ function! s:action_unstage(candidates, options) abort
 endfunction
 
 function! s:action_toggle(candidates, options) abort
-  let options = copy(a:options)
   let stage_candidates = []
   let unstage_candidates = []
   let candidates = filter(copy(a:candidates), 's:is_available_for_toggle(v:val)')

@@ -16,8 +16,6 @@ function! s:is_available(candidate) abort
 endfunction
 
 function! s:action(candidates, options) abort
-  let options = extend({
-        \}, a:options)
   let branch_names = []
   for candidate in a:candidates
     if s:is_available(candidate)
