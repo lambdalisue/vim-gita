@@ -12,6 +12,7 @@ let s:MAPPING_TABLE = {
 
 function! gita#action#show#action(candidates, ...) abort
   let options = extend({
+        \ 'anchor': 1,
         \ 'opener': g:gita#action#show#default_opener,
         \}, get(a:000, 0, {}))
   call gita#option#assign_commit(options)
@@ -20,6 +21,7 @@ function! gita#action#show#action(candidates, ...) abort
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
+            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'selection': get(candidate, 'selection', get(options, 'selection', [])),
             \ 'commit': get(options, 'commit', ''),
@@ -43,9 +45,9 @@ function! gita#action#show#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-show-right)
         \ :call gita#action#call('show', {'opener': 'rightbelow vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-show-tabnew)
-        \ :call gita#action#call('show', {'opener': 'tabnew'})<CR>
+        \ :call gita#action#call('show', {'opener': 'tabnew', 'anchor': 0})<CR>
   noremap <buffer><silent> <Plug>(gita-show-pedit)
-        \ :call gita#action#call('show', {'opener': 'pedit'})<CR>
+        \ :call gita#action#call('show', {'opener': 'pedit', 'anchor': 0})<CR>
 endfunction
 
 function! gita#action#show#define_default_mappings() abort

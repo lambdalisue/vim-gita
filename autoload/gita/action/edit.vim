@@ -14,12 +14,14 @@ let s:MAPPING_TABLE = {
 
 function! gita#action#edit#action(candidates, ...) abort
   let options = extend({
+        \ 'anchor': 1,
         \ 'opener': g:gita#action#edit#default_opener,
         \}, get(a:000, 0, {}))
   call gita#option#assign_opener(options)
   for candidate in a:candidates
     if has_key(candidate, 'path')
       call gita#command#show#open({
+            \ 'anchor': options.anchor,
             \ 'opener': options.opener,
             \ 'filename': candidate.path,
             \ 'worktree': 1,
@@ -42,9 +44,9 @@ function! gita#action#edit#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-edit-right)
         \ :call gita#action#call('edit', {'opener': 'rightbelow vnew'})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-tabnew)
-        \ :call gita#action#call('edit', {'opener': 'tabnew'})<CR>
+        \ :call gita#action#call('edit', {'opener': 'tabnew', 'anchor': 0})<CR>
   noremap <buffer><silent> <Plug>(gita-edit-pedit)
-        \ :call gita#action#call('edit', {'opener': 'pedit'})<CR>
+        \ :call gita#action#call('edit', {'opener': 'pedit', 'anchor': 0})<CR>
 endfunction
 
 function! gita#action#edit#define_default_mappings() abort

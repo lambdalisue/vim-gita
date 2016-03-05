@@ -14,6 +14,7 @@ let s:MAPPING_TABLE = {
 
 function! gita#action#diff#action(candidates, ...) abort
   let options = extend({
+        \ 'anchor': 1,
         \ 'opener': g:gita#action#diff#default_opener,
         \ 'split': g:gita#action#diff#default_split,
         \}, get(a:000, 0, {}))
@@ -24,6 +25,7 @@ function! gita#action#diff#action(candidates, ...) abort
     if has_key(candidate, 'path')
       if empty(options.split)
         call gita#command#diff#open({
+              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'selection': get(options, 'selection', []),
               \ 'cached': !get(candidate, 'is_unstaged', 1),
@@ -32,6 +34,7 @@ function! gita#action#diff#action(candidates, ...) abort
               \})
       else
         call gita#command#diff#open2({
+              \ 'anchor': options.anchor,
               \ 'opener': options.opener,
               \ 'selection': get(options, 'selection', []),
               \ 'split': options.split,
@@ -58,9 +61,9 @@ function! gita#action#diff#define_plugin_mappings() abort
   noremap <buffer><silent> <Plug>(gita-diff-right)
         \ :call gita#action#call('diff', {'opener': 'rightbelow vnew', 'split': ''})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-tabnew)
-        \ :call gita#action#call('diff', {'opener': 'tabnew', 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'tabnew', 'split': '', 'anchor': 0,})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-pedit)
-        \ :call gita#action#call('diff', {'opener': 'pedit', 'split': ''})<CR>
+        \ :call gita#action#call('diff', {'opener': 'pedit', 'split': '', 'anchor': 0})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-vertical)
         \ :call gita#action#call('diff', {'opener': 'edit', 'split': 'vertical'})<CR>
   noremap <buffer><silent> <Plug>(gita-diff-horizontal)

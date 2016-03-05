@@ -213,6 +213,7 @@ function! gita#command#show#call(...) abort
 endfunction
 function! gita#command#show#open(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'opener': 'edit',
         \ 'window': '',
         \ 'selection': [],
@@ -221,17 +222,17 @@ function! gita#command#show#open(...) abort
   if empty(bufname)
     return
   endif
-  if s:Anchor.is_available(options.opener)
+  if options.anchor && s:Anchor.is_available(options.opener)
     call s:Anchor.focus()
   endif
   try
-    let gita#var = options
+    let g:gita#var = options
     call gita#util#buffer#open(bufname, {
           \ 'opener': options.opener,
           \ 'window': options.window,
           \})
   finally
-    unlet! gita#var
+    silent! unlet! g:gita#var
   endtry
   call gita#util#select(options.selection)
 endfunction

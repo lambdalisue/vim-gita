@@ -119,14 +119,14 @@ function! s:on_BufWriteCmd() abort
   endtry
 endfunction
 
-function! gita#command#diff#bufname(...) abort
-  let options = gita#option#init('^diff$', get(a:000, 0, {}), {
+function! gita#command#diff#bufname(options) abort
+  let options = extend({
         \ 'patch': 0,
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
-        \})
+        \}, a:options)
   let git = gita#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
@@ -198,6 +198,7 @@ function! gita#command#diff#call(...) abort
 endfunction
 function! gita#command#diff#open(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'opener': 'edit',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
@@ -205,7 +206,7 @@ function! gita#command#diff#open(...) abort
   if empty(bufname)
     return
   endif
-  if s:Anchor.is_available(options.opener)
+  if options.anchor && s:Anchor.is_available(options.opener)
     call s:Anchor.focus()
   endif
   try
@@ -213,7 +214,7 @@ function! gita#command#diff#open(...) abort
     let g:gita#var = options
     call gita#util#buffer#open(bufname, { 'opener': options.opener })
   finally
-    unlet! g:gita#var
+    silent! unlet! g:gita#var
   endtry
   call gita#util#select(options.selection)
 endfunction
@@ -276,6 +277,7 @@ endfunction
 
 function! gita#command#diff#open2(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'patch': 0,
         \ 'cached': 0,
         \ 'reverse': 0,
@@ -327,10 +329,8 @@ function! gita#command#diff#open2(...) abort
   let split = empty(options.split)
         \ ? matchstr(&diffopt, 'vertical')
         \ : options.split
-  if s:Anchor.is_available(options.opener)
-    call s:Anchor.focus()
-  endif
   call gita#command#show#open(extend(options.reverse ? loptions : roptions, {
+        \ 'anchor': options.anchor,
         \ 'opener': options.opener,
         \ 'window': 'diff_rhs',
         \}))
