@@ -104,27 +104,7 @@ function! s:format_stats(stats, width) abort
   return content
 endfunction
 
-function! s:on_VimResized() abort
-  try
-    if gita#meta#get_for('diff_ls', 'winwidth', winwidth(0)) != winwidth(0)
-      call gita#command#ui#diff_ls#redraw()
-    endif
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
-function! s:on_WinEnter() abort
-  try
-    if gita#meta#get_for('diff_ls', 'winwidth', winwidth(0)) != winwidth(0)
-      call gita#command#diff_ls#redraw()
-    endif
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
-function! gita#command#ui#diff_ls#BufReadCmd(options) abort
+function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^diff-ls$', a:options, {
         \})
@@ -155,6 +135,26 @@ function! gita#command#ui#diff_ls#BufReadCmd(options) abort
   call gita#command#ui#diff_ls#redraw()
 endfunction
 
+function! s:on_VimResized() abort
+  try
+    if gita#meta#get_for('diff_ls', 'winwidth', winwidth(0)) != winwidth(0)
+      call gita#command#ui#diff_ls#redraw()
+    endif
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+
+function! s:on_WinEnter() abort
+  try
+    if gita#meta#get_for('diff_ls', 'winwidth', winwidth(0)) != winwidth(0)
+      call gita#command#diff_ls#redraw()
+    endif
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+
 function! gita#command#ui#diff_ls#bufname(options) abort
   let options = extend({
         \ 'commit': '',
@@ -163,13 +163,12 @@ function! gita#command#ui#diff_ls#bufname(options) abort
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
         \ 'content_type': 'diff-ls',
-        \ 'extra_options': [
+        \ 'extra_option': [
+        \   commit,
         \ ],
-        \ 'commitish': commit,
-        \ 'path': '',
         \})
 endfunction
 
@@ -208,6 +207,20 @@ function! gita#command#ui#diff_ls#redraw() abort
   let contents = s:format_stats(stats, winwidth(0))
   let s:candidate_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))
+endfunction
+
+function! gita#command#ui#diff_ls#autocmd(name, options, attributes) abort
+  if empty(a:attributes.extra_attribute)
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ expand('<afile>'),
+          \))
+  endif
+  let options = {
+        \ 'commit': gita#variable#get_valid_range(a:attributes.extra_attribute),
+        \}
+  let options = extend(options, a:options)
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#diff_ls#define_highlights() abort

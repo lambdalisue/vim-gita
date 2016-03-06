@@ -1,9 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:Prelude = s:V.import('Prelude')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:GitTerm = s:V.import('Git.Term')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@@'  " @@ is not valid commit thus
@@ -75,13 +72,13 @@ function! s:get_diff_content(git, commit, filenames, options) abort
 endfunction
 
 function! gita#command#diff#call(...) abort
-  let options = gita#option#cascade('^diff$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

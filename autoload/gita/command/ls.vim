@@ -115,9 +115,9 @@ function! gita#command#ls#bufname(options) abort
         \})
 endfunction
 function! gita#command#ls#call(...) abort
-  let options = gita#option#cascade('^ls$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
@@ -154,11 +154,10 @@ function! gita#command#ls#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
+  let bufname = gita#command#ls#bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ls#default_opener
         \ : options.opener
-  let bufname = gita#command#ls#bufname(options)
   let guard = s:Guard.store('&eventignore')
   try
     set eventignore+=BufReadCmd

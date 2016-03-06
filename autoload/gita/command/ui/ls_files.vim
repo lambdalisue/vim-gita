@@ -47,8 +47,7 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
-
-function! gita#command#ui#ls_files#BufReadCmd(options) abort
+function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^ls-files$', a:options, {
         \ 'encoding': '',
@@ -77,16 +76,15 @@ function! gita#command#ui#ls_files#BufReadCmd(options) abort
   call gita#command#ui#ls_files#redraw()
 endfunction
 
+
 function! gita#command#ui#ls_files#bufname(options) abort
   let options = extend({
         \}, a:options)
   let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
         \ 'content_type': 'ls-files',
-        \ 'extra_options': [
-        \ ],
-        \ 'path': '',
+        \ 'extra_option': [],
         \})
 endfunction
 
@@ -134,6 +132,10 @@ function! gita#command#ui#ls_files#redraw(...) abort
         \ 'fileformat': options.fileformat,
         \ 'bad': options.bad,
         \})
+endfunction
+
+function! gita#command#ui#ls_files#autocmd(name, options, attributes) abort
+  call call('s:on_' . a:name, [a:options])
 endfunction
 
 function! gita#command#ui#ls_files#define_highlights() abort

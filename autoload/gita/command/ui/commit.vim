@@ -135,23 +135,7 @@ function! s:action_commit_do(candidate, options) abort
   call gita#action#call('status')
 endfunction
 
-function! s:on_WinLeave() abort
-  if exists('w:_vim_gita_commit_QuitPre')
-    unlet w:_vim_gita_commit_QuitPre
-    try
-      call s:commit_commitmsg_confirm()
-    catch /^\%(vital: Git[:.]\|vim-gita:\)/
-      call gita#util#handle_exception()
-    endtry
-  endif
-endfunction
-
-function! s:on_QuitPre() abort
-  let w:_vim_gita_commit_QuitPre = 1
-endfunction
-
-
-function! gita#command#ui#commit#BufReadCmd(options) abort
+function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^commit$', a:options, {
         \ 'encoding': '',
@@ -195,26 +179,41 @@ function! gita#command#ui#commit#BufReadCmd(options) abort
   call gita#command#ui#commit#redraw(options)
 endfunction
 
-function! gita#command#ui#commit#BufWriteCmd(options) abort
+function! s:on_BufWriteCmd(options) abort
   call s:save_commitmsg()
   setlocal nomodified
 endfunction
 
+function! s:on_WinLeave() abort
+  if exists('w:_vim_gita_commit_QuitPre')
+    unlet w:_vim_gita_commit_QuitPre
+    try
+      call s:commit_commitmsg_confirm()
+    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+      call gita#util#handle_exception()
+    endtry
+  endif
+endfunction
+
+function! s:on_QuitPre() abort
+  let w:_vim_gita_commit_QuitPre = 1
+endfunction
+
+
 function! gita#command#ui#commit#bufname(options) abort
   let options = extend({
+        \ 'amend': 0,
         \ 'allow-empty': 0,
         \ 'filenames': [],
         \}, a:options)
   let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
         \ 'content_type': 'commit',
-        \ 'extra_options': [
+        \ 'extra_option': [
+        \   empty(options['amend']) ? '' : 'amend',
         \   empty(options['allow-empty']) ? '' : 'allow-empty',
-        \   empty(options.filenames) ? '' : 'partial',
         \ ],
-        \ 'commitish': '',
-        \ 'path': '',
         \})
 endfunction
 
@@ -284,6 +283,15 @@ function! gita#command#ui#commit#redraw(...) abort
         \ 'fileformat': options.fileformat,
         \ 'bad': options.bad,
         \})
+endfunction
+
+function! gita#command#ui#commit#autocmd(name, options, attributes) abort
+  let options = {}
+  for option_name in split(a:attributes.extra_attribute, ':')
+    let options[option_name] = 1
+  endfor
+  let options = extend(options, a:options)
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#commit#define_highlights() abort

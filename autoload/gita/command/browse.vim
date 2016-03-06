@@ -103,10 +103,10 @@ function! s:find_url(git, commit, filename, options) abort
 endfunction
 
 function! gita#command#browse#call(...) abort
-  let options = gita#option#cascade('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let local_branch = s:GitInfo.get_local_branch(git)
   let commit = empty(options.commit) ? local_branch.name : options.commit

@@ -34,7 +34,7 @@ endfunction
 
 function! s:get_for_internal(expr, options) abort
   let bufname = bufname(a:expr)
-  let refname = matchstr(bufname, '^gita:\%(//\)\?\zs[^:/]\+')
+  let refname = matchstr(bufname, '^gita:\%(//\)\?\zs[^:\\/]\+')
   if !has_key(s:references, refname)
     call gita#throw(printf(
           \ 'No repository reference for %s is found.',

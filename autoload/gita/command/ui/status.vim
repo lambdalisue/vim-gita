@@ -98,46 +98,14 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
-function! gita#command#ui#status#BufReadCmd(options) abort
-  let options = gita#option#cascade('^status$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
-  let options['porcelain'] = 1
-  let options['quiet'] = 1
-  let result = gita#command#status#call(options)
-  let statuses = gita#command#ui#status#parse_statuses(git, result.content)
-  call gita#meta#set('content_type', 'status')
-  call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'porcelain',
-        \]))
-  call gita#meta#set('statuses', statuses)
-  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#meta#set('filenames', result.filenames)
-  call gita#meta#set('winwidth', winwidth(0))
-  call s:define_actions()
-  call s:Anchor.register()
-  " the following options are required so overwrite everytime
-  setlocal filetype=gita-status
-  setlocal buftype=nofile nobuflisted
-  setlocal nomodifiable
-  call gita#command#ui#status#redraw(options)
-endfunction
-
 function! gita#command#ui#status#bufname(...) abort
   let options = extend({
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
         \ 'content_type': 'status',
-        \ 'extra_options': [
-        \   empty(options.filenames) ? '' : 'partial',
-        \ ],
-        \ 'commitish': '',
-        \ 'path': '',
+        \ 'extra_option': [],
         \})
 endfunction
 
@@ -157,33 +125,23 @@ function! gita#command#ui#status#open(...) abort
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#var
-  endtry
+  call gita#autocmd#cascade(options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#status#redraw(...) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^status$', get(a:000, 0, {}), {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
   let prologue = [s:get_header_string(git)]
   let contents = s:format_statuses(gita#meta#get_for('status', 'statuses', []))
+  call gita#util#buffer#edit_content(
+        \ extend(prologue, contents),
+        \ gita#autocmd#parse_cmdarg(),
+        \)
   let s:candidate_offset = len(prologue)
-  call gita#util#buffer#edit_content(extend(prologue, contents), {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
 endfunction
 
 function! gita#command#ui#status#parse_statuses(git, content) abort
@@ -225,6 +183,35 @@ function! gita#command#ui#status#define_syntax() abort
   syntax match GitaImportant  /AM \d\/\d/
   syntax match GitaImportant  /AM\/REBASE \d\/\d/
   syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
+endfunction
+
+
+function! gita#command#ui#status#autocmd(name, info) abort
+  call call('s:on_' . a:name, [a:info.cascade])
+endfunction
+
+function! s:on_BufReadCmd(options) abort
+  let git = gita#core#get_or_fail()
+  let options = gita#option#cascade('^status$', a:options, {})
+  let options['porcelain'] = 1
+  let options['quiet'] = 1
+  let result = gita#command#status#call(options)
+  let statuses = gita#command#ui#status#parse_statuses(git, result.content)
+  call gita#meta#set('content_type', 'status')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
+        \ 'force', 'opener', 'porcelain',
+        \]))
+  call gita#meta#set('statuses', statuses)
+  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#meta#set('filenames', result.filenames)
+  call gita#meta#set('winwidth', winwidth(0))
+  call s:define_actions()
+  call s:Anchor.register()
+  " the following options are required so overwrite everytime
+  setlocal filetype=gita-status
+  setlocal buftype=nofile nobuflisted
+  setlocal nomodifiable
+  call gita#command#ui#status#redraw()
 endfunction
 
 call gita#util#define_variables('command#ui#status', {

@@ -108,7 +108,6 @@ endfunction
 
 function! gita#action#include(names, ...) abort
   let disable_mapping = get(a:000, 0)
-  let action_holder = gita#action#get_holder()
   for name in a:names
     let domain = matchstr(name, '^[^:]\+')
     call call(printf('gita#action#%s#define', domain), [disable_mapping])

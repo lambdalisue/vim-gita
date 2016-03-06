@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Anchor = s:V.import('Vim.Buffer.Anchor')
+let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:WORKTREE = '@@'  " @@ is not valid commit thus
 
@@ -129,8 +130,7 @@ function! s:open2(options) abort
   diffupdate
 endfunction
 
-
-function! gita#command#ui#diff#BufReadCmd(options) abort
+function! s:on_BufReadCmd(options) abort
   let options = gita#option#cascade('^diff$', a:options, {
         \ 'encoding': '',
         \ 'filefcrmat': '',
@@ -170,7 +170,7 @@ function! gita#command#ui#diff#BufReadCmd(options) abort
   setlocal filetype=diff
 endfunction
 
-function! gita#command#ui#diff#FileReadCmd(options) abort
+function! s:on_FileReadCmd(options) abort
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
@@ -190,7 +190,7 @@ function! gita#command#ui#diff#FileReadCmd(options) abort
         \})
 endfunction
 
-function! gita#command#ui#diff#BufWriteCmd() abort
+function! s:on_BufWriteCmd() abort
   " It is only called when PATCH mode is enabled
   try
     let options = gita#meta#get_for('diff', 'options', {})
@@ -214,13 +214,14 @@ function! gita#command#ui#diff#BufWriteCmd() abort
   endtry
 endfunction
 
-function! gita#command#ui#diff#FileWriteCmd() abort
+function! s:on_FileWriteCmd() abort
   try
     call gita#throw('Writing a partial content is perhibited')
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry
 endfunction
+
 
 function! gita#command#ui#diff#bufname(options) abort
   let options = extend({
@@ -238,9 +239,9 @@ function! gita#command#ui#diff#bufname(options) abort
         \ ? ''
         \ : gita#variable#get_valid_filename(options.filename)
   if empty(filename)
-    return gita#autocmd#bufname(git, {
+    return gita#autocmd#bufname({
           \ 'content_type': 'diff',
-          \ 'extra_options': [
+          \ 'extra_option': [
           \   options.patch ? 'patch' : '',
           \   !options.patch && options.cached ? 'cached' : '',
           \   !options.patch && options.reverse ? 'reverse' : '',
@@ -249,9 +250,9 @@ function! gita#command#ui#diff#bufname(options) abort
           \ 'path': '',
           \})
   else
-    return gita#autocmd#bufname(git, {
+    return gita#autocmd#bufname({
           \ 'content_type': 'diff',
-          \ 'extra_options': [
+          \ 'extra_option': [
           \   options.patch ? 'patch' : '',
           \   !options.patch && options.cached ? 'cached' : '',
           \   !options.patch && options.reverse ? 'reverse' : '',
@@ -271,6 +272,32 @@ function! gita#command#ui#diff#open(...) abort
   else
     call s:open1(options)
   endif
+endfunction
+
+function! gita#command#ui#diff#autocmd(name, options, attributes) abort
+  if a:attributes.extra_attribute !~# '^[^\/]*[\/].*$'
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ expand('<afile>'),
+          \))
+  endif
+  let git = gita#get_or_fail()
+  let m = matchlist(
+        \ a:attributes.extra_attribute, 
+        \ '^\([^\/]*\)[\/]\(.*\)$',
+        \)
+  let [meta, treeish] = m[1 : 2]
+  let [commit, unixpath] = s:GitTerm.split_treeish(
+        \ treeish, { '_allow_range': 1 },
+        \)
+  let options = {}
+  let options.commit = commit
+  let options.filename = empty(unixpath) ? '' : s:Git.get_absolute_path(git, unixpath)
+  for option_name in split(meta, ':')
+    let options[option_name] = 1
+  endfor
+  let options = extend(options, a:options)
+  call call('s:on_' . a:name, [options])
 endfunction
 
 call gita#util#define_variables('command#ui#diff', {

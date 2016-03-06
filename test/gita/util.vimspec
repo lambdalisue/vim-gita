@@ -57,4 +57,29 @@ Describe gita#util
       Assert Equals(g:gita#bar, 1)
     End
   End
+
+  Describe #matchdict({expr}, {pattern}, {scheme})
+    It returns an empty dictionary if {expr} does not match {pattern}
+      let ret = gita#util#matchdict('foo', 'bar', {})
+      Assert Equals(ret, {})
+    End
+
+    It returns a dictionary which constructed from {pattern} and {scheme}
+      let expr = 'gita://vim-gita:diff:cached:reverse/HEAD:README.md'
+      let pattern = '^gita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\)/\(.\+\)$'
+      let scheme = {
+            \ 'refname': 1,
+            \ 'content_type': 2,
+            \ 'extra_option': 3,
+            \ 'treeish': 4,
+            \}
+      let ret = gita#util#matchdict(expr, pattern, scheme)
+      Assert Equals(ret, {
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_option': 'cached:reverse',
+            \ 'treeish': 'HEAD:README.md',
+            \})
+    End
+  End
 End

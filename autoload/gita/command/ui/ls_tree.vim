@@ -48,8 +48,7 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
-
-function! gita#command#ui#ls_tree#BufReadCmd(options) abort
+function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^ls-tree$', a:options, {
         \ 'encoding': '',
@@ -81,19 +80,19 @@ function! gita#command#ui#ls_tree#BufReadCmd(options) abort
   call gita#command#ui#ls_tree#redraw()
 endfunction
 
+
 function! gita#command#ui#ls_tree#bufname(options) abort
   let options = extend({
         \ 'commit': '',
         \}, a:options)
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit)
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
         \ 'content_type': 'ls-tree',
-        \ 'extra_options': [
+        \ 'extra_option': [
+        \   commit,
         \ ],
-        \ 'commitish': commit,
-        \ 'path': '',
         \})
 endfunction
 
@@ -141,6 +140,20 @@ function! gita#command#ui#ls_tree#redraw(...) abort
         \ 'fileformat': options.fileformat,
         \ 'bad': options.bad,
         \})
+endfunction
+
+function! gita#command#ui#ls_tree#autocmd(name, options, attributes) abort
+  if empty(a:attributes.extra_attribute)
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ expand('<afile>'),
+          \))
+  endif
+  let options = {
+        \ 'commit': gita#variable#get_valid_range(a:attributes.extra_attribute),
+        \}
+  let options = extend(options, a:options)
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#ls_tree#define_highlights() abort
