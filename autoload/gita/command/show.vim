@@ -1,11 +1,7 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
-let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:Guard = s:V.import('Vim.Guard')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
@@ -21,6 +17,13 @@ function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
+function! s:get_ancestor_content(git, commit, filename, options) abort
+  let [lhs, rhs] = s:GitTerm.split_range(a:commit)
+  let lhs = empty(lhs) ? 'HEAD' : lhs
+  let rhs = empty(rhs) ? 'HEAD' : rhs
+  let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
+  return s:get_revision_content(a:git, commit, a:filename, a:options)
+endfunction
 function! s:get_revision_content(git, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   if empty(a:filename)
@@ -34,151 +37,22 @@ function! s:get_revision_content(git, commit, filename, options) abort
   let result = gita#execute(a:git, 'show', options)
   if result.status
     call s:GitProcess.throw(result)
+  elseif !get(a:options, 'quiet')
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
-function! s:get_ancestor_content(git, commit, filename, options) abort
-  let [lhs, rhs] = s:GitTerm.split_range(a:commit)
-  let lhs = empty(lhs) ? 'HEAD' : lhs
-  let rhs = empty(rhs) ? 'HEAD' : rhs
-  let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
-  return s:get_revision_content(a:git, commit, a:filename, a:options)
-endfunction
-function! s:get_diff_content(git, content, filename, options) abort
-  let tempfile  = tempname()
-  let tempfile1 = tempfile . '.index'
-  let tempfile2 = tempfile . '.buffer'
-  try
-    " save contents to temporary files
-    call writefile(
-          \ s:get_revision_content(a:git, '', a:filename, a:options),
-          \ tempfile1,
-          \)
-    call writefile(a:content, tempfile2)
-    " create a diff content between index_content and content
-    let result = gita#command#diff#call({
-          \ 'no-index': 1,
-          \ 'filenames': [tempfile1, tempfile2],
-          \})
-    if empty(result) || empty(result.content) || len(result.content) < 4
-      " fail or no differences. Assume that there are no differences
-      call s:Prompt.debug(result)
-      if &verbose >= 2
-        call s:Prompt.debug(result.content)
-      endif
-      call gita#throw('Attention: No differences are detected')
-    endif
-    return s:replace_filenames_in_diff(
-          \ result.content,
-          \ tempfile1,
-          \ tempfile2,
-          \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
-          \)
-  finally
-    call delete(tempfile1)
-    call delete(tempfile2)
-  endtry
-endfunction
-function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) abort
-  let is_windows = get(a:000, 0, s:Prelude.is_windows())
-  " replace tempfile1/tempfile2 in the header to a:filename
-  "
-  "   diff --git a/<tempfile1> b/<tempfile2>
-  "   index XXXXXXX..XXXXXXX XXXXXX
-  "   --- a/<tempfile1>
-  "   +++ b/<tempfile2>
-  "
-  let src1 = s:StringExt.escape_regex(a:filename1)
-  let src2 = s:StringExt.escape_regex(a:filename2)
-  if is_windows
-    " NOTE:
-    " '\' in {content} from 'git diff' are escaped so double escape is required
-    " to substitute such path
-    " NOTE:
-    " escape(src1, '\') cannot be used while other characters such as '.' are
-    " already escaped as well
-    let src1 = substitute(src1, '\\\\', '\\\\\\\\', 'g')
-    let src2 = substitute(src2, '\\\\', '\\\\\\\\', 'g')
-  endif
-  let repl = (a:filename1 =~# '^/' ? '/' : '') . a:repl
-  let content = copy(a:content)
-  let content[0] = substitute(content[0], src1, repl, '')
-  let content[0] = substitute(content[0], src2, repl, '')
-  let content[2] = substitute(content[2], src1, repl, '')
-  let content[3] = substitute(content[3], src2, repl, '')
-  return content
-endfunction
 
-function! s:on_BufWriteCmd() abort
-  " This autocmd is executed ONLY when the buffer is shown as PATCH mode
-  let tempfile = tempname()
-  try
-    let git = gita#core#get_or_fail()
-    let filename = gita#meta#get('filename', '')
-    let options  = gita#meta#get('options', {})
-    let content  = s:get_diff_content(git, getline(1, '$'), filename, options)
-    call writefile(content, tempfile)
-    call gita#command#apply#call({
-          \ 'filenames': [tempfile],
-          \ 'cached': 1,
-          \})
-    setlocal nomodified
-    diffupdate
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  finally
-    call delete(tempfile)
-  endtry
-endfunction
-
-function! gita#command#show#bufname(options) abort
+function! gita#command#show#call(...) abort
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \ 'patch': 0,
-        \}, a:options)
-  if get(options, 'worktree')
-    let options.commit = s:WORKTREE
-    unlet options.worktree
-  endif
-  if options.commit ==# s:WORKTREE
-    if !filereadable(options.filename)
-      call gita#throw(
-            \ printf(
-            \   'A file "%s" could not be found in the working tree',
-            \   options.filename,
-            \))
-    endif
-    return s:Path.relpath(gita#variable#get_valid_filename(options.filename))
-  endif
+        \ 'worktree': 0,
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = empty(options.filename)
-        \ ? ''
-        \ : gita#variable#get_valid_filename(options.filename)
-  return gita#autocmd#bufname(git, {
-        \ 'content_type': 'show',
-        \ 'extra_options': [
-        \   options.patch ? 'patch' : '',
-        \ ],
-        \ 'commitish': commit,
-        \ 'path': filename,
-        \})
-endfunction
-function! gita#command#show#call(...) abort
-  let options = gita#option#cascade('^show$', get(a:000, 0, {}), {
-        \ 'commit': '',
-        \ 'filename': '',
-        \})
-  if has_key(options, 'worktree')
-    let options.commit = s:WORKTREE
-    unlet options.worktree
-  endif
-  let git = gita#core#get_or_fail()
-  if options.commit ==# s:WORKTREE
-    let commit = options.commit
+  if options.worktree || options.commit ==# s:WORKTREE
+    let commit = s:WORKTREE
   else
     let commit = gita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
@@ -187,7 +61,7 @@ function! gita#command#show#call(...) abort
   if empty(options.filename)
     let filename = ''
     if commit ==# s:WORKTREE
-      call hita#throw('Cannot show a summary of worktree')
+      call gita#throw('Cannot show a summary of worktree')
     endif
     let content = s:get_revision_content(git, commit, filename, options)
   else
@@ -211,89 +85,6 @@ function! gita#command#show#call(...) abort
         \}
   return result
 endfunction
-function! gita#command#show#open(...) abort
-  let options = extend({
-        \ 'anchor': 0,
-        \ 'opener': 'edit',
-        \ 'window': '',
-        \ 'selection': [],
-        \}, get(a:000, 0, {}))
-  let bufname = gita#command#show#bufname(options)
-  if empty(bufname)
-    return
-  endif
-  if options.anchor && s:Anchor.is_available(options.opener)
-    call s:Anchor.focus()
-  endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': options.opener,
-          \ 'window': options.window,
-          \})
-  finally
-    silent! unlet! g:gita#var
-  endtry
-  call gita#util#select(options.selection)
-endfunction
-
-function! gita#command#show#BufReadCmd(options) abort
-  let options = gita#option#cascade('^show$', a:options, {
-        \ 'patch': 0,
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
-  if options.patch
-    " 'patch' mode requires:
-    " - INDEX content, naemly 'commit' should be an empty value
-    " - file content, namely 'filename' is reqiured
-    let options.commit = ''
-    let options.filename = gita#variable#get_valid_filename(
-          \ get(options, 'filename', ''),
-          \)
-  endif
-  let result = gita#command#show#call(options)
-  call gita#meta#set('content_type', 'show')
-  call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'opener', 'selection',
-        \]))
-  call gita#meta#set('commit', result.commit)
-  call gita#meta#set('filename', result.filename)
-  call gita#util#buffer#edit_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-  if options.patch
-    setlocal buftype=acwrite
-    augroup vim_gita_internal_show_apply_diff
-      autocmd! * <buffer>
-      autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
-    augroup END
-    setlocal noreadonly
-  else
-    if empty(result.filename)
-      setfiletype git
-    endif
-    setlocal buftype=nowrite
-    setlocal readonly
-  endif
-endfunction
-function! gita#command#show#FileReadCmd(options) abort
-  let options = gita#option#cascade('^show$', a:options, {
-        \ 'patch': 0,
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
-  let result = gita#command#show#call(options)
-  call gita#util#buffer#read_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -304,6 +95,10 @@ function! s:get_parser() abort
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
     call s:parser.add_argument(
           \ '--repository', '-r',
           \ 'show a summary of the repository instead of a file content', {
@@ -330,18 +125,27 @@ function! s:get_parser() abort
           \   'conflicts': ['repository', 'worktree', 'ancestor', 'ours'],
           \})
     call s:parser.add_argument(
-          \ '--patch',
-          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
-          \)
+          \ '--ui',
+          \ 'show a buffer instead of echo the result. imply --quiet', {
+          \   'default': 1,
+          \   'deniable': 1,
+          \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--selection',
           \ 'a line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \   'superordinates': ['ui'],
+          \})
+    call s:parser.add_argument(
+          \ '--patch',
+          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content', {
+          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ 'commit', [
@@ -378,16 +182,20 @@ function! gita#command#show#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#command#show#default_opener)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#show#default_options),
         \ options,
         \)
-  call gita#command#show#open(options)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
+  if get(options, 'ui')
+    call gita#option#assign_selection(options)
+    call gita#option#assign_opener(options)
+    call gita#command#ui#show#open(options)
+  else
+    call gita#command#show#call(options)
+  endif
 endfunction
 function! gita#command#show#complete(...) abort
   let parser = s:get_parser()
@@ -396,5 +204,4 @@ endfunction
 
 call gita#util#define_variables('command#show', {
       \ 'default_options': {},
-      \ 'default_opener': '',
       \})

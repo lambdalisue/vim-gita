@@ -6,10 +6,10 @@ function! s:action(candidate, options) abort
         \}, a:options)
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#action#diff#default_opener)
+  call gita#option#assign_opener(options)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  call gita#command#diff#open({
+  call gita#command#ui#diff#open({
         \ 'split': options.split,
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
@@ -93,6 +93,5 @@ function! gita#action#diff#define(disable_mapping) abort
 endfunction
 
 call gita#util#define_variables('action#diff', {
-      \ 'default_opener': '',
       \ 'default_split': 0,
       \})

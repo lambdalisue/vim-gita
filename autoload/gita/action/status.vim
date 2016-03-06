@@ -1,6 +1,6 @@
 function! s:action(candidate, options) abort
   let filenames = gita#meta#get('filenames', [])
-  call gita#command#status#open({
+  call gita#command#ui#status#open({
         \ 'filenames': filenames,
         \})
 endfunction

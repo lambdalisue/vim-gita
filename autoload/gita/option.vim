@@ -85,18 +85,8 @@ function! gita#option#assign_opener(options, ...) abort
     return
   endif
 
-  let default_opener = get(a:000, 0, '')
-  let default_opener = empty(default_opener)
-        \ ? g:gita#option#default_opener
-        \ : default_opener
   let content_type = gita#meta#get('content_type')
   if content_type =~# '^blame-\%(navi\|view\)$'
-    let a:options['opener'] = 'tabedit'
-  else
-    let a:options['opener'] = default_opener
+    let a:options.opener = 'tabedit'
   endif
 endfunction
-
-call gita#util#define_variables('option', {
-      \ 'default_opener': 'edit',
-      \})

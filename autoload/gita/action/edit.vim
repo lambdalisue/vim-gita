@@ -4,9 +4,9 @@ function! s:action(candidate, options) abort
         \ 'opener': '',
         \}, a:options)
   call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#action#edit#default_opener)
+  call gita#option#assign_opener(options)
   let options.selection = get(options, 'selection', [])
-  call gita#command#show#open({
+  call gita#command#ui#show#open({
         \ 'worktree': 1,
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
@@ -72,7 +72,3 @@ function! gita#action#edit#define(disable_mapping) abort
   nmap <buffer><nowait><expr> et gita#action#smart_map('et', '<Plug>(gita-edit-tab)')
   nmap <buffer><nowait><expr> ep gita#action#smart_map('ep', '<Plug>(gita-edit-preview)')
 endfunction
-
-call gita#util#define_variables('action#edit', {
-      \ 'default_opener': '',
-      \})

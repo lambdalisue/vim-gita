@@ -61,103 +61,19 @@ function! s:get_diff_content(git, commit, filenames, options) abort
     let options['--'] = a:filenames
   endif
   let result = gita#execute(a:git, 'diff', options)
-  if get(options, 'no-index') || get(options, 'exit-code')
+  if result.status && !get(options, 'no-index') && !get(options, 'exit-code')
     " NOTE:
     " --no-index force --exit-code option.
     " --exit-code mean that the program exits with 1 if there were differences
     " and 0 means no differences
-    return result.content
-  elseif result.status
     call s:GitProcess.throw(result.stdout)
+  elseif !get(a:options, 'quiet')
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
-function! s:configure_options(options) abort
-  if a:options.patch
-    " 'patch' mode requires:
-    " - Existence of INDEX, namely no commit or --cached
-    let commit = get(a:options, 'commit', '')
-    if empty(commit)
-      " INDEX vs HEAD
-      let a:options.cached = 0
-      let a:options.reverse = 0
-    elseif commit =~# '^.\{-}\.\.\.?.*$'
-      " RANGE is not allowed
-      call gita#throw(printf(
-            \ 'A commit range "%s" is not allowed for PATCH mode.',
-            \ commit,
-            \))
-    else
-      " COMMIT vs INDEX
-      let a:options.cached = 1
-      let a:options.reverse = 1
-    endif
-  endif
-endfunction
 
-function! s:on_BufWriteCmd() abort
-  " It is only called when PATCH mode is enabled
-  try
-    let options = gita#meta#get('options', {})
-    let tempfile = tempname()
-    try
-      call writefile(getline(1, '$'), tempfile)
-      call gita#command#apply#call({
-            \ 'filenames': [tempfile],
-            \ 'cached': 1,
-            \ 'unidiff-zero': get(options, 'unified', '') ==# '0',
-            \ 'whitespace': 'fix',
-            \ 'allow-overlap': 1,
-            \ 'recount': 1,
-            \})
-    finally
-      call delete(tempfile)
-    endtry
-    setlocal nomodified
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
-function! gita#command#diff#bufname(options) abort
-  let options = extend({
-        \ 'patch': 0,
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = empty(options.filename)
-        \ ? ''
-        \ : gita#variable#get_valid_filename(options.filename)
-  if empty(filename)
-    return gita#autocmd#bufname(git, {
-          \ 'content_type': 'diff',
-          \ 'extra_options': [
-          \   options.patch ? 'patch' : '',
-          \   !options.patch && options.cached ? 'cached' : '',
-          \   !options.patch && options.reverse ? 'reverse' : '',
-          \ ],
-          \ 'commitish': commit,
-          \ 'path': '',
-          \})
-  else
-    return gita#autocmd#bufname(git, {
-          \ 'content_type': 'diff',
-          \ 'extra_options': [
-          \   options.patch ? 'patch' : '',
-          \   !options.patch && options.cached ? 'cached' : '',
-          \   !options.patch && options.reverse ? 'reverse' : '',
-          \ ],
-          \ 'commitish': commit,
-          \ 'path': filename,
-          \})
-  endif
-endfunction
 function! gita#command#diff#call(...) abort
   let options = gita#option#cascade('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
@@ -196,161 +112,6 @@ function! gita#command#diff#call(...) abort
         \}
   return result
 endfunction
-function! gita#command#diff#open(...) abort
-  let options = extend({
-        \ 'split': 0,
-        \}, get(a:000, 0, {}))
-  if options.split
-    call gita#command#diff#open2(options)
-  else
-    call gita#command#diff#open1(options)
-  endif
-endfunction
-function! gita#command#diff#open1(...) abort
-  let options = extend({
-        \ 'anchor': 0,
-        \ 'opener': 'edit',
-        \ 'selection': [],
-        \}, get(a:000, 0, {}))
-  let bufname = gita#command#diff#bufname(options)
-  if empty(bufname)
-    return
-  endif
-  if options.anchor && s:Anchor.is_available(options.opener)
-    call s:Anchor.focus()
-  endif
-  try
-    " for cascading options
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, { 'opener': options.opener })
-  finally
-    silent! unlet! g:gita#var
-  endtry
-  call gita#util#select(options.selection)
-endfunction
-function! gita#command#diff#open2(...) abort
-  let options = extend({
-        \ 'anchor': 0,
-        \ 'patch': 0,
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'opener': 'edit',
-        \ 'selection': [],
-        \}, get(a:000, 0, {}))
-  call s:configure_options(options)
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = empty(options.filename) ? '%' : options.filename
-  let filename = gita#variable#get_valid_filename(filename)
-  if empty(commit)
-    " git diff          : INDEX vs TREE
-    " git diff --cached :  HEAD vs INDEX
-    let lhs = options.cached ? 'HEAD' : ''
-    let rhs = options.cached ? '' : s:WORKTREE
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = commit
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  else
-    " git diff <ref>          : <ref> vs TREE
-    " git diff --cached <ref> : <ref> vs INDEX
-    let lhs = commit
-    let rhs = options.cached ? '' : s:WORKTREE
-  endif
-  let loptions = {
-        \ 'patch': !options.reverse && options.patch,
-        \ 'commit': lhs,
-        \ 'filename': filename,
-        \ 'worktree': lhs ==# s:WORKTREE,
-        \}
-  let roptions = {
-        \ 'patch': options.reverse && options.patch,
-        \ 'commit': rhs,
-        \ 'filename': filename,
-        \ 'worktree': rhs ==# s:WORKTREE,
-        \}
-  let vertical = matchstr(&diffopt, 'vertical')
-  call gita#command#show#open(extend(options.reverse ? loptions : roptions, {
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'window': 'diff2_rhs',
-        \}))
-  call gita#util#diffthis()
-  call gita#command#show#open(extend(options.reverse ? roptions : loptions, {
-        \ 'opener': vertical ==# 'vertical'
-        \   ? 'leftabove vertical split'
-        \   : 'leftabove split',
-        \ 'window': 'diff2_lhs',
-        \}))
-  call gita#util#diffthis()
-  call gita#util#select(options.selection)
-  diffupdate
-endfunction
-function! gita#command#diff#BufReadCmd(options) abort
-  let options = gita#option#cascade('^diff$', a:options, {
-        \ 'encoding': '',
-        \ 'filefcrmat': '',
-        \ 'bad': '',
-        \ 'patch': 0,
-        \ 'ignore-space-change': &diffopt =~# 'iwhite',
-        \ 'unified': &diffopt =~# 'context:\d\+'
-        \   ? matchstr(&diffopt, 'context:\zs\d\+')
-        \   : 0,
-        \})
-  call s:configure_options(options)
-  let result = gita#command#diff#call(options)
-  call gita#meta#set('content_type', 'diff')
-  call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'opener', 'selection',
-        \]))
-  call gita#meta#set('commit', result.commit)
-  call gita#meta#set('filename', result.filename)
-  call gita#meta#set('filenames', result.filenames)
-  call gita#util#buffer#edit_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-  if options.patch
-    augroup vim_gita_internal_diff_apply_diff
-      autocmd! * <buffer>
-      autocmd BufWriteCmd <buffer> call s:on_BufWriteCmd()
-    augroup END
-    setlocal buftype=acwrite
-    setlocal noreadonly
-  else
-    setlocal buftype=nowrite
-    setlocal readonly
-  endif
-  setlocal filetype=diff
-endfunction
-function! gita#command#diff#FileReadCmd(options) abort
-  let options = gita#option#cascade('^diff$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \ 'patch': 0,
-        \ 'ignore-space-change': &diffopt =~# 'iwhite',
-        \ 'unified': &diffopt =~# 'context:\d\+'
-        \   ? matchstr(&diffopt, 'context:\zs\d\+')
-        \   : 0,
-        \})
-  let result = gita#command#diff#call(options)
-  call gita#util#buffer#read_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -361,6 +122,10 @@ function! s:get_parser() abort
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ '--quiet',
+          \ 'be quiet',
+          \)
     call s:parser.add_argument(
           \ '--unified', '-U',
           \ 'generate diffs with <N> lines of context', {
@@ -561,19 +326,29 @@ function! s:get_parser() abort
           \ 'compare with a content in the index',
           \)
     call s:parser.add_argument(
-          \ '--patch',
-          \ 'diff a content in PATCH mode. most of options will be disabled',
-          \)
+          \ '--ui',
+          \ 'show a buffer instead of echo the result. imply --quiet', {
+          \   'default': 1,
+          \   'deniable': 1,
+          \})
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--split', '-s', [
           \   'open two buffer to compare by vimdiff rather than to open a single diff file.',
           \   'see ":help &diffopt" if you would like to control default split direction',
-          \])
+          \], {
+          \   'superordinates': ['ui'],
+          \})
+    call s:parser.add_argument(
+          \ '--patch',
+          \ 'diff a content in PATCH mode. most of options will be disabled', {
+          \   'superordinates': ['ui'],
+          \})
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to diff.',
@@ -601,16 +376,20 @@ function! gita#command#diff#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#command#diff#default_opener)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#diff#default_options),
         \ options,
         \)
-  call gita#command#diff#open(options)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
+  if get(options, 'ui')
+    call gita#option#assign_selection(options)
+    call gita#option#assign_opener(options)
+    call gita#command#ui#diff#open(options)
+  else
+    call gita#command#diff#call(options)
+  endif
 endfunction
 function! gita#command#diff#complete(...) abort
   let parser = s:get_parser()
@@ -619,5 +398,4 @@ endfunction
 
 call gita#util#define_variables('command#diff', {
       \ 'default_options': {},
-      \ 'default_opener': '',
       \})

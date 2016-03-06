@@ -11,10 +11,18 @@ command! -nargs=? -range -bang
 
 augroup vim_gita_internal_autocmd
   autocmd!
-  autocmd BufReadCmd   gita://* call gita#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd  gita://* call gita#autocmd#call('FileReadCmd')
-  autocmd SourceCmd    gita://* call gita#autocmd#call('SourceCmd')
+  autocmd SourceCmd     gita://* call gita#autocmd#call('SourceCmd')
+  autocmd BufReadCmd    gita://* nested call gita#autocmd#call('BufReadCmd')
+  autocmd BufWriteCmd   gita://* nested call gita#autocmd#call('BufWriteCmd')
+  autocmd FileReadCmd   gita://* nested call gita#autocmd#call('FileReadCmd')
+  autocmd FileWriteCmd  gita://* nested call gita#autocmd#call('FileWriteCmd')
+  autocmd BufReadCmd    gita:*   nested call gita#autocmd#call('BufReadCmd')
+  autocmd BufWriteCmd   gita:*   nested call gita#autocmd#call('BufWriteCmd')
+  autocmd BufReadCmd    gita:*/* nested call gita#autocmd#call('BufReadCmd')
+  autocmd BufWriteCmd   gita:*/* nested call gita#autocmd#call('BufWriteCmd')
   " to check if the content in git repository is updated
-  autocmd BufWritePre  *        call gita#autocmd#call('BufWritePre')
-  autocmd BufWritePost *        call gita#autocmd#call('BufWritePost')
+  autocmd BufWritePre  * call gita#autocmd#call('BufWritePre')
+  autocmd BufWritePost * call gita#autocmd#call('BufWritePost')
+  " to update status window
+  autocmd User GitaStatusModified nested call gita#autocmd#call('GitaStatusModified')
 augroup END

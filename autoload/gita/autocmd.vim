@@ -21,6 +21,31 @@ function! s:parse_cmdarg(cmdarg) abort
   return options
 endfunction
 
+function! s:parse_bufname(bufname) abort
+  let options = {}
+  let result = s:parse_filename(expand(a:expr))
+  if empty(result.treeish)
+    let commit = ''
+    let unixpath = ''
+  else
+    let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish, {
+          \ '_allow_range': 1,
+          \})
+    let options.comit = commit
+    " NOTE:
+    " filename is always a relative path from the repository root so convert
+    " it to a real absolute path (s:Git.get_absolute_path returns a real path)
+    if !empty(unixpath)
+      let git = gita#core#get_or_fail()
+      let options.filename = s:Git.get_absolute_path(git, unixpath)
+    endif
+  endif
+  for extra_option in split(result.extra_option, ':')
+    let options[extra_option] = 1
+  endfor
+  return options
+endfunction
+
 function! s:on_SourceCmd() abort
   let content = getbufline(expand('<afile>'), 1, '$')
   try
@@ -33,45 +58,25 @@ function! s:on_SourceCmd() abort
     endif
   endtry
 endfunction
+
 function! s:on_BufReadCmd() abort
   call gita#util#doautocmd('BufReadPre')
-  let info = gita#autocmd#parse(expand('<afile>'))
   let options = {
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
         \}
   let options = extend(options, get(g:, 'gita#var', {}))
+  let options = extend(options, s:parse_bufname(expand('<afile>')))
   let options = extend(options, s:parse_cmdarg(v:cmdarg))
-  let options = extend(options, info.extra_options)
-  let content_type = get(info, 'content_type')
-  if content_type ==# 'show'
-    call gita#command#show#BufReadCmd({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'encoding': options.encoding,
-          \ 'fileformat': options.fileformat,
-          \ 'bad': options.bad,
-          \ 'patch': get(options, 'patch'),
-          \})
-  elseif content_type ==# 'diff'
-    call gita#command#diff#BufReadCmd({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'encoding': options.encoding,
-          \ 'fileformat': options.fileformat,
-          \ 'bad': options.bad,
-          \ 'patch': get(options, 'patch'),
-          \ 'cached': get(options, 'cached'),
-          \ 'reverse': get(options, 'reverse'),
-          \})
-  else
-    call gita#throw(printf(
-          \ 'Unknown content-type "%s" is specified', content_type,
-          \))
-  endif
+  let content_type = substitute(get(info, 'content_type'), '-', '_', 'g')
+  call call(
+        \ printf('gita#command#ui#%s#BufReadCmd', content_type),
+        \ [options],
+        \)
   call gita#util#doautocmd('BufReadPost')
 endfunction
+
 function! s:on_FileReadCmd() abort
   call gita#util#doautocmd('FileReadPre')
   let info = gita#autocmd#parse(expand('<afile>'))
@@ -83,37 +88,56 @@ function! s:on_FileReadCmd() abort
   let options = extend(options, get(g:, 'gita#var', {}))
   let options = extend(options, s:parse_cmdarg(v:cmdarg))
   let options = extend(options, info.extra_options)
-  let content_type = get(info, 'content_type')
-  if content_type ==# 'show'
-    call gita#command#show#FileReadCmd({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'encoding': options.encoding,
-          \ 'fileformat': options.fileformat,
-          \ 'bad': options.bad,
-          \ 'patch': get(options, 'patch'),
-          \})
-  elseif content_type ==# 'diff'
-    call gita#command#diff#FileReadCmd({
-          \ 'commit': info.commit,
-          \ 'filename': info.filename,
-          \ 'encoding': options.encoding,
-          \ 'fileformat': options.fileformat,
-          \ 'bad': options.bad,
-          \ 'patch': get(options, 'patch'),
-          \ 'cached': get(options, 'cached'),
-          \ 'reverse': get(options, 'reverse'),
-          \})
-  else
-    call gita#throw(printf(
-          \ 'Unknown content-type "%s" is specified', content_type,
-          \))
-  endif
+  let content_type = substitute(get(info, 'content_type'), '-', '_', 'g')
+  call call(
+        \ printf('gita#command#ui#%s#FileReadCmd', content_type),
+        \ [options],
+        \)
   call gita#util#doautocmd('FileReadPost')
 endfunction
+
+function! s:on_BufWriteCmd() abort
+  call gita#util#doautocmd('BufWritePre')
+  let info = gita#autocmd#parse(expand('<afile>'))
+  let options = {
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \ 'bad': '',
+        \}
+  let options = extend(options, get(g:, 'gita#var', {}))
+  let options = extend(options, s:parse_cmdarg(v:cmdarg))
+  let options = extend(options, info.extra_options)
+  let content_type = substitute(get(info, 'content_type'), '-', '_', 'g')
+  call call(
+        \ printf('gita#command#ui#%s#BufWriteCmd', content_type),
+        \ [options],
+        \)
+  call gita#util#doautocmd('BufWritePost')
+endfunction
+
+function! s:on_FileWriteCmd() abort
+  call gita#util#doautocmd('FileWritePre')
+  let info = gita#autocmd#parse(expand('<afile>'))
+  let options = {
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \ 'bad': '',
+        \}
+  let options = extend(options, get(g:, 'gita#var', {}))
+  let options = extend(options, s:parse_cmdarg(v:cmdarg))
+  let options = extend(options, info.extra_options)
+  let content_type = substitute(get(info, 'content_type'), '-', '_', 'g')
+  call call(
+        \ printf('gita#command#ui#%s#FileWriteCmd', content_type),
+        \ [options],
+        \)
+  call gita#util#doautocmd('FileWritePost')
+endfunction
+
 function! s:on_BufWritePre() abort
   let b:_gita_autocmd_modified = &modified
 endfunction
+
 function! s:on_BufWritePost() abort
   if get(b:, '_gita_autocmd_modified', &modified) != &modified
     if gita#core#get().is_enabled
@@ -121,6 +145,13 @@ function! s:on_BufWritePost() abort
     endif
   endif
   silent! unlet! b:_gita_autocmd_modified
+endfunction
+
+function! s:on_GitaStatusModified() abort
+  let pattern = '^\%(gita-status\|gita-commit\|gita-diff-ls\)$'
+  let winnum = winnr()
+  keepjump windo if &filetype =~# pattern | edit | endif
+  execute printf('keepjump %dwincmd w', winnum)
 endfunction
 
 function! gita#autocmd#call(name) abort
@@ -136,6 +167,7 @@ function! gita#autocmd#call(name) abort
     call gita#util#handle_exception()
   endtry
 endfunction
+
 function! gita#autocmd#parse(expr) abort
   let git = gita#core#get_or_fail(a:expr)
   let result = s:parse_filename(expand(a:expr))
@@ -155,6 +187,7 @@ function! gita#autocmd#parse(expr) abort
   endfor
   return result
 endfunction
+
 function! gita#autocmd#bufname(git, options) abort
   let options = extend({
         \ 'filebase': 1,
@@ -189,9 +222,9 @@ function! gita#autocmd#bufname(git, options) abort
   return bufname
 endfunction
 
-" gita://<repository>/<treeish>
-" gita://<repository>:<content-type>/<treeish>
-" gita://<repository>:<content-type>:<extra-option>/<treeish>
+" gita://<refname>/<treeish>
+" gita://<refname>:<content-type>/<treeish>
+" gita://<refname>:<content-type>:<extra-option>/<treeish>
 " gita://vim-gita/:                             git show
 " gita://vim-gita/HEAD~:                        git show HEAD~
 " gita://vim-gita/:README.md                    git show :README.md
@@ -203,6 +236,9 @@ endfunction
 " gita://vim-gita:diff:cached/:README.md        git diff --cached -- README.md
 " gita://vim-gita:diff:cached/HEAD:README.md    git diff --cached HEAD -- README.md
 " gita://vim-gita:diff:cached:reverse/HEAD:README.md    git diff --cached --reverse HEAD -- README.md
+" gita:<refname>:<content-type>
+" gita:<refname>:<content-type>:<extra-option>
+" gita:<refname>:<content-type>:<extra-option>:<treeish>
 function! s:parse_filename(filename) abort
   let ncolons = len(substitute(a:filename, '[^:]', '', 'g'))
   let filename = len(ncolons) < 3
@@ -229,6 +265,7 @@ function! s:parse_filename(filename) abort
         \ a:filename
         \))
 endfunction
+
 let s:schemes = [
       \ ['^gita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\)/\(.\+\)$', {
       \   'repository': 1,
@@ -247,5 +284,17 @@ let s:schemes = [
       \   'content_type': 'show',
       \   'extra_option': '',
       \   'treeish': 2,
+      \ }],
+      \ ['^gita://\([^/:]\{-}\):\([^/:]\{-}\):\([^/]\{-}\):\(.*\)$', {
+      \   'repository': 1,
+      \   'content_type': 2,
+      \   'extra_option': 3,
+      \   'treeish': 4,
+      \ }],
+      \ ['^gita:\([^/:]\{-}\):\([^/:]\{-}\):\(.*\)$', {
+      \   'repository': 1,
+      \   'content_type': 2,
+      \   'extra_option': '',
+      \   'treeish': 3,
       \ }],
       \]
