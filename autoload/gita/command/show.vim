@@ -168,7 +168,7 @@ function! gita#command#show#bufname(options) abort
         \})
 endfunction
 function! gita#command#show#call(...) abort
-  let options = gita#option#init('^show$', get(a:000, 0, {}), {
+  let options = gita#option#cascade('^show$', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})
@@ -238,7 +238,7 @@ function! gita#command#show#open(...) abort
 endfunction
 
 function! gita#command#show#BufReadCmd(options) abort
-  let options = gita#option#init('^show$', a:options, {
+  let options = gita#option#cascade('^show$', a:options, {
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',
@@ -281,7 +281,7 @@ function! gita#command#show#BufReadCmd(options) abort
   endif
 endfunction
 function! gita#command#show#FileReadCmd(options) abort
-  let options = gita#option#init('^show$', a:options, {
+  let options = gita#option#cascade('^show$', a:options, {
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',

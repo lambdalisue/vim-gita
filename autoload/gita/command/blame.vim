@@ -263,7 +263,7 @@ function! s:call_pseudo_command(...) abort
 endfunction
 
 function! gita#command#blame#call(...) abort
-  let options = gita#option#init('blame', get(a:000, 0, {}), {
+  let options = gita#option#cascade('blame', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})

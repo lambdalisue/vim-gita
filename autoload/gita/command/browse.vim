@@ -103,7 +103,7 @@ function! s:find_url(git, commit, filename, options) abort
 endfunction
 
 function! gita#command#browse#call(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = gita#option#cascade('', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filename': '',
         \})

@@ -130,7 +130,7 @@ function! gita#command#branch#bufname(options) abort
         \})
 endfunction
 function! gita#command#branch#call(...) abort
-  let options = gita#option#init('^branch$', get(a:000, 0, {}), {
+  let options = gita#option#cascade('^branch$', get(a:000, 0, {}), {
         \ 'all': 0,
         \ 'remotes': 0,
         \})
@@ -168,7 +168,7 @@ function! gita#command#branch#open(...) abort
   call gita#command#branch#edit(options)
 endfunction
 function! gita#command#branch#edit(...) abort
-  let options = gita#option#init('^branch$', {}, get(a:000, 0, {}))
+  let options = gita#option#cascade('^branch$', {}, get(a:000, 0, {}))
   let options['quiet'] = 1
   let result = gita#command#branch#call(options)
   call gita#set_meta('content_type', 'branch')

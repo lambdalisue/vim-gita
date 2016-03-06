@@ -225,7 +225,7 @@ function! gita#command#commit#bufname(options) abort
         \})
 endfunction
 function! gita#command#commit#call(...) abort
-  let options = gita#option#init('^commit$', get(a:000, 0, {}), {
+  let options = gita#option#cascade('^commit$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \ 'amend': 0,
         \})
@@ -273,7 +273,7 @@ function! gita#command#commit#open(...) abort
   call gita#command#commit#edit(options)
 endfunction
 function! gita#command#commit#edit(...) abort
-  let options = gita#option#init('^\%(commit\|status\)$', get(a:000, 0, {}))
+  let options = gita#option#cascade('^\%(commit\|status\)$', get(a:000, 0, {}))
   let options['porcelain'] = 1
   let options['dry-run'] = 1
   let options['quiet'] = 1

@@ -59,7 +59,7 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
   " NOTE:
   " This function should be called only from gita#command#blame#open so that
   " options.commit, options.filename should be valid.
-  let options = gita#option#init('^blame-navi$', {
+  let options = gita#option#cascade('^blame-navi$', {
         \ 'opener': '',
         \ 'commit': '',
         \ 'filename': '',

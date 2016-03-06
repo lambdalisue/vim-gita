@@ -159,7 +159,7 @@ function! gita#command#diff#bufname(options) abort
   endif
 endfunction
 function! gita#command#diff#call(...) abort
-  let options = gita#option#init('^diff$', get(a:000, 0, {}), {
+  let options = gita#option#cascade('^diff$', get(a:000, 0, {}), {
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
@@ -296,7 +296,7 @@ function! gita#command#diff#open2(...) abort
   diffupdate
 endfunction
 function! gita#command#diff#BufReadCmd(options) abort
-  let options = gita#option#init('^diff$', a:options, {
+  let options = gita#option#cascade('^diff$', a:options, {
         \ 'encoding': '',
         \ 'filefcrmat': '',
         \ 'bad': '',
@@ -334,7 +334,7 @@ function! gita#command#diff#BufReadCmd(options) abort
   setlocal filetype=diff
 endfunction
 function! gita#command#diff#FileReadCmd(options) abort
-  let options = gita#option#init('^diff$', a:options, {
+  let options = gita#option#cascade('^diff$', a:options, {
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',

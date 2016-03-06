@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:Prompt = s:V.import('Vim.Prompt')
 
-function! gita#option#init(content_type, options, ...) abort
+function! gita#option#cascade(content_type, options, ...) abort
   let options = get(a:000, 0, {})
   let options = extend(options, gita#get_meta_for(a:content_type, 'options', {}))
   let options = extend(options, a:options)

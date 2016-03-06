@@ -35,7 +35,7 @@ function! s:apply_command(git, commit, filenames, options) abort
   let result = gita#execute(a:git, 'checkout', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
-  elseif !get(a:options, 'quiet', 0)
+  elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")
   endif
@@ -43,7 +43,7 @@ function! s:apply_command(git, commit, filenames, options) abort
 endfunction
 
 function! gita#command#checkout#call(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = gita#option#cascade('', get(a:000, 0, {}), {
         \ 'commit': '',
         \ 'filenames': [],
         \})

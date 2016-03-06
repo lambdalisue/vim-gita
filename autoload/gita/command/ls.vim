@@ -115,7 +115,7 @@ function! gita#command#ls#bufname(options) abort
         \})
 endfunction
 function! gita#command#ls#call(...) abort
-  let options = gita#option#init('^ls$', get(a:000, 0, {}), {
+  let options = gita#option#cascade('^ls$', get(a:000, 0, {}), {
         \ 'commit': '',
         \})
   let git = gita#get_or_fail()
@@ -174,7 +174,7 @@ function! gita#command#ls#open(...) abort
   call gita#command#ls#edit(options)
 endfunction
 function! gita#command#ls#edit(...) abort
-  let options = gita#option#init('^ls$', {}, get(a:000, 0, {}))
+  let options = gita#option#cascade('^ls$', {}, get(a:000, 0, {}))
   let result = gita#command#ls#call(options)
   call gita#set_meta('content_type', 'ls')
   call gita#set_meta('options', s:Dict.omit(result.options, [

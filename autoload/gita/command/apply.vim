@@ -28,14 +28,14 @@ function! s:pick_available_options(options) abort
         \ 'allow-overlap',
         \])
 endfunction
-function! s:apply_patches(git, filenames, options) abort
+function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
   let options['verbose'] = 1
   let result = gita#execute(a:git, 'apply', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
-  elseif !get(a:options, 'quiet', 0)
+  elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")
   endif
@@ -43,7 +43,7 @@ function! s:apply_patches(git, filenames, options) abort
 endfunction
 
 function! gita#command#apply#call(...) abort
-  let options = gita#option#init('', get(a:000, 0, {}), {
+  let options = gita#option#cascade('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
   let git = gita#get_or_fail()
@@ -54,7 +54,7 @@ function! gita#command#apply#call(...) abort
         \ copy(options.filenames),
         \ 'gita#variable#get_valid_filename(v:val)',
         \)
-  let content = s:apply_patches(git, filenames, options)
+  let content = s:apply_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,
