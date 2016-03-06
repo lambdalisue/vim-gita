@@ -125,7 +125,7 @@ function! gita#variable#get_valid_filename(filename, ...) abort
     let guard = s:Guard.store(['_complete_options', s:])
     let s:_complete_options = options
     try
-      call histadd('input', s:Path.relpath(gita#expand('%')))
+      call histadd('input', s:Path.relpath(gita#meta#expand('%')))
       let filename = s:Prompt.ask(
             \ 'Please input a filename: ', '',
             \ 'customlist,gita#variable#complete_filename'
@@ -137,7 +137,7 @@ function! gita#variable#get_valid_filename(filename, ...) abort
       call guard.restore()
     endtry
   else
-    let filename = gita#expand(a:filename)
+    let filename = gita#meta#expand(a:filename)
   endif
   " NOTE:
   " Alwasy return a real absolute path

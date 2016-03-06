@@ -58,12 +58,12 @@ function! gita#command#blame#view#_open(blameobj, ...) abort
   " gita#command#blame#view#_edit() will be called by
   " gita#command#blame#open() later so store 'blameobj' reference into meta
   let a:blameobj.view_bufnum = bufnr('%')
-  call gita#set_meta('content_type', 'blame-view')
-  call gita#set_meta('blameobj', a:blameobj)
-  call gita#set_meta('commit', options.commit)
-  call gita#set_meta('filename', options.filename)
-  if !empty(options.backward) || empty(gita#get_meta('backward'))
-    call gita#set_meta('backward', options.backward)
+  call gita#meta#set('content_type', 'blame-view')
+  call gita#meta#set('blameobj', a:blameobj)
+  call gita#meta#set('commit', options.commit)
+  call gita#meta#set('filename', options.filename)
+  if !empty(options.backward) || empty(gita#meta#get('backward'))
+    call gita#meta#set('backward', options.backward)
   endif
 endfunction
 function! gita#command#blame#view#_edit() abort

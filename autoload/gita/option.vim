@@ -3,7 +3,7 @@ let s:Prompt = s:V.import('Vim.Prompt')
 
 function! gita#option#cascade(content_type, options, ...) abort
   let options = get(a:000, 0, {})
-  let options = extend(options, gita#get_meta_for(a:content_type, 'options', {}))
+  let options = extend(options, gita#meta#get_for(a:content_type, 'options', {}))
   let options = extend(options, a:options)
   return options
 endfunction
@@ -13,7 +13,7 @@ function! gita#option#assign_commit(options) abort
     return
   endif
 
-  let content_type = gita#get_meta('content_type')
+  let content_type = gita#meta#get('content_type')
   if content_type =~# '^\%(status\|commit\|ls\|diff-ls\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'commit')
@@ -21,8 +21,8 @@ function! gita#option#assign_commit(options) abort
     endif
   endif
   if empty(get(a:options, 'commit'))
-    if !empty(gita#get_meta('commit'))
-      let a:options.commit = gita#get_meta('commit')
+    if !empty(gita#meta#get('commit'))
+      let a:options.commit = gita#meta#get('commit')
     endif
   endif
 endfunction
@@ -33,7 +33,7 @@ function! gita#option#assign_filename(options) abort
   elseif len(get(a:options, '__unknown__')) > 0
     let a:options.filename = a:options.__unknown__[0]
   endif
-  let content_type = gita#get_meta('content_type')
+  let content_type = gita#meta#get('content_type')
   if content_type =~# '^\%(status\|commit\|ls\|diff-ls\)$'
     let candidate = get(gita#action#get_candidates(), 0, {})
     if has_key(candidate, 'path')
@@ -41,12 +41,12 @@ function! gita#option#assign_filename(options) abort
     endif
   endif
   if empty(get(a:options, 'filename'))
-    if !empty(gita#get_meta('filename'))
-      let a:options.filename = gita#get_meta('filename')
-    elseif !empty(gita#expand('%'))
+    if !empty(gita#meta#get('filename'))
+      let a:options.filename = gita#meta#get('filename')
+    elseif !empty(gita#meta#expand('%'))
       " NOTE:
-      " gita#expand() always return a real absolute path or ''
-      let a:options.filename = gita#expand('%')
+      " gita#meta#expand() always return a real absolute path or ''
+      let a:options.filename = gita#meta#expand('%')
     endif
   endif
 endfunction
@@ -67,7 +67,7 @@ function! gita#option#assign_selection(options) abort
           \)
   endif
 
-  let content_type = gita#get_meta('content_type')
+  let content_type = gita#meta#get('content_type')
   if content_type =~# '^blame-\%(navi\|view\)$'
     let line_start = get(a:options.selection, 0, 0)
     let line_end = get(a:options.selection, 1, line_start)
@@ -89,7 +89,7 @@ function! gita#option#assign_opener(options, ...) abort
   let default_opener = empty(default_opener)
         \ ? g:gita#option#default_opener
         \ : default_opener
-  let content_type = gita#get_meta('content_type')
+  let content_type = gita#meta#get('content_type')
   if content_type =~# '^blame-\%(navi\|view\)$'
     let a:options['opener'] = 'tabedit'
   else

@@ -247,7 +247,7 @@ function! s:call_pseudo_command(...) abort
   elseif ret =~# '^q\%(\|u\|ui\|uit\)!\?$' || ret =~# '^clo\%(\|s\|se\)!\?$'
     try
       let blameobj = gita#command#blame#_get_blameobj_or_fail()
-      let winnum_partner = gita#get_meta('content_type') ==# 'blame-navi'
+      let winnum_partner = gita#meta#get('content_type') ==# 'blame-navi'
             \ ? winbufnr(blameobj.view_bufnum)
             \ : winbufnr(blameobj.navi_bufnum)
       if winnum_partner != -1
@@ -389,7 +389,7 @@ function! gita#command#blame#select(selection) abort
 endfunction
 
 function! gita#command#blame#_get_blameobj_or_fail() abort
-  let blameobj = gita#get_meta('blameobj')
+  let blameobj = gita#meta#get('blameobj')
   if empty(blameobj)
     call gita#throw(printf(
           \ 'Fatal: "blameobj" is not found on %s', bufname('%'),
@@ -427,8 +427,8 @@ function! gita#command#blame#_define_actions() abort
     if empty(candidate)
       return
     endif
-    let commit   = gita#get_meta('commit')
-    let filename = gita#get_meta('filename')
+    let commit   = gita#meta#get('commit')
+    let filename = gita#meta#get('filename')
     echo '=== Current ==='
     echo 'Commit:   ' . commit
     echo 'Filename: ' . filename
@@ -447,7 +447,7 @@ function! gita#command#blame#_define_actions() abort
     if empty(candidate)
       return
     endif
-    let commit = gita#get_meta('commit')
+    let commit = gita#meta#get('commit')
     if candidate.revision ==# commit
       if !has_key(candidate, 'previous')
         call gita#throw(
@@ -473,7 +473,7 @@ function! gita#command#blame#_define_actions() abort
     call gita#command#blame#open({
           \ 'backward': join([
           \   commit,
-          \   gita#get_meta('filename'),
+          \   gita#meta#get('filename'),
           \ ], ':'),
           \ 'commit': revision,
           \ 'filename': filename,
@@ -483,7 +483,7 @@ function! gita#command#blame#_define_actions() abort
     redraw | echo
   endfunction
   function! action.actions.blame_backward(candidates, ...) abort
-    let backward = gita#get_meta('backward')
+    let backward = gita#meta#get('backward')
     if empty(backward)
       call gita#throw(
             \ 'Cancel:',

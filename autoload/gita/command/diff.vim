@@ -98,7 +98,7 @@ endfunction
 function! s:on_BufWriteCmd() abort
   " It is only called when PATCH mode is enabled
   try
-    let options = gita#get_meta('options', {})
+    let options = gita#meta#get('options', {})
     let tempfile = tempname()
     try
       call writefile(getline(1, '$'), tempfile)
@@ -308,13 +308,13 @@ function! gita#command#diff#BufReadCmd(options) abort
         \})
   call s:configure_options(options)
   let result = gita#command#diff#call(options)
-  call gita#set_meta('content_type', 'diff')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'diff')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'opener', 'selection',
         \]))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('filename', result.filename)
-  call gita#set_meta('filenames', result.filenames)
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('filename', result.filename)
+  call gita#meta#set('filenames', result.filenames)
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,

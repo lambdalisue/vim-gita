@@ -104,7 +104,7 @@ endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let statuses = gita#get_meta('statuses', [])
+  let statuses = gita#meta#get('statuses', [])
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -141,7 +141,7 @@ function! s:on_VimResized() abort
 endfunction
 function! s:on_WinEnter() abort
   try
-    if gita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+    if gita#meta#get('winwidth', winwidth(0)) != winwidth(0)
       call gita#command#status#redraw()
     endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -227,14 +227,14 @@ function! gita#command#status#edit(...) abort
   let options = gita#option#cascade('^status$', get(a:000, 0, {}))
   let options['porcelain'] = 1
   let result = gita#command#status#call(options)
-  call gita#set_meta('content_type', 'status')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'status')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener', 'porcelain',
         \]))
-  call gita#set_meta('statuses', result.statuses)
-  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#set_meta('filenames', result.filenames)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('statuses', result.statuses)
+  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#meta#set('filenames', result.filenames)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
   augroup vim_gita_internal_status
@@ -255,7 +255,7 @@ function! gita#command#status#redraw() abort
   endif
   let git = gita#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let statuses = gita#get_meta('statuses', [])
+  let statuses = gita#meta#get('statuses', [])
   let contents = s:format_statuses(statuses)
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))

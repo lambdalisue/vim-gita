@@ -116,19 +116,19 @@ Describe gita
   Describe #get_meta({name}[, {default}, {expr}])
     It returns a value of {name} is a buffer variable
       let b:_gita_meta = { 'foo': 'foo', 'bar': 'bar' }
-      Assert Equals(gita#get_meta('foo'), 'foo')
-      Assert Equals(gita#get_meta('bar'), 'bar')
+      Assert Equals(gita#meta#get('foo'), 'foo')
+      Assert Equals(gita#meta#get('bar'), 'bar')
     End
     It returns {default} if {name} is missing is a buffer variable
-      Assert Equals(gita#get_meta('foo', 'bar'), 'bar')
-      Assert Equals(gita#get_meta('bar', 'foo'), 'foo')
+      Assert Equals(gita#meta#get('foo', 'bar'), 'bar')
+      Assert Equals(gita#meta#get('bar', 'foo'), 'foo')
     End
   End
 
   Describe #set_meta({name}, {value}[, {expr}])
     It set {value} to {name} in a buffer variable
-      call gita#set_meta('foo', 'bar')
-      call gita#set_meta('bar', 'foo')
+      call gita#meta#set('foo', 'bar')
+      call gita#meta#set('bar', 'foo')
       Assert Equals(b:_gita_meta, { 'foo': 'bar', 'bar': 'foo' })
     End
   End
@@ -136,12 +136,12 @@ Describe gita
   Describe #expand({expr})
     It expand {expr}
       file foobar
-      Assert Equals(gita#expand('%'), Path.abspath('foobar'))
+      Assert Equals(gita#meta#expand('%'), Path.abspath('foobar'))
     End
     It expand b:_gita_meta.filename if available
       file foobar
-      call gita#set_meta('filename', 'hogehoge')
-      Assert Equals(gita#expand('%'), Path.abspath('hogehoge'))
+      call gita#meta#set('filename', 'hogehoge')
+      Assert Equals(gita#meta#expand('%'), Path.abspath('hogehoge'))
     End
   End
 

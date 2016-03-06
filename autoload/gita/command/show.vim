@@ -114,8 +114,8 @@ function! s:on_BufWriteCmd() abort
   let tempfile = tempname()
   try
     let git = gita#get_or_fail()
-    let filename = gita#get_meta('filename', '')
-    let options  = gita#get_meta('options', {})
+    let filename = gita#meta#get('filename', '')
+    let options  = gita#meta#get('options', {})
     let content  = s:get_diff_content(git, getline(1, '$'), filename, options)
     call writefile(content, tempfile)
     call gita#command#apply#call({
@@ -254,12 +254,12 @@ function! gita#command#show#BufReadCmd(options) abort
           \)
   endif
   let result = gita#command#show#call(options)
-  call gita#set_meta('content_type', 'show')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'show')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'opener', 'selection',
         \]))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('filename', result.filename)
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('filename', result.filename)
   call gita#util#buffer#edit_content(result.content, {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,

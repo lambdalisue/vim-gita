@@ -108,9 +108,9 @@ function! s:format_matches(matches, width) abort
   return content
 endfunction
 function! s:get_header_string(git) abort
-  let commit = gita#get_meta('commit', '')
-  let pattern = gita#get_meta('pattern', '')
-  let candidates = gita#get_meta('candidates', [])
+  let commit = gita#meta#get('commit', '')
+  let pattern = gita#meta#get('pattern', '')
+  let candidates = gita#meta#get('candidates', [])
   let ncandidates = len(candidates)
   return printf(
         \ 'Files contain "%s" in <%s> (%d file%s) %s',
@@ -124,7 +124,7 @@ endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let candidates = gita#get_meta('candidates', [])
+  let candidates = gita#meta#get('candidates', [])
   return index >= 0 ? get(candidates, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -226,14 +226,14 @@ endfunction
 function! gita#command#grep#edit(...) abort
   let options = gita#option#cascade('^grep$', {}, get(a:000, 0, {}))
   let result = gita#command#grep#call(options)
-  call gita#set_meta('content_type', 'grep')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'grep')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener',
         \]))
-  call gita#set_meta('pattern', result.pattern)
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('candidates', result.candidates)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('pattern', result.pattern)
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('candidates', result.candidates)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
   augroup vim_gita_internal_grep
@@ -251,7 +251,7 @@ endfunction
 function! gita#command#grep#redraw() abort
   let git = gita#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let candidates = gita#get_meta('candidates', [])
+  let candidates = gita#meta#get('candidates', [])
   let contents = s:format_matches(candidates, winwidth(0))
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))
@@ -380,7 +380,7 @@ function! gita#command#grep#define_highlights() abort
 endfunction
 function! gita#command#grep#define_syntax() abort
   syntax match GitaComment    /\%^.*$/
-  let pattern = gita#get_meta('pattern')
+  let pattern = gita#meta#get('pattern')
   execute printf(
         \ 'syntax match GitaKeyword /%s/',
         \ s:StringExt.escape_regex(pattern),

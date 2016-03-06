@@ -76,22 +76,22 @@ function! gita#command#blame#navi#_open(blameobj, ...) abort
   " gita#command#blame#navi#_edit() will be called by
   " gita#command#blame#open() later so store 'blameobj' reference into meta
   let a:blameobj.navi_bufnum = bufnr('%')
-  call gita#set_meta('content_type', 'blame-navi')
-  call gita#set_meta('blameobj', a:blameobj)
-  call gita#set_meta('commit', options.commit)
-  call gita#set_meta('filename', options.filename)
-  if !empty(options.backward) || empty(gita#get_meta('backward'))
-    call gita#set_meta('backward', options.backward)
+  call gita#meta#set('content_type', 'blame-navi')
+  call gita#meta#set('blameobj', a:blameobj)
+  call gita#meta#set('commit', options.commit)
+  call gita#meta#set('filename', options.filename)
+  if !empty(options.backward) || empty(gita#meta#get('backward'))
+    call gita#meta#set('backward', options.backward)
   endif
 endfunction
 function! gita#command#blame#navi#_edit() abort
   let blameobj = gita#command#blame#_get_blameobj_or_fail()
-  if !has_key(blameobj, 'blamemeta') || gita#get_meta('winwidth') != winwidth(0)
+  if !has_key(blameobj, 'blamemeta') || gita#meta#get('winwidth') != winwidth(0)
     " Construct 'blamemeta' from 'blameobj'. It is time-consuming process.
     " Store constructed 'blamemeta' in 'blameobj' so that blame-view buffer
     " can access to the instance.
     let blameobj.blamemeta = gita#command#blame#format(blameobj, winwidth(0))
-    call gita#set_meta('winwidth', winwidth(0))
+    call gita#meta#set('winwidth', winwidth(0))
   endif
   call s:define_actions()
   augroup vim_gita_internal_blame_navi

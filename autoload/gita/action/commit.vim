@@ -2,7 +2,7 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'amend': -1,
         \}, a:options)
-  let filenames = gita#get_meta('filenames', [])
+  let filenames = gita#meta#get('filenames', [])
   if options.amend == -1
     call gita#command#commit#open({
           \ 'filenames': filenames,

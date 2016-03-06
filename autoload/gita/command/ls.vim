@@ -58,8 +58,8 @@ function! s:format_entry(entry) abort
   return a:entry.relpath
 endfunction
 function! s:get_header_string(git) abort
-  let commit = gita#get_meta('commit', '')
-  let candidates = gita#get_meta('candidates', [])
+  let commit = gita#meta#get('commit', '')
+  let candidates = gita#meta#get('candidates', [])
   let ncandidates = len(candidates)
   return printf(
         \ 'Files in <%s> (%d file%s) %s',
@@ -72,7 +72,7 @@ endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let candidates = gita#get_meta('candidates', [])
+  let candidates = gita#meta#get('candidates', [])
   return index >= 0 ? get(candidates, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -176,13 +176,13 @@ endfunction
 function! gita#command#ls#edit(...) abort
   let options = gita#option#cascade('^ls$', {}, get(a:000, 0, {}))
   let result = gita#command#ls#call(options)
-  call gita#set_meta('content_type', 'ls')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'ls')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener',
         \]))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('candidates', result.candidates)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('candidates', result.candidates)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
   augroup vim_gita_internal_ls
@@ -198,7 +198,7 @@ endfunction
 function! gita#command#ls#redraw() abort
   let git = gita#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let candidates = gita#get_meta('candidates', [])
+  let candidates = gita#meta#get('candidates', [])
   let contents = map(
         \ copy(candidates),
         \ 's:format_entry(v:val)'

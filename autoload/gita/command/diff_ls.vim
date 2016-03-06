@@ -11,8 +11,8 @@ let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:get_header_string(git) abort
-  let commit = gita#get_meta('commit', '')
-  let stats = gita#get_meta('stats', [])
+  let commit = gita#meta#get('commit', '')
+  let stats = gita#meta#get('stats', [])
   let nstats = len(stats)
   if commit =~# '^.\{-}\.\.\..\{-}$'
     let [lhs, rhs] = s:GitTerm.split_range(commit)
@@ -86,7 +86,7 @@ endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let stats = gita#get_meta('stats', [])
+  let stats = gita#meta#get('stats', [])
   return index >= 0 ? get(stats, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -112,7 +112,7 @@ function! s:on_BufReadCmd() abort
 endfunction
 function! s:on_VimResized() abort
   try
-    if gita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+    if gita#meta#get('winwidth', winwidth(0)) != winwidth(0)
       call gita#command#diff_ls#redraw()
     endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -121,7 +121,7 @@ function! s:on_VimResized() abort
 endfunction
 function! s:on_WinEnter() abort
   try
-    if gita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+    if gita#meta#get('winwidth', winwidth(0)) != winwidth(0)
       call gita#command#diff_ls#redraw()
     endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -201,13 +201,13 @@ endfunction
 function! gita#command#diff_ls#edit(...) abort
   let options = gita#option#cascade('^diff-ls$', {}, get(a:000, 0, {}))
   let result = gita#command#diff_ls#call(options)
-  call gita#set_meta('content_type', 'diff-ls')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'diff-ls')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener', 'porcelain',
         \]))
-  call gita#set_meta('commit', result.commit)
-  call gita#set_meta('stats', result.stats)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('stats', result.stats)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
   augroup vim_gita_internal_diff_ls
@@ -226,7 +226,7 @@ endfunction
 function! gita#command#diff_ls#redraw() abort
   let git = gita#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let stats = gita#get_meta('stats', [])
+  let stats = gita#meta#get('stats', [])
   let contents = s:format_stats(stats, winwidth(0))
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))

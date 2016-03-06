@@ -8,8 +8,8 @@ let s:Git = s:V.import('Git')
 let s:GitProcess = s:V.import('Git.Process')
 
 function! s:is_expired(expr) abort
-  let cbufname = gita#get_meta('bufname')
-  let ccwd = gita#get_meta('cwd')
+  let cbufname = gita#meta#get('bufname')
+  let ccwd = gita#meta#get('cwd')
   let bufnum = bufnr(a:expr)
   let bufname = bufname(bufnum)
   let buftype = s:Compat.getbufvar(bufnum, '&buftype')
@@ -40,7 +40,7 @@ function! s:get_git_instance(bufnum, force) abort
     let git = empty(git) ? s:Git.get(getcwd(), options) : git
   elseif buftype =~# '^\%(\|nowrite\|acwrite\)$'
     " file buffer
-    let filename = gita#expand(a:bufnum)
+    let filename = gita#meta#expand(a:bufnum)
     let git = s:Git.get(filename, options)
     let git = !git.is_enabled && filename !=# resolve(filename)
           \ ? s:Git.get(resolve(filename), options)
@@ -64,17 +64,10 @@ function! s:get_git_instance(bufnum, force) abort
   endif
   if bufexists(a:bufnum)
     call setbufvar(a:bufnum, '_git', git)
-    call gita#set_meta('bufname', bufname(a:bufnum))
-    call gita#set_meta('cwd', getcwd())
+    call gita#meta#set('bufname', bufname(a:bufnum))
+    call gita#meta#set('cwd', getcwd())
   endif
   return git
-endfunction
-function! s:get_meta_instance(bufnum) abort
-  let meta = s:Compat.getbufvar(a:bufnum, '_gita_meta', {})
-  if bufexists(a:bufnum)
-    call setbufvar(a:bufnum, '_gita_meta', meta)
-  endif
-  return meta
 endfunction
 function! s:get_repository_cache() abort
   if !exists('s:repository_cache')
@@ -157,57 +150,11 @@ function! gita#execute(git, name, ...) abort
   endif
 endfunction
 
-function! gita#get_meta(name, ...) abort
-  " WARNING:
-  " DO NOT USE 'gita' instance in this method.
-  let expr = get(a:000, 1, '%')
-  let meta = s:get_meta_instance(bufnr(expr))
-  return get(meta, a:name, get(a:000, 0, ''))
-endfunction
-function! gita#get_meta_for(content_type, name, ...) abort
-  if a:content_type !~# gita#get_meta('content_type', '')
-    return get(a:000, 0, '')
-  endif
-  return call('gita#get_meta', [a:name] + a:000)
-endfunction
-function! gita#set_meta(name, value, ...) abort
-  " WARNING:
-  " DO NOT USE 'gita' instance in this method.
-  let expr = get(a:000, 0, '%')
-  let meta = s:get_meta_instance(bufnr(expr))
-  let meta[a:name] = a:value
-endfunction
-function! gita#remove_meta(name, ...) abort
-  " WARNING:
-  " DO NOT USE 'gita' instance in this method.
-  let expr = get(a:000, 0, '%')
-  let meta = s:get_meta_instance(bufnr(expr))
-  if has_key(meta, a:name)
-    unlet meta[a:name]
-  endif
-endfunction
-
 function! gita#is_enabled(...) abort
   return call('gita#get', a:000).is_enabled
 endfunction
 function! gita#vital() abort
   return s:V
-endfunction
-function! gita#expand(expr) abort
-  " WARNING:
-  " DO NOT USE 'gita' instance in this method.
-  if empty(a:expr)
-    return ''
-  endif
-  let bufnum = bufnr(a:expr)
-  let meta_filename = gita#get_meta('filename', '', bufnum)
-  let real_filename = expand(
-        \ s:Prelude.is_string(a:expr) ? a:expr : bufname(a:expr)
-        \)
-  let filename = empty(meta_filename) ? real_filename : meta_filename
-  " NOTE:
-  " Always return a real absolute path
-  return s:Path.abspath(s:Path.realpath(filename))
 endfunction
 function! gita#throw(...) abort
   let msg = join(a:000)

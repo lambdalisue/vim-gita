@@ -60,7 +60,7 @@ function! s:format_branches(branches) abort
   return map(copy(a:branches), 's:format_branch(v:val)')
 endfunction
 function! s:get_header_string(git) abort
-  let branches = gita#get_meta('branches', [])
+  let branches = gita#meta#get('branches', [])
   let nbranches = len(branches)
   return printf(
         \ 'There are %d branch%s %s',
@@ -72,7 +72,7 @@ endfunction
 
 function! s:get_entry(index) abort
   let index = a:index - s:entry_offset
-  let candidates = gita#get_meta('branches', [])
+  let candidates = gita#meta#get('branches', [])
   return index >= 0 ? get(candidates, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -171,12 +171,12 @@ function! gita#command#branch#edit(...) abort
   let options = gita#option#cascade('^branch$', {}, get(a:000, 0, {}))
   let options['quiet'] = 1
   let result = gita#command#branch#call(options)
-  call gita#set_meta('content_type', 'branch')
-  call gita#set_meta('options', s:Dict.omit(result.options, [
+  call gita#meta#set('content_type', 'branch')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener', 'quiet',
         \]))
-  call gita#set_meta('branches', result.branches)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('branches', result.branches)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
   augroup vim_gita_internal_branch
@@ -194,7 +194,7 @@ endfunction
 function! gita#command#branch#redraw() abort
   let git = gita#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let branches = gita#get_meta('branches', [])
+  let branches = gita#meta#get('branches', [])
   let contents = s:format_branches(branches)
   let s:entry_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents))

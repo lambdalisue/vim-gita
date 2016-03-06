@@ -60,12 +60,12 @@ function! s:get_current_commitmsg() abort
   return filter(getline(1, '$'), 'v:val !~# "^#"')
 endfunction
 function! s:save_commitmsg() abort
-  call gita#set_meta('commitmsg_saved', s:get_current_commitmsg())
+  call gita#meta#set('commitmsg_saved', s:get_current_commitmsg())
 endfunction
 function! s:commit_commitmsg() abort
   let git = gita#get_or_fail()
-  let options = gita#get_meta('options')
-  let statuses = gita#get_meta('statuses')
+  let options = gita#meta#get('options')
+  let statuses = gita#meta#get('statuses')
   let staged_statuses = filter(copy(statuses), 'v:val.is_staged')
   if !s:GitInfo.is_merging(git) && empty(staged_statuses) && !get(options, 'allow-empty')
     call gita#throw(
@@ -95,8 +95,8 @@ function! s:commit_commitmsg() abort
           \ len(staged_statuses),
           \))
     call s:Prompt.echo('None', join(content, "\n"))
-    call gita#remove_meta('commitmsg_saved', '')
-    call gita#set_meta('options', {})
+    call gita#meta#remove('commitmsg_saved', '')
+    call gita#meta#set('options', {})
     silent keepjumps %delete _
     call gita#util#doautocmd('User', 'GitaStatusModified')
   finally
@@ -121,7 +121,7 @@ function! s:get_entry(index) abort
     let offset += 1
   endfor
   let index = a:index - s:entry_offset - offset
-  let statuses = gita#get_meta('statuses', [])
+  let statuses = gita#meta#get('statuses', [])
   return index >= 0 ? get(statuses, index, {}) : {}
 endfunction
 function! s:define_actions() abort
@@ -172,7 +172,7 @@ function! s:on_VimResized() abort
 endfunction
 function! s:on_WinEnter() abort
   try
-    if gita#get_meta('winwidth', winwidth(0)) != winwidth(0)
+    if gita#meta#get('winwidth', winwidth(0)) != winwidth(0)
       call gita#command#commit#redraw()
     endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -278,14 +278,14 @@ function! gita#command#commit#edit(...) abort
   let options['dry-run'] = 1
   let options['quiet'] = 1
   let result = gita#command#commit#call(options)
-  call gita#set_meta('content_type', 'commit')
-  call gita#set_meta('options', s:Dict.omit(options, [
+  call gita#meta#set('content_type', 'commit')
+  call gita#meta#set('options', s:Dict.omit(options, [
         \ 'force', 'opener', 'porcelain', 'dry-run',
         \]))
-  call gita#set_meta('statuses', result.statuses)
-  call gita#set_meta('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#set_meta('filenames', result.filenames)
-  call gita#set_meta('winwidth', winwidth(0))
+  call gita#meta#set('statuses', result.statuses)
+  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#meta#set('filenames', result.filenames)
+  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   augroup vim_gita_internal_commit
     autocmd! * <buffer>
@@ -317,15 +317,15 @@ function! gita#command#commit#redraw() abort
     call gita#throw('redraw() requires to be called in a gita-commit buffer')
   endif
   let git = gita#get_or_fail()
-  let options = gita#get_meta('options')
+  let options = gita#meta#get('options')
 
   let commit_mode = ''
-  if !empty(gita#get_meta('commitmsg_cached'))
-    let commitmsg = gita#get_meta('commitmsg_cached')
-    call gita#get_meta('commitmsg_cached', [])
+  if !empty(gita#meta#get('commitmsg_cached'))
+    let commitmsg = gita#meta#get('commitmsg_cached')
+    call gita#meta#get('commitmsg_cached', [])
     setlocal modified
-  elseif !empty(gita#get_meta('commitmsg_saved'))
-    let commitmsg = gita#get_meta('commitmsg_saved')
+  elseif !empty(gita#meta#get('commitmsg_saved'))
+    let commitmsg = gita#meta#get('commitmsg_saved')
   elseif s:GitInfo.is_merging(git)
     let commitmsg = s:GitInfo.get_merge_msg(git)
     let commit_mode = 'merge'
@@ -341,7 +341,7 @@ function! gita#command#commit#redraw() abort
         \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
         \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \])
-  let statuses = gita#get_meta('statuses', [])
+  let statuses = gita#meta#get('statuses', [])
   let contents = map(
         \ copy(statuses),
         \ 's:format_entry(v:val)'
