@@ -11,6 +11,7 @@ function! gita#action#attach(fn) abort
   let action_holder = {
         \ 'get_candidates': a:fn,
         \ 'actions': {},
+        \ 'aliases': {},
         \}
   let b:_gita_action_holder = action_holder
 endfunction
@@ -73,34 +74,44 @@ endfunction
 
 function! gita#action#define(name, fn, ...) abort
   let options = extend({
-        \ 'description': printf('Perform %s action', a:name),
-        \ 'mapping': printf('<Plug>(gita-%s)', substitute(a:name, ':', '-', 'g')),
+        \ 'alias': a:name,
+        \ 'description': '',
+        \ 'mapping': '',
         \ 'mapping_mode': 'nv',
         \ 'requirements': [],
         \ 'options': {},
         \}, get(a:000, 0, {}))
+  let description = empty(options.description)
+        \ ? printf('Perform %s action', options.alias)
+        \ : options.description
+  let mapping = empty(options.mapping)
+        \ ? printf('<Plug>(gita-%s)', substitute(options.alias, ':', '-', 'g'))
+        \ : options.mapping
   let action_holder = gita#action#get_holder()
+  let action_holder.aliases[options.alias] = a:name
   let action_holder.actions[a:name] = {
         \ 'fn': a:fn,
-        \ 'description': options.description,
-        \ 'mapping': options.mapping,
+        \ 'alias': options.alias,
+        \ 'description': description,
+        \ 'mapping': mapping,
         \ 'mapping_mode': options.mapping_mode,
         \ 'requirements': options.requirements,
         \ 'options': options.options,
         \}
-  if !empty(options.mapping)
-    for mode in split(options.mapping_mode, '\zs')
-      execute printf(
-            \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
-            \ mode, options.mapping, mode ==# '[ni]' ? '<C-u>' : '', a:name,
-            \)
-    endfor
-  endif
+  for mode in split(options.mapping_mode, '\zs')
+    execute printf(
+          \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
+          \ mode, mapping, mode ==# '[ni]' ? '<C-u>' : '', a:name,
+          \)
+  endfor
 endfunction
 
 function! gita#action#include(names, ...) abort
+  let disable_mapping = get(a:000, 0)
+  let action_holder = gita#action#get_holder()
   for name in a:names
-    call call(printf('gita#action#%s#define', name), [get(a:000, 0)])
+    let domain = matchstr(name, '^[^:]\+')
+    call call(printf('gita#action#%s#define', domain), [disable_mapping])
   endfor
 endfunction
 
@@ -112,5 +123,3 @@ function! gita#action#smart_map(lhs, rhs) abort range
     call gita#util#handle_exception()
   endtry
 endfunction
-
-

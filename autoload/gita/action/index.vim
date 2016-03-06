@@ -33,13 +33,16 @@ function! s:action_toggle(candidates, options) abort
       call add(stage_candidates, candidate)
     endif
   endfor
-  noautocmd call gita#action#do('stage', stage_candidates)
-  noautocmd call gita#action#do('unstage', unstage_candidates)
+  noautocmd call gita#action#do('index:stage', stage_candidates)
+  noautocmd call gita#action#do('index:unstage', unstage_candidates)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#index#define(disable_mapping) abort
-  call gita#action#define('stage', function('s:action_stage'), {
+  " include dependencies without default mappings
+  call gita#action#include(['add', 'rm', 'reset'], 1)
+  call gita#action#define('index:stage', function('s:action_stage'), {
+        \ 'alias': 'stage',
         \ 'description': 'Stage changes to the index',
         \ 'requirements': [
         \   'path',
@@ -48,12 +51,14 @@ function! gita#action#index#define(disable_mapping) abort
         \ ],
         \ 'options': {},
         \})
-  call gita#action#define('unstage', function('s:action_unstage'), {
+  call gita#action#define('index:unstage', function('s:action_unstage'), {
+        \ 'alias': 'unstage',
         \ 'description': 'Unstage changes from the index',
         \ 'requirements': ['path'],
         \ 'options': {},
         \})
-  call gita#action#define('toggle', function('s:action_toggle'), {
+  call gita#action#define('index:toggle', function('s:action_toggle'), {
+        \ 'alias': 'toggle',
         \ 'description': 'Toggle stage/unstage of changes in the index',
         \ 'requirements': [
         \   'path',
@@ -65,9 +70,6 @@ function! gita#action#index#define(disable_mapping) abort
         \ ],
         \ 'options': {},
         \})
-  call gita#action#add#define(0)
-  call gita#action#rm#define(0)
-  call gita#action#reset#define(0)
   if a:disable_mapping
     return
   endif

@@ -39,6 +39,7 @@ function! s:build_help(action_holder) abort
   let longest2 = 0
   let longest3 = 0
   for [name, action] in items(a:action_holder.actions)
+    let alias = action.alias
     let lhs = ''
     let rhs = action.mapping
     let mapping = get(mappings, action.mapping, {})
@@ -47,11 +48,12 @@ function! s:build_help(action_holder) abort
     endif
     call add(rows, [
           \ name,
+          \ alias,
           \ action.description,
           \ rhs,
           \ lhs,
           \])
-    let longest1 = len(name) > longest1 ? len(name) : longest1
+    let longest1 = len(alias) > longest1 ? len(alias) : longest1
     let longest2 = len(action.description) > longest2 ? len(action.description) : longest2
     let longest3 = len(rhs) > longest3 ? len(rhs) : longest3
   endfor
@@ -59,8 +61,8 @@ function! s:build_help(action_holder) abort
   let content = []
   let pattern = printf('%%-%ds : %%-%ds %%-%ds %%s', longest1, longest2, longest3)
   call add(content, printf(pattern, 'ACTION', 'DESCRIPTION', 'PLUG MAPPING', 'KEY MAPPING'))
-  for [name, description, rhs, lhs] in sort(rows, 's:compare')
-    call add(content, printf(pattern, name, description, rhs, lhs))
+  for [name, alias, description, rhs, lhs] in sort(rows, 's:compare')
+    call add(content, printf(pattern, alias, description, rhs, lhs))
   endfor
   return content
 endfunction
@@ -72,26 +74,26 @@ endfunction
 
 function! s:action_choice(candidates, options) abort
   let action_holder = gita#action#get_holder()
-  let action_names  = keys(action_holder.actions)
-  let g:gita#action#common#_action_names = join(action_names, "\n")
+  let g:gita#action#common#_aliases = join(keys(action_holder.aliases), "\n")
   call inputsave()
   try
     echohl Question
     redraw | echo
-    let name = input(
+    let alias = input(
           \ 'action: ', '',
-          \ 'custom,gita#action#common#_complete_action_name'
+          \ 'custom,gita#action#common#_complete_alias'
           \)
     redraw | echo
   finally
     echohl None
     call inputrestore()
-    silent! unlet! g:gita#action#common#_action_names
+    silent! unlet! g:gita#action#common#_aliases
   endtry
-  if empty(name)
+  if empty(alias)
     return
   endif
-  call gita#action#do(name, a:candidates)
+  let action_name = action_holder.aliases[alias]
+  call gita#action#do(action_name, a:candidates)
 endfunction
 
 function! s:action_close(candidate, options) abort
@@ -109,21 +111,25 @@ function! s:action_redraw(candidate, options) abort
 endfunction
 
 function! gita#action#common#define(disable_mapping) abort
-  call gita#action#define('help', function('s:action_help'), {
+  call gita#action#define('common:help', function('s:action_help'), {
+        \ 'alias': 'help',
         \ 'description': 'Show help',
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  call gita#action#define('choice', function('s:action_choice'), {
+  call gita#action#define('common:choice', function('s:action_choice'), {
+        \ 'alias': 'choice',
         \ 'description': 'Select action to perform',
         \ 'options': {},
         \})
-  call gita#action#define('close', function('s:action_close'), {
+  call gita#action#define('common:close', function('s:action_close'), {
+        \ 'alias': 'close',
         \ 'description': 'Close and focus an anchor',
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  call gita#action#define('redraw', function('s:action_redraw'), {
+  call gita#action#define('common:redraw', function('s:action_redraw'), {
+        \ 'alias': 'redraw',
         \ 'description': 'Redraw the buffer',
         \ 'mapping_mode': 'n',
         \ 'options': {},
@@ -139,6 +145,6 @@ function! gita#action#common#define(disable_mapping) abort
 endfunction
 
 
-function! gita#action#common#_complete_action_name(arglead, cmdline, cursorpos) abort
-  return g:gita#action#common#_action_names
+function! gita#action#common#_complete_alias(arglead, cmdline, cursorpos) abort
+  return g:gita#action#common#_aliases
 endfunction
