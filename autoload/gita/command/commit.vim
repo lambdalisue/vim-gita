@@ -225,10 +225,10 @@ function! gita#command#commit#bufname(options) abort
         \})
 endfunction
 function! gita#command#commit#call(...) abort
-  let options = gita#option#cascade('^commit$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
         \ 'amend': 0,
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(

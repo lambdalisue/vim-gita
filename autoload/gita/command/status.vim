@@ -177,9 +177,9 @@ function! gita#command#status#bufname(options) abort
         \})
 endfunction
 function! gita#command#status#call(...) abort
-  let options = gita#option#cascade('^status$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(

@@ -43,9 +43,9 @@ function! s:apply_command(git, filenames, options) abort
 endfunction
 
 function! gita#command#apply#call(...) abort
-  let options = gita#option#cascade('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   if empty(options.filenames)
     call gita#throw('ValidationError: "filenames" cannot be empty')

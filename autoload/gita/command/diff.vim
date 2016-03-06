@@ -159,13 +159,13 @@ function! gita#command#diff#bufname(options) abort
   endif
 endfunction
 function! gita#command#diff#call(...) abort
-  let options = gita#option#cascade('^diff$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'cached': 0,
         \ 'reverse': 0,
         \ 'commit': '',
         \ 'filename': '',
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
@@ -331,7 +331,7 @@ function! gita#command#diff#BufReadCmd(options) abort
   setlocal filetype=diff
 endfunction
 function! gita#command#diff#FileReadCmd(options) abort
-  let options = gita#option#cascade('^diff$', a:options, {
+  let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
@@ -340,7 +340,7 @@ function! gita#command#diff#FileReadCmd(options) abort
         \ 'unified': &diffopt =~# 'context:\d\+'
         \   ? matchstr(&diffopt, 'context:\zs\d\+')
         \   : 0,
-        \})
+        \}, a:options)
   let result = gita#command#diff#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,

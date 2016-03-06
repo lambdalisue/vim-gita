@@ -168,10 +168,10 @@ function! gita#command#show#bufname(options) abort
         \})
 endfunction
 function! gita#command#show#call(...) abort
-  let options = gita#option#cascade('^show$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \})
+        \}, get(a:000, 0, {}))
   if has_key(options, 'worktree')
     let options.commit = s:WORKTREE
     unlet options.worktree
@@ -278,12 +278,12 @@ function! gita#command#show#BufReadCmd(options) abort
   endif
 endfunction
 function! gita#command#show#FileReadCmd(options) abort
-  let options = gita#option#cascade('^show$', a:options, {
+  let options = extend({
         \ 'patch': 0,
         \ 'encoding': '',
         \ 'fileformat': '',
         \ 'bad': '',
-        \})
+        \}, get(a:000, 0, {}))
   let result = gita#command#show#call(options)
   call gita#util#buffer#read_content(result.content, {
         \ 'encoding': options.encoding,

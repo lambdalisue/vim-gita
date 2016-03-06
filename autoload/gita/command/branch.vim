@@ -130,10 +130,10 @@ function! gita#command#branch#bufname(options) abort
         \})
 endfunction
 function! gita#command#branch#call(...) abort
-  let options = gita#option#cascade('^branch$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'all': 0,
         \ 'remotes': 0,
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let content = s:get_branch_content(git, options)
   if options.remotes

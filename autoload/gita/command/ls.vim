@@ -115,9 +115,9 @@ function! gita#command#ls#bufname(options) abort
         \})
 endfunction
 function! gita#command#ls#call(...) abort
-  let options = gita#option#cascade('^ls$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

@@ -159,9 +159,9 @@ function! gita#command#diff_ls#bufname(options) abort
         \})
 endfunction
 function! gita#command#diff_ls#call(...) abort
-  let options = gita#option#cascade('^diff-ls$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let options['numstat'] = 1
   let result = gita#command#diff#call(options)

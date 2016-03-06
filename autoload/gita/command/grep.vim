@@ -175,11 +175,11 @@ function! gita#command#grep#bufname(options) abort
         \})
 endfunction
 function! gita#command#grep#call(...) abort
-  let options = gita#option#cascade('^grep$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'pattern': '',
         \ 'commit': '',
         \ 'directories': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_commit(options.commit, {
         \ '_allow_empty': 1,
