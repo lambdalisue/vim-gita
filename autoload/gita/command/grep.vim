@@ -205,9 +205,6 @@ function! gita#command#grep#open(...) abort
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = gita#command#grep#bufname(options)
-  if empty(bufname)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#grep#default_opener
         \ : options.opener

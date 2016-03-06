@@ -180,9 +180,6 @@ function! gita#command#diff_ls#open(...) abort
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = gita#command#diff_ls#bufname(options)
-  if empty(bufname)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#diff_ls#default_opener
         \ : options.opener

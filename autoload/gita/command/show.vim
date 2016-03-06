@@ -219,9 +219,6 @@ function! gita#command#show#open(...) abort
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = gita#command#show#bufname(options)
-  if empty(bufname)
-    return
-  endif
   if options.anchor && s:Anchor.is_available(options.opener)
     call s:Anchor.focus()
   endif

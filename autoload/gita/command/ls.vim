@@ -155,9 +155,6 @@ function! gita#command#ls#open(...) abort
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = gita#command#ls#bufname(options)
-  if empty(bufname)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#ls#default_opener
         \ : options.opener
