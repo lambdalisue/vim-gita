@@ -37,7 +37,7 @@ endfunction
 
 function! s:apply_command(name, options) abort
   let args = [a:name] + a:options.__unknown__
-  let git = gita#get()
+  let git = gita#core#get()
   if git.is_enabled
     let args = ['-C', git.worktree] + args
   endif
@@ -46,7 +46,7 @@ function! s:apply_command(name, options) abort
   if !v:shell_error
     if a:name ==# 'init'
       " Likely need to clear the cache of the current buffer
-      call gita#clear()
+      call gita#core#expire()
     else
       " Maybe status is modified
       call gita#util#doautocmd('User', 'GitaStatusModified')

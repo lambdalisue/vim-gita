@@ -63,7 +63,7 @@ function! s:save_commitmsg() abort
   call gita#meta#set('commitmsg_saved', s:get_current_commitmsg())
 endfunction
 function! s:commit_commitmsg() abort
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let options = gita#meta#get('options')
   let statuses = gita#meta#get('statuses')
   let staged_statuses = filter(copy(statuses), 'v:val.is_staged')
@@ -212,7 +212,7 @@ function! gita#command#commit#bufname(options) abort
         \ 'allow-empty': 0,
         \ 'filenames': [],
         \}, a:options)
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'commit',
@@ -229,7 +229,7 @@ function! gita#command#commit#call(...) abort
         \ 'filenames': [],
         \ 'amend': 0,
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
@@ -253,7 +253,7 @@ function! gita#command#commit#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:gita#command#commit#default_opener
         \ : options.opener
@@ -268,8 +268,6 @@ function! gita#command#commit#open(...) abort
   finally
     call guard.restore()
   endtry
-  " cascade git instance of previous buffer which open this buffer
-  let b:_git = git
   call gita#command#commit#edit(options)
 endfunction
 function! gita#command#commit#edit(...) abort
@@ -316,7 +314,7 @@ function! gita#command#commit#redraw() abort
   if &filetype !=# 'gita-commit'
     call gita#throw('redraw() requires to be called in a gita-commit buffer')
   endif
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let options = gita#meta#get('options')
 
   let commit_mode = ''

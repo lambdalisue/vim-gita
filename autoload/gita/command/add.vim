@@ -39,7 +39,7 @@ function! gita#command#add#call(...) abort
   let options = extend({
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if empty(options.filenames)
     let filenames = []
   else

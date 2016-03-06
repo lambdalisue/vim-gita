@@ -301,7 +301,7 @@ let s:schemes.rebase = {
 let s:schemes['rev-parse'] = {
       \ 'default': '--%k %v',
       \ 'prefix': '--%k %v',
-      \ 'resolve_git_dir': '--%k %v',
+      \ 'resolve-git-dir': '--%k %v',
       \ 'args': '%v',
       \}
 let s:schemes.show = {

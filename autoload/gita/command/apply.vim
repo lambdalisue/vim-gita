@@ -46,7 +46,7 @@ function! gita#command#apply#call(...) abort
   let options = gita#option#cascade('', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if empty(options.filenames)
     call gita#throw('ValidationError: "filenames" cannot be empty')
   endif

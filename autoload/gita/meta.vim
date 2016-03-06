@@ -2,11 +2,12 @@ let s:V = vital#of('vim_gita')
 let s:Prelude = s:V.import('Prelude')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Path = s:V.import('System.Filepath')
+let s:NAME = '_gita_meta'
 
 function! s:get_meta_instance(bufnum) abort
-  let meta = s:Compat.getbufvar(a:bufnum, '_gita_meta', {})
+  let meta = s:Compat.getbufvar(a:bufnum, s:NAME, {})
   if bufexists(a:bufnum)
-    call setbufvar(a:bufnum, '_gita_meta', meta)
+    call setbufvar(a:bufnum, s:NAME, meta)
   endif
   return meta
 endfunction
@@ -39,6 +40,11 @@ function! gita#meta#remove(name, ...) abort
   if has_key(meta, a:name)
     unlet meta[a:name]
   endif
+endfunction
+
+function! gita#meta#clear(...) abort
+  let expr = get(a:000, 0, '%')
+  call setbufvar(expr, s:NAME, {})
 endfunction
 
 function! gita#meta#expand(expr) abort

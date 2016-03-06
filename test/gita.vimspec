@@ -5,149 +5,27 @@ let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 let s:file = s:Path.realpath('autoload/gita.vim')
 
 Describe gita
-  Before
-    Init
-    let Path = s:Path
-    let sf = s:ScriptLocal.sfuncs(s:file)
-    let sv = s:ScriptLocal.svars(s:file)
-    let guard = s:Guard.store(
-          \ 'b:_git',
-          \ 'b:_gita_meta',
-          \ ['repository_cache', sv],
-          \)
-  End
-  After
-    call guard.restore()
-  End
-
-  Describe s:get_repository_cache()
-    It returns a cache instance [singleton]
-      let result = sf.get_repository_cache()
-      Assert KeyExists(result, 'has')
-      Assert KeyExists(result, 'get')
-      Assert KeyExists(result, 'set')
-      let result2 = sf.get_repository_cache()
-      Assert Same(result, result2)
-    End
-  End
-
-  Describe #get([{expr}])
-    Context A file buffer in a git repository
-      Before
-        WorkonInside
-        let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It returns a git instance
-        let git = gita#get(bufname)
-        Assert Equals(git.is_enabled, 1)
-      End
-      It returns a same git instance
-        let git1 = gita#get(bufname)
-        let git2 = gita#get(bufname)
-        Assert Same(git1, git2)
-      End
-      It returns a same git instance for a same repository
-        let git1 = gita#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
-        let git2 = gita#get(bufname . '.mod')
-        Assert Same(git1, git2)
-      End
-    End
-
-    Context A file buffer in a non git repository
-      Before
-        WorkonInside
-        let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It returns a git instance while cwd is in a git repository
-        let git = gita#get(bufname)
-        Assert Equals(git.is_enabled, 1)
-      End
-      It returns a git instance but not enabled if cwd is not in a git repository
-        WorkonOutside
-        let git = gita#get(bufname)
-        Assert Equals(git.is_enabled, 0)
-      End
-      It returns a same git instance
-        let git1 = gita#get(bufname)
-        let git2 = gita#get(bufname)
-        Assert Same(git1, git2)
-      End
-      It does not return a same git instance if bufname has changed
-        let git1 = gita#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
-        let git2 = gita#get(bufname . '.mod')
-        Assert Same(git1, git2)
-      End
-    End
-
-    Context A non file buffer
-      Before
-        WorkonInside
-        let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
-        setlocal buftype=nofile
-      End
-      It returns a git instance while cwd is in a git repository
-        let git = gita#get(bufname)
-        Assert Equals(git.is_enabled, 1)
-      End
-      It returns a git instance but not enabled if cwd is not in a git repository
-        WorkonOutside
-        let git = gita#get(bufname)
-        Assert Equals(git.is_enabled, 0)
-      End
-      It returns a same git instance
-        let git1 = gita#get(bufname)
-        let git2 = gita#get(bufname)
-        Assert Same(git1, git2)
-      End
-      It does not return a same git instance if a current working directory has changed
-        let git1 = gita#get(bufname)
-        WorkonOutside
-        let git2 = gita#get(bufname)
-        Assert NotSame(git1, git2)
-      End
-    End
-  End
-
-  Describe #get_meta({name}[, {default}, {expr}])
-    It returns a value of {name} is a buffer variable
-      let b:_gita_meta = { 'foo': 'foo', 'bar': 'bar' }
-      Assert Equals(gita#meta#get('foo'), 'foo')
-      Assert Equals(gita#meta#get('bar'), 'bar')
-    End
-    It returns {default} if {name} is missing is a buffer variable
-      Assert Equals(gita#meta#get('foo', 'bar'), 'bar')
-      Assert Equals(gita#meta#get('bar', 'foo'), 'foo')
-    End
-  End
-
-  Describe #set_meta({name}, {value}[, {expr}])
-    It set {value} to {name} in a buffer variable
-      call gita#meta#set('foo', 'bar')
-      call gita#meta#set('bar', 'foo')
-      Assert Equals(b:_gita_meta, { 'foo': 'bar', 'bar': 'foo' })
-    End
-  End
-
-  Describe #expand({expr})
-    It expand {expr}
-      file foobar
-      Assert Equals(gita#meta#expand('%'), Path.abspath('foobar'))
-    End
-    It expand b:_gita_meta.filename if available
-      file foobar
-      call gita#meta#set('filename', 'hogehoge')
-      Assert Equals(gita#meta#expand('%'), Path.abspath('hogehoge'))
+  Describe #vital()
+    It returns a Vital instance
+      let instance = gita#vital()
+      Assert KeyExists(instance, 'import')
     End
   End
 
   Describe #throw({msg})
     It throw an exception with a prefix
       Throws /^vim-gita: foo$/ gita#throw('foo')
+    End
+  End
+
+  Describe #execute({git}, {name}[, {options}, {config})
+    It executes a {name} git command
+      let result = gita#execute(gita#core#get(), 'rev-parse', {
+            \ 'is-inside-work-tree': 1,
+            \})
+      Assert Equals(result.status, 0)
+      Assert Equals(result.stdout, "true\n")
+      Assert Equals(result.content, ['true'])
     End
   End
 End

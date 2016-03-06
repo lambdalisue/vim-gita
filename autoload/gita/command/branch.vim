@@ -116,7 +116,7 @@ function! gita#command#branch#bufname(options) abort
         \ 'all': 0,
         \ 'remotes': 0,
         \}, a:options)
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'branch',
@@ -134,7 +134,7 @@ function! gita#command#branch#call(...) abort
         \ 'all': 0,
         \ 'remotes': 0,
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let content = s:get_branch_content(git, options)
   if options.remotes
     let content = map(
@@ -154,7 +154,7 @@ function! gita#command#branch#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:gita#command#branch#default_opener
         \ : options.opener
@@ -163,8 +163,6 @@ function! gita#command#branch#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  " cascade git instance of previous buffer which open this buffer
-  let b:_git = git
   call gita#command#branch#edit(options)
 endfunction
 function! gita#command#branch#edit(...) abort
@@ -192,7 +190,7 @@ function! gita#command#branch#edit(...) abort
   call gita#command#branch#redraw()
 endfunction
 function! gita#command#branch#redraw() abort
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let branches = gita#meta#get('branches', [])
   let contents = s:format_branches(branches)

@@ -50,7 +50,7 @@ endfunction
 function! gita#command#rebase#call(...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let content = s:apply_command(git, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {

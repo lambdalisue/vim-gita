@@ -2,6 +2,7 @@ let s:V = vital#of('vim_gita')
 let s:Path = s:V.import('System.Filepath')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Git = s:V.import('Git')
+let s:NAME = '_gita_refinfo'
 let s:references = {}
 
 function! s:get_available_refname(refname) abort
@@ -47,7 +48,7 @@ function! s:get_for_external(expr, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let refinfo = s:Compat.getbufvar(a:expr, '_gita_refinfo', {})
+  let refinfo = s:Compat.getbufvar(a:expr, s:NAME, {})
   if !empty(refinfo) && !options.force && !s:is_expired(a:expr, refinfo)
     return refinfo.git
   endif
@@ -83,7 +84,7 @@ function! s:new_for_external(expr, options) abort
   endif
   " save reference info to the buffer if the buffer exists
   if bufexists(a:expr)
-    call setbufvar(a:expr, '_gita_refinfo', {
+    call setbufvar(a:expr, s:NAME, {
           \ 'git': git,
           \ 'bufname': bufname(a:expr),
           \ 'cwd': getcwd(),
@@ -112,7 +113,7 @@ function! gita#core#get_or_fail(...) abort
   call gita#throw(
         \ 'Attention:',
         \ printf('Git is not available on "%s" buffer.', expand(expr)),
-        \ 'Call ":GitaClear" if you would like to remove cache.',
+        \ 'Call ":call gita#core#expire()" to remove cache if you feel it is incorrect.',
         \)
 endfunction
 

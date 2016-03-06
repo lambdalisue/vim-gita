@@ -180,7 +180,7 @@ function! s:on_BufWritePre() abort
 endfunction
 function! s:on_BufWritePost() abort
   if get(b:, '_gita_statusline_modified', &modified) != &modified
-    let git = gita#get()
+    let git = gita#core#get()
     if git.is_enabled
       call s:get_format_cache(git).clear()
     endif
@@ -188,7 +188,7 @@ function! s:on_BufWritePost() abort
   silent! unlet! b:_gita_statusline_modified
 endfunction
 function! s:on_GitaStatusModified() abort
-  let git = gita#get()
+  let git = gita#core#get()
   if git.is_enabled
     call s:get_format_cache(git).clear()
     for key in filter(git.repository_cache.keys(), 'v:val =~# "^gita#statusline"')
@@ -199,7 +199,7 @@ endfunction
 
 function! gita#statusline#format(format) abort
   try
-    let git = gita#get_or_fail()
+    let git = gita#core#get_or_fail()
     let format_cache = s:get_format_cache(git)
     if format_cache.has(a:format) && !s:is_repository_updated(git)
       return format_cache.get(a:format)

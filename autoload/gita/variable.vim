@@ -150,7 +150,7 @@ function! gita#variable#complete_commit(arglead, cmdline, cursorpos, ...) abort
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
-    let git = gita#get_or_fail()
+    let git = gita#core#get_or_fail()
     let complete_branches = s:GitInfo.get_available_branches(git, options)
     let complete_tags = s:GitInfo.get_available_tags(git, options)
     if !empty(a:arglead)
@@ -171,7 +171,7 @@ function! gita#variable#complete_filename(arglead, cmdline, cursorpos, ...) abor
   let options = get(s:, '_complete_options', {})
   let options = extend(options, get(a:000, 0, {}))
   try
-    let git = gita#get_or_fail()
+    let git = gita#core#get_or_fail()
     let filenames = s:GitInfo.get_available_filenames(git, options)
     " NOTE:
     " Filter filenames exists under the current working directory

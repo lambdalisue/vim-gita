@@ -113,7 +113,7 @@ function! s:on_BufWriteCmd() abort
   " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try
-    let git = gita#get_or_fail()
+    let git = gita#core#get_or_fail()
     let filename = gita#meta#get('filename', '')
     let options  = gita#meta#get('options', {})
     let content  = s:get_diff_content(git, getline(1, '$'), filename, options)
@@ -151,7 +151,7 @@ function! gita#command#show#bufname(options) abort
     endif
     return s:Path.relpath(gita#variable#get_valid_filename(options.filename))
   endif
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -176,7 +176,7 @@ function! gita#command#show#call(...) abort
     let options.commit = s:WORKTREE
     unlet options.worktree
   endif
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if options.commit ==# s:WORKTREE
     let commit = options.commit
   else

@@ -101,7 +101,7 @@ function! gita#command#ls#bufname(options) abort
   let options = extend({
         \ 'commit': '',
         \}, a:options)
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -118,7 +118,7 @@ function! gita#command#ls#call(...) abort
   let options = gita#option#cascade('^ls$', get(a:000, 0, {}), {
         \ 'commit': '',
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -154,7 +154,7 @@ function! gita#command#ls#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:gita#command#ls#default_opener
         \ : options.opener
@@ -169,8 +169,6 @@ function! gita#command#ls#open(...) abort
   finally
     call guard.restore()
   endtry
-  " cascade git instance of previous buffer which open this buffer
-  let b:_git = git
   call gita#command#ls#edit(options)
 endfunction
 function! gita#command#ls#edit(...) abort
@@ -196,7 +194,7 @@ function! gita#command#ls#edit(...) abort
   call gita#command#ls#redraw()
 endfunction
 function! gita#command#ls#redraw() abort
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let candidates = gita#meta#get('candidates', [])
   let contents = map(

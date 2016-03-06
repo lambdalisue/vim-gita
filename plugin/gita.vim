@@ -3,7 +3,7 @@ if exists('g:loaded_gita') && get(g:, 'gita#develop')
 endif
 let g:loaded_gita = 1
 
-command! GitaClear :call gita#clear()
+command! GitaClear :call gita#core#expire()
 command! -nargs=? -range -bang
       \ -complete=customlist,gita#command#complete
       \ Gita

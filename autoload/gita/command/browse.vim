@@ -107,7 +107,7 @@ function! gita#command#browse#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let local_branch = s:GitInfo.get_local_branch(git)
   let commit = empty(options.commit) ? local_branch.name : options.commit
   let commit = gita#variable#get_valid_range(commit)

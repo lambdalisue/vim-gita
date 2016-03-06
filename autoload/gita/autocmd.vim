@@ -116,7 +116,7 @@ function! s:on_BufWritePre() abort
 endfunction
 function! s:on_BufWritePost() abort
   if get(b:, '_gita_autocmd_modified', &modified) != &modified
-    if gita#get().is_enabled
+    if gita#core#get().is_enabled
       call gita#util#doautocmd('User', 'GitaStatusModified')
     endif
   endif
@@ -137,7 +137,7 @@ function! gita#autocmd#call(name) abort
   endtry
 endfunction
 function! gita#autocmd#parse(expr) abort
-  let git = gita#get_or_fail(a:expr)
+  let git = gita#core#get_or_fail(a:expr)
   let result = s:parse_filename(expand(a:expr))
   let [commit, unixpath] = s:GitTerm.split_treeish(result.treeish, {
         \ '_allow_range': 1,

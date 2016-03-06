@@ -145,7 +145,7 @@ function! gita#command#diff_ls#bufname(options) abort
   let options = extend({
         \ 'commit': '',
         \}, a:options)
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})
@@ -162,7 +162,7 @@ function! gita#command#diff_ls#call(...) abort
   let options = gita#option#cascade('^diff-ls$', get(a:000, 0, {}), {
         \ 'commit': '',
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let options['numstat'] = 1
   let result = gita#command#diff#call(options)
   let stats = s:GitParser.parse_numstat(result.content)
@@ -179,7 +179,7 @@ function! gita#command#diff_ls#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:gita#command#diff_ls#default_opener
         \ : options.opener
@@ -194,8 +194,6 @@ function! gita#command#diff_ls#open(...) abort
   finally
     call guard.restore()
   endtry
-  " cascade git instance of previous buffer which open this buffer
-  let b:_git = git
   call gita#command#diff_ls#edit(options)
 endfunction
 function! gita#command#diff_ls#edit(...) abort
@@ -224,7 +222,7 @@ function! gita#command#diff_ls#edit(...) abort
   call gita#command#diff_ls#redraw()
 endfunction
 function! gita#command#diff_ls#redraw() abort
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let stats = gita#meta#get('stats', [])
   let contents = s:format_stats(stats, winwidth(0))

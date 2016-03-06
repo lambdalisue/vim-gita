@@ -47,7 +47,7 @@ function! gita#command#checkout#call(...) abort
         \ 'commit': '',
         \ 'filenames': [],
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
         \})

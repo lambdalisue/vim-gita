@@ -165,7 +165,7 @@ function! gita#command#status#bufname(options) abort
   let options = extend({
         \ 'filenames': [],
         \}, a:options)
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   return gita#autocmd#bufname(git, {
         \ 'filebase': 0,
         \ 'content_type': 'status',
@@ -180,7 +180,7 @@ function! gita#command#status#call(...) abort
   let options = gita#option#cascade('^status$', get(a:000, 0, {}), {
         \ 'filenames': [],
         \})
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if !empty(options.filenames)
     let filenames = map(
           \ copy(options.filenames),
@@ -204,7 +204,7 @@ function! gita#command#status#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let opener = empty(options.opener)
         \ ? g:gita#command#status#default_opener
         \ : options.opener
@@ -219,8 +219,6 @@ function! gita#command#status#open(...) abort
   finally
     call guard.restore()
   endtry
-  " cascade git instance of previous buffer which open this buffer
-  let b:_git = git
   call gita#command#status#edit(options)
 endfunction
 function! gita#command#status#edit(...) abort
@@ -253,7 +251,7 @@ function! gita#command#status#redraw() abort
   if &filetype !=# 'gita-status'
     call gita#throw('redraw() requires to be called in a gita-status buffer')
   endif
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let statuses = gita#meta#get('statuses', [])
   let contents = s:format_statuses(statuses)
@@ -342,7 +340,7 @@ function! gita#command#status#define_syntax() abort
   syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
 endfunction
 function! gita#command#status#_get_header_string() abort
-  let git = gita#get()
+  let git = gita#core#get()
   if git.is_enabled
     return s:get_header_string(git)
   else

@@ -43,7 +43,7 @@ function! gita#command#merge#call(...) abort
   let options = extend({
         \ 'commits': [],
         \}, get(a:000, 0, {}))
-  let git = gita#get_or_fail()
+  let git = gita#core#get_or_fail()
   if empty(options.commits)
     let commits = []
   else
