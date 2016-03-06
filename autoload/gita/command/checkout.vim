@@ -43,10 +43,10 @@ function! s:apply_command(git, commit, filenames, options) abort
 endfunction
 
 function! gita#command#checkout#call(...) abort
-  let options = gita#option#cascade('', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
         \ 'filenames': [],
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,

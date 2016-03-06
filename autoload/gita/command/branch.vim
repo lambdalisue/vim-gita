@@ -130,10 +130,10 @@ function! gita#command#branch#bufname(options) abort
         \})
 endfunction
 function! gita#command#branch#call(...) abort
-  let options = gita#option#cascade('^branch$', get(a:000, 0, {}), {
+  let options = extend({
         \ 'all': 0,
         \ 'remotes': 0,
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let content = s:get_branch_content(git, options)
   if options.remotes
@@ -154,11 +154,10 @@ function! gita#command#branch#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
+  let bufname = gita#command#branch#bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#branch#default_opener
         \ : options.opener
-  let bufname = gita#command#branch#bufname(options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',

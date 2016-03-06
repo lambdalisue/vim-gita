@@ -263,10 +263,10 @@ function! s:call_pseudo_command(...) abort
 endfunction
 
 function! gita#command#blame#call(...) abort
-  let options = gita#option#cascade('blame', get(a:000, 0, {}), {
+  let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \})
+        \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit, {
         \ '_allow_empty': 1,
