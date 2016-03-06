@@ -272,8 +272,24 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
-          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--ignored',
+          \ 'show ignored files as well'
+          \)
+    call s:parser.add_argument(
+          \ '--ignore-submodules',
+          \ 'ignore changes to submodules when looking for changes', {
+          \   'choices': ['none', 'untracked', 'dirty', 'all'],
+          \   'on_default': 'all',
+          \})
+    call s:parser.add_argument(
+          \ '--untracked-files', '-u',
+          \ 'show untracked files, optional modes: all, normal, no', {
+          \   'choices': ['all', 'normal', 'no'],
+          \   'on_default': 'all',
           \})
   endif
   return s:parser
