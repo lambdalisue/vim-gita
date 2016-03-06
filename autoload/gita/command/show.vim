@@ -63,7 +63,7 @@ function! s:get_diff_content(git, content, filename, options) abort
     if empty(result) || empty(result.content) || len(result.content) < 4
       " fail or no differences. Assume that there are no differences
       call s:Prompt.debug(result)
-      if g:gita#debug >= 2
+      if &verbose >= 2
         call s:Prompt.debug(result.content)
       endif
       call gita#throw('Attention: No differences are detected')

@@ -18,14 +18,14 @@ function! gita#execute(git, name, ...) abort
         \})
   let options = get(a:000, 0, {})
   let config  = get(a:000, 1, {})
-  if !g:gita#debug
+  if !&verbose
     return s:GitProcess.execute(a:git, a:name, options, config)
   else
     let result = s:GitProcess.execute(a:git, a:name, options, config)
     call s:Prompt.debug(printf(
           \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
           \))
-    if g:gita#debug >= 2
+    if &verbose >= 2
       call s:Prompt.debug(printf(
             \ '| status: %d', result.status,
             \))
@@ -42,7 +42,7 @@ endfunction
 
 function! s:is_debug() abort
   " Used to tell if gita is in debug mode
-  return g:gita#debug || &verbose
+  return &verbose
 endfunction
 
 function! s:is_batch() abort
@@ -56,7 +56,6 @@ call s:Prompt.set_config({
       \})
 call gita#util#define_variables('', {
       \ 'test': 0,
-      \ 'debug': 0,
       \ 'develop': 1,
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
