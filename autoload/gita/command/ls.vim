@@ -154,11 +154,13 @@ function! gita#command#ls#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
+  let bufname = gita#command#ls#bufname(options)
+  if empty(bufname)
+    return
+  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#ls#default_opener
         \ : options.opener
-  let bufname = gita#command#ls#bufname(options)
   let guard = s:Guard.store('&eventignore')
   try
     set eventignore+=BufReadCmd

@@ -154,11 +154,13 @@ function! gita#command#branch#open(...) abort
   let options = extend({
         \ 'opener': '',
         \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
+  let bufname = gita#command#branch#bufname(options)
+  if empty(bufname)
+    return
+  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#branch#default_opener
         \ : options.opener
-  let bufname = gita#command#branch#bufname(options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
