@@ -3,6 +3,7 @@ if exists('b:current_syntax')
 endif
 let b:current_syntax = 'gita-ls-files'
 
+highlight default link GitaComment Comment
+
 syntax clear
-call gita#command#ui#ls_files#define_highlights()
-call gita#command#ui#ls_files#define_syntax()
+syntax match GitaComment /\%^.*$/

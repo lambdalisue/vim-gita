@@ -1,4 +1,8 @@
-let s:registry = {}
+let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
+if !exists('s:registry')
+  let s:registry = {}
+endif
 
 function! s:on_BufWritePre() abort
   let b:_gita_internal_observer_modified = &modified
@@ -13,24 +17,32 @@ function! s:on_BufWritePost() abort
   endif
 endfunction
 
-function! gita#observer#attach(bufnum, ...) abort
-  let command = get(a:000, 0, 'edit')
-  let s:registry[a:bufnum] = command
+function! gita#observer#attach(...) abort
+  let bufnum  = get(a:000, 0, bufnr('%'))
+  let Command = get(a:000, 1, 'edit')
+  let s:registry[bufnum] = Command
 endfunction
 
-function! gita#observer#detach(bufnum) abort
-  if has_key(s:registry, a:bufnum)
-    unlet s:registry[a:bufnum]
+function! gita#observer#detach(...) abort
+  let bufnum  = get(a:000, 0, bufnr('%'))
+  if has_key(s:registry, bufnum)
+    unlet s:registry[bufnum]
   endif
 endfunction
 
 function! gita#observer#update_all() abort
   let winnum_saved = winnr()
-  for [bufnum, command] in items(s:registry)
-    if bufexists(bufnum) && bufwinnr(bufnum)
-      execute printf('keepjumps %d wincmd w', bufwinnr(bufnum))
-      execute command
+  for [bufnum, Command] in items(s:registry)
+    let winnum = bufwinnr(bufname(bufnum))
+    if winnum >= 0
+      execute printf('keepjumps %dwincmd w', winnum)
+      if s:Prelude.is_funcref(Command)
+        call call(Command, [])
+      else
+        execute Command
+      endif
     endif
+    unlet Command
   endfor
   execute printf('keepjumps %dwincmd w', winnum_saved)
 endfunction

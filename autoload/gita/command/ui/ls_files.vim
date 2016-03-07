@@ -74,6 +74,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call s:Anchor.register()
+  call gita#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-ls-files
   setlocal buftype=nofile nobuflisted
