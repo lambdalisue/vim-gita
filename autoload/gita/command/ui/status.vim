@@ -165,15 +165,18 @@ endfunction
 function! gita#command#ui#status#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
+  let s:candidate_offset = len(prologue)
   let contents = s:format_statuses(gita#meta#get_for('status', 'statuses', []))
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
         \ gita#autocmd#parse_cmdarg(),
         \)
-  let s:candidate_offset = len(prologue)
 endfunction
 
 function! gita#command#ui#status#parse_statuses(content) abort
+  if empty(a:content)
+    return []
+  endif
   let git = gita#core#get_or_fail()
   let statuses = s:GitParser.parse_status(a:content, {
         \ 'fail_silently': 0,

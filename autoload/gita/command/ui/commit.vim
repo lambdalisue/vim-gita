@@ -267,9 +267,9 @@ function! gita#command#ui#commit#redraw() abort
         \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
         \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \])
+  let s:candidate_offset = len(prologue)
   let statuses = gita#meta#get_for('commit', 'statuses', [])
   let contents = map(copy(statuses), '"# " . v:val.record')
-  let s:candidate_offset = len(prologue)
   call gita#util#buffer#edit_content(
         \ commitmsg + prologue + contents,
         \ gita#autocmd#parse_cmdarg(),

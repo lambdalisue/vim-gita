@@ -124,9 +124,9 @@ function! gita#command#ui#ls_files#redraw(...) abort
         \ 'bad': '',
         \})
   let prologue = [s:get_header_string(git)]
+  let s:candidate_offset = len(prologue)
   let candidates = gita#meta#get_for('ls-files', 'candidates', [])
   let contents = map(copy(candidates), 'v:val.relpath')
-  let s:candidate_offset = len(prologue)
   call gita#util#buffer#edit_content(extend(prologue, contents), {
         \ 'encoding': options.encoding,
         \ 'fileformat': options.fileformat,

@@ -196,9 +196,9 @@ endfunction
 function! gita#command#ui#diff_ls#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
+  let s:candidate_offset = len(prologue)
   let stats = gita#meta#get_for('diff-ls', 'stats', [])
   let contents = s:format_stats(stats, winwidth(0))
-  let s:candidate_offset = len(prologue)
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
         \ gita#autocmd#parse_cmdarg(),
