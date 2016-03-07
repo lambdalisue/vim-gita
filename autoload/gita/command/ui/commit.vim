@@ -118,6 +118,7 @@ function! s:commit_commitmsg() abort
     call gita#meta#remove('commitmsg_saved', '')
     call gita#meta#set('options', {})
     silent keepjumps %delete _
+    setlocal nomodified
     call gita#util#doautocmd('User', 'GitaStatusModified')
   finally
     call delete(tempfile)
