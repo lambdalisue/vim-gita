@@ -184,12 +184,12 @@ function! gita#command#grep#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#grep#default_options),
         \ options,
         \)
+  call gita#option#assign_commit(options)
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)

@@ -35,7 +35,7 @@ function! s:open1(options) abort
         \ 'window': '',
         \ 'selection': [],
         \}, a:options)
-  let bufname = gita#command#ui#diff#bufname(options)
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#diff#default_opener
         \ : options.opener

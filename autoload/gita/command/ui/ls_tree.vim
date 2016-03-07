@@ -112,7 +112,7 @@ function! gita#command#ui#ls_tree#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#ls_tree#bufname(options)
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#ls_tree#default_opener
         \ : options.opener

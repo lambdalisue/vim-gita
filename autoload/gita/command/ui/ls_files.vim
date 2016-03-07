@@ -94,7 +94,7 @@ function! gita#command#ui#ls_files#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#ls_files#bufname(options)
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#ls_files#default_opener
         \ : options.opener

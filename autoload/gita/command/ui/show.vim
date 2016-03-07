@@ -191,6 +191,7 @@ endfunction
 
 
 function! gita#command#ui#show#autocmd(name) abort
+  let git = gita#get_or_fail()
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita://[^:\\/]\+\%(:show\)\?:\([^\\/]\+\)[\\/]\(.*\)$')
   if empty(m)
