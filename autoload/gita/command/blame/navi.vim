@@ -112,28 +112,7 @@ function! gita#command#blame#navi#redraw() abort
   call gita#command#blame#_set_pseudo_separators(blamemeta.separators)
 endfunction
 
-function! gita#command#blame#navi#define_highlights() abort
-  highlight default link GitaHorizontal Comment
-  highlight default link GitaSummary    Title
-  highlight default link GitaMetaInfo   Comment
-  highlight default link GitaAuthor     Identifier
-  highlight default link GitaNotCommittedYet Constant
-  highlight default link GitaTimeDelta  Comment
-  highlight default link GitaRevision   String
-  highlight default link GitaLineNr     LineNr
-endfunction
-function! gita#command#blame#navi#define_syntax() abort
-  syntax match GitaSummary   /.*/ contains=GitaLineNr,GitaMetaInfo
-  syntax match GitaLineNr    /^\s*[0-9]\+/
-  syntax match GitaMetaInfo  /\%(\w\+ authored\|Not committed yet\) .*$/
-        \ contains=GitaAuthor,GitaNotCommittedYet,GitaTimeDelta,GitaRevision
-  syntax match GitaAuthor    /\w\+\ze authored/ contained
-  syntax match GitaNotCommittedYet /Not committed yet/ contained
-  syntax match GitaTimeDelta /authored \zs.*\ze\s\+[0-9a-fA-F]\{7}$/ contained
-  syntax match GitaRevision  /[0-9a-fA-F]\{7}$/ contained
-endfunction
-
-call gita#util#define_variables('command#blame#navi', {
+call gita#util#define_variables('command#ui#blame_navi', {
       \ 'default_opener': 'leftabove 50 vsplit',
       \ 'enable_default_mappings': 1,
       \})
