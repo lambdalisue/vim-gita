@@ -1,17 +1,8 @@
 let s:V = gita#vital()
-let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
-let s:Path = s:V.import('System.Filepath')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:StringExt = s:V.import('Data.StringExt')
-let s:Git = s:V.import('Git')
-let s:GitInfo = s:V.import('Git.Info')
-let s:GitTerm = s:V.import('Git.Term')
-let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-let s:entry_offset = 0
 
 function! s:pick_available_options(options) abort
   " Note:
@@ -37,12 +28,10 @@ function! s:pick_available_options(options) abort
         \])
   return options
 endfunction
+
 function! s:get_branch_content(git, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
-  let options['no-column'] = 1
-  let options['no-color'] = 1
-  let options['no-abbrev'] = 1
   let result = gita#execute(a:git, 'branch', options)
   if result.status
     call s:GitProcess.throw(result.stdout)
@@ -53,82 +42,6 @@ function! s:get_branch_content(git, options) abort
   return result.content
 endfunction
 
-function! s:format_branch(branch) abort
-  return a:branch.record
-endfunction
-function! s:format_branches(branches) abort
-  return map(copy(a:branches), 's:format_branch(v:val)')
-endfunction
-function! s:get_header_string(git) abort
-  let branches = gita#meta#get('branches', [])
-  let nbranches = len(branches)
-  return printf(
-        \ 'There are %d branch%s %s',
-        \ nbranches,
-        \ nbranches == 1 ? '' : 'es',
-        \ '| Press ? to toggle a mapping help',
-        \)
-endfunction
-
-function! s:get_entry(index) abort
-  let index = a:index - s:entry_offset
-  let candidates = gita#meta#get('branches', [])
-  return index >= 0 ? get(candidates, index, {}) : {}
-endfunction
-function! s:define_actions() abort
-  call gita#action#attach(function('s:get_entry'))
-  call gita#action#include([
-        \ 'common', 'branch', 'merge', 'rebase',
-        \], g:gita#command#branch#disable_default_mappings)
-
-  if g:gita#command#branch#disable_default_mappings
-    return
-  endif
-  execute printf(
-        \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#branch#default_action_mapping
-        \)
-endfunction
-
-function! s:on_BufReadCmd() abort
-  try
-    call gita#command#branch#edit()
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-function! s:on_GitaStatusModified() abort
-  try
-    let winnum = winnr()
-    keepjump windo
-          \ if &filetype ==# 'gita-branch' |
-          \   call gita#command#branch#edit() |
-          \ endif
-    execute printf('keepjump %dwincmd w', winnum)
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
-function! gita#command#branch#bufname(options) abort
-  let options = extend({
-        \ 'list': '',
-        \ 'all': 0,
-        \ 'remotes': 0,
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
-        \ 'content_type': 'branch',
-        \ 'extra_options': [
-        \   empty(options.list) ? '' : options.list,
-        \   empty(options.all) ? '' : 'all',
-        \   empty(options.remotes) ? '' : 'remotes',
-        \ ],
-        \ 'commitish': '',
-        \ 'path': '',
-        \})
-endfunction
 function! gita#command#branch#call(...) abort
   let options = extend({
         \ 'all': 0,
@@ -142,59 +55,11 @@ function! gita#command#branch#call(...) abort
           \ 'substitute(v:val, "^\\(..\\)", "\\1remotes/", "")'
           \)
   endif
-  let branches = s:GitParser.parse_branch(content)
   let result = {
         \ 'content': content,
-        \ 'branches': branches,
         \ 'options': options,
         \}
   return result
-endfunction
-function! gita#command#branch#open(...) abort
-  let options = extend({
-        \ 'opener': '',
-        \}, get(a:000, 0, {}))
-  let bufname = gita#command#branch#bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#command#branch#default_opener
-        \ : options.opener
-  call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'window': 'manipulation_panel',
-        \})
-  call gita#command#branch#edit(options)
-endfunction
-function! gita#command#branch#edit(...) abort
-  let options = gita#option#cascade('^branch$', {}, get(a:000, 0, {}))
-  let options['quiet'] = 1
-  let result = gita#command#branch#call(options)
-  call gita#meta#set('content_type', 'branch')
-  call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'quiet',
-        \]))
-  call gita#meta#set('branches', result.branches)
-  call gita#meta#set('winwidth', winwidth(0))
-  call s:define_actions()
-  call s:Anchor.register()
-  augroup vim_gita_internal_branch
-    autocmd! * <buffer>
-    autocmd BufReadCmd <buffer> nested call s:on_BufReadCmd()
-  augroup END
-  " the following options are required so overwrite everytime
-  setlocal filetype=gita-branch
-  setlocal buftype=nofile nobuflisted
-  setlocal nowrap
-  setlocal cursorline
-  setlocal nomodifiable
-  call gita#command#branch#redraw()
-endfunction
-function! gita#command#branch#redraw() abort
-  let git = gita#core#get_or_fail()
-  let prologue = [s:get_header_string(git)]
-  let branches = gita#meta#get('branches', [])
-  let contents = s:format_branches(branches)
-  let s:entry_offset = len(prologue)
-  call gita#util#buffer#edit_content(extend(prologue, contents))
 endfunction
 
 function! s:get_parser() abort
@@ -273,13 +138,27 @@ function! s:get_parser() abort
           \   'complete': function('gita#variable#complete_commit'),
           \})
     call s:parser.add_argument(
+          \ '--ui',
+          \ 'show a buffer instead of echo the result. imply --quiet', {
+          \   'default': 1,
+          \   'deniable': 1,
+          \})
+    call s:parser.add_argument(
           \ '--opener', '-o',
-          \ 'A way to open a new buffer such as "edit", "split", etc.', {
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \   'superordinates': ['ui'],
+          \})
+    call s:parser.add_argument(
+          \ '--selection',
+          \ 'a line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \   'superordinates': ['ui'],
           \})
   endif
   return s:parser
 endfunction
+
 function! gita#command#branch#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -291,31 +170,20 @@ function! gita#command#branch#command(...) abort
         \ deepcopy(g:gita#command#branch#default_options),
         \ options,
         \)
-  call gita#command#branch#open(options)
+  if get(options, 'ui')
+    call gita#option#assign_selection(options)
+    call gita#option#assign_opener(options)
+    call gita#command#ui#branch#open(options)
+  else
+    call gita#command#branch#call(options)
+  endif
 endfunction
+
 function! gita#command#branch#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
-function! gita#command#branch#define_highlights() abort
-  highlight default link GitaComment    Comment
-  highlight default link GitaSelected   Special
-  highlight default link GitaRemote     Constant
-endfunction
-function! gita#command#branch#define_syntax() abort
-  syntax match GitaComment    /\%^.*$/
-  syntax match GitaSelected   /^\* [^ ]\+/hs=s+2
-  syntax match GitaRemote     /^..remotes\/[^ ]\+/hs=s+2
-endfunction
-
-augroup vim_gita_internal_branch_update
-  autocmd!
-  autocmd User GitaStatusModified call s:on_GitaStatusModified()
-augroup END
 
 call gita#util#define_variables('command#branch', {
       \ 'default_options': {},
-      \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-branch-checkout)',
-      \ 'disable_default_mappings': 0,
       \})
