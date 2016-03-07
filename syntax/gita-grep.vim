@@ -3,6 +3,6 @@ if exists('b:current_syntax')
 endif
 let b:current_syntax = 'gita-grep'
 
-syntax clear
-call gita#command#grep#define_highlights()
-call gita#command#grep#define_syntax()
+highlight default link GitaComment    Comment
+highlight default link GitaKeyword    Keyword
+
