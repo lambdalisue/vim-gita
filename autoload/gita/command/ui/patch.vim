@@ -1,6 +1,3 @@
-let s:V = gita#vital()
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-
 function! s:open1(options) abort
   let options = extend({
         \ 'reverse': 0,

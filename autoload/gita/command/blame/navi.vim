@@ -1,7 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Guard = s:V.import('Vim.Guard')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 function! s:define_actions() abort
   call gita#command#blame#_define_actions()

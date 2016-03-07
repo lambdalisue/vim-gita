@@ -1,6 +1,5 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitParser = s:V.import('Git.Parser')
 let s:candidate_offset = 0
 
@@ -71,7 +70,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('branches', branches)
   call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
-  call s:Anchor.register()
+  call gita#util#anchor#attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-branch
@@ -90,8 +89,8 @@ function! gita#command#branch#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#branch#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('branch', options)
   call gita#util#buffer#open(bufname, {

@@ -1,7 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
@@ -142,7 +141,7 @@ function! s:on_BufReadCmd(options) abort
     autocmd WinEnter   <buffer> call s:on_WinEnter()
   augroup END
   call s:define_actions()
-  call s:Anchor.register()
+  call gita#util#anchor#attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal nolist
@@ -199,8 +198,8 @@ function! gita#command#ui#diff_ls#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#diff_ls#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('diff-ls', options)
   call gita#util#buffer#open(bufname, {

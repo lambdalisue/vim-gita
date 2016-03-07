@@ -6,7 +6,6 @@ let s:Path = s:V.import('System.Filepath')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
@@ -293,7 +292,7 @@ function! gita#command#blame#open(...) abort
         \ : options.opener
   let result = gita#command#blame#call(options)
   if options.anchor
-    call s:Anchor.focus()
+    call gita#util#anchor#focus()
   endif
   " NOTE:
   " In case, do not call autocmd to prevent infinity-loop while both buffers

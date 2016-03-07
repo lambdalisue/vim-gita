@@ -3,7 +3,6 @@ let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:StringExt = s:V.import('Data.StringExt')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
@@ -222,8 +221,8 @@ function! gita#command#ui#show#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#show#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('show', options)
   call gita#util#buffer#open(bufname, {

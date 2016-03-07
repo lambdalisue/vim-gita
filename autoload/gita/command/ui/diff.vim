@@ -1,6 +1,5 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:WORKTREE = '@@'  " @@ is not valid commit thus
@@ -39,8 +38,8 @@ function! s:open1(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#diff#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('diff', options)
   call gita#util#buffer#open(bufname, {
@@ -247,6 +246,7 @@ endfunction
 
 
 function! gita#command#ui#diff#autocmd(name) abort
+  let git = gita#core#get_or_fail()
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita://[^:\\/]\+:diff:\([^\\/]\+\)[\\/]\(.*\)$')
   if empty(m)

@@ -4,7 +4,6 @@ set cpo&vim
 function! s:_vital_loaded(V) abort
   let s:Dict = a:V.import('Data.Dict')
   let s:Compat = a:V.import('Vim.Compat')
-  let s:Close = a:V.import('Vim.Buffer.Close')
   let s:config = {
         \ 'buflisted_required': 1,
         \ 'unsuitable_buftype_pattern': '^\%(nofile\|quickfix\)$',
@@ -88,8 +87,52 @@ function! s:focus() abort
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
 endfunction
 
-function! s:register() abort
-  call s:Close.register(function('s:focus'))
+function! s:_on_QuitPre() abort
+  let w:_vital_vim_buffer_anchor_quitpre = 1
+endfunction
+
+function! s:_on_QuitPreVim703(name) abort
+  if histget('cmd') =~# '^\%(q\|qu\|qui\|quit\|quit!\)$'
+    let w:_vital_vim_buffer_anchor_quitpre = 1
+  elseif histget('cmd') =~# '^\%(cq\|cqu\|cqui\|cquit\|cquit!\)$'
+    let w:_vital_vim_buffer_anchor_quitpre = 1
+  elseif histget('cmd') =~# '^\%(wq\|wq!\)$'
+    let w:_vital_vim_buffer_anchor_quitpre = 1
+  elseif histget('cmd') =~# '^\%(x\|xi\|xit\|xit!\)$'
+    let w:_vital_vim_buffer_anchor_quitpre = 1
+  elseif histget('cmd') =~# '^\%(exi\|exit\|exit!\)$'
+    let w:_vital_vim_buffer_anchor_quitpre = 1
+  endif
+endfunction
+
+function! s:_on_WinLeave() abort
+  if get(w:, '_vital_vim_buffer_anchor_quitpre')
+    unlet! b:_vital_vim_buffer_anchor_quitpre
+    call s:focus()
+  endif
+endfunction
+
+function! s:attach() abort
+  let bufnum = bufnr('%')
+  augroup vital_vim_buffer_anchor_internal
+    autocmd! * <buffer>
+    if exists('##QuitPre')
+      autocmd QuitPre <buffer> call s:_on_QuitPre()
+    else
+      " Note:
+      "
+      " QuitPre was introduced since Vim 7.3.544
+      " https://github.com/vim-jp/vim/commit/4e7db56d
+      "
+      " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
+      " :q        : QuitPre > WinLeave > BufWinLeave
+      " :e        : BufWinLeave
+      " :wincmd w : WinLeave
+      "
+      autocmd WinLeave <buffer> call s:_on_QuitPreVim703()
+    endif
+    autocmd WinLeave <buffer> call s:_on_WinLeave()
+  augroup END
 endfunction
 
 let &cpo = s:save_cpo

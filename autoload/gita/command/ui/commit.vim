@@ -2,8 +2,6 @@ let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
-let s:Close = s:V.import('Vim.Buffer.Close')
 let s:GitInfo = s:V.import('Git.Info')
 let s:candidate_offset = 0
 
@@ -176,10 +174,7 @@ function! s:on_BufReadCmd(options) abort
     autocmd WinLeave <buffer> nested call s:on_WinLeave()
     autocmd QuitPre  <buffer> call s:on_QuitPre()
   augroup END
-  " NOTE:
-  " Vim.Buffer.Anchor.register use WinLeave thus it MUST called after autocmd
-  " of this buffer has registered.
-  call s:Anchor.register()
+  call gita#util#anchor#attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-commit
@@ -232,8 +227,8 @@ function! gita#command#ui#commit#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#commit#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('commit', options)
   call gita#util#buffer#open(bufname, {

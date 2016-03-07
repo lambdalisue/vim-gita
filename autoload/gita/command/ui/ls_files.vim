@@ -1,7 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:candidate_offset = 0
 
@@ -73,7 +72,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('candidates', candidates)
   call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
-  call s:Anchor.register()
+  call gita#util#anchor#attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-ls-files
@@ -98,8 +97,8 @@ function! gita#command#ui#ls_files#open(...) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#ls_files#default_opener
         \ : options.opener
-  if options.anchor && s:Anchor.is_available(opener)
-    call s:Anchor.focus()
+  if options.anchor && gita#util#anchor#is_available(opener)
+    call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('ls-files', options)
   call gita#util#buffer#open(bufname, {

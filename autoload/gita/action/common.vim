@@ -1,5 +1,4 @@
 let s:V = gita#vital()
-let s:Anchor = s:V.import('Vim.Buffer.Anchor')
 
 function! s:compare(i1, i2) abort
   return a:i1[0] == a:i2[0] ? 0 : a:i1[0] > a:i2[0] ? 1 : -1
@@ -97,9 +96,7 @@ function! s:action_choice(candidates, options) abort
 endfunction
 
 function! s:action_close(candidate, options) abort
-  let winnum = winnr()
-  call s:Anchor.focus()
-  execute printf('%dclose', winnum)
+  close
 endfunction
 
 function! s:action_redraw(candidate, options) abort
