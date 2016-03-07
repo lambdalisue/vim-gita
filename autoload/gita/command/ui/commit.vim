@@ -180,7 +180,7 @@ function! s:on_BufReadCmd(options) abort
   " Vim.Buffer.Anchor.register use WinLeave thus it MUST called after autocmd
   " of this buffer has registered.
   call s:Anchor.register()
-  call gita#observer#attach()
+  call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
