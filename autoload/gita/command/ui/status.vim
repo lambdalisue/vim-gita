@@ -174,7 +174,7 @@ function! gita#command#ui#status#redraw() abort
 endfunction
 
 function! gita#command#ui#status#parse_statuses(content) abort
-  if empty(a:content)
+  if len(a:content) == 1 && empty(a:content[0])
     return []
   endif
   let git = gita#core#get_or_fail()
