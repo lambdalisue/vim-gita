@@ -135,6 +135,65 @@ function! s:action_commit_do(candidate, options) abort
   call gita#action#call('status')
 endfunction
 
+function! s:get_bufname(options) abort
+  let options = extend({
+        \ 'amend': 0,
+        \ 'allow-empty': 0,
+        \ 'filenames': [],
+        \}, a:options)
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
+        \ 'content_type': 'commit',
+        \ 'extra_option': [
+        \   empty(options['amend']) ? '' : 'amend',
+        \   empty(options['allow-empty']) ? '' : 'allow-empty',
+        \ ],
+        \})
+endfunction
+
+function! s:on_BufReadCmd(options) abort
+  let options = gita#option#cascade('^commit$', a:options, {})
+  let options['quiet'] = 1
+  let options['porcelain'] = 1
+  let options['dry-run'] = 1
+  let result = gita#command#commit#call(options)
+  let statuses = gita#command#ui#status#parse_statuses(result.content)
+  call gita#meta#set('content_type', 'commit')
+  call gita#meta#set('options', s:Dict.omit(options, [
+        \ 'opener', 'selection', 'quiet', 'porcelain', 'dry-run',
+        \]))
+  call gita#meta#set('statuses', statuses)
+  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
+  call gita#meta#set('filenames', result.filenames)
+  call gita#meta#set('winwidth', winwidth(0))
+  call s:define_actions()
+  augroup vim_gita_internal_commit
+    autocmd! * <buffer>
+    " NOTE:
+    " During BufHidden or whatever, the current buffer will be moved onto
+    " the next one so could not be used.
+    autocmd WinLeave <buffer> nested call s:on_WinLeave()
+    autocmd QuitPre  <buffer> call s:on_QuitPre()
+  augroup END
+  " NOTE:
+  " Vim.Buffer.Anchor.register use WinLeave thus it MUST called after autocmd
+  " of this buffer has registered.
+  call s:Anchor.register()
+  " the following options are required so overwrite everytime
+  setlocal filetype=gita-commit
+  setlocal buftype=acwrite nobuflisted
+  setlocal modifiable
+  " Used for template system
+  call gita#util#doautocmd('BufReadPre')
+  setlocal filetype=gita-commit
+  call gita#command#ui#commit#redraw()
+endfunction
+
+function! s:on_BufWriteCmd(options) abort
+  call s:save_commitmsg()
+  setlocal nomodified
+endfunction
+
 function! s:on_WinLeave() abort
   if exists('w:_vim_gita_commit_QuitPre')
     unlet w:_vim_gita_commit_QuitPre
@@ -151,71 +210,14 @@ function! s:on_QuitPre() abort
 endfunction
 
 
-function! gita#command#ui#commit#BufReadCmd(options) abort
-  let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^commit$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
-  let options['porcelain'] = 1
-  let options['dry-run'] = 1
-  let options['quiet'] = 1
-  let result = gita#command#commit#call(options)
-  let statuses = gita#command#ui#status#parse_statuses(git, result.content)
-  call gita#meta#set('content_type', 'commit')
-  call gita#meta#set('options', s:Dict.omit(options, [
-        \ 'force', 'opener', 'porcelain', 'dry-run',
-        \]))
-  call gita#meta#set('statuses', statuses)
-  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#meta#set('filenames', result.filenames)
-  call gita#meta#set('winwidth', winwidth(0))
-  call s:define_actions()
-  augroup vim_gita_internal_commit
-    autocmd! * <buffer>
-    " NOTE:
-    " During BufHidden or whatever, the current buffer will be moved onto
-    " the next one so could not be used.
-    autocmd WinLeave    <buffer> nested call s:on_WinLeave()
-    autocmd QuitPre     <buffer> call s:on_QuitPre()
-  augroup END
-  " NOTE:
-  " Vim.Buffer.Anchor.register use WinLeave thus it MUST called after autocmd
-  " of this buffer has registered.
-  call s:Anchor.register()
-  " the following options are required so overwrite everytime
-  setlocal filetype=gita-commit
-  setlocal buftype=acwrite nobuflisted
-  setlocal modifiable
-
-  " Used for template system
-  call gita#util#doautocmd('BufReadPre')
-  setlocal filetype=gita-commit
-  call gita#command#ui#commit#redraw(options)
-endfunction
-
-function! gita#command#ui#commit#BufWriteCmd(options) abort
-  call s:save_commitmsg()
-  setlocal nomodified
-endfunction
-
-function! gita#command#ui#commit#bufname(options) abort
-  let options = extend({
-        \ 'allow-empty': 0,
-        \ 'filenames': [],
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
-        \ 'content_type': 'commit',
-        \ 'extra_options': [
-        \   empty(options['allow-empty']) ? '' : 'allow-empty',
-        \   empty(options.filenames) ? '' : 'partial',
-        \ ],
-        \ 'commitish': '',
-        \ 'path': '',
-        \})
+function! gita#command#ui#commit#autocmd(name) abort
+  let bufname = expand('<afile>')
+  let options = gita#util#cascade#get('commit')
+  let extra = matchstr(bufname, 'gita:[^:\\/]\+:commit:\zs.*$')
+  for option_name in split(extra, ':')
+    let options[option_name] = 1
+  endfor
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#commit#open(...) abort
@@ -224,35 +226,24 @@ function! gita#command#ui#commit#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#commit#bufname(options)
-  if empty(bufname)
-    return
-  endif
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#commit#default_opener
         \ : options.opener
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#var
-  endtry
+  call gita#util#cascade#set('commit', options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
-function! gita#command#ui#commit#redraw(...) abort
+function! gita#command#ui#commit#redraw() abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^commit$', get(a:000, 0, {}), {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
+  let options = gita#meta#get_for('commit', 'options')
 
   let commit_mode = ''
   if !empty(gita#meta#get_for('commit', 'commitmsg_cached'))
@@ -279,43 +270,10 @@ function! gita#command#ui#commit#redraw(...) abort
   let statuses = gita#meta#get_for('commit', 'statuses', [])
   let contents = map(copy(statuses), '"# " . v:val.record')
   let s:candidate_offset = len(prologue)
-  call gita#util#buffer#edit_content(commitmsg + prologue + contents, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-
-function! gita#command#ui#commit#define_highlights() abort
-  highlight default link GitaComment    Comment
-  highlight default link GitaConflicted Error
-  highlight default link GitaUnstaged   Constant
-  highlight default link GitaStaged     Special
-  highlight default link GitaUntracked  GitaUnstaged
-  highlight default link GitaIgnored    Identifier
-  highlight default link GitaBranch     Title
-  highlight default link GitaHighlight  Keyword
-  highlight default link GitaImportant  Constant
-endfunction
-
-function! gita#command#ui#commit#define_syntax() abort
-  syntax match GitaStaged     /^# [ MADRC][ MD]/hs=s+2,he=e-1 contains=ALL
-  syntax match GitaUnstaged   /^# [ MADRC][ MD]/hs=s+3 contains=ALL
-  syntax match GitaStaged     /^# [ MADRC]\s.*$/hs=s+5 contains=ALL
-  syntax match GitaUnstaged   /^# .[MDAU?].*$/hs=s+5 contains=ALL
-  syntax match GitaIgnored    /^# !!\s.*$/hs=s+2
-  syntax match GitaUntracked  /^# ??\s.*$/hs=s+2
-  syntax match GitaConflicted /^# \%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/hs=s+2
-  syntax match GitaComment    /^# .*$/ contains=ALL
-  syntax match GitaBranch     /Gita status of [^ ]\+/hs=s+15 contained
-  syntax match GitaBranch     /Gita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
-  syntax match GitaHighlight  /\d\+ commit(s) ahead/ contained
-  syntax match GitaHighlight  /\d\+ commit(s) behind/ contained
-  syntax match GitaImportant  /REBASE-[mi] \d\/\d/
-  syntax match GitaImportant  /REBASE \d\/\d/
-  syntax match GitaImportant  /AM \d\/\d/
-  syntax match GitaImportant  /AM\/REBASE \d\/\d/
-  syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
+  call gita#util#buffer#edit_content(
+        \ commitmsg + prologue + contents,
+        \ gita#autocmd#parse_cmdarg(),
+        \0)
 endfunction
 
 

@@ -98,19 +98,26 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
-function! gita#command#ui#status#BufReadCmd(options) abort
-  let options = gita#option#cascade('^status$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
+function! s:get_bufname(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
+        \ 'content_type': 'status',
+        \ 'extra_option': [],
         \})
+endfunction
+
+function! s:on_BufReadCmd(options) abort
+  let options = gita#option#cascade('^status$', a:options, {})
   let options['porcelain'] = 1
   let options['quiet'] = 1
-  let result = gita#command#status#call(options)
-  let statuses = gita#command#ui#status#parse_statuses(git, result.content)
+  let result   = gita#command#status#call(options)
+  let statuses = gita#command#ui#status#parse_statuses(result.content)
   call gita#meta#set('content_type', 'status')
   call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener', 'porcelain',
+        \ 'opener', 'selection', 'quiet', 'porcelain',
         \]))
   call gita#meta#set('statuses', statuses)
   call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
@@ -122,23 +129,13 @@ function! gita#command#ui#status#BufReadCmd(options) abort
   setlocal filetype=gita-status
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  call gita#command#ui#status#redraw(options)
+  call gita#command#ui#status#redraw()
 endfunction
 
-function! gita#command#ui#status#bufname(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname(git, {
-        \ 'filebase': 0,
-        \ 'content_type': 'status',
-        \ 'extra_options': [
-        \   empty(options.filenames) ? '' : 'partial',
-        \ ],
-        \ 'commitish': '',
-        \ 'path': '',
-        \})
+
+function! gita#command#ui#status#autocmd(name) abort
+  let options = gita#util#cascade#get('status')
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#status#open(...) abort
@@ -147,7 +144,7 @@ function! gita#command#ui#status#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#status#bufname(options)
+  let bufname = s:get_bufname(options)
   if empty(bufname)
     return
   endif
@@ -157,75 +154,35 @@ function! gita#command#ui#status#open(...) abort
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#var
-  endtry
+  call gita#util#cascade#set('status', options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
-function! gita#command#ui#status#redraw(...) abort
+function! gita#command#ui#status#redraw() abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^status$', get(a:000, 0, {}), {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
   let prologue = [s:get_header_string(git)]
   let contents = s:format_statuses(gita#meta#get_for('status', 'statuses', []))
+  call gita#util#buffer#edit_content(
+        \ extend(prologue, contents),
+        \ gita#autocmd#parse_cmdarg(),
+        \)
   let s:candidate_offset = len(prologue)
-  call gita#util#buffer#edit_content(extend(prologue, contents), {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
 endfunction
 
-function! gita#command#ui#status#parse_statuses(git, content) abort
+function! gita#command#ui#status#parse_statuses(content) abort
+  let git = gita#core#get_or_fail()
   let statuses = s:GitParser.parse_status(a:content, {
         \ 'fail_silently': 0,
         \ 'flatten': 1,
         \})
-  call map(statuses, 's:extend_status(a:git, v:val)')
+  call map(statuses, 's:extend_status(git, v:val)')
   return sort(statuses, function('s:compare_statuses'))
 endfunction
 
-function! gita#command#ui#status#define_highlights() abort
-  highlight default link GitaComment    Comment
-  highlight default link GitaConflicted Error
-  highlight default link GitaUnstaged   Constant
-  highlight default link GitaStaged     Special
-  highlight default link GitaUntracked  GitaUnstaged
-  highlight default link GitaIgnored    Identifier
-  highlight default link GitaBranch     Title
-  highlight default link GitaHighlight  Keyword
-  highlight default link GitaImportant  Constant
-endfunction
-
-function! gita#command#ui#status#define_syntax() abort
-  syntax match GitaStaged     /^[ MADRC][ MD]/he=e-1 contains=ALL
-  syntax match GitaUnstaged   /^[ MADRC][ MD]/hs=s+1 contains=ALL
-  syntax match GitaStaged     /^[ MADRC]\s.*$/hs=s+3 contains=ALL
-  syntax match GitaUnstaged   /^.[MDAU?].*$/hs=s+3 contains=ALL
-  syntax match GitaIgnored    /^!!\s.*$/
-  syntax match GitaUntracked  /^??\s.*$/
-  syntax match GitaConflicted /^\%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/
-  syntax match GitaComment    /^.*$/ contains=ALL
-  syntax match GitaBranch     /Gita status of [^ ]\+/hs=s+15 contained
-  syntax match GitaBranch     /Gita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
-  syntax match GitaHighlight  /\d\+ commit(s) ahead/ contained
-  syntax match GitaHighlight  /\d\+ commit(s) behind/ contained
-  syntax match GitaImportant  /REBASE-[mi] \d\/\d/
-  syntax match GitaImportant  /REBASE \d\/\d/
-  syntax match GitaImportant  /AM \d\/\d/
-  syntax match GitaImportant  /AM\/REBASE \d\/\d/
-  syntax match GitaImportant  /\%(MERGING\|CHERRY-PICKING\|REVERTING\|BISECTING\)/
-endfunction
 
 call gita#util#define_variables('command#ui#status', {
       \ 'default_opener': 'botright 10 split',
