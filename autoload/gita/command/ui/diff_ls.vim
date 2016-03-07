@@ -172,6 +172,22 @@ function! s:on_WinEnter() abort
 endfunction
 
 
+function! gita#command#ui#diff_ls#autocmd(name) abort
+  let bufname = expand('<afile>')
+  let m = matchlist(bufname, '^gita:[^:\\/]\+:diff-ls:\(.*\)$')
+  if empty(m)
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ expand('<afile>'),
+          \))
+  endif
+  let options = gita#util#cascade#get('diff-ls')
+  let options.commit = gita#variable#get_valid_range(m[1], {
+        \ '_allow_empty': 1,
+        \})
+  call call('s:on_' . a:name, [options])
+endfunction
+
 function! gita#command#ui#diff_ls#open(...) abort
   let options = extend({
         \ 'anchor': 0,
@@ -203,20 +219,6 @@ function! gita#command#ui#diff_ls#redraw() abort
         \ extend(prologue, contents),
         \ gita#autocmd#parse_cmdarg(),
         \)
-endfunction
-
-function! gita#command#ui#diff_ls#autocmd(name) abort
-  if empty(a:attributes.extra_attribute)
-    call gita#throw(printf(
-          \ 'A bufname %s does not have required components',
-          \ expand('<afile>'),
-          \))
-  endif
-  let options = {
-        \ 'commit': gita#variable#get_valid_range(a:attributes.extra_attribute),
-        \}
-  let options = extend(options, a:options)
-  call call('s:on_' . a:name, [options])
 endfunction
 
 

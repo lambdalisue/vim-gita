@@ -47,13 +47,18 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
+function! s:get_bufname(options) abort
+  let options = extend({
+        \}, a:options)
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
+        \ 'content_type': 'ls-files',
+        \})
+endfunction
+
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-files$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
+  let options = gita#option#cascade('^ls-files$', a:options, {})
   let options['full-name'] = 1
   let options['quiet'] = 1
   let result = gita#command#ls_files#call(options)
@@ -63,7 +68,7 @@ function! s:on_BufReadCmd(options) abort
         \)
   call gita#meta#set('content_type', 'ls-files')
   call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener',
+        \ 'force', 'opener', 'selection', 'quiet', 'full-name',
         \]))
   call gita#meta#set('candidates', candidates)
   call gita#meta#set('winwidth', winwidth(0))
@@ -77,15 +82,9 @@ function! s:on_BufReadCmd(options) abort
 endfunction
 
 
-function! gita#command#ui#ls_files#bufname(options) abort
-  let options = extend({
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  return gita#autocmd#bufname({
-        \ 'nofile': 1,
-        \ 'content_type': 'ls-files',
-        \ 'extra_option': [],
-        \})
+function! gita#command#ui#ls_files#autocmd(name) abort
+  let options = gita#util#cascade#get('ls-files')
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#ls_files#open(...) abort
@@ -95,55 +94,30 @@ function! gita#command#ui#ls_files#open(...) abort
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = gita#command#ui#ls_files#bufname(options)
-  if empty(bufname)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#ls_files#default_opener
         \ : options.opener
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#vars
-  endtry
+  call gita#util#cascade#set('ls-files', options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
-function! gita#command#ui#ls_files#redraw(...) abort
+function! gita#command#ui#ls_files#redraw() abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-files$', get(a:000, 0, {}), {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
   let candidates = gita#meta#get_for('ls-files', 'candidates', [])
   let contents = map(copy(candidates), 'v:val.relpath')
-  call gita#util#buffer#edit_content(extend(prologue, contents), {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-
-function! gita#command#ui#ls_files#autocmd(name, options, attributes) abort
-  call call('s:on_' . a:name, [a:options])
-endfunction
-
-function! gita#command#ui#ls_files#define_highlights() abort
-  highlight default link GitaComment    Comment
-endfunction
-
-function! gita#command#ui#ls_files#define_syntax() abort
-  syntax match GitaComment    /\%^.*$/
+  call gita#util#buffer#edit_content(
+        \ extend(prologue, contents),
+        \ gita#autocmd#parse_cmdarg(),
+        \)
 endfunction
 
 

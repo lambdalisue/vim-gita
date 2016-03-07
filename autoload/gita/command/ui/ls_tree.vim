@@ -48,13 +48,23 @@ function! s:get_header_string(git) abort
         \)
 endfunction
 
+function! s:get_bufname(options) abort
+  let options = extend({
+        \ 'commit': '',
+        \}, a:options)
+  let commit = gita#variable#get_valid_range(options.commit)
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
+        \ 'content_type': 'ls-tree',
+        \ 'extra_option': [
+        \   commit,
+        \ ],
+        \})
+endfunction
+
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-tree$', a:options, {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
+  let options = gita#option#cascade('^ls-tree$', a:options, {})
   let options['full-name'] = 1
   let options['name-only'] = 1
   let options['r'] = 1
@@ -66,7 +76,7 @@ function! s:on_BufReadCmd(options) abort
         \)
   call gita#meta#set('content_type', 'ls-tree')
   call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'force', 'opener',
+        \ 'opener', 'selection', 'quiet',
         \]))
   call gita#meta#set('commit', result.commit)
   call gita#meta#set('candidates', candidates)
@@ -81,19 +91,18 @@ function! s:on_BufReadCmd(options) abort
 endfunction
 
 
-function! gita#command#ui#ls_tree#bufname(options) abort
-  let options = extend({
-        \ 'commit': '',
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit)
-  return gita#autocmd#bufname({
-        \ 'nofile': 1,
-        \ 'content_type': 'ls-tree',
-        \ 'extra_option': [
-        \   commit,
-        \ ],
-        \})
+function! gita#command#ui#ls_tree#autocmd(name, options, attributes) abort
+  let bufname = expand('<afile>')
+  let m = matchlist(bufname, '^gita:[^:\\/]\+:diff-ls:\(.*\)$')
+  if empty(m)
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ expand('<afile>'),
+          \))
+  endif
+  let options = gita#util#cascade#get('diff-ls')
+  let options.commit = gita#variable#get_valid_range(m[1])
+  call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#ls_tree#open(...) abort
@@ -103,65 +112,30 @@ function! gita#command#ui#ls_tree#open(...) abort
         \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = gita#command#ui#ls_tree#bufname(options)
-  if empty(bufname)
-    return
-  endif
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#ls_tree#default_opener
         \ : options.opener
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#vars
-  endtry
+  call gita#util#cascade#set('ls-tree', options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
-function! gita#command#ui#ls_tree#redraw(...) abort
+function! gita#command#ui#ls_tree#redraw() abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-tree$', get(a:000, 0, {}), {
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \})
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
   let candidates = gita#meta#get_for('ls-tree', 'candidates', [])
   let contents = map(copy(candidates), 'v:val.relpath')
-  call gita#util#buffer#edit_content(extend(prologue, contents), {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-
-function! gita#command#ui#ls_tree#autocmd(name, options, attributes) abort
-  if empty(a:attributes.extra_attribute)
-    call gita#throw(printf(
-          \ 'A bufname %s does not have required components',
-          \ expand('<afile>'),
-          \))
-  endif
-  let options = {
-        \ 'commit': gita#variable#get_valid_range(a:attributes.extra_attribute),
-        \}
-  let options = extend(options, a:options)
-  call call('s:on_' . a:name, [options])
-endfunction
-
-function! gita#command#ui#ls_tree#define_highlights() abort
-  highlight default link GitaComment    Comment
-endfunction
-
-function! gita#command#ui#ls_tree#define_syntax() abort
-  syntax match GitaComment    /\%^.*$/
+  call gita#util#buffer#edit_content(
+        \ extend(prologue, contents),
+        \ gita#autocmd#parse_cmdarg(),
+        \)
 endfunction
 
 
