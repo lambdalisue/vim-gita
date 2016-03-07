@@ -76,86 +76,7 @@ function! s:get_diff_content(git, content, filename) abort
   endtry
 endfunction
 
-function! s:on_BufReadCmd(options) abort
-  let options = gita#option#cascade('^show$', a:options, {
-        \ 'patch': 0,
-        \})
-  if options.patch
-    " 'patch' mode requires:
-    " - INDEX content, naemly 'commit' should be an empty value
-    " - file content, namely 'filename' is reqiured
-    let options.commit = ''
-    let options.filename = gita#variable#get_valid_filename(
-          \ get(options, 'filename', ''),
-          \)
-  endif
-  let options['quiet'] = 1
-  let result = gita#command#show#call(options)
-  call gita#meta#set('content_type', 'show')
-  call gita#meta#set('options', s:Dict.omit(result.options, [
-        \ 'opener', 'selection',
-        \]))
-  call gita#meta#set('commit', result.commit)
-  call gita#meta#set('filename', result.filename)
-  call gita#util#buffer#edit_content(result.content, a:options.cmdarg)
-  if options.patch
-    setlocal buftype=acwrite
-    setlocal noreadonly
-  else
-    if empty(result.filename)
-      setfiletype git
-    endif
-    setlocal buftype=nowrite
-    setlocal readonly
-  endif
-endfunction
-
-function! s:on_FileReadCmd(options) abort
-  let options = extend({
-        \ 'encoding': '',
-        \ 'fileformat': '',
-        \ 'bad': '',
-        \}, a:options)
-  let options['quiet'] = 1
-  let result = gita#command#show#call(options)
-  call gita#util#buffer#read_content(result.content, {
-        \ 'encoding': options.encoding,
-        \ 'fileformat': options.fileformat,
-        \ 'bad': options.bad,
-        \})
-endfunction
-
-function! s:on_BufWriteCmd(options) abort
-  " This autocmd is executed ONLY when the buffer is shown as PATCH mode
-  let tempfile = tempname()
-  try
-    let git = gita#core#get_or_fail()
-    let filename = gita#meta#get_for('show', 'filename', '')
-    let content  = s:get_diff_content(git, getline(1, '$'), filename)
-    call writefile(content, tempfile)
-    call gita#command#apply#call({
-          \ 'filenames': [tempfile],
-          \ 'cached': 1,
-          \})
-    setlocal nomodified
-    diffupdate
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  finally
-    call delete(tempfile)
-  endtry
-endfunction
-
-function! s:on_FileWriteCmd(options) abort
-  try
-    call gita#throw('Writing a partial content is perhibited')
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
-
-function! gita#command#ui#show#bufname(...) abort
+function! s:get_bufname(...) abort
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
@@ -188,6 +109,107 @@ function! gita#command#ui#show#bufname(...) abort
         \})
 endfunction
 
+function! s:on_BufReadCmd(options) abort
+  let options = gita#option#cascade('^show$', a:options, {
+        \ 'patch': 0,
+        \})
+  if options.patch
+    " 'patch' mode requires:
+    " - INDEX content, naemly 'commit' should be an empty value
+    " - file content, namely 'filename' is reqiured
+    let options.commit = ''
+    let options.filename = gita#variable#get_valid_filename(
+          \ get(options, 'filename', ''),
+          \)
+  endif
+  let options['quiet'] = 1
+  let result = gita#command#show#call(options)
+  call gita#meta#set('content_type', 'show')
+  call gita#meta#set('options', s:Dict.omit(result.options, [
+        \ 'opener', 'selection',
+        \]))
+  call gita#meta#set('commit', result.commit)
+  call gita#meta#set('filename', result.filename)
+  call gita#util#buffer#edit_content(
+        \ result.content,
+        \ gita#autocmd#parse_cmdarg(),
+        \)
+  if options.patch
+    setlocal buftype=acwrite
+    setlocal noreadonly
+  else
+    if empty(result.filename)
+      setfiletype git
+    endif
+    setlocal buftype=nowrite
+    setlocal readonly
+  endif
+endfunction
+
+function! s:on_FileReadCmd(options) abort
+  let options = extend({
+        \ 'encoding': '',
+        \ 'fileformat': '',
+        \ 'bad': '',
+        \}, a:options)
+  let options['quiet'] = 1
+  let result = gita#command#show#call(options)
+  call gita#util#buffer#read_content(
+        \ result.content,
+        \ gita#autocmd#parse_cmdarg(),
+        \)
+endfunction
+
+function! s:on_BufWriteCmd(options) abort
+  " This autocmd is executed ONLY when the buffer is shown as PATCH mode
+  let tempfile = tempname()
+  try
+    let git = gita#core#get_or_fail()
+    let filename = gita#meta#get_for('show', 'filename', '')
+    let content  = s:get_diff_content(git, getline(1, '$'), filename)
+    call writefile(content, tempfile)
+    call gita#command#apply#call({
+          \ 'filenames': [tempfile],
+          \ 'cached': 1,
+          \})
+    setlocal nomodified
+    diffupdate
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  finally
+    call delete(tempfile)
+  endtry
+endfunction
+
+function! s:on_FileWriteCmd(options) abort
+  try
+    call gita#throw('Writing a partial content is perhibited')
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+
+
+function! gita#command#ui#show#autocmd(name) abort
+  let bufname = expand('<afile>')
+  let m = matchlist(bufname, '^gita://[^:\\/]\+\%(:show\)\?:\([^\\/]\+\)[\\/]\(.*\)$')
+  if empty(m)
+    call gita#throw(printf(
+          \ 'A bufname %s does not have required components',
+          \ bufname,
+          \))
+  endif
+  let [extra, treeish] = m[1 : 2]
+  let [commit, unixpath] = s:GitTerm.split_treeish(treeish, { '_allow_range': 1 })
+  let options = gita#util#cascade#get('show')
+  let options.commit = commit
+  let options.filename = empty(unixpath) ? '' : s:Git.get_absolute_path(git, unixpath)
+  for option_name in split(extra, ':')
+    let options[option_name] = 1
+  endfor
+  call call('s:on_' . a:name, [options])
+endfunction
+
 function! gita#command#ui#show#open(...) abort
   let options = extend({
         \ 'anchor': 0,
@@ -195,48 +217,19 @@ function! gita#command#ui#show#open(...) abort
         \ 'window': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#show#bufname(options)
-  if empty(bufname)
-    return
-  endif
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#show#default_opener
         \ : options.opener
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  call gita#autocmd#cascade(options)
+  call gita#util#cascade#set('show', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,
         \})
   call gita#util#select(options.selection)
-endfunction
-
-function! gita#command#ui#show#autocmd(name, options, attributes) abort
-  if a:attributes.extra_attribute !~# '^[^\/]*[\/].*$'
-    call gita#throw(printf(
-          \ 'A bufname %s does not have required components',
-          \ expand('<afile>'),
-          \))
-  endif
-  let git = gita#get_or_fail()
-  let m = matchlist(
-        \ a:attributes.extra_attribute, 
-        \ '^\([^\/]*\)[\/]\(.*\)$',
-        \)
-  let [meta, treeish] = m[1 : 2]
-  let [commit, unixpath] = s:GitTerm.split_treeish(
-        \ treeish, { '_allow_range': 1 },
-        \)
-  let options = {}
-  let options.commit = commit
-  let options.filename = empty(unixpath) ? '' : s:Git.get_absolute_path(git, unixpath)
-  for option_name in split(meta, ':')
-    let options[option_name] = 1
-  endfor
-  let options = extend(options, a:options)
-  call call('s:on_' . a:name, [options])
 endfunction
 
 

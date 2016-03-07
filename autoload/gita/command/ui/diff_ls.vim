@@ -104,6 +104,22 @@ function! s:format_stats(stats, width) abort
   return content
 endfunction
 
+function! s:get_bufname(options) abort
+  let options = extend({
+        \ 'commit': '',
+        \}, a:options)
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  return gita#autocmd#bufname({
+        \ 'nofile': 1,
+        \ 'content_type': 'diff-ls',
+        \ 'extra_option': [
+        \   commit,
+        \ ],
+        \})
+endfunction
+
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^diff-ls$', a:options, {
@@ -155,22 +171,6 @@ function! s:on_WinEnter() abort
   endtry
 endfunction
 
-function! gita#command#ui#diff_ls#bufname(options) abort
-  let options = extend({
-        \ 'commit': '',
-        \}, a:options)
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  return gita#autocmd#bufname({
-        \ 'nofile': 1,
-        \ 'content_type': 'diff-ls',
-        \ 'extra_option': [
-        \   commit,
-        \ ],
-        \})
-endfunction
 
 function! gita#command#ui#diff_ls#open(...) abort
   let options = extend({
@@ -178,25 +178,18 @@ function! gita#command#ui#diff_ls#open(...) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, get(a:000, 0, {}))
-  let bufname = gita#command#ui#diff_ls#bufname(options)
-  if empty(bufname)
-    return
-  endif
+  let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#diff_ls#default_opener
         \ : options.opener
   if options.anchor && s:Anchor.is_available(opener)
     call s:Anchor.focus()
   endif
-  try
-    let g:gita#var = options
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'manipulation_panel',
-          \})
-  finally
-    silent! unlet! g:gita#var
-  endtry
+  call gita#util#cascade#set('diff-ls', options)
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': 'manipulation_panel',
+        \})
   call gita#util#select(options.selection)
 endfunction
 
@@ -206,10 +199,13 @@ function! gita#command#ui#diff_ls#redraw() abort
   let stats = gita#meta#get_for('diff-ls', 'stats', [])
   let contents = s:format_stats(stats, winwidth(0))
   let s:candidate_offset = len(prologue)
-  call gita#util#buffer#edit_content(extend(prologue, contents))
+  call gita#util#buffer#edit_content(
+        \ extend(prologue, contents),
+        \ gita#autocmd#parse_cmdarg(),
+        \)
 endfunction
 
-function! gita#command#ui#diff_ls#autocmd(name, options, attributes) abort
+function! gita#command#ui#diff_ls#autocmd(name) abort
   if empty(a:attributes.extra_attribute)
     call gita#throw(printf(
           \ 'A bufname %s does not have required components',
@@ -223,23 +219,6 @@ function! gita#command#ui#diff_ls#autocmd(name, options, attributes) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#diff_ls#define_highlights() abort
-  highlight default link GitaComment Comment
-  highlight default link GitaAdded   Special
-  highlight default link GitaDeleted Constant
-  highlight default link GitaDiffZero Comment
-endfunction
-
-function! gita#command#ui#diff_ls#define_syntax() abort
-  syntax match GitaComment    /\%^.*$/
-  syntax match GitaDiffLs        /^.\{-} +\d\+\s\+-\d\+\s\++*-*$/
-        \ contains=GitaDiffLsSuffix
-  syntax match GitaDiffLsSuffix  /+\d\+\s\+-\d\+\s\++*-*$/
-        \ contains=GitaAdded,GitaDeleted,GitaDiffZero
-  syntax match GitaAdded   /+[0-9+]*/ contained
-  syntax match GitaDeleted /-[0-9-]*/ contained
-  syntax match GitaDiffZero /[+-]0/ contained
-endfunction
 
 call gita#util#define_variables('command#ui#diff_ls', {
       \ 'default_opener': 'botright 10 split',

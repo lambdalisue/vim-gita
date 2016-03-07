@@ -48,7 +48,7 @@ function! s:get_for_external(expr, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let refinfo = s:Compat.getbufvar(a:expr, s:NAME, {})
+  let refinfo = gita#core#get_refinfo(a:expr)
   if !empty(refinfo) && !options.force && !s:is_expired(a:expr, refinfo)
     return refinfo.git
   endif
@@ -81,11 +81,14 @@ function! s:new_for_external(expr, options) abort
   if git.is_enabled
     let refname = s:get_available_refname(git.repository_name)
     let s:references[refname] = git
+  else
+    let refname = ''
   endif
   " save reference info to the buffer if the buffer exists
   if bufexists(a:expr)
     call setbufvar(a:expr, s:NAME, {
           \ 'git': git,
+          \ 'refname': refname,
           \ 'bufname': bufname(a:expr),
           \ 'cwd': getcwd(),
           \})
@@ -120,4 +123,10 @@ endfunction
 function! gita#core#expire(...) abort
   let git = call('gita#core#get', a:000)
   let git.is_expired = 1
+endfunction
+
+function! gita#core#get_refinfo(...) abort
+  let expr = get(a:000, 0, '%')
+  let refinfo = s:Compat.getbufvar(expr, s:NAME, {})
+  return refinfo
 endfunction

@@ -2,60 +2,19 @@ let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 
-function! s:parse_cmdarg(cmdarg) abort
-  let options = {}
-  if a:cmdarg =~# '++enc='
-    let options.encoding = matchstr(a:cmdarg, '++enc=\zs[^ ]\+\ze')
-  endif
-  if a:cmdarg =~# '++ff='
-    let options.fileformat = matchstr(a:cmdarg, '++ff=\zs[^ ]\+\ze')
-  endif
-  if a:cmdarg =~# '++bad='
-    let options.bad = matchstr(a:cmdarg, '++bad=\zs[^ ]\+\ze')
-  endif
-  if a:cmdarg =~# '++bin'
-    let options.binary = 1
-  endif
-  if a:cmdarg =~# '++nobin'
-    let options.nobinary = 1
-  endif
-  if a:cmdarg =~# '++edit'
-    let options.edit = 1
-  endif
-  return options
-endfunction
-
-function! s:parse_bufname(bufname) abort
-  let options = {}
-  for scheme in s:schemes
-    let options = gita#util#matchdict(a:bufname, scheme[0], scheme[1])
-    if !empty(options)
-      break
-    endif
-  endfor
-  if empty(options)
-    call gita#throw(printf(
-          \ 'A bufname %s does not have required components',
-          \ a:bufname,
-          \))
-  endif
-  return options
-endfunction
-
-
 function! gita#autocmd#bufname(options, ...) abort
   let options = extend({
         \ 'nofile': 0,
-        \ 'refname': '',
         \ 'content_type': 'show',
         \ 'extra_option': [],
         \ 'commitish': '',
         \ 'path': '',
         \}, a:options)
   let git = call('gita#core#get_or_fail', a:000)
-  let refname = empty(options.refname)
+  let refinfo = call('gita#core#get_refinfo', a:000)
+  let refname = empty(get(refinfo, 'refname'))
         \ ? git.repository_name
-        \ : options.refname
+        \ : refinfo.refname
   let realpath = s:Path.realpath(options.path)
   let unixpath = s:Path.unixpath(
         \ s:Path.is_absolute(realpath)
@@ -90,22 +49,15 @@ endfunction
 
 function! gita#autocmd#call(name) abort
   try
-    let info = s:parse_bufname(expand('<afile>'))
-    let info.cascade = get(g:, 'gita#autocmd#_cascade', {})
+    let content_type = gita#autocmd#parse_bufname()[1]
     let fname = printf(
           \ 'gita#command#ui#%s#autocmd',
-          \ substitute(info.content_type, '-', '_', 'g'),
+          \ substitute(content_type, '-', '_', 'g'),
           \)
-    call call(fname, [a:name, info])
+    call call(fname, [a:name])
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
-  finally
-    silent! unlet! g:gita#autocmd#_cascade
   endtry
-endfunction
-
-function! gita#autocmd#cascade(options) abort
-  let g:gita#autocmd#_cascade = a:options
 endfunction
 
 function! gita#autocmd#parse_cmdarg(...) abort
@@ -132,21 +84,16 @@ function! gita#autocmd#parse_cmdarg(...) abort
   return options
 endfunction
 
-" gita://<refname>:<content-type>
-" gita://<refname>:<content-type>/<extra-attribute>
-" gita://<refname>:<content-type>:<extra-attribute>
-" gita:<refname>:<content-type>
-" gita:<refname>:<content-type>/<extra-attribute>
-" gita:<refname>:<content-type>:<extra-attribute>
-let s:schemes = [
-      \ ['^gita://\([^/:]\+\):\([^/:]\+\)\%([/:]\(.*\)\)\?$', {
-      \   'refname': 1,
-      \   'content_type': 2,
-      \   'extra_attribute': 3,
-      \ }],
-      \ ['^gita:\([^/:]\+\):\([^/:]\+\)\%([/:]\(.*\)\)\?$', {
-      \   'refname': 1,
-      \   'content_type': 2,
-      \   'extra_attribute': 3,
-      \ }],
-      \]
+function! gita#autocmd#parse_bufname(...) abort
+  let bufname = get(a:000, 0, expand('<afile>'))
+  let m = matchlist(bufname, '^gita:\%(//\)\?\([^:\\/]\+\)\%(:\([^:\\/]\+\)\)')
+  if empty(m)
+    call gita#throw(printf(
+          \ 'A buffer name %s does not contain required components',
+          \ bufname,
+          \))
+  endif
+  let refname = m[1]
+  let content_type = get(m, 2, 'show')
+  return [refname, content_type]
+endfunction
