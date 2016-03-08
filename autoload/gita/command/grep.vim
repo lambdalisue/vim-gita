@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -23,6 +24,8 @@ function! s:pick_available_options(options) abort
         \ 'perl-regexp',
         \ 'fixed-strings',
         \ 'all-match',
+        \ 'full-name',
+        \ 'line-number',
         \])
   return options
 endfunction
@@ -39,6 +42,9 @@ function! s:get_grep_content(git, pattern, commit, directories, options) abort
   let result = gita#execute(a:git, 'grep', options)
   if result.status
     call s:GitProcess.throw(result)
+  elseif !get(a:options, 'quiet')
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
   return result.content
 endfunction
@@ -156,24 +162,10 @@ function! s:get_parser() abort
           \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
-          \ 'commit', [
-          \   'a commit which you want to grep.',
-          \   'If nothing is specified, it grep a content in an index or working tree.',
-          \   'If <commit> is specified, it grep a content in the named <commit>.',
-          \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
-          \})
-    call s:parser.add_argument(
           \ 'pattern', [
           \   'a match pattern',
           \ ], {
           \})
-    function! s:parser.hooks.post_validate(options) abort
-      if !has_key(a:options, 'pattern')
-        let a:options.pattern = get(a:options, 'commit', '')
-        let a:options.commit = ''
-      endif
-    endfunction
   endif
   return s:parser
 endfunction

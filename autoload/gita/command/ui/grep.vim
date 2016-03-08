@@ -99,19 +99,12 @@ endfunction
 function! s:get_bufname(options) abort
   let options = extend({
         \ 'pattern': '',
-        \ 'commit': '',
-        \ 'cached': 0,
-        \ 'no-index': 0,
-        \ 'untracked': 0,
         \}, a:options)
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
   return gita#autocmd#bufname({
         \ 'nofile': 1,
         \ 'content_type': 'grep',
-        \ 'extra_options': [
-        \   commit,
+        \ 'extra_option': [
+        \   options.pattern,
         \ ],
         \})
 endfunction
@@ -124,6 +117,7 @@ function! s:on_BufReadCmd(options) abort
   let options['full-name'] = 1
   let options['no-color'] = 1
   let options['line-number'] = 1
+  let options['quiet'] = 1
   let result = gita#command#grep#call(options)
   let candidates = map(
         \ copy(result.content),
@@ -169,12 +163,13 @@ function! gita#command#ui#grep#autocmd(name) abort
           \))
   endif
   let options = gita#util#cascade#get('grep')
-  let options.commit = gita#variable#get_valid_range(m[1])
+  let options.pattern = m[1]
   call call('s:on_' . a:name, [options])
 endfunction
 
 function! gita#command#ui#grep#open(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
@@ -191,7 +186,7 @@ function! gita#command#ui#grep#open(...) abort
         \})
 endfunction
 
-function! gita#command#grep#redraw() abort
+function! gita#command#ui#grep#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
