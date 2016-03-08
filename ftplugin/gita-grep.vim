@@ -3,7 +3,6 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-" Users can override the following with user's ftplugin/gita-status.vim
 setlocal winfixheight
 setlocal cursorline
 setlocal nolist nospell
@@ -20,3 +19,4 @@ augroup vim_gita_window_size
   autocmd! * <buffer>
   autocmd BufEnter <buffer> call s:keep_height()
 augroup END
+
