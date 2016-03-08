@@ -23,7 +23,11 @@ function! s:get_candidate(index) abort
   if empty(lineinfo)
     return {}
   endif
-  return deepcopy(blamemeta.chunks[lineinfo.chunkref])
+  return blamemeta.chunks[lineinfo.chunkref]
+endfunction
+
+function! s:action_echo(candidate, options) abort
+  echo string(a:candidate)
 endfunction
 
 function! s:action_enter(candidate, options) abort
@@ -85,9 +89,37 @@ function! s:action_back(candidate, options) abort
   redraw | echo
 endfunction
 
+function! s:action_previous_chunk(candidate, options) abort
+  let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
+  let chunks = blamemeta.chunks
+  if a:candidate.index <= 0
+    call s:Prompt.warn('This is a first chunk')
+    return
+  endif
+  let prev_chunk = chunks[a:candidate.index - 1]
+  call gita#command#ui#blame#select(blamemeta, [prev_chunk.linenum.final])
+endfunction
+
+function! s:action_next_chunk(candidate, options) abort
+  let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
+  let chunks = blamemeta.chunks
+  if a:candidate.index >= len(chunks) - 1
+    call s:Prompt.warn('This is a last chunk')
+    return
+  endif
+  let next_chunk = chunks[a:candidate.index + 1]
+  call gita#command#ui#blame#select(blamemeta, [next_chunk.linenum.final])
+endfunction
+
 
 function! gita#command#ui#blame#define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
+  call gita#action#define('blame:echo', function('s:action_echo'), {
+        \ 'description': 'Echo a chunk',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': [],
+        \ 'options': {},
+        \})
   call gita#action#define('blame:enter', function('s:action_enter'), {
         \ 'description': 'Enter in a commit of the chunk',
         \ 'mapping_mode': 'n',
@@ -98,6 +130,18 @@ function! gita#command#ui#blame#define_actions() abort
         \ 'description': 'Enter back in the previous revision',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['revision', 'filename', 'linenum'],
+        \ 'options': {},
+        \})
+  call gita#action#define('blame:previous:chunk', function('s:action_previous_chunk'), {
+        \ 'description': 'Move to the previous chunk',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['index'],
+        \ 'options': {},
+        \})
+  call gita#action#define('blame:next:chunk', function('s:action_next_chunk'), {
+        \ 'description': 'Move to the next chunk',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['index'],
         \ 'options': {},
         \})
 

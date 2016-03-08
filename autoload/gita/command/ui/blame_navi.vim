@@ -19,6 +19,8 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <S-Return> %s',
         \ g:gita#command#ui#blame_navi#secondary_action_mapping
         \)
+  nmap <buffer><nowait> [c <Plug>(gita-blame-previous-chunk)
+  nmap <buffer><nowait> ]c <Plug>(gita-blame-next-chunk)
 endfunction
 
 function! s:on_CursorMoved() abort
