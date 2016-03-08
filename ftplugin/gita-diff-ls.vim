@@ -9,13 +9,3 @@ setlocal cursorline
 setlocal nolist nospell
 setlocal nowrap nofoldenable
 setlocal foldcolumn=0 colorcolumn=0
-
-function! s:keep_height() abort
-  resize 10
-endfunction
-augroup vim_gita_commit_window_size
-  autocmd! * <buffer>
-  autocmd BufEnter <buffer> call s:keep_height()
-augroup END
-
-
