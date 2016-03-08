@@ -116,21 +116,3 @@ function! gita#util#select(selection, ...) abort
     keepjump call setpos('.', [0, line_start, 1, 0])
   endif
 endfunction
-
-function! gita#util#matchdict(expr, pattern, scheme) abort
-  if a:expr !~# a:pattern
-    return {}
-  endif
-  let t = type(0)
-  let m = matchlist(a:expr, a:pattern)
-  let object = {}
-  for [key, value] in items(a:scheme)
-    if type(value) == t
-      let object[key] = m[value]
-    else
-      let object[key] = value
-    endif
-    unlet value
-  endfor
-  return object
-endfunction

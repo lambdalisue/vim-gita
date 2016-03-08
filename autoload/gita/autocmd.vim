@@ -86,7 +86,7 @@ endfunction
 
 function! gita#autocmd#parse_bufname(...) abort
   let bufname = get(a:000, 0, expand('<afile>'))
-  let m = matchlist(bufname, '^gita:\%(//\)\?\([^:\\/]\+\)\%(:\([^:\\/]\+\)\)')
+  let m = matchlist(bufname, '^gita:\%(//\)\?\([^:\\/]\+\)\%(:\([^:\\/]\+\)\)\?')
   if empty(m)
     call gita#throw(printf(
           \ 'A buffer name %s does not contain required components',
@@ -94,6 +94,6 @@ function! gita#autocmd#parse_bufname(...) abort
           \))
   endif
   let refname = m[1]
-  let content_type = get(m, 2, 'show')
+  let content_type = empty(m[2]) ? 'show' : m[2]
   return [refname, content_type]
 endfunction
