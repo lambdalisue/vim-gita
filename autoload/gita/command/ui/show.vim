@@ -235,6 +235,7 @@ function! gita#command#ui#show#open(...) abort
         \ 'anchor': 0,
         \ 'opener': '',
         \ 'window': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -243,11 +244,22 @@ function! gita#command#ui#show#open(...) abort
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
   endif
-  call gita#util#cascade#set('show', options)
-  call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'window': options.window,
-        \})
+  if bufname =~# '^gita:'
+    call gita#util#cascade#set('show', options)
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \ 'window': options.window,
+          \})
+  else
+    if !empty(options.selection)
+      let opener = empty(opener) ? 'edit' : opener
+      let opener = printf('%s +%d', opener, options.selection[0])
+    endif
+    call gita#util#buffer#open(bufname, {
+          \ 'opener': opener,
+          \ 'window': options.window,
+          \})
+  endif
 endfunction
 
 

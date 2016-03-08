@@ -178,6 +178,7 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
 function! gita#command#show#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -199,6 +200,7 @@ function! gita#command#show#command(...) abort
     call gita#command#show#call(options)
   endif
 endfunction
+
 function! gita#command#show#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
