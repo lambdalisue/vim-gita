@@ -166,10 +166,11 @@ function! s:system(args, ...) abort
         \ 'encode_input',
         \ 'encode_output',
         \]))
+  let use_vimproc = get(config, 'use_vimproc', s:Process.has_vimproc())
   let result = {
         \ 'args': args,
         \ 'stdout': stdout,
-        \ 'status': s:Process.get_last_status(),
+        \ 'status': s:Process.get_last_status(use_vimproc),
         \}
   if config.content
     let result['content'] = s:Process.split_posix_text(stdout)
