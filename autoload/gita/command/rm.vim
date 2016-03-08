@@ -28,7 +28,7 @@ function! s:apply_command(git, filenames, options) abort
   endif
   let result = gita#execute(a:git, 'rm', options)
   if result.status
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

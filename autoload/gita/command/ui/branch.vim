@@ -35,7 +35,7 @@ function! s:define_actions() abort
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#branch#default_action_mapping
+        \ g:gita#command#ui#branch#primary_action_mapping
         \)
 endfunction
 
@@ -122,6 +122,6 @@ endfunction
 
 call gita#util#define_variables('command#ui#branch', {
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-branch-checkout)',
+      \ 'primary_action_mapping': '<Plug>(gita-branch-checkout)',
       \ 'disable_default_mappings': 0,
       \})

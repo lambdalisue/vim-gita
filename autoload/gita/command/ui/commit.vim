@@ -34,7 +34,7 @@ function! s:define_actions() abort
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#commit#default_action_mapping
+        \ g:gita#command#ui#commit#primary_action_mapping
         \)
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
   nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
@@ -277,6 +277,6 @@ endfunction
 
 call gita#util#define_variables('command#ui#commit', {
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-diff)',
+      \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})

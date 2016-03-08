@@ -20,7 +20,7 @@ function! s:define_actions() abort
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#ls_files#default_action_mapping
+        \ g:gita#command#ui#ls_files#primary_action_mapping
         \)
 endfunction
 
@@ -124,7 +124,7 @@ endfunction
 
 call gita#util#define_variables('command#ui#ls_files', {
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-show)',
+      \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,
       \})
 

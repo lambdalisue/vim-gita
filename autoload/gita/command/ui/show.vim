@@ -109,6 +109,7 @@ function! s:get_bufname(...) abort
 endfunction
 
 function! s:on_BufReadCmd(options) abort
+  call gita#util#doautocmd('BufReadPre')
   let options = gita#option#cascade('^show$', a:options, {
         \ 'patch': 0,
         \ 'selection': [],
@@ -145,9 +146,11 @@ function! s:on_BufReadCmd(options) abort
     setlocal readonly
   endif
   call gita#util#select(options.selection)
+  call gita#util#doautocmd('BufReadPost')
 endfunction
 
 function! s:on_FileReadCmd(options) abort
+  call gita#util#doautocmd('FileReadPre')
   let options = extend({
         \ 'encoding': '',
         \ 'fileformat': '',
@@ -159,9 +162,11 @@ function! s:on_FileReadCmd(options) abort
         \ result.content,
         \ gita#autocmd#parse_cmdarg(),
         \)
+  call gita#util#doautocmd('FileReadPost')
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
+    call gita#util#doautocmd('BufWritePre')
   " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try
@@ -175,6 +180,7 @@ function! s:on_BufWriteCmd(options) abort
           \})
     setlocal nomodified
     diffupdate
+    call gita#util#doautocmd('BufWritePost')
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   finally

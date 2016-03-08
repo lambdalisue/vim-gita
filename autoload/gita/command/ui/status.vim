@@ -25,7 +25,7 @@ function! s:define_actions() abort
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#status#default_action_mapping
+        \ g:gita#command#ui#status#primary_action_mapping
         \)
   nmap <buffer> <C-^> <Plug>(gita-commit)
 endfunction
@@ -190,6 +190,6 @@ endfunction
 
 call gita#util#define_variables('command#ui#status', {
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-edit)',
+      \ 'primary_action_mapping': '<Plug>(gita-edit)',
       \ 'disable_default_mappings': 0,
       \})

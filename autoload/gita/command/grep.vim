@@ -38,7 +38,7 @@ function! s:get_grep_content(git, pattern, commit, directories, options) abort
   endif
   let result = gita#execute(a:git, 'grep', options)
   if result.status
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   endif
   return result.content
 endfunction

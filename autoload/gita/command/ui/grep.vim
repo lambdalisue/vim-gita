@@ -92,7 +92,7 @@ function! s:define_actions() abort
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#grep#default_action_mapping
+        \ g:gita#command#ui#grep#primary_action_mapping
         \)
 endfunction
 
@@ -207,6 +207,6 @@ endfunction
 
 call gita#util#define_variables('command#ui#grep', {
       \ 'default_opener': 'botright 10 split',
-      \ 'default_action_mapping': '<Plug>(gita-show)',
+      \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,
       \})

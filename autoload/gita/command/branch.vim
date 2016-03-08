@@ -34,7 +34,7 @@ function! s:get_branch_content(git, options) abort
   let options['verbose'] = 1
   let result = gita#execute(a:git, 'branch', options)
   if result.status
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

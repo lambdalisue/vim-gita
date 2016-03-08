@@ -1,110 +1,16 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:DateTime = s:V.import('DateTime')
 let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
+let s:DateTime = s:V.import('DateTime')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
+let s:Python = s:V.import('Vim.Python')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 let s:GitProcess = s:V.import('Git.Process')
-let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:ProgressBar = s:V.import('ProgressBar')
-
-function! s:pick_available_options(options) abort
-  let options = s:Dict.pick(a:options, [
-        \ 'porcelain',
-        \ 'incremental',
-        \])
-  return options
-endfunction
-
-function! s:format_content(content) abort
-  let progressbar = s:ProgressBar.new(
-        \ len(a:content), {
-        \   'barwidth': 80,
-        \   'statusline': 0,
-        \   'prefix': 'Parsing blame content: ',
-        \})
-  try
-    return s:GitParser.parse_blame(a:content, progressbar)
-  finally
-    call progressbar.exit()
-  endtry
-endfunction
-
-function! s:get_blameobj(git, commit, filename, options) abort
-  " NOTE:
-  " Usually gita provide a way to get a raw content but formatting raw content
-  " of blame is timeconsuming and the result requires to be cached so do not
-  " return a raw content to reduce cache size
-  let options = s:pick_available_options(a:options)
-  if g:gita#command#blame#use_porcelain_instead
-    let options['porcelain'] = 1
-  else
-    let options['incremental'] = 1
-  endif
-  let options['commit'] = a:commit
-  let options['--'] = [
-        \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
-        \]
-  redraw | echo 'Retrieving a blame content...'
-  let result = gita#execute(a:git, 'blame', options)
-  redraw | echo
-  if result.status
-    call s:GitProcess.throw(result.stdout)
-  endif
-  let blameobj = s:format_content(result.content)
-  if !get(options, 'porcelain')
-    if empty(a:commit)
-      let blameobj.file_content = readfile(a:filename)
-    else
-      let blameobj.file_content = gita#command#show#call({
-            \ 'commit': a:commit,
-            \ 'filename': a:filename,
-            \}).content
-    endif
-  endif
-  return blameobj
-endfunction
-
-function! s:get_cached_blameobj(git, commit, filename, options) abort
-  let cachename = join([
-        \ a:commit, a:filename,
-        \ g:gita#command#blame#use_porcelain_instead ? 'porcelain' : 'incremental',
-        \ string(s:pick_available_options(a:options)),
-        \])
-  if !has_key(a:git, '_gita_blameobj_cache')
-    let a:git._gita_blameobj_cache = s:MemoryCache.new()
-  endif
-  " NOTE:
-  " Get cached blameobj and check if 'index' is updated from a last accessed
-  " time and determine if the cached content is fresh enough.
-  " But if the 'commit' seems like a hashref, trust cached blameobj while
-  " constructing blameobj is really timeconsuming.
-  let cached  = a:git._gita_blameobj_cache.get(cachename, {})
-  let hashref = a:commit =~# '^[0-9a-zA-Z]\{40}$'
-  let uptime = empty(a:commit)
-        \ ? getftime(a:filename)
-        \ : s:Git.getftime(a:git, 'index')
-  if empty(cached) || (!hashref && (uptime == -1 || uptime > cached.uptime))
-    let blameobj = s:get_blameobj(a:git, a:commit, a:filename, a:options)
-    call a:git._gita_blameobj_cache.set(cachename, {
-          \ 'uptime': uptime,
-          \ 'blameobj': blameobj,
-          \})
-    return blameobj
-  endif
-  return cached.blameobj
-endfunction
-
-function! s:get_chunkinfo_cache() abort
-  if !exists('s:_chunkinfo_cache')
-    let s:_chunkinfo_cache = s:MemoryCache.new()
-  endif
-  return s:_chunkinfo_cache
-endfunction
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:format_timestamp(timestamp, timezone, now) abort
   let datetime  = s:DateTime.from_unix_time(a:timestamp, a:timezone)
@@ -120,7 +26,7 @@ endfunction
 
 function! s:get_max_linenum(chunks) abort
   let chunk = a:chunks[len(a:chunks) - 1]
-  return chunk.linenum.final + get(chunk.linenum, 'nlines', 1)
+  return chunk.linenum.final + get(chunk, 'nlines', 1)
 endfunction
 
 function! s:build_chunkinfo(chunk, width, now, whitespaces) abort
@@ -150,7 +56,7 @@ function! s:format_chunk(chunk, width, height, cache, now, whitespaces) abort
   if a:height == 1
     if !has_key(chunkinfo, 'linesummary')
       " produce a linesummary only when it becomes necessary
-      let linesummary = s:String.truncate(a:chunk.summary, a:width)
+      let linesummary = s:String.truncate(a:chunk.summary, a:width - 1)
       let chunkinfo.linesummary = substitute(linesummary, '\s\+$', '', '')
       call a:cache.set(a:chunk.revision, chunkinfo)
     endif
@@ -167,7 +73,7 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   let chunks    = a:blameobj.chunks
   let revisions = a:blameobj.revisions
   let now   = s:DateTime.now()
-  let cache = s:get_chunkinfo_cache()
+  let cache = s:MemoryCache.new()
   let linenum_width  = len(s:get_max_linenum(chunks))
   let linenum_spacer = repeat(' ', linenum_width)
   let linenum_pseudo = 1
@@ -221,49 +127,71 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
           \})
     call add(separators, linenum_pseudo)
     let linenum_pseudo += 1
-    if !empty(a:progressbar)
-      call a:progressbar.update()
-    endif
+    call a:progressbar.update()
   endfor
   let offset = -2
-  let blame = {
+  let blamemeta = {
         \ 'chunks':       chunks,
         \ 'lineinfos':    lineinfos[:offset],
         \ 'linerefs':     linerefs,
-        \ 'separators':   empty(separators) ? [] : separators[:offset],
+        \ 'separators':   len(separators) < 2 ? [] : separators[:offset],
         \ 'navi_content': navi_content[:offset],
         \ 'view_content': view_content[:offset],
         \ 'linenum_width': linenum_width,
         \}
-  return blame
+  return blamemeta
 endfunction
 
-function! gita#command#blame#call(...) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = gita#variable#get_valid_filename(options.filename)
-  let blameobj = s:get_cached_blameobj(git, commit, filename, options)
-  let result = {
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'blameobj': blameobj,
-        \ 'options': options,
+
+function! s:get_content(git, commit, filename) abort
+  let options = {
+        \ 'commit': a:commit,
+        \ '--': [s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename))],
         \}
-  return result
+  if g:gita#command#blame#use_porcelain_instead
+    let options['porcelain'] = 1
+  else
+    let options['incremental'] = 1
+  endif
+  let result = gita#execute(a:git, 'blame', options)
+  if result.status
+    call s:GitProcess.throw(result)
+  endif
+  return result.content
 endfunction
 
-function! gita#command#blame#format(blameobj, width) abort
+function! s:get_blameobj(content, commit, filename) abort
+  let progressbar = s:ProgressBar.new(
+        \ len(a:content), {
+        \   'barwidth': 80,
+        \   'statusline': 0,
+        \})
+  try
+    let blameobj = s:GitParser.parse_blame(a:content, {
+          \ 'progressbar': progressbar,
+          \ 'python': g:gita#command#blame#use_python,
+          \})
+    if !g:gita#command#blame#use_porcelain_instead
+      if empty(a:commit)
+        let blameobj.file_content = readfile(a:filename)
+      else
+        let blameobj.file_content = gita#command#show#call({
+              \ 'commit': a:commit,
+              \ 'filename': a:filename,
+              \}).content
+      endif
+    endif
+    return blameobj
+  finally
+    call progressbar.exit()
+  endtry
+endfunction
+
+function! s:get_blamemeta(blameobj, width) abort
   let progressbar = s:ProgressBar.new(
         \ len(a:blameobj.chunks), {
         \   'barwidth': 80,
-        \   'statusline': 1,
-        \   'prefix': 'Constructing interface: ',
+        \   'statusline': 0,
         \})
   try
     return s:format_blameobj(a:blameobj, a:width, progressbar)
@@ -272,25 +200,79 @@ function! gita#command#blame#format(blameobj, width) abort
   endtry
 endfunction
 
-function! gita#command#blame#get_blameobj_or_fail() abort
-  let blameobj = gita#meta#get_for('^blame-', 'blameobj')
-  if empty(blameobj)
-    call gita#throw(printf(
-          \ 'Fatal: "blameobj" is not found on %s', bufname('%'),
-          \))
-  endif
-  return blameobj
+function! s:retrieve(commit, filename) abort
+  let git = gita#core#get_or_fail()
+  let guard = s:Guard.store('&l:statusline')
+  try
+    setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
+    redrawstatus
+    let content = s:get_content(git, a:commit, a:filename)
+    setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
+    redrawstatus
+    let blameobj = s:get_blameobj(content, a:commit, a:filename)
+    setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
+    redrawstatus
+    let blamemeta = s:get_blamemeta(blameobj, g:gita#command#blame#navigator_width)
+    return blamemeta
+  finally
+    call guard.restore()
+  endtry
 endfunction
 
-function! gita#command#blame#get_blamemeta_or_fail() abort
-  let blameobj = gita#command#blame#get_blameobj_or_fail()
-  if !has_key(blameobj, 'blamemeta')
-    call gita#throw(printf(
-          \ 'Fatal: "blameobj" does not have "blamemeta" attribute on %s',
-          \ bufname('%'),
-          \))
+
+function! gita#command#blame#get_or_create(options) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, a:options)
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = gita#variable#get_valid_filename(options.filename)
+
+  let bufname_view = gita#command#ui#blame_view#bufname({
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \})
+  if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
+    return {
+          \ 'commit': commit,
+          \ 'filename': filename,
+          \ 'blamemeta': getbufvar(bufname_view, '_gita_blame_cache'),
+          \}
   endif
-  return blameobj.blamemeta
+
+  let bufname_navi = gita#command#ui#blame_navi#bufname({
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \})
+  if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
+    return {
+          \ 'commit': commit,
+          \ 'filename': filename,
+          \ 'blamemeta': getbufvar(bufname_navi, '_gita_blame_cache'),
+          \}
+  endif
+
+  let blamemeta = s:retrieve(commit, filename)
+  if bufexists(bufname_view)
+    call setbufvar(bufname_view, '_gita_blame_cache', blamemeta)
+  endif
+  if bufexists(bufname_navi)
+    call setbufvar(bufname_navi, '_gita_blame_cache', blamemeta)
+  endif
+
+  return {
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \ 'blamemeta': blamemeta,
+        \}
+endfunction
+
+function! gita#command#blame#get_or_fail() abort
+  if !exists('b:_gita_blame_cache')
+  endif
+  return b:_gita_blame_cache
 endfunction
 
 
@@ -298,7 +280,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita blame',
-          \ 'description': 'Show what revision and author last modified each line of a file',
+          \ 'description': 'Show what revision and author last modified each line of a file (UI only)',
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
@@ -311,7 +293,6 @@ function! s:get_parser() abort
           \ ], {
           \   'complete': function('gita#variable#complete_commit'),
           \ })
-    " TODO: Add more arguments
   endif
   return s:parser
 endfunction
@@ -322,15 +303,15 @@ function! gita#command#blame#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#blame#default_options),
         \ options,
         \)
-  call gita#command#blame#open(options)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
+  call gita#option#assign_selection(options)
+  call gita#command#ui#blame#open(options)
 endfunction
 
 function! gita#command#blame#complete(...) abort
@@ -338,7 +319,10 @@ function! gita#command#blame#complete(...) abort
   return call(parser.complete, a:000, parser)
 endfunction
 
+
 call gita#util#define_variables('command#blame', {
       \ 'default_options': {},
       \ 'use_porcelain_instead': 0,
+      \ 'use_python': s:Python.is_enabled(),
+      \ 'navigator_width': 50,
       \})

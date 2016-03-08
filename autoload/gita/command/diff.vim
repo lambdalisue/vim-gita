@@ -63,7 +63,7 @@ function! s:get_diff_content(git, commit, filenames, options) abort
     " --no-index force --exit-code option.
     " --exit-code mean that the program exits with 1 if there were differences
     " and 0 means no differences
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

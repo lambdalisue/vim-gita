@@ -22,7 +22,7 @@ endfunction
 function! gita#meta#get_for(content_type, name, ...) abort
   let default = get(a:000, 0, '')
   let expr    = get(a:000, 1, '%')
-  if a:content_type !~# gita#meta#get('content_type', '', expr)
+  if gita#meta#get('content_type', '', expr) !~# a:content_type
     return default
   endif
   return call('gita#meta#get', [a:name, default, expr])

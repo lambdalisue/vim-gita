@@ -49,7 +49,7 @@ function! s:get_commit_content(git, filenames, options) abort
   if result.status  && !get(options, 'dry-run')
     " Note:
     " Somehow 'git commit' return 1 when --dry-run is specified
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

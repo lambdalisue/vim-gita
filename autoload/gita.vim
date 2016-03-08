@@ -70,4 +70,3 @@ call gita#util#define_variables('', {
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'complete_threshold': 100,
       \})
-

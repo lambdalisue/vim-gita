@@ -33,7 +33,7 @@ def _vim_gita_vital_Git_Parser_main():
                         'original': int(bits[1]),
                         'final': int(bits[2]),
                     },
-                    'nlines': 0 if len(bits) <= 3 else bits[3],
+                    'nlines': 0 if len(bits) < 3 else bits[3],
                 }
                 if revision not in revisions:
                     revisions[revision] = {}

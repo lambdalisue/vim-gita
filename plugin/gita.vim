@@ -11,8 +11,6 @@ command! -nargs=? -range -bang
 
 augroup vim_gita_internal_autocmd
   autocmd!
-  autocmd BufReadCmd    gita://* nested call gita#autocmd#call('BufReadCmd')
-  autocmd BufWriteCmd   gita://* nested call gita#autocmd#call('BufWriteCmd')
   autocmd FileReadCmd   gita://* nested call gita#autocmd#call('FileReadCmd')
   autocmd FileWriteCmd  gita://* nested call gita#autocmd#call('FileWriteCmd')
   autocmd BufReadCmd    gita:*   nested call gita#autocmd#call('BufReadCmd')
