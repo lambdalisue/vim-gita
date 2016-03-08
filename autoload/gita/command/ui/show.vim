@@ -80,6 +80,9 @@ function! s:get_bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \ 'patch': 0,
+        \ 'ancestors': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
         \ 'worktree': 0,
         \}, get(a:000, 0, {}))
   if options.worktree || options.commit ==# s:WORKTREE
@@ -92,9 +95,13 @@ function! s:get_bufname(...) abort
     endif
     return s:Path.relpath(gita#variable#get_valid_filename(options.filename))
   endif
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
+  if options.ancestors || options.ours || options.theirs
+    let commit = ''
+  else
+    let commit = gita#variable#get_valid_range(options.commit, {
+          \ '_allow_empty': 1,
+          \})
+  endif
   let filename = empty(options.filename)
         \ ? ''
         \ : gita#variable#get_valid_filename(options.filename)
@@ -102,6 +109,9 @@ function! s:get_bufname(...) abort
         \ 'content_type': 'show',
         \ 'extra_option': [
         \   options.patch ? 'patch' : '',
+        \   options.ancestors ? 'ancestors' : '',
+        \   options.ours ? 'ours' : '',
+        \   options.theirs ? 'theirs' : '',
         \ ],
         \ 'commitish': commit,
         \ 'path': filename,
@@ -112,10 +122,12 @@ function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
   let options = gita#option#cascade('^show$', a:options, {
         \ 'patch': 0,
+        \ 'ancestors': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
         \ 'selection': [],
         \})
-  if options.patch
-    " 'patch' mode requires:
+  if options.patch || options.ancestors || options.ours || options.theirs
     " - INDEX content, naemly 'commit' should be an empty value
     " - file content, namely 'filename' is reqiured
     let options.commit = ''

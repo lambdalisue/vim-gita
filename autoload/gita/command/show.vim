@@ -17,6 +17,7 @@ function! s:pick_available_options(options) abort
   let options = s:Dict.pick(a:options, [])
   return options
 endfunction
+
 function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
   let lhs = empty(lhs) ? 'HEAD' : lhs
@@ -24,6 +25,7 @@ function! s:get_ancestor_content(git, commit, filename, options) abort
   let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
   return s:get_revision_content(a:git, commit, a:filename, a:options)
 endfunction
+
 function! s:get_revision_content(git, commit, filename, options) abort
   let options = s:pick_available_options(a:options)
   if empty(a:filename)
@@ -46,6 +48,9 @@ endfunction
 
 function! gita#command#show#call(...) abort
   let options = extend({
+        \ 'ancestors': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
         \ 'commit': '',
         \ 'filename': '',
         \ 'worktree': 0,
@@ -53,6 +58,12 @@ function! gita#command#show#call(...) abort
   let git = gita#core#get_or_fail()
   if options.worktree || options.commit ==# s:WORKTREE
     let commit = s:WORKTREE
+  elseif options.ancestors
+    let commit = ':1'
+  elseif options.ours
+    let commit = ':2'
+  elseif options.theirs
+    let commit = ':3'
   else
     let commit = gita#variable#get_valid_range(options.commit, {
           \ '_allow_empty': 1,
@@ -110,19 +121,19 @@ function! s:get_parser() abort
           \   'conflicts': ['repository', 'ancestor', 'ours', 'theirs'],
           \})
     call s:parser.add_argument(
-          \ '--ancestor', '-1',
+          \ '--ancestors', '-1',
           \ 'open a content of a file in a common ancestor during merge', {
           \   'conflicts': ['repository', 'worktree', 'ours', 'theirs'],
           \})
     call s:parser.add_argument(
           \ '--ours', '-2',
           \ 'open a content of a file in our side during merge', {
-          \   'conflicts': ['repository', 'worktree', 'ancestor', 'theirs'],
+          \   'conflicts': ['repository', 'worktree', 'ancestors', 'theirs'],
           \})
     call s:parser.add_argument(
           \ '--theirs', '-3',
           \ 'open a content of a file in thier side during merge', {
-          \   'conflicts': ['repository', 'worktree', 'ancestor', 'ours'],
+          \   'conflicts': ['repository', 'worktree', 'ancestors', 'ours'],
           \})
     call s:parser.add_argument(
           \ '--ui',
@@ -161,15 +172,6 @@ function! s:get_parser() abort
       if get(a:options, 'repository')
         let a:options.filename = ''
         unlet a:options.repository
-      elseif get(a:options, 'ancestor')
-        let a:options.commit = ':1'
-        unlet a:options.commit
-      elseif get(a:options, 'ours')
-        let a:options.commit = ':2'
-        unlet a:options.commit
-      elseif get(a:options, 'theirs')
-        let a:options.commit = ':3'
-        unlet a:options.commit
       endif
     endfunction
     call s:parser.hooks.validate()

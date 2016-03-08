@@ -16,7 +16,7 @@ function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
         \ 'common', 'index', 'blame', 'browse', 'checkout',
-        \ 'commit', 'diff', 'discard', 'edit', 'patch',
+        \ 'commit', 'diff', 'discard', 'edit', 'patch', 'chaperone',
         \ 'show',
         \], g:gita#command#ui#status#disable_default_mappings)
 

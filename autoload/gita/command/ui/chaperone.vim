@@ -12,11 +12,11 @@ function! s:open2(options) abort
   let filename = empty(options.filename) ? '%' : options.filename
   let filename = gita#variable#get_valid_filename(filename)
   let loptions = {
-        \ 'commit': ':2',
+        \ 'ours': 1,
         \ 'filename': filename,
         \}
   let roptions = {
-        \ 'commit': ':3',
+        \ 'theirs': 1,
         \ 'filename': filename,
         \}
   let vertical = matchstr(&diffopt, 'vertical')
@@ -30,8 +30,9 @@ function! s:open2(options) abort
         \}))
   call gita#util#diffthis()
 
-  let result =gita#command#show#call(loptions)
-  call writefile(result.content, filename)
+  let result =gita#command#show#call(extend(loptions, {
+        \ 'quiet': 1,
+        \}))
   call gita#command#ui#show#open({
         \ 'worktree': 1,
         \ 'filename': filename,
@@ -40,7 +41,9 @@ function! s:open2(options) abort
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
         \ 'window': 'chaperone2_lhs',
-        \}))
+        \})
+  call gita#util#buffer#edit_content(result.content)
+  setlocal modified
   call gita#util#diffthis()
   call gita#util#select(options.selection)
   diffupdate
@@ -56,15 +59,15 @@ function! s:open3(options) abort
   let filename = empty(options.filename) ? '%' : options.filename
   let filename = gita#variable#get_valid_filename(filename)
   let loptions = {
-        \ 'commit': ':2',
+        \ 'ours': 1,
         \ 'filename': filename,
         \}
   let coptions = {
-        \ 'commit': ':1',
+        \ 'ancestors': 1,
         \ 'filename': filename,
         \}
   let roptions = {
-        \ 'commit': ':3',
+        \ 'theirs': 1,
         \ 'filename': filename,
         \}
   let vertical = matchstr(&diffopt, 'vertical')
@@ -79,8 +82,9 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let rhs_bufnum = bufnr('%')
 
-  let result =gita#command#show#call(coptions)
-  call writefile(result.content, filename)
+  let result =gita#command#show#call(extend(coptions, {
+        \ 'quiet': 1,
+        \}))
   call gita#command#ui#show#open({
         \ 'worktree': 1,
         \ 'filename': filename,
@@ -89,7 +93,9 @@ function! s:open3(options) abort
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
         \ 'window': 'chaperone3_chs',
-        \}))
+        \})
+  call gita#util#buffer#edit_content(result.content)
+  setlocal modified
   call gita#util#diffthis()
   let chs_bufnum = bufnr('%')
 
