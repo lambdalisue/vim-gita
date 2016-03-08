@@ -94,7 +94,7 @@ function! s:on_BufReadCmd(options) abort
 endfunction
 
 
-function! gita#command#ui#ls_tree#autocmd(name, options, attributes) abort
+function! gita#command#ui#ls_tree#autocmd(name) abort
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita:[^:\\/]\+:diff-ls:\(.*\)$')
   if empty(m)

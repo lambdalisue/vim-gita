@@ -159,7 +159,7 @@ function! s:define_syntax() abort
         \)
 endfunction
 
-function! gita#command#ui#grep#autocmd(name, options, attributes) abort
+function! gita#command#ui#grep#autocmd(name) abort
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita:[^:\\/]\+:grep:\(.*\)$')
   if empty(m)
