@@ -248,7 +248,7 @@ endfunction
 function! gita#command#ui#diff#autocmd(name) abort
   let git = gita#core#get_or_fail()
   let bufname = expand('<afile>')
-  let m = matchlist(bufname, '^gita://[^:\\/]\+:diff:\([^\\/]\+\)[\\/]\(.*\)$')
+  let m = matchlist(bufname, '^gita://[^:\\/]\+:diff\%(:\([^\\/]\+\)\)\?[\\/]\(.*\)$')
   if empty(m)
     call gita#throw(printf(
           \ 'A bufname %s does not have required components',
