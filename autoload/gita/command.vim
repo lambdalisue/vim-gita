@@ -145,6 +145,10 @@ call gita#command#register('commit',
       \ 'gita#command#commit#command',
       \ 'gita#command#commit#complete',
       \)
+call gita#command#register('chaperone',
+      \ 'gita#command#chaperone#command',
+      \ 'gita#command#chaperone#complete',
+      \)
 call gita#command#register('checkout',
       \ 'gita#command#checkout#command',
       \ 'gita#command#checkout#complete',
