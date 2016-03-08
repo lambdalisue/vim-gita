@@ -41,7 +41,6 @@ endfunction
 
 function! s:get_bufname(options) abort
   let options = extend({
-        \ 'list': '',
         \ 'all': 0,
         \ 'remotes': 0,
         \}, a:options)
@@ -81,9 +80,17 @@ function! s:on_BufReadCmd(options) abort
   call gita#command#ui#branch#redraw()
 endfunction
 
-function! gita#command#branch#open(...) abort
+
+function! gita#command#ui#branch#autocmd(name) abort
+  let options = gita#util#cascade#get('branch')
+  call call('s:on_' . a:name, [options])
+endfunction
+
+function! gita#command#ui#branch#open(...) abort
   let options = extend({
+        \ 'anchor': 0,
         \ 'opener': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -100,7 +107,7 @@ function! gita#command#branch#open(...) abort
   call gita#util#select(options.selection)
 endfunction
 
-function! gita#command#branch#redraw() abort
+function! gita#command#ui#branch#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:content_offset = len(prologue)
