@@ -1,5 +1,6 @@
 let s:V = vital#of('vim_gita')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:GitInfo = s:V.import('Git.Info')
 let s:GitProcess = s:V.import('Git.Process')
 
 function! gita#vital() abort
@@ -40,6 +41,14 @@ function! gita#execute(git, name, ...) abort
   endif
 endfunction
 
+function! gita#get_git_version() abort
+  if exists('s:git_version')
+    return s:git_version
+  endif
+  let s:git_version = s:GitInfo.get_git_version()
+  return s:git_version
+endfunction
+
 function! s:is_debug() abort
   " Used to tell if gita is in debug mode
   return &verbose
@@ -61,4 +70,3 @@ call gita#util#define_variables('', {
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'complete_threshold': 100,
       \})
-

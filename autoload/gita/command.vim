@@ -161,9 +161,13 @@ call gita#command#register('grep',
       \ 'gita#command#grep#command',
       \ 'gita#command#grep#complete',
       \)
-call gita#command#register('ls',
-      \ 'gita#command#ls#command',
-      \ 'gita#command#ls#complete',
+call gita#command#register('ls-files',
+      \ 'gita#command#ls_files#command',
+      \ 'gita#command#ls_files#complete',
+      \)
+call gita#command#register('ls-tree',
+      \ 'gita#command#ls_tree#command',
+      \ 'gita#command#ls_tree#complete',
       \)
 call gita#command#register('merge',
       \ 'gita#command#merge#command',

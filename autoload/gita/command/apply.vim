@@ -34,7 +34,7 @@ function! s:apply_command(git, filenames, options) abort
   let options['verbose'] = 1
   let result = gita#execute(a:git, 'apply', options)
   if result.status
-    call s:GitProcess.throw(result.stdout)
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

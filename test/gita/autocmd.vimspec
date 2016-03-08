@@ -1,0 +1,122 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+let s:scriptfile = s:Path.realpath('autoload/gita/autocmd.vim')
+
+Describe gita#autocmd
+  Before
+    let sf = s:ScriptLocal.sfuncs(s:scriptfile)
+  End
+
+  Describe #parse_cmdarg([{cmdarg}])
+    It returns an empty dictionary for non cmdarg
+      let ret = gita#autocmd#parse_cmdarg('')
+      Assert Equals(ret, {})
+    End
+    It parses "++enc=XXX" and return "encoding: XXX" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++enc=utf-8')
+      Assert Equals(ret, { 'encoding': 'utf-8' })
+    End
+
+    It parses "++ff=XXX" and return "fileformat: XXX" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++ff=dos')
+      Assert Equals(ret, { 'fileformat': 'dos' })
+    End
+
+    It parses "++bad=XXX" and return "bad: XXX" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++bad=keep')
+      Assert Equals(ret, { 'bad': 'keep' })
+    End
+
+    It parses "++bin" and return "binary: 1" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++binary')
+      Assert Equals(ret, { 'binary': 1 })
+    End
+
+    It parses "++nobin" and return "nobinary: 1" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++nobin')
+      Assert Equals(ret, { 'nobinary': 1 })
+    End
+
+    It parses "++edit" and return "edit: 1" dictionary
+      let ret = gita#autocmd#parse_cmdarg('++edit')
+      Assert Equals(ret, { 'edit': 1 })
+    End
+
+    It parses multiple opts specification and return a correct dictionary
+      let ret = gita#autocmd#parse_cmdarg(
+            \ '++enc=utf-8 ++ff=dos ++bad=keep ++binary ++nobinary ++edit'
+            \)
+      Assert Equals(ret, {
+            \ 'encoding': 'utf-8',
+            \ 'fileformat': 'dos',
+            \ 'bad': 'keep',
+            \ 'binary': 1,
+            \ 'nobinary': 1,
+            \ 'edit': 1,
+            \})
+    End
+  End
+
+  Describe #parse_bufname({bufname})
+    It throws an exception if {bufname} does not follow schemes defined
+      Throws /A buffer name foo does not contain required components/
+            \ gita#autocmd#parse_bufname('foo')
+    End
+
+    It prases gita://<refname>:<content_type> type names
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff:cached:reverse/HEAD:README.md')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff:cached/HEAD:README.md')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff:cached/:README.md')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff:cached/HEAD')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff:cached/')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+    End
+
+    It prases gita://<refname>:<content_type>/<treeish> type names
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff/HEAD:README.md')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff/:README.md')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff/HEAD')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita:diff/')
+      Assert Equals(ret, ['vim-gita', 'diff'])
+    End
+
+    It prases gita://<refname> type names
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita/HEAD:README.md')
+      Assert Equals(ret, ['vim-gita', 'show'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita/:README.md')
+      Assert Equals(ret, ['vim-gita', 'show'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita/HEAD')
+      Assert Equals(ret, ['vim-gita', 'show'])
+
+      let ret = gita#autocmd#parse_bufname('gita://vim-gita/')
+      Assert Equals(ret, ['vim-gita', 'show'])
+    End
+
+    It prases gita:<refname>:<content_type> type names
+      let ret = gita#autocmd#parse_bufname('gita:vim-gita:grep:doc:autoload/gita:plugin')
+      Assert Equals(ret, ['vim-gita', 'grep'])
+    End
+
+    It prases gita:<refname>:<content_type> type names
+      let ret = gita#autocmd#parse_bufname('gita:vim-gita:status')
+      Assert Equals(ret, ['vim-gita', 'status'])
+    End
+  End
+End

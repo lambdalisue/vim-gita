@@ -4,9 +4,10 @@ function! s:action(candidate, options) abort
         \ 'opener': '',
         \ 'method': g:gita#action#patch#default_method,
         \}, a:options)
-  call gita#option#assign_selection(options, g:gita#action#patch#default_opener)
+  call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options)
   let options.selection = get(options, 'selection', [])
-  call gita#command#patch#open({
+  call gita#command#ui#patch#open({
         \ 'method': options.method,
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
@@ -51,5 +52,4 @@ endfunction
 
 call gita#util#define_variables('action#patch', {
       \ 'default_method': '',
-      \ 'default_opener': '',
       \})

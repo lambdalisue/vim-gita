@@ -5,10 +5,10 @@ function! s:action(candidate, options) abort
         \}, a:options)
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#action#blame#default_opener)
+  call gita#option#assign_opener(options)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  call gita#command#blame#open({
+  call gita#command#ui#blame#open({
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
         \ 'filename': a:candidate.path,
@@ -31,5 +31,5 @@ function! gita#action#blame#define(disable_mappings) abort
 endfunction
 
 call gita#util#define_variables('action#blame', {
-      \ 'default_opener': 'tabnew',
+      \ 'default_opener': '',
       \})

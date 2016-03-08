@@ -1,4 +1,4 @@
-if exists('g:loaded_gita') && get(g:, 'gita#develop')
+if exists('g:loaded_gita')
   finish
 endif
 let g:loaded_gita = 1
@@ -11,10 +11,10 @@ command! -nargs=? -range -bang
 
 augroup vim_gita_internal_autocmd
   autocmd!
-  autocmd BufReadCmd   gita://* call gita#autocmd#call('BufReadCmd')
-  autocmd FileReadCmd  gita://* call gita#autocmd#call('FileReadCmd')
-  autocmd SourceCmd    gita://* call gita#autocmd#call('SourceCmd')
-  " to check if the content in git repository is updated
-  autocmd BufWritePre  *        call gita#autocmd#call('BufWritePre')
-  autocmd BufWritePost *        call gita#autocmd#call('BufWritePost')
+  autocmd FileReadCmd   gita://* nested call gita#autocmd#call('FileReadCmd')
+  autocmd FileWriteCmd  gita://* nested call gita#autocmd#call('FileWriteCmd')
+  autocmd BufReadCmd    gita:*   nested call gita#autocmd#call('BufReadCmd')
+  autocmd BufWriteCmd   gita:*   nested call gita#autocmd#call('BufWriteCmd')
+  autocmd BufReadCmd    gita:*/* nested call gita#autocmd#call('BufReadCmd')
+  autocmd BufWriteCmd   gita:*/* nested call gita#autocmd#call('BufWriteCmd')
 augroup END

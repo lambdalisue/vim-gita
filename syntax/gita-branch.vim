@@ -3,7 +3,11 @@ if exists('b:current_syntax')
 endif
 let b:current_syntax = 'gita-branch'
 
-syntax clear
-call gita#command#branch#define_highlights()
-call gita#command#branch#define_syntax()
+highlight default link GitaComment    Comment
+highlight default link GitaSelected   Special
+highlight default link GitaRemote     Constant
 
+syntax clear
+syntax match GitaComment    /\%^.*$/
+syntax match GitaSelected   /^\* [^ ]\+/hs=s+2
+syntax match GitaRemote     /^..remotes\/[^ ]\+/hs=s+2

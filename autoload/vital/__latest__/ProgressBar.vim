@@ -96,8 +96,12 @@ function! s:instance.construct() abort
   let indicator = substitute(indicator, '%(percent)s', percent, '')
   return indicator
 endfunction
-function! s:instance.redraw() abort
+function! s:instance.redraw(...) abort
   let indicator = self.construct()
+  if a:0 > 0 && indicator ==# a:1
+    " skip
+    return
+  endif
   if self.statusline
     let &l:statusline = indicator
     redrawstatus
@@ -107,8 +111,9 @@ function! s:instance.redraw() abort
 endfunction
 function! s:instance.update(...) abort
   let value = get(a:000, 0, self.current + 1)
+  let previous = self.construct()
   let self.current = value > self.maxvalue ? self.maxvalue : value
-  call self.redraw()
+  call self.redraw(previous)
 endfunction
 function! s:instance.exit() abort
   let self.current = self.maxvalue

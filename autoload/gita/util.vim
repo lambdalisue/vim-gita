@@ -106,7 +106,7 @@ function! gita#util#select(selection, ...) abort
   " Original from mattn/emmet-vim
   " https://github.com/mattn/emmet-vim/blob/master/autoload/emmet/util.vim#L75-L79
   let prefer_visual = get(a:000, 0, 0)
-  let line_start = get(a:selection, 0, 1)
+  let line_start = get(a:selection, 0, line('.'))
   let line_end = get(a:selection, 1, line_start)
   if line_start == line_end && !prefer_visual
     keepjump call setpos('.', [0, line_start, 1, 0])

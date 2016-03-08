@@ -5,10 +5,10 @@ function! s:action(candidate, options) abort
         \}, a:options)
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options, g:gita#action#show#default_opener)
+  call gita#option#assign_opener(options)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  call gita#command#show#open({
+  call gita#command#ui#show#open({
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
         \ 'filename': a:candidate.path,
@@ -74,7 +74,3 @@ function! gita#action#show#define(disable_mapping) abort
   nmap <buffer><nowait><expr> st gita#action#smart_map('st', '<Plug>(gita-show-tab)')
   nmap <buffer><nowait><expr> sp gita#action#smart_map('sp', '<Plug>(gita-show-preview)')
 endfunction
-
-call gita#util#define_variables('action#show', {
-      \ 'default_opener': '',
-      \})
