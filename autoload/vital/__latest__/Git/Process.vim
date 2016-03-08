@@ -138,10 +138,10 @@ function! s:execute(...) abort
     let worktree = get(a:1, 'worktree', '')
     let args = s:build_args(a:2, get(a:000, 2, {}))
     let args = (empty(worktree) ? [] : ['-C', worktree]) + args
-    let config = get(a:000, 4, {})
-  else
-    let args = s:build_args(a:1, get(a:000, 3, {}))
     let config = get(a:000, 3, {})
+  else
+    let args = s:build_args(a:1, get(a:000, 1, {}))
+    let config = get(a:000, 2, {})
   endif
   return s:system(args, config)
 endfunction
