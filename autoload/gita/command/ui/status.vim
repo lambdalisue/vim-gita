@@ -109,7 +109,9 @@ function! s:get_bufname(...) abort
 endfunction
 
 function! s:on_BufReadCmd(options) abort
-  let options = gita#option#cascade('^status$', a:options, {})
+  let options = gita#option#cascade('^status$', a:options, {
+        \ 'selection': [],
+        \})
   let options['porcelain'] = 1
   let options['quiet'] = 1
   let result   = gita#command#status#call(options)
@@ -130,6 +132,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   call gita#command#ui#status#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 
@@ -142,7 +145,6 @@ function! gita#command#ui#status#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   if empty(bufname)
@@ -159,7 +161,6 @@ function! gita#command#ui#status#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#status#redraw() abort

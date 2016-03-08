@@ -32,7 +32,6 @@ function! s:open1(options) abort
         \ 'anchor': 0,
         \ 'opener': '',
         \ 'window': '',
-        \ 'selection': [],
         \}, a:options)
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -46,7 +45,6 @@ function! s:open1(options) abort
         \ 'opener': opener,
         \ 'window': options.window,
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! s:open2(options) abort
@@ -103,6 +101,9 @@ function! s:open2(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#command#ui#diff#default_opener
         \ : options.opener
+  if opener =~# 'pedit'
+    call gita#throw('"pedit" is not supported for split diff')
+  endif
   call gita#command#ui#show#open(extend(options.reverse ? loptions : roptions, {
         \ 'anchor': options.anchor,
         \ 'opener': opener,
@@ -167,6 +168,7 @@ function! s:on_BufReadCmd(options) abort
         \ 'unified': &diffopt =~# 'context:\d\+'
         \   ? matchstr(&diffopt, 'context:\zs\d\+')
         \   : 0,
+        \ 'selection': [],
         \})
   call s:configure_options(options)
   let options['quiet'] = 1
@@ -194,6 +196,7 @@ function! s:on_BufReadCmd(options) abort
     setlocal readonly
   endif
   setlocal filetype=diff
+  call gita#util#select(options.selection)
 endfunction
 
 function! s:on_FileReadCmd(options) abort

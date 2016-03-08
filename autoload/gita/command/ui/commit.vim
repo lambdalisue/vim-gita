@@ -151,7 +151,9 @@ function! s:get_bufname(options) abort
 endfunction
 
 function! s:on_BufReadCmd(options) abort
-  let options = gita#option#cascade('^commit$', a:options, {})
+  let options = gita#option#cascade('^commit$', a:options, {
+        \ 'selection': [],
+        \})
   let options['quiet'] = 1
   let options['porcelain'] = 1
   let options['dry-run'] = 1
@@ -184,6 +186,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
   setlocal filetype=gita-commit
   call gita#command#ui#commit#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
@@ -221,7 +224,6 @@ function! gita#command#ui#commit#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -235,7 +237,6 @@ function! gita#command#ui#commit#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#commit#redraw() abort

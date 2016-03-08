@@ -57,7 +57,9 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-files$', a:options, {})
+  let options = gita#option#cascade('^ls-files$', a:options, {
+        \ 'selection': [],
+        \})
   let options['full-name'] = 1
   let options['quiet'] = 1
   let result = gita#command#ls_files#call(options)
@@ -79,6 +81,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   call gita#command#ui#ls_files#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 
@@ -91,7 +94,6 @@ function! gita#command#ui#ls_files#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -105,7 +107,6 @@ function! gita#command#ui#ls_files#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#ls_files#redraw() abort

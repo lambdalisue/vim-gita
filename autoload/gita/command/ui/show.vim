@@ -111,6 +111,7 @@ endfunction
 function! s:on_BufReadCmd(options) abort
   let options = gita#option#cascade('^show$', a:options, {
         \ 'patch': 0,
+        \ 'selection': [],
         \})
   if options.patch
     " 'patch' mode requires:
@@ -143,6 +144,7 @@ function! s:on_BufReadCmd(options) abort
     setlocal buftype=nowrite
     setlocal readonly
   endif
+  call gita#util#select(options.selection)
 endfunction
 
 function! s:on_FileReadCmd(options) abort
@@ -215,7 +217,6 @@ function! gita#command#ui#show#open(...) abort
         \ 'anchor': 0,
         \ 'opener': '',
         \ 'window': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -229,7 +230,6 @@ function! gita#command#ui#show#open(...) abort
         \ 'opener': opener,
         \ 'window': options.window,
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 

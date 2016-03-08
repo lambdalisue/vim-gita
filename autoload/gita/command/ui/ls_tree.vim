@@ -63,7 +63,9 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^ls-tree$', a:options, {})
+  let options = gita#option#cascade('^ls-tree$', a:options, {
+        \ 'selection': [],
+        \})
   let options['full-name'] = 1
   let options['name-only'] = 1
   let options['r'] = 1
@@ -88,6 +90,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   call gita#command#ui#ls_tree#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 
@@ -109,7 +112,6 @@ function! gita#command#ui#ls_tree#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -123,7 +125,6 @@ function! gita#command#ui#ls_tree#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#ls_tree#redraw() abort

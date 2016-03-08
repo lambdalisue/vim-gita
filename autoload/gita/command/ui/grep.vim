@@ -118,7 +118,9 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
-  let options = gita#option#cascade('^grep$', a:options, {})
+  let options = gita#option#cascade('^grep$', a:options, {
+        \ 'selection': [],
+        \})
   let options['full-name'] = 1
   let options['no-color'] = 1
   let options['line-number'] = 1
@@ -145,6 +147,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal cursorline
   setlocal nomodifiable
   call gita#command#ui#grep#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 function! s:define_syntax() abort
@@ -186,7 +189,6 @@ function! gita#command#ui#grep#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#grep#redraw() abort

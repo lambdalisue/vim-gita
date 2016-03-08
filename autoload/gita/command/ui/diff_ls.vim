@@ -122,6 +122,7 @@ endfunction
 function! s:on_BufReadCmd(options) abort
   let git = gita#core#get_or_fail()
   let options = gita#option#cascade('^diff-ls$', a:options, {
+        \ 'selection': [],
         \})
   let options['quiet'] = 1
   let options['numstat'] = 1
@@ -149,6 +150,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
   call gita#command#ui#diff_ls#redraw()
+  call gita#util#select(options.selection)
 endfunction
 
 function! s:on_VimResized() abort
@@ -192,7 +194,6 @@ function! gita#command#ui#diff_ls#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
-        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
@@ -206,7 +207,6 @@ function! gita#command#ui#diff_ls#open(...) abort
         \ 'opener': opener,
         \ 'window': 'manipulation_panel',
         \})
-  call gita#util#select(options.selection)
 endfunction
 
 function! gita#command#ui#diff_ls#redraw() abort
