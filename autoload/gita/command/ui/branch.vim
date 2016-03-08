@@ -110,7 +110,7 @@ endfunction
 function! gita#command#ui#branch#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
-  let s:content_offset = len(prologue)
+  let s:candidate_offset = len(prologue)
   let branches = gita#meta#get_for('branch', 'branches', [])
   let contents = s:format_branches(branches)
   call gita#util#buffer#edit_content(
