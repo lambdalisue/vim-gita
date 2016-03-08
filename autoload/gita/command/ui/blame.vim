@@ -76,7 +76,6 @@ function! s:action_back(candidate, options) abort
   let [revision, filename, selection] = previous
   let winnum = winnr()
   redraw | echo printf('Opening a blame content of "%s" in %s', filename, revision)
-  let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
   call gita#command#ui#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,

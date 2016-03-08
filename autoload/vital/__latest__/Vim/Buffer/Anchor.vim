@@ -113,7 +113,6 @@ function! s:_on_WinLeave() abort
 endfunction
 
 function! s:attach() abort
-  let bufnum = bufnr('%')
   augroup vital_vim_buffer_anchor_internal
     autocmd! * <buffer>
     if exists('##QuitPre')

@@ -98,9 +98,6 @@ function! s:get_header_string(git) abort
 endfunction
 
 function! s:get_bufname(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
   return gita#autocmd#bufname({
         \ 'nofile': 1,
         \ 'content_type': 'status',

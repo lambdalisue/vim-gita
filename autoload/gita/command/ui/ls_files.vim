@@ -47,8 +47,6 @@ function! s:get_header_string(git) abort
 endfunction
 
 function! s:get_bufname(options) abort
-  let options = extend({
-        \}, a:options)
   return gita#autocmd#bufname({
         \ 'nofile': 1,
         \ 'content_type': 'ls-files',

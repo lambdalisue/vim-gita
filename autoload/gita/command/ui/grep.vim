@@ -135,7 +135,7 @@ function! s:on_BufReadCmd(options) abort
         \]))
   call gita#meta#set('pattern', result.pattern)
   call gita#meta#set('commit', result.commit)
-  call gita#meta#set('candidates', result.candidates)
+  call gita#meta#set('candidates', candidates)
   call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   call gita#util#anchor#attach()
