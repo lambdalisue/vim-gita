@@ -28,13 +28,29 @@ function! s:on_CursorMoved() abort
     " Restrict cursor movement to mimic linenum columns
     let blamemeta = gita#meta#get_for('blame-navi', 'blamemeta')
     let linenum_width = blamemeta.linenum_width
-    let column = col('.')
-    if column <= linenum_width + 1
-      call setpos('.', [0, line('.'), linenum_width + 2, 0])
+    let [col, offset] = getpos('.')[2:]
+    if col + offset <= linenum_width + 1
+      call setpos('.', [0, line('.'), linenum_width + 2 - offset, offset])
     endif
   catch
     " fail silently
   endtry
+endfunction
+
+function! s:on_BufEnter() abort
+  let options = gita#meta#get_for('blame-navi', 'options')
+  let bufname = gita#command#ui#blame_view#bufname(options)
+  let bufnum  = bufnr(bufname)
+  if bufnum > -1 || bufwinnr(bufnum) > -1
+    " force to follow same linnum as the partner
+    let winnum = winnr()
+    let [col, offset] = getpos('.')[2:]
+    execute printf('noautocmd keepjumps %dwincmd w', bufwinnr(bufnum))
+    syncbind
+    let linenum = line('.')
+    execute printf('noautocmd keepjumps %dwincmd w', winnum)
+    call setpos('.', [0, linenum, col, offset])
+  endif
 endfunction
 
 function! s:on_BufWinEnter() abort
@@ -68,6 +84,7 @@ function! s:on_BufReadCmd(options) abort
   augroup vim_gita_internal_blame_navi
     autocmd! * <buffer>
     autocmd CursorMoved <buffer> call s:on_CursorMoved()
+    autocmd BufEnter    <buffer> call s:on_BufEnter()
     autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()
   augroup END
   call s:define_actions()

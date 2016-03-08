@@ -24,6 +24,22 @@ function! s:define_actions() abort
   nmap <buffer><nowait> ]c <Plug>(gita-blame-next-chunk)
 endfunction
 
+function! s:on_BufEnter() abort
+  let options = gita#meta#get_for('blame-view', 'options')
+  let bufname = gita#command#ui#blame_navi#bufname(options)
+  let bufnum  = bufnr(bufname)
+  if bufnum > -1 || bufwinnr(bufnum) > -1
+    " force to follow same linnum as the partner
+    let winnum = winnr()
+    let [col, offset] = getpos('.')[2:]
+    execute printf('noautocmd keepjumps %dwincmd w', bufwinnr(bufnum))
+    syncbind
+    let linenum = line('.')
+    execute printf('noautocmd keepjumps %dwincmd w', winnum)
+    call setpos('.', [0, linenum, col, offset])
+  endif
+endfunction
+
 function! s:on_BufWinEnter() abort
   let options = gita#meta#get_for('blame-view', 'options')
   let bufname = gita#command#ui#blame_navi#bufname(options)
@@ -55,6 +71,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('blamemeta', result.blamemeta)
   augroup vim_gita_internal_blame_view
     autocmd! * <buffer>
+    autocmd BufEnter    <buffer> call s:on_BufEnter()
     autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()
   augroup END
   call s:define_actions()
