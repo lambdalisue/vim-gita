@@ -187,6 +187,7 @@ function! s:on_BufWriteCmd(options) abort
     let content  = s:get_diff_content(git, getline(1, '$'), filename)
     call writefile(content, tempfile)
     call gita#command#apply#call({
+          \ 'quiet': 1,
           \ 'filenames': [tempfile],
           \ 'cached': 1,
           \})
