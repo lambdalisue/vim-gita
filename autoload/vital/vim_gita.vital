@@ -1,5 +1,5 @@
 vim_gita
-fb3732cfb9dbdd8f8497baf5da7855e530a0160f
+7e9a416eedcfa6e52e89e053a43f13ac85588395
 
 Prelude
 Vim.Compat
@@ -15,3 +15,4 @@ Data.String
 DateTime
 ArgumentParser
 Vim.Python
+System.Process
