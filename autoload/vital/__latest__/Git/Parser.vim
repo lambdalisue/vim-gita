@@ -44,8 +44,9 @@ endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
-        \ 'Data.StringExt',
+        \ 'System.Filepath',
         \ 'Vim.Python',
+        \ 'Data.StringExt',
         \]
 endfunction
 
