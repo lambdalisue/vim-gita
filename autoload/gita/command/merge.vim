@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -31,7 +31,7 @@ function! s:apply_command(git, commits, options) abort
   endif
   let result = gita#execute(a:git, 'merge', options)
   if result.status
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet', 0)
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

@@ -3,7 +3,7 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:pick_available_options(options) abort
@@ -40,7 +40,7 @@ function! s:apply_command(git, pathlist, options) abort
   endif
   let result = gita#execute(a:git, 'ls-files', options)
   if result.status
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

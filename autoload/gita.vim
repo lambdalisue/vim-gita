@@ -1,7 +1,7 @@
 let s:V = vital#of('vim_gita')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 
 function! gita#vital() abort
   return s:V
@@ -13,16 +13,16 @@ function! gita#throw(...) abort
 endfunction
 
 function! gita#execute(git, name, ...) abort
-  call s:GitProcess.set_config({
+  call s:GitProcessOld.set_config({
         \ 'executable': g:gita#executable,
         \ 'arguments':  g:gita#arguments,
         \})
   let options = get(a:000, 0, {})
   let config  = get(a:000, 1, {})
   if !&verbose
-    return s:GitProcess.execute(a:git, a:name, options, config)
+    return s:GitProcessOld.execute(a:git, a:name, options, config)
   else
-    let result = s:GitProcess.execute(a:git, a:name, options, config)
+    let result = s:GitProcessOld.execute(a:git, a:name, options, config)
     call s:Prompt.debug(printf(
           \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
           \))

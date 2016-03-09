@@ -58,7 +58,7 @@ function! s:throw(msg) abort
   else
     let msg = a:msg
   endif
-  throw 'vital: Git.Process: ' . msg
+  throw 'vital: Git.ProcessOld: ' . msg
 endfunction
 
 function! s:translate_option(key, val, pattern) abort

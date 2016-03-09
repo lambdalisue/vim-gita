@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@@'  " @@ is not valid commit thus
 
@@ -63,7 +63,7 @@ function! s:get_diff_content(git, commit, filenames, options) abort
     " --no-index force --exit-code option.
     " --exit-code mean that the program exits with 1 if there were differences
     " and 0 means no differences
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

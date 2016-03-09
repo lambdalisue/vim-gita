@@ -5,7 +5,7 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@@'
 
@@ -38,7 +38,7 @@ function! s:get_revision_content(git, commit, filename, options) abort
   endif
   let result = gita#execute(a:git, 'show', options)
   if result.status
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")

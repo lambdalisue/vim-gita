@@ -8,7 +8,7 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Python = s:V.import('Vim.Python')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ProgressBar = s:V.import('ProgressBar')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -155,7 +155,7 @@ function! s:get_content(git, commit, filename) abort
   endif
   let result = gita#execute(a:git, 'blame', options)
   if result.status
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   return result.content
 endfunction

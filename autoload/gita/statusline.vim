@@ -7,7 +7,7 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
-let s:GitProcess = s:V.import('Git.Process')
+let s:GitProcessOld = s:V.import('Git.ProcessOld')
 
 let s:format_map = {}
 function! s:format_map.md(data) abort
@@ -259,7 +259,7 @@ function! gita#statusline#get_status_count(git) abort
           \ 'modified': 0,
           \}
     try
-      let result = s:GitProcess.execute(a:git, 'status', {
+      let result = s:GitProcessOld.execute(a:git, 'status', {
             \ 'porcelain': 1,
             \ 'ignore_submodules': 1,
             \})

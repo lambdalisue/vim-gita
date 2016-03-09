@@ -3,14 +3,14 @@ function! s:_vital_loaded(V) abort
   let s:Path = a:V.import('System.Filepath')
   let s:INI = a:V.import('Text.INI')
   let s:Git = a:V.import('Git')
-  let s:GitProcess = a:V.import('Git.Process')
+  let s:GitProcessOld = a:V.import('Git.ProcessOld')
 endfunction
 function! s:_vital_depends() abort
   return [
         \ 'System.Filepath',
         \ 'Text.INI',
         \ 'Git',
-        \ 'Git.Process',
+        \ 'Git.ProcessOld',
         \]
 endfunction
 
@@ -243,7 +243,7 @@ endfunction
 
 " *** External process *******************************************************
 function! s:get_git_version() abort
-  let result = s:GitProcess.system(['--version'])
+  let result = s:GitProcessOld.system(['--version'])
   if result.status
     return '0.0.0'
   else
@@ -255,7 +255,7 @@ function! s:get_last_commitmsg(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
         \}, get(a:000, 0, {}))
-  let result = s:GitProcess.execute(a:git, 'log', {
+  let result = s:GitProcessOld.execute(a:git, 'log', {
         \ '1': 1,
         \ 'pretty': '%B',
         \})
@@ -263,7 +263,7 @@ function! s:get_last_commitmsg(git, ...) abort
     if options.fail_silently
       return []
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = result.content
   return content
@@ -273,7 +273,7 @@ function! s:count_commits_ahead_of_remote(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
         \}, get(a:000, 0, {}))
-  let result = s:GitProcess.execute(a:git, 'log', {
+  let result = s:GitProcessOld.execute(a:git, 'log', {
         \ 'oneline': 1,
         \ 'revision-range': '@{upstream}..',
         \})
@@ -281,7 +281,7 @@ function! s:count_commits_ahead_of_remote(git, ...) abort
     if options.fail_silently
       return 0
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = len(filter(result.content, '!empty(v:val)'))
   return content
@@ -290,7 +290,7 @@ function! s:count_commits_behind_remote(git, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
         \}, get(a:000, 0, {}))
-  let result = s:GitProcess.execute(a:git, 'log', {
+  let result = s:GitProcessOld.execute(a:git, 'log', {
         \ 'oneline': 1,
         \ 'revision-range': '..@{upstream}',
         \})
@@ -298,7 +298,7 @@ function! s:count_commits_behind_remote(git, ...) abort
     if options.fail_silently
       return 0
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = len(filter(result.content, '!empty(v:val)'))
   return content
@@ -313,12 +313,12 @@ function! s:get_available_tags(git, ...) abort
           \ 'sort',
           \ 'contains', 'points-at',
           \])
-  let result = s:GitProcess.execute(a:git, 'tag', execute_options)
+  let result = s:GitProcessOld.execute(a:git, 'tag', execute_options)
   if result.status
     if options.fail_silently
       return []
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = result.content
   return content
@@ -335,12 +335,12 @@ function! s:get_available_branches(git, ...) abort
         \ 'color',
         \])
   let execute_options['color'] = 'never'
-  let result = s:GitProcess.execute(a:git, 'branch', execute_options)
+  let result = s:GitProcessOld.execute(a:git, 'branch', execute_options)
   if result.status
     if options.fail_silently
       return []
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
   return content
@@ -357,12 +357,12 @@ function! s:get_available_commits(git, ...) abort
         \ 'pretty',
         \])
   let execute_options['pretty'] = '%h'
-  let result = s:GitProcess.execute(a:git, 'log', execute_options)
+  let result = s:GitProcessOld.execute(a:git, 'log', execute_options)
   if result.status
     if options.fail_silently
       return []
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = result.content
   return content
@@ -398,12 +398,12 @@ function! s:get_available_filenames(git, ...) abort
         \])
   " NOTE:
   " git -C <rep> ls-files returns unix relative paths from the repository
-  let result = s:GitProcess.execute(a:git, 'ls-files', execute_options)
+  let result = s:GitProcessOld.execute(a:git, 'ls-files', execute_options)
   if result.status
     if options.fail_silently
       return []
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   " return real absolute paths
   let prefix = expand(a:git.worktree) . s:Path.separator()
@@ -417,7 +417,7 @@ function! s:find_common_ancestor(git, commit1, commit2, ...) abort
         \}, get(a:000, 0, {}))
   let lhs = empty(a:commit1) ? 'HEAD' : a:commit1
   let rhs = empty(a:commit2) ? 'HEAD' : a:commit2
-  let result = s:GitProcess.execute(a:git, 'merge-base', {
+  let result = s:GitProcessOld.execute(a:git, 'merge-base', {
         \ 'commit1': lhs,
         \ 'commit2': rhs,
         \})
@@ -425,7 +425,7 @@ function! s:find_common_ancestor(git, commit1, commit2, ...) abort
     if options.fail_silently
       return ''
     endif
-    call s:GitProcess.throw(result)
+    call s:GitProcessOld.throw(result)
   endif
   let content = substitute(result.stdout, '\r\?\n$', '', '')
   return content
