@@ -57,7 +57,7 @@ function! s:get_diff_content(git, commit, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = gita#execute(a:git, 'diff', options)
+  let result = gita#execute_old(a:git, 'diff', options)
   if result.status && !get(options, 'no-index') && !get(options, 'exit-code')
     " NOTE:
     " --no-index force --exit-code option.

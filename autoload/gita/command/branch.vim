@@ -32,7 +32,7 @@ endfunction
 function! s:get_branch_content(git, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
-  let result = gita#execute(a:git, 'branch', options)
+  let result = gita#execute_old(a:git, 'branch', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

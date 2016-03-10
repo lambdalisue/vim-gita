@@ -5,6 +5,10 @@ function! s:_vital_loaded(V) abort
   let s:INI = a:V.import('Text.INI')
   let s:Git = a:V.import('Git')
   let s:GitProcess = a:V.import('Git.Process')
+
+  " obsolete
+  let s:Prelude = a:V.import('Prelude')
+  let s:StringExt = a:V.import('Data.StringExt')
 endfunction
 function! s:_vital_depends() abort
   return [
@@ -301,123 +305,6 @@ function! s:count_commits_behind_remote(git, ...) abort
   return len(filter(result.content, '!empty(v:val)'))
 endfunction
 
-function! s:get_available_tags(git, ...) abort
-  let options = extend({
-        \ 'fail_silently': 0,
-        \}, get(a:000, 0, {}))
-  let args = s:List.flatten([
-        \ 'tag',
-        \ s:GitProcess.translate('l', options),
-        \ s:GitProcess.translate('list', options),
-        \ s:GitProcess.translate('sort', options, '--%k %v'),
-        \ s:GitProcess.translate('contains', options, '--%k %v'),
-        \ s:GitProcess.translate('points-at', options, '--%k %v'),
-        \])
-  let result = s:GitProcess.execute(a:git, args)
-  if !result.success
-    if options.fail_silently
-      return []
-    endif
-    call s:GitProcess.throw(result)
-  endif
-  return result.content
-endfunction
-function! s:get_available_branches(git, ...) abort
-  let options = extend({
-        \ 'fail_silently': 0,
-        \ 'force': 0,
-        \}, get(a:000, 0, {}))
-  let args = s:List.flatten([
-        \ 'branch',
-        \ s:GitProcess.translate('a', options),
-        \ s:GitProcess.translate('all', options),
-        \ s:GitProcess.translate('list', options, '--%k %v'),
-        \ s:GitProcess.translate('merged', options, '--%k %v'),
-        \ s:GitProcess.translate('no-merged', options, '--%k %v'),
-        \ '--color=never',
-        \])
-  let result = s:GitProcess.execute(a:git, args)
-  if !result.success
-    if options.fail_silently
-      return []
-    endif
-    call s:GitProcess.throw(result)
-  endif
-  return map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
-endfunction
-function! s:get_available_commits(git, ...) abort
-  let options = extend({
-        \ 'fail_silently': 0,
-        \ 'force': 0,
-        \}, get(a:000, 0, {}))
-  let args = s:List.flatten([
-        \ 'log',
-        \ s:GitProcess.translate('author', options),
-        \ s:GitProcess.translate('comitter', options),
-        \ s:GitProcess.translate('since', options),
-        \ s:GitProcess.translate('after', options),
-        \ s:GitProcess.translate('until', options),
-        \ s:GitProcess.translate('before', options),
-        \ '--pretty=%h',
-        \])
-  let result = s:GitProcess.execute(a:git, args)
-  if !result.success
-    if options.fail_silently
-      return []
-    endif
-    call s:GitProcess.throw(result)
-  endif
-  return result.content
-endfunction
-function! s:get_available_filenames(git, ...) abort
-  let options = extend({
-        \ 'fail_silently': 0,
-        \ 'force': 0,
-        \}, get(a:000, 0, {}))
-  let args = s:List.flatten([
-        \ 'ls-files',
-        \ s:GitProcess.translate('t', options),
-        \ s:GitProcess.translate('v', options),
-        \ s:GitProcess.translate('c', options),
-        \ s:GitProcess.translate('cached', options),
-        \ s:GitProcess.translate('d', options),
-        \ s:GitProcess.translate('deleted', options),
-        \ s:GitProcess.translate('m', options),
-        \ s:GitProcess.translate('modified', options),
-        \ s:GitProcess.translate('i', options),
-        \ s:GitProcess.translate('ignored', options),
-        \ s:GitProcess.translate('s', options),
-        \ s:GitProcess.translate('staged', options),
-        \ s:GitProcess.translate('k', options),
-        \ s:GitProcess.translate('killed', options),
-        \ s:GitProcess.translate('u', options),
-        \ s:GitProcess.translate('unmerged', options),
-        \ s:GitProcess.translate('directory', options),
-        \ s:GitProcess.translate('empty-directory', options),
-        \ s:GitProcess.translate('resolve-undo', options),
-        \ s:GitProcess.translate('x', options, '-%k %v'),
-        \ s:GitProcess.translate('exclude', options, '--%k %v'),
-        \ s:GitProcess.translate('X', options, '-%k %v'),
-        \ s:GitProcess.translate('exclude-from', options, '--%k %v'),
-        \ s:GitProcess.translate('exclude-per-directory', options, '--%k %v'),
-        \ s:GitProcess.translate('exclude-standard', options),
-        \ '--full-name',
-        \])
-  " NOTE:
-  " git -C <rep> ls-files returns unix relative paths from the repository
-  let result = s:GitProcess.execute(a:git, args)
-  if !result.success
-    if options.fail_silently
-      return []
-    endif
-    call s:GitProcess.throw(result)
-  endif
-  " return real absolute paths
-  let prefix = expand(a:git.worktree) . s:Path.separator()
-  let content = map(result.content, 's:Path.realpath(prefix . v:val)')
-  return content
-endfunction
-
 function! s:find_common_ancestor(git, commit1, commit2, ...) abort
   let options = extend({
         \ 'fail_silently': 0,
@@ -434,4 +321,143 @@ function! s:find_common_ancestor(git, commit1, commit2, ...) abort
     call s:GitProcess.throw(result)
   endif
   return substitute(result.output, '\r\?\n$', '', '')
+endfunction
+
+" Obsolete
+function! s:enclose_if_required(value) abort
+  return a:value =~# '\s' ? printf("'%s'", a:value) : a:value
+endfunction
+function! s:translate(key, options, ...) abort
+  let scheme = get(a:000, 0, len(a:key) == 1 ? '-%k%v' : '--%k%{=}v')
+  if !has_key(a:options, a:key)
+    return []
+  endif
+  let value = a:options[a:key]
+  if s:Prelude.is_list(value)
+    return map(value, 's:translate(a:key, { a:key : v:val }, scheme)')
+  elseif s:Prelude.is_number(value)
+    return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
+  else
+  return s:StringExt.splitargs(s:StringExt.format(
+        \ scheme,
+        \ { 'k': 'key', 'v': 'val' },
+        \ { 'key': a:key, 'val': s:enclose_if_required(value) },
+        \))
+  endif
+endfunction
+function! s:get_available_tags(git, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \}, get(a:000, 0, {}))
+  let args = s:List.flatten([
+        \ 'tag',
+        \ s:translate('l', options),
+        \ s:translate('list', options),
+        \ s:translate('sort', options, '--%k %v'),
+        \ s:translate('contains', options, '--%k %v'),
+        \ s:translate('points-at', options, '--%k %v'),
+        \])
+  let result = s:GitProcess.execute(a:git, filter(args, '!empty(v:val)'))
+  if !result.success
+    if options.fail_silently
+      return []
+    endif
+    call s:GitProcess.throw(result)
+  endif
+  return result.content
+endfunction
+function! s:get_available_branches(git, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  let args = s:List.flatten([
+        \ 'branch',
+        \ s:translate('a', options),
+        \ s:translate('all', options),
+        \ s:translate('list', options, '--%k %v'),
+        \ s:translate('merged', options, '--%k %v'),
+        \ s:translate('no-merged', options, '--%k %v'),
+        \ '--color=never',
+        \])
+  let result = s:GitProcess.execute(a:git, filter(args, '!empty(v:val)'))
+  if !result.success
+    if options.fail_silently
+      return []
+    endif
+    call s:GitProcess.throw(result)
+  endif
+  return map(result.content, 'matchstr(v:val, "^..\\zs.*$")')
+endfunction
+function! s:get_available_commits(git, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  let args = s:List.flatten([
+        \ 'log',
+        \ s:translate('author', options),
+        \ s:translate('comitter', options),
+        \ s:translate('since', options),
+        \ s:translate('after', options),
+        \ s:translate('until', options),
+        \ s:translate('before', options),
+        \ '--pretty=%h',
+        \])
+  let result = s:GitProcess.execute(a:git, filter(args, '!empty(v:val)'))
+  if !result.success
+    if options.fail_silently
+      return []
+    endif
+    call s:GitProcess.throw(result)
+  endif
+  return result.content
+endfunction
+function! s:get_available_filenames(git, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \ 'force': 0,
+        \}, get(a:000, 0, {}))
+  let args = s:List.flatten([
+        \ 'ls-files',
+        \ s:translate('t', options),
+        \ s:translate('v', options),
+        \ s:translate('c', options),
+        \ s:translate('cached', options),
+        \ s:translate('d', options),
+        \ s:translate('deleted', options),
+        \ s:translate('m', options),
+        \ s:translate('modified', options),
+        \ s:translate('i', options),
+        \ s:translate('ignored', options),
+        \ s:translate('s', options),
+        \ s:translate('staged', options),
+        \ s:translate('k', options),
+        \ s:translate('killed', options),
+        \ s:translate('u', options),
+        \ s:translate('unmerged', options),
+        \ s:translate('directory', options),
+        \ s:translate('empty-directory', options),
+        \ s:translate('resolve-undo', options),
+        \ s:translate('x', options, '-%k %v'),
+        \ s:translate('exclude', options, '--%k %v'),
+        \ s:translate('X', options, '-%k %v'),
+        \ s:translate('exclude-from', options, '--%k %v'),
+        \ s:translate('exclude-per-directory', options, '--%k %v'),
+        \ s:translate('exclude-standard', options),
+        \ '--full-name',
+        \])
+  " NOTE:
+  " git -C <rep> ls-files returns unix relative paths from the repository
+  let result = s:GitProcess.execute(a:git, filter(args, '!empty(v:val)'))
+  if !result.success
+    if options.fail_silently
+      return []
+    endif
+    call s:GitProcess.throw(result)
+  endif
+  " return real absolute paths
+  let prefix = expand(a:git.worktree) . s:Path.separator()
+  let content = map(result.content, 's:Path.realpath(prefix . v:val)')
+  return content
 endfunction

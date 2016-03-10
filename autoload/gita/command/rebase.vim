@@ -37,7 +37,7 @@ endfunction
 function! s:apply_command(git, options) abort
   let options = s:pick_available_options(a:options)
   let options['verbose'] = 1
-  let result = gita#execute(a:git, 'rebase', options)
+  let result = gita#execute_old(a:git, 'rebase', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet', 0)

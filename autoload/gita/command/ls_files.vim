@@ -38,7 +38,7 @@ function! s:apply_command(git, pathlist, options) abort
   if !empty(a:pathlist)
     let options['--'] = a:pathlist
   endif
-  let result = gita#execute(a:git, 'ls-files', options)
+  let result = gita#execute_old(a:git, 'ls-files', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

@@ -153,7 +153,7 @@ function! s:get_content(git, commit, filename) abort
   else
     let options['incremental'] = 1
   endif
-  let result = gita#execute(a:git, 'blame', options)
+  let result = gita#execute_old(a:git, 'blame', options)
   if result.status
     call s:GitProcessOld.throw(result)
   endif

@@ -30,7 +30,7 @@ function! s:apply_command(git, filenames, options) abort
           \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
           \)
   endif
-  let result = gita#execute(a:git, 'reset', options)
+  let result = gita#execute_old(a:git, 'reset', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

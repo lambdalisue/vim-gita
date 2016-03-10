@@ -20,7 +20,7 @@ Describe gita
 
   Describe #execute({git}, {name}[, {options}, {config})
     It executes a {name} git command
-      let result = gita#execute(gita#core#get(), 'rev-parse', {
+      let result = gita#execute_old(gita#core#get(), 'rev-parse', {
             \ 'is-inside-work-tree': 1,
             \})
       Assert Equals(result.status, 0)

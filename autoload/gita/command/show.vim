@@ -36,7 +36,7 @@ function! s:get_revision_content(git, commit, filename, options) abort
           \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
           \], ':')
   endif
-  let result = gita#execute(a:git, 'show', options)
+  let result = gita#execute_old(a:git, 'show', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

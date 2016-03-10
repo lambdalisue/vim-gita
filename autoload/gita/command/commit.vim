@@ -45,7 +45,7 @@ function! s:get_commit_content(git, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = gita#execute(a:git, 'commit', options)
+  let result = gita#execute_old(a:git, 'commit', options)
   if result.status  && !get(options, 'dry-run')
     " Note:
     " Somehow 'git commit' return 1 when --dry-run is specified

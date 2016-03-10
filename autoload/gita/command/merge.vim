@@ -29,7 +29,7 @@ function! s:apply_command(git, commits, options) abort
   if !empty(a:commits)
     let options['commit'] = a:commits
   endif
-  let result = gita#execute(a:git, 'merge', options)
+  let result = gita#execute_old(a:git, 'merge', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet', 0)

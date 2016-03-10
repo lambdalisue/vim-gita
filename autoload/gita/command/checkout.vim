@@ -32,7 +32,7 @@ function! s:apply_command(git, commit, filenames, options) abort
           \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
           \)
   endif
-  let result = gita#execute(a:git, 'checkout', options)
+  let result = gita#execute_old(a:git, 'checkout', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

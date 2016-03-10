@@ -1,7 +1,9 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:StringExt = s:V.import('Data.StringExt')
 
 function! s:diffoff() abort
   if !&diff
@@ -115,4 +117,33 @@ function! gita#util#select(selection, ...) abort
     keepjump normal! v
     keepjump call setpos('.', [0, line_start, 1, 0])
   endif
+endfunction
+
+function! s:translate(key, options, scheme) abort
+  let value = a:options[a:key]
+  if s:Prelude.is_list(value)
+    return map(value, 's:translate(a:key, { a:key : v:val }, a:scheme)')
+  elseif s:Prelude.is_number(value)
+    return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
+  else
+  let value = value =~# '\s' ? printf("'%s'", value) : value
+  return s:StringExt.splitargs(s:StringExt.format(
+        \ a:scheme,
+        \ { 'k': 'key', 'v': 'val' },
+        \ { 'key': a:key, 'val': value },
+        \))
+  endif
+endfunction
+function! gita#util#args_from_options(options, schemes) abort
+  let args = []
+  for key in sort(keys(a:schemes))
+    if !has_key(a:options, key)
+      continue
+    endif
+    let scheme = s:Prelude.is_string(a:schemes[key])
+          \ ? a:schemes[key]
+          \ : len(key) == 1 ? '-%k%v' : '--%k{=}v'
+    call extend(args, s:translate(key, a:options, scheme))
+  endfor
+  return args
 endfunction

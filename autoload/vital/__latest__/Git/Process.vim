@@ -42,39 +42,13 @@ function! s:throw(msg_or_result) abort
   throw 'vital: Git.Process: ' . msg
 endfunction
 
-function! s:enclose_if_required(value) abort
-  return a:value =~# '\s' ? printf("'%s'", a:value) : a:value
-endfunction
-
-function! s:translate(key, options, ...) abort
-  let scheme = get(a:000, 0, len(a:key) == 1 ? '-%k%v' : '--%k%{=}v')
-  if !has_key(a:options, a:key)
-    return []
-  endif
-  let value = a:options[a:key]
-  if s:Prelude.is_list(value)
-    return map(value, 's:translate(a:key, { a:key : v:val }, scheme)')
-  elseif s:Prelude.is_number(value)
-    return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
-  else
-  return s:StringExt.splitargs(s:StringExt.format(
-        \ scheme,
-        \ { 'k': 'key', 'v': 'val' },
-        \ { 'key': a:key, 'val': s:enclose_if_required(value) },
-        \))
-  endif
-endfunction
-
 " execute({git}, {args}[, {options}])
 function! s:execute(git, args, ...) abort
   let options = get(a:000, 0, {})
   let worktree = empty(a:git) ? '' : get(a:git, 'worktree', '')
   let args = (empty(worktree) ? [] : ['-C', worktree]) + a:args
   let args = [s:config.executable] + s:config.arguments + args
-  return s:Process.execute(
-        \ filter(args, '!empty(v:val)'),
-        \ options,
-        \)
+  return s:Process.execute(args, options)
 endfunction
 
 let &cpoptions = s:save_cpoptions

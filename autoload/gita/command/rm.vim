@@ -26,7 +26,7 @@ function! s:apply_command(git, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = gita#execute(a:git, 'rm', options)
+  let result = gita#execute_old(a:git, 'rm', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

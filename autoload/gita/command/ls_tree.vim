@@ -28,7 +28,7 @@ function! s:apply_command(git, commit, pathlist, options) abort
   if !empty(a:pathlist)
     let options['--'] = a:pathlist
   endif
-  let result = gita#execute(a:git, 'ls-tree', options)
+  let result = gita#execute_old(a:git, 'ls-tree', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

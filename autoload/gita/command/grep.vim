@@ -39,7 +39,7 @@ function! s:get_grep_content(git, pattern, commit, directories, options) abort
   if !empty(a:directories)
     let options['--'] = a:directories
   endif
-  let result = gita#execute(a:git, 'grep', options)
+  let result = gita#execute_old(a:git, 'grep', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

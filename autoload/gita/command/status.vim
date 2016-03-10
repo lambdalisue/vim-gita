@@ -32,7 +32,7 @@ function! s:get_status_content(git, filenames, options) abort
   if !empty(a:filenames)
     let options['--'] = a:filenames
   endif
-  let result = gita#execute(a:git, 'status', options)
+  let result = gita#execute_old(a:git, 'status', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')

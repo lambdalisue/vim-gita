@@ -32,7 +32,7 @@ function! s:apply_command(git, filenames, options) abort
   let options = s:pick_available_options(a:options)
   let options['--'] = a:filenames
   let options['verbose'] = 1
-  let result = gita#execute(a:git, 'apply', options)
+  let result = gita#execute_old(a:git, 'apply', options)
   if result.status
     call s:GitProcessOld.throw(result)
   elseif !get(a:options, 'quiet')
