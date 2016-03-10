@@ -3,59 +3,49 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'd',
-        \ 'r',
-        \ 't',
-        \ 'long',
-        \ 'name-only', 'name-status',
-        \ 'abbrev',
-        \ 'full-name',
-        \ 'full-tree',
-        \])
-  return options
-endfunction
-
-function! s:apply_command(git, commit, pathlist, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['commit'] = a:commit
-  if !empty(a:pathlist)
-    let options['--'] = a:pathlist
-  endif
-  let result = gita#execute_old(a:git, 'ls-tree', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! s:execute_command(git, commit, paths, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'd': 1,
+        \ 'r': 1,
+        \ 't': 1,
+        \ 'long': 1,
+        \ 'name-only': 1,
+        \ 'name-status': 1,
+        \ 'abbrev': 1,
+        \ 'full-name': 1,
+        \ 'full-tree': 1,
+        \})
+  let args = ['ls-tree'] + args + ['--'] + a:paths
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 
 function! gita#command#ls_tree#call(...) abort
   let options = extend({
         \ 'commit': '',
+        \ 'paths': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   let commit = gita#variable#get_valid_range(options.commit)
+  let paths = map(
+        \ copy(options.paths),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
   if commit =~# '^.\{-}\.\.\..\{-}$'
     let [lhs, rhs] = s:GitTerm.split_range(commit)
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
     let _commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-    let content = s:apply_command(git, _commit, [], options)
+    let content = s:execute_command(git, _commit, paths, options)
   elseif commit =~# '^.\{-}\.\..\{-}$'
     let _commit  = s:GitTerm.split_range(commit)[0]
-    let content = s:apply_command(git, _commit, [], options)
+    let content = s:execute_command(git, _commit, paths, options)
   else
-    let content = s:apply_command(git, commit, [], options)
+    let content = s:execute_command(git, commit, paths, options)
   endif
   let result = {
         \ 'commit': commit,

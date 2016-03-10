@@ -8,7 +8,6 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Python = s:V.import('Vim.Python')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
-let s:GitProcess = s:V.import('Git.Process')
 let s:ProgressBar = s:V.import('ProgressBar')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 

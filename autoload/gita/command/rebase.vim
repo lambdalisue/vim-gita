@@ -1,57 +1,52 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'onto',
-        \ 'upstream',
-        \ 'branch',
-        \ 'continue',
-        \ 'abort',
-        \ 'keep-empty',
-        \ 'skip',
-        \ 'merge',
-        \ 'strategy',
-        \ 'strategy-option',
-        \ 'gpg-sign',
-        \ 'stat', 'no-stat',
-        \ 'verify', 'no-verify',
-        \ 'C',
-        \ 'force-rebase',
-        \ 'fork-point', 'no-fork-point',
-        \ 'ignore-whitespace', 'whitespace',
-        \ 'committer-date-is-author-date', 'ignore-date',
-        \ 'preserve-merges',
-        \ 'exec',
-        \ 'root',
-        \ 'autosquash', 'no-autosquash',
-        \ 'autostash', 'no-autostash',
-        \ 'rerere-autoupdate',
-        \])
+function! s:execute_command(git, commits, paths, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'onto': '--%k %v',
+        \ 'continue': 1,
+        \ 'abort': 1,
+        \ 'keep-empty': 1,
+        \ 'skip': 1,
+        \ 'merge': 1,
+        \ 'strategy': 1,
+        \ 'strategy-option': 1,
+        \ 'gpg-sign': 1,
+        \ 'stat': 1,
+        \ 'no-stat': 1,
+        \ 'verify': 1,
+        \ 'no-verify': 1,
+        \ 'C': 1,
+        \ 'force-rebase': 1,
+        \ 'fork-point': 1,
+        \ 'no-fork-point': 1,
+        \ 'ignore-whitespace': 1,
+        \ 'whitespace': 1,
+        \ 'committer-date-is-author-date': 1,
+        \ 'ignore-date': 1,
+        \ 'preserve-merges': 1,
+        \ 'exec': '--%k %v',
+        \ 'root': 1,
+        \ 'autosquash': 1,
+        \ 'no-autosquash': 1,
+        \ 'autostash': 1,
+        \ 'no-autostash': 1,
+        \ 'rerere-autoupdate': 1,
+        \ 'upstream': '%v',
+        \ 'branch': '%v',
+       \})
+  let args = ['rebase', '--verbose'] + args + a:commits
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
-function! s:apply_command(git, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['verbose'] = 1
-  let result = gita#execute_old(a:git, 'rebase', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet', 0)
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
-endfunction
-
 function! gita#command#rebase#call(...) abort
   let options = extend({
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let content = s:apply_command(git, options)
+  let content = s:execute_command(git, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'content': content,

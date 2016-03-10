@@ -3,7 +3,6 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:execute_command(git, filenames, options) abort
@@ -55,8 +54,8 @@ endfunction
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Gita ls-tree',
-          \ 'description': 'List the contents of a tree object',
+          \ 'name': 'Gita ls-files',
+          \ 'description': 'Show information about files in the index and the working tree',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'complete_unknown': function('gita#variable#complete_filename'),
           \ 'unknown_description': '<file>...',

@@ -1,42 +1,34 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'commit', 'no-commit',
-        \ 'ff', 'no-ff', 'ff-only',
-        \ 'log', 'no-log',
-        \ 'stat', 'no-stat',
-        \ 'squash', 'no-squash',
-        \ 'strategy',
-        \ 'strategy-option',
-        \ 'verify-signatures', 'no-verify-signatures',
-        \ 'gpg-sign',
-        \ 'm',
-        \ 'rerere-autoupdate',
-        \ 'abort',
-        \])
-endfunction
-function! s:apply_command(git, commits, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['verbose'] = 1
-  let options['no-edit'] = 1
-  if !empty(a:commits)
-    let options['commit'] = a:commits
-  endif
-  let result = gita#execute_old(a:git, 'merge', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet', 0)
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! s:execute_command(git, commits, paths, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'commit': 1,
+        \ 'no-commit': 1,
+        \ 'ff': 1,
+        \ 'no-ff': 1,
+        \ 'ff-only': 1,
+        \ 'log': 1,
+        \ 'no-log': 1,
+        \ 'stat': 1,
+        \ 'no-stat': 1,
+        \ 'squash': 1,
+        \ 'no-squash': 1,
+        \ 'strategy': 1,
+        \ 'strategy-option': 1,
+        \ 'verify-signatures': 1,
+        \ 'no-verify-signatures': 1,
+        \ 'gpg-sign': 1,
+        \ 'm': 1,
+        \ 'rerere-autoupdate': 1,
+        \ 'abort': 1,
+        \})
+  let args = ['merge', '--no-edit', '--verbose'] + args + a:commits
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#merge#call(...) abort
@@ -44,15 +36,11 @@ function! gita#command#merge#call(...) abort
         \ 'commits': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  if empty(options.commits)
-    let commits = []
-  else
-    let commits = map(
-          \ copy(options.commits),
-          \ 'gita#variable#get_valid_commit(v:val)',
-          \)
-  endif
-  let content = s:apply_command(git, commits, options)
+  let commits = map(
+        \ copy(options.commits),
+        \ 'gita#variable#get_valid_commit(v:val)',
+        \)
+  let content = s:execute_command(git, commits, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'commits': commits,
@@ -177,9 +165,7 @@ function! gita#command#merge#command(...) abort
   if empty(options)
     return
   endif
-  if !empty(options.__unknown__)
-    let options.commits = options.__unknown__
-  endif
+  let options.commits = options.__unknown__
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#merge#default_options),
