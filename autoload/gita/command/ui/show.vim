@@ -45,6 +45,7 @@ function! s:get_diff_content(git, content, filename) abort
   try
     " save contents to temporary files
     let result = gita#command#show#call({
+          \ 'quiet': 1,
           \ 'commit': '',
           \ 'filename': a:filename,
           \})
@@ -52,6 +53,7 @@ function! s:get_diff_content(git, content, filename) abort
     call writefile(a:content, tempfile2)
     " create a diff content between index_content and content
     let result = gita#command#diff#call({
+          \ 'quiet': 1,
           \ 'no-index': 1,
           \ 'filenames': [tempfile1, tempfile2],
           \})
