@@ -142,7 +142,7 @@ function! gita#util#args_from_options(options, schemes) abort
     endif
     let scheme = s:Prelude.is_string(a:schemes[key])
           \ ? a:schemes[key]
-          \ : len(key) == 1 ? '-%k%v' : '--%k{=}v'
+          \ : len(key) == 1 ? '-%k%v' : '--%k%{=}v'
     call extend(args, s:translate(key, a:options, scheme))
   endfor
   return args
