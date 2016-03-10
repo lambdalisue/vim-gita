@@ -2,15 +2,16 @@ function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let args = [
-        \ '--quiet', '--ignore-errors',
-        \ options.force ? '--force' : '',
-        \]
-  let args += ['--'] + map(
+  let filenames = map(
         \ copy(a:candidates),
         \ 'fnameescape(get(v:val, "path2", v:val.path))',
         \)
-  execute printf('Gita add %s', join(args))
+  call gita#command#add#call({
+        \ 'quiet': 1,
+        \ 'ignore-errors': 1,
+        \ 'force': options.force,
+        \ 'filenames': filenames,
+        \})
 endfunction
 
 function! gita#action#add#define(disable_mappings) abort
