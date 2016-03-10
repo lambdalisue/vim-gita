@@ -263,7 +263,7 @@ function! s:get_last_commitmsg(git, ...) abort
         \ 'fail_silently': 0,
         \}, get(a:000, 0, {}))
   let result = s:GitProcess.execute(a:git, [
-        \ 'log', '-1', '-pretty=%B',
+        \ 'log', '-1', '--pretty=%B',
         \])
   if !result.success
     if options.fail_silently
