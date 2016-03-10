@@ -3,43 +3,34 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'force',
-        \ 'ours', 'theirs',
-        \ 'b', 'B',
-        \ 'track', 'no-track',
-        \ 'l',
-        \ 'detach',
-        \ 'orphan',
-        \ 'ignore-skip-worktree-bits',
-        \ 'merge',
-        \ 'conflict',
-        \ 'ignore-other-worktrees',
-        \])
-endfunction
-function! s:apply_command(git, commit, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['commit'] = a:commit
-  if !empty(a:filenames)
-    let options['--'] = map(
-          \ copy(a:filenames),
-          \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
-          \)
-  endif
-  let result = gita#execute_old(a:git, 'checkout', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! s:execute_command(git, commit, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'force': 1,
+        \ 'ours': 1,
+        \ 'theirs': 1,
+        \ 'b': '-%k %v',
+        \ 'B': '-%k %v',
+        \ 'track': 1,
+        \ 'no-track': 1,
+        \ 'l': 1,
+        \ 'detach': 1,
+        \ 'orphan': 1,
+        \ 'ignore-skip-worktree-bits': 1,
+        \ 'merge': 1,
+        \ 'conflict': 1,
+        \ 'ignore-other-worktrees': 1,
+        \})
+  let filenames = map(
+        \ copy(a:filenames),
+        \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
+        \)
+  let args = ['checkout'] + args + [a:options.commit] + ['--'] + filenames
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#checkout#call(...) abort
@@ -59,7 +50,7 @@ function! gita#command#checkout#call(...) abort
           \ 'gita#variable#get_valid_filename(v:val)',
           \)
   endif
-  let content = s:apply_command(git, commit, filenames, options)
+  let content = s:execute_command(git, commit, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'commit': commit,

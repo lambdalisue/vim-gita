@@ -1,4 +1,5 @@
 let s:V = vital#of('vim_gita')
+let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitProcess = s:V.import('Git.Process')
@@ -18,8 +19,20 @@ function! gita#execute(git, args, ...) abort
         \ 'executable': g:gita#executable,
         \ 'arguments':  g:gita#arguments,
         \})
-  let options = get(a:000, 0, {})
-  return s:GitProcess.execute(a:git, a:args, options)
+  let options = extend({
+        \ 'quiet': 0,
+        \ 'fail_silently': 0,
+        \}, get(a:000, 0, {}))
+  let result = s:GitProcess.execute(a:git, a:args, s:Dict.omit(options, [
+        \ 'quiet', 'fail_silently'
+        \]))
+  if !options.fail_silently && !result.success
+    call s:GitProcess.throw(result)
+  elseif !options.quiet
+    call s:Prompt.title('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
+  endif
+  return result.content
 endfunction
 
 function! gita#execute_old(git, name, ...) abort

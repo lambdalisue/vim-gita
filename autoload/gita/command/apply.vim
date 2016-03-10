@@ -1,45 +1,40 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'stat', 'numstat', 'summary', 'check',
-        \ 'index', 'cached',
-        \ 'build-fake-ancestor',
-        \ 'reverse',
-        \ 'reject',
-        \ 'p',
-        \ 'C',
-        \ 'unidiff-zero',
-        \ 'apply',
-        \ 'no-add',
-        \ 'exclude', 'include',
-        \ 'ignore-space-change', 'ignore-whitespace',
-        \ 'whitespace',
-        \ 'inaccurate-eof',
-        \ 'recount',
-        \ 'directory',
-        \ 'unsafe-paths',
-        \ 'allow-overlap',
-        \])
-endfunction
-function! s:apply_command(git, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['--'] = a:filenames
-  let options['verbose'] = 1
-  let result = gita#execute_old(a:git, 'apply', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'stat': 1,
+        \ 'numstat': 1,
+        \ 'summary': 1,
+        \ 'check': 1,
+        \ 'index': 1,
+        \ 'cached': 1,
+        \ 'build-fake-ancestor': 1,
+        \ 'reverse': 1,
+        \ 'reject': 1,
+        \ 'p': 1,
+        \ 'C': 1,
+        \ 'unidiff-zero': 1,
+        \ 'apply': 1,
+        \ 'no-add': 1,
+        \ 'exclude': 1,
+        \ 'include': 1,
+        \ 'ignore-space-change': 1,
+        \ 'ignore-whitespace': 1,
+        \ 'whitespace': 1,
+        \ 'inaccurate-eof': 1,
+        \ 'recount': 1,
+        \ 'directory': 1,
+        \ 'unsafe-paths': 1,
+        \ 'allow-overlap': 1,
+        \})
+  let args = ['apply'] + args + ['--verbose', '--'] + a:filenames
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#apply#call(...) abort
@@ -54,7 +49,7 @@ function! gita#command#apply#call(...) abort
         \ copy(options.filenames),
         \ 'gita#variable#get_valid_filename(v:val)',
         \)
-  let content = s:apply_command(git, filenames, options)
+  let content = s:execute_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,

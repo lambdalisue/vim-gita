@@ -8,7 +8,7 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Python = s:V.import('Vim.Python')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ProgressBar = s:V.import('ProgressBar')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -144,20 +144,16 @@ endfunction
 
 
 function! s:get_content(git, commit, filename) abort
-  let options = {
-        \ 'commit': a:commit,
-        \ '--': [s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename))],
-        \}
-  if g:gita#command#blame#use_porcelain_instead
-    let options['porcelain'] = 1
-  else
-    let options['incremental'] = 1
-  endif
-  let result = gita#execute_old(a:git, 'blame', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  endif
-  return result.content
+  let args = [
+        \ 'blame',
+        \ g:gita#command#blame#use_porcelain_instead ? '--porcelain' : '--incremental',
+        \ a:commit,
+        \ '--',
+        \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
+        \]
+  return gita#execute(a:git, args, {
+        \ 'quiet': 1,
+        \})
 endfunction
 
 function! s:get_blameobj(content, commit, filename) abort

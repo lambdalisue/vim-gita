@@ -17,14 +17,9 @@ function! s:execute_command(git, filenames, options) abort
         \ 'ignore-missing': 1,
         \})
   let args = ['add'] + args + ['--'] + a:filenames
-  let result = gita#execute(a:git, args)
-  if !result.success
-    call s:GitProcess.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#add#call(...) abort
@@ -32,14 +27,10 @@ function! gita#command#add#call(...) abort
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  if empty(options.filenames)
-    let filenames = []
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  endif
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
   let content = s:execute_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {

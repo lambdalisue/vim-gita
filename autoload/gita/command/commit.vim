@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:is_untracked_files_supported() abort
@@ -13,48 +13,35 @@ function! s:is_untracked_files_supported() abort
   return s:untracked_files_supported
 endfunction
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'all',
-        \ 'reset-author',
-        \ 'file',
-        \ 'author',
-        \ 'date',
-        \ 'message',
-        \ 'allow-empty',
-        \ 'allow-empty-message',
-        \ 'amend',
-        \ 'untracked-files',
-        \ 'dry-run',
-        \ 'gpg-sign',
-        \ 'no-gpg-sign',
-        \ 'porcelain',
-        \])
-  if !s:is_untracked_files_supported()
-    " remove -u/--untracked-files which requires Git >= 1.4
-    let options = s:Dict.omit(options, ['u', 'untracked-files'])
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'all': 1,
+        \ 'reset-author': 1,
+        \ 'file': 1,
+        \ 'author': 1,
+        \ 'date': 1,
+        \ 'message': 1,
+        \ 'allow-empty': 1,
+        \ 'allow-empty-message': 1,
+        \ 'amend': 1,
+        \ 'untracked-files': 1,
+        \ 'dry-run': 1,
+        \ 'gpg-sign': 1,
+        \ 'no-gpg-sign': 1,
+        \ 'porcelain': 1,
+        \})
+  if s:is_untracked_files_supported() && has_key(a:options, 'untracked-files')
+    let args += ['--untracked-files']
   endif
-  return options
-endfunction
-
-function! s:get_commit_content(git, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['verbose'] = 1
-  if !empty(a:filenames)
-    let options['--'] = a:filenames
-  endif
-  let result = gita#execute_old(a:git, 'commit', options)
-  if result.status  && !get(options, 'dry-run')
-    " Note:
-    " Somehow 'git commit' return 1 when --dry-run is specified
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  let args = ['commit', '--verbose'] + args + ['--'] + a:filenames
+  " NOTE:
+  " 'git commit' always returns 1 when --dry-run is specified
+  let options = extend(copy(a:options), {
+        \ 'fail_silently': get(a:options, 'dry-run'),
+        \})
+  return gita#execute(a:git, args, s:Dict.pick(options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 
@@ -72,7 +59,7 @@ function! gita#command#commit#call(...) abort
   else
     let filenames = []
   endif
-  let content = s:get_commit_content(git, filenames, options)
+  let content = s:execute_command(git, filenames, options)
   let result = {
         \ 'filenames': filenames,
         \ 'content': content,

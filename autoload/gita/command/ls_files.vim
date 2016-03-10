@@ -3,60 +3,51 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'cached',
-        \ 'deleted',
-        \ 'modified',
-        \ 'others',
-        \ 'ignored',
-        \ 'stage',
-        \ 'directory',
-        \ 'no-empty-directory',
-        \ 'unmerged',
-        \ 'killed',
-        \ 'exclude',
-        \ 'exclude-from',
-        \ 'exclude-per-directory',
-        \ 'exclude-standard',
-        \ 'error-unmatch',
-        \ 'with-tree',
-        \ 'full-name',
-        \ 'abbrev',
-        \ 'file',
-        \])
-  return options
-endfunction
-
-function! s:apply_command(git, pathlist, options) abort
-  let options = s:pick_available_options(a:options)
-  if !empty(a:pathlist)
-    let options['--'] = a:pathlist
-  endif
-  let result = gita#execute_old(a:git, 'ls-files', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'cached': 1,
+        \ 'deleted': 1,
+        \ 'modified': 1,
+        \ 'others': 1,
+        \ 'ignored': 1,
+        \ 'stage': 1,
+        \ 'directory': 1,
+        \ 'no-empty-directory': 1,
+        \ 'unmerged': 1,
+        \ 'killed': 1,
+        \ 'exclude-standard': 1,
+        \ 'error-unmatch': 1,
+        \ 'full-name': 1,
+        \ 'abbrev': 1,
+        \ 'exclude': '--%k %v',
+        \ 'exclude-from': '--%k %v',
+        \ 'exclude-per-directory': '--%k %v',
+        \ 'with-tree': '--%k %v',
+        \})
+  let args = ['ls-files'] + args + ['--'] + a:filenames
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 
 function! gita#command#ls_files#call(...) abort
   let options = extend({
+        \ 'filenames': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let content = s:apply_command(git, [], options)
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
   let result = {
         \ 'content': content,
         \ 'options': options,
+        \ 'filenames': filenames,
         \}
   return result
 endfunction
@@ -173,6 +164,7 @@ function! gita#command#ls_files#command(...) abort
   if empty(options)
     return
   endif
+  let options.filenames = options.__unknown__
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#ls_files#default_options),

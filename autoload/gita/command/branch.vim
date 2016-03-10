@@ -1,54 +1,51 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'delete',
-        \ 'D',
-        \ 'create-reflog',
-        \ 'force',
-        \ 'move',
-        \ 'M',
-        \ 'remotes',
-        \ 'all',
-        \ 'list',
-        \ 'track', 'no-track',
-        \ 'set-upstream', 'set-upstream-to', 'unset-upstream',
-        \ 'contains',
-        \ 'merged', 'no-merged',
-        \ 'branchname',
-        \ 'start-point',
-        \ 'oldbranch',
-        \ 'newbranch',
-        \])
-  return options
-endfunction
-
-function! s:get_branch_content(git, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['verbose'] = 1
-  let result = gita#execute_old(a:git, 'branch', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+" git branch [--color[=<when>] | --no-color] [-r | -a]
+"         [--list] [-v [--abbrev=<length> | --no-abbrev]]
+"         [--column[=<options>] | --no-column]
+"         [(--merged | --no-merged | --contains) [<commit>]] [<pattern>...]
+" git branch [--set-upstream | --track | --no-track] [-l] [-f] <branchname> [<start-point>]
+" git branch (--set-upstream-to=<upstream> | -u <upstream>) [<branchname>]
+" git branch --unset-upstream [<branchname>]
+" git branch (-m | -M) [<oldbranch>] <newbranch>
+" git branch (-d | -D) [-r] <branchname>...
+" git branch --edit-description [<branchname>]
+function! s:execute_command(git, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'delete': 1,
+        \ 'D': 1,
+        \ 'create-reflog': 1,
+        \ 'force': 1,
+        \ 'move': 1,
+        \ 'M': 1,
+        \ 'remotes': 1,
+        \ 'all': 1,
+        \ 'list': '--%k %v',
+        \ 'track': 1,
+        \ 'no-track': 1,
+        \ 'set-upstream': 1,
+        \ 'set-upstream-to': 1,
+        \ 'unset-upstream': 1,
+        \ 'contains': '--%k %v',
+        \ 'merged': '--%k %v',
+        \ 'no-merged': '--%k %v',
+        \})
+  let args = ['blanch', '--no-color', '--verbose'] + args + get(a:options, '__unknown__', [])
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#branch#call(...) abort
   let options = extend({
-        \ 'all': 0,
         \ 'remotes': 0,
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let content = s:get_branch_content(git, options)
+  let content = s:execute_command(git, options)
   if options.remotes
     let content = map(
           \ content,
@@ -68,6 +65,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita branch',
           \ 'description': 'List, create, or delete branches',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<extra-options>...',
           \})
     call s:parser.add_argument(
           \ '--quiet',

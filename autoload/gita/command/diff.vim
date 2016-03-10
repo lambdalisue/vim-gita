@@ -1,74 +1,65 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@@'  " @@ is not valid commit thus
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'unified',
-        \ 'minimal',
-        \ 'patience',
-        \ 'histogram',
-        \ 'diff-algorithm',
-        \ 'submodule',
-        \ 'word-diff-regex',
-        \ 'no-renames',
-        \ 'full-index',
-        \ 'binary',
-        \ 'abbrev',
-        \ 'B',
-        \ 'M',
-        \ 'C',
-        \ 'find-copies-harder',
-        \ 'irreversible-delete',
-        \ 'l',
-        \ 'diff-filter',
-        \ 'S',
-        \ 'G',
-        \ 'pickaxe-all',
-        \ 'O',
-        \ 'R',
-        \ 'relative',
-        \ 'text',
-        \ 'ignore-space-at-eol',
-        \ 'ignore-space-change',
-        \ 'ignore-all-space',
-        \ 'ignore-blank-lines',
-        \ 'inter-hunk-context',
-        \ 'function-context',
-        \ 'ignore-submodules',
-        \ 'src-prefix',
-        \ 'dst-prefix',
-        \ 'no-prefix',
-        \ 'numstat',
-        \ 'no-index',
-        \ 'cached',
-        \])
-endfunction
-function! s:get_diff_content(git, commit, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['R'] = get(a:options, 'reverse', 0)
-  let options['no-color'] = 1
-  let options['commit'] = a:commit
-  if !empty(a:filenames)
-    let options['--'] = a:filenames
+function! s:execute_command(git, commit, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'unified': 1,
+        \ 'minimal': 1,
+        \ 'patience': 1,
+        \ 'histogram': 1,
+        \ 'diff-algorithm': 1,
+        \ 'submodule': 1,
+        \ 'word-diff-regex': 1,
+        \ 'no-renames': 1,
+        \ 'full-index': 1,
+        \ 'binary': 1,
+        \ 'abbrev': 1,
+        \ 'B': 1,
+        \ 'M': 1,
+        \ 'C': 1,
+        \ 'find-copies-harder': 1,
+        \ 'irreversible-delete': 1,
+        \ 'l': 1,
+        \ 'diff-filter': 1,
+        \ 'S': 1,
+        \ 'G': 1,
+        \ 'pickaxe-all': 1,
+        \ 'O': 1,
+        \ 'R': 1,
+        \ 'relative': 1,
+        \ 'text': 1,
+        \ 'ignore-space-at-eol': 1,
+        \ 'ignore-space-change': 1,
+        \ 'ignore-all-space': 1,
+        \ 'ignore-blank-lines': 1,
+        \ 'inter-hunk-context': 1,
+        \ 'function-context': 1,
+        \ 'ignore-submodules': 1,
+        \ 'src-prefix': 1,
+        \ 'dst-prefix': 1,
+        \ 'no-prefix': 1,
+        \ 'numstat': 1,
+        \ 'no-index': 1,
+        \ 'cached': 1,
+        \})
+  if !has_key(a:options, 'R') && get(a:options, 'reverse')
+    let args += ['-R']
   endif
-  let result = gita#execute_old(a:git, 'diff', options)
-  if result.status && !get(options, 'no-index') && !get(options, 'exit-code')
-    " NOTE:
-    " --no-index force --exit-code option.
-    " --exit-code mean that the program exits with 1 if there were differences
-    " and 0 means no differences
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  let args = ['diff', '--no-color'] + args + [a:commit] + ['--'] + a:filenames
+  " NOTE:
+  " --no-index force --exit-code option.
+  " --exit-code mean that the program exits with 1 if there were differences
+  " and 0 means no differences
+  let options = extend(copy(a:options), {
+        \ 'fail_silently': get(a:options, 'no-index') || get(a:options, 'exit-code'),
+        \})
+  return gita#execute(a:git, args, s:Dict.pick(options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#diff#call(...) abort
@@ -99,7 +90,7 @@ function! gita#command#diff#call(...) abort
     " remove duplicate filenames
     let filenames = uniq(filenames)
   endif
-  let content = s:get_diff_content(git, commit, filenames, options)
+  let content = s:execute_command(git, commit, filenames, options)
   let result = {
         \ 'commit': commit,
         \ 'filename': empty(filenames) ? '' : filenames[0],
