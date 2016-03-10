@@ -1,33 +1,25 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  return s:Dict.pick(a:options, [
-        \ 'dry-run',
-        \ 'force',
-        \ 'update',
-        \ 'all',
-        \ 'ignore-removal',
-        \ 'intent-to-add',
-        \ 'refresh',
-        \ 'ignore-errors',
-        \ 'ignore-missing',
-        \])
-endfunction
-function! s:apply_command(git, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['verbose'] = 1
-  if !empty(a:filenames)
-    let options['--'] = a:filenames
-  endif
-  let result = gita#execute_old(a:git, 'add', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'dry-run': 1,
+        \ 'force': 1,
+        \ 'update': 1,
+        \ 'all': 1,
+        \ 'ignore-removal': 1,
+        \ 'intent-to-add': 1,
+        \ 'refresh': 1,
+        \ 'ignore-errors': 1,
+        \ 'ignore-missing': 1,
+        \})
+  let args = ['add'] + args + ['--'] + a:filenames
+  let result = gita#execute(a:git, args)
+  if !result.success
+    call s:GitProcess.throw(result)
   elseif !get(a:options, 'quiet')
     call s:Prompt.title('OK: ' . join(result.args, ' '))
     echo join(result.content, "\n")
@@ -48,7 +40,7 @@ function! gita#command#add#call(...) abort
           \ 'gita#variable#get_valid_filename(v:val)',
           \)
   endif
-  let content = s:apply_command(git, filenames, options)
+  let content = s:execute_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,
