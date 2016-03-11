@@ -95,7 +95,7 @@ function! s:get_bufname(...) abort
             \   options.filename,
             \))
     endif
-    return s:Path.relpath(gita#variable#get_valid_filename(options.filename))
+    return gita#variable#get_valid_filename(options.filename)
   endif
   if options.ancestors || options.ours || options.theirs
     let commit = ''
