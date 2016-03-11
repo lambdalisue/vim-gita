@@ -252,7 +252,13 @@ function! gita#command#branch#call(...) abort
           \ 'substitute(v:val, ''^\(..\)'', ''\1remotes/'', '''')'
           \)
   endif
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  if s:oneof(options, [
+        \ 'set-upstream', 'track', 'no-track',
+        \ 'set-upstream-to', 'unset-upstream',
+        \ 'move', 'M', 'delete', 'D'
+        \])
+    call gita#util#doautocmd('User', 'GitaStatusModified')
+  endif
   let result = {
         \ 'content': content,
         \ 'options': options,
