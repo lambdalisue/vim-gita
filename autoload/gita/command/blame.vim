@@ -171,6 +171,7 @@ function! s:get_blameobj(content, commit, filename) abort
         let blameobj.file_content = readfile(a:filename)
       else
         let blameobj.file_content = gita#command#show#call({
+              \ 'quiet': 1,
               \ 'commit': a:commit,
               \ 'filename': a:filename,
               \}).content
