@@ -5,18 +5,8 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 let s:WORKTREE = '@@'
-
-function! s:pick_available_options(options) abort
-  " Note:
-  " Personally 'git show' is used only for showing a content of a particular
-  " <refspec> so no options are required to be allowed.
-  " Let me know or send me a PR if you need some options to be allowed.
-  let options = s:Dict.pick(a:options, [])
-  return options
-endfunction
 
 function! s:get_ancestor_content(git, commit, filename, options) abort
   let [lhs, rhs] = s:GitTerm.split_range(a:commit)
@@ -27,23 +17,18 @@ function! s:get_ancestor_content(git, commit, filename, options) abort
 endfunction
 
 function! s:get_revision_content(git, commit, filename, options) abort
-  let options = s:pick_available_options(a:options)
   if empty(a:filename)
-    let options['object'] = a:commit
+    let object = a:commit
   else
-    let options['object'] = join([
+    let object = join([
           \ a:commit,
           \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
-          \], ':')
+          \ ], ':')
   endif
-  let result = gita#execute_old(a:git, 'show', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  let args = ['show'] + [object]
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#show#call(...) abort

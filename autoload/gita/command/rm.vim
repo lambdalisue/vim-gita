@@ -1,39 +1,25 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
+let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
+let s:Git = s:V.import('Git')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'force',
-        \ 'dry-run',
-        \ 'r',
-        \ 'cached',
-        \ 'ignore-unmatch',
-        \])
-  return options
-endfunction
-function! s:apply_command(git, filenames, options) abort
-  let options = a:options
-  " NOTE: git rm does not understand 'recursive' so translate
-  if has_key(options, 'recursive')
-    let options['r'] = options.recursive
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'force': 1,
+        \ 'dry-run': 1,
+        \ 'r': 1,
+        \ 'cached': 1,
+        \ 'ignore-unmatch': 1,
+        \})
+  if !has_key(a:options, 'r') && get(a:options, 'recursive')
+    let args += ['-r']
   endif
-  let options = s:pick_available_options(options)
-  if !empty(a:filenames)
-    let options['--'] = a:filenames
-  endif
-  let result = gita#execute_old(a:git, 'rm', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  let args = ['rm'] + args + ['--'] + a:filenames
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#rm#call(...) abort
@@ -49,7 +35,7 @@ function! gita#command#rm#call(...) abort
           \ 'gita#variable#get_valid_filename(v:val)',
           \)
   endif
-  let content = s:apply_command(git, filenames, options)
+  let content = s:execute_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')
   return {
         \ 'filenames': filenames,
@@ -94,6 +80,7 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
 function! gita#command#rm#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -110,6 +97,7 @@ function! gita#command#rm#command(...) abort
         \)
   call gita#command#rm#call(options)
 endfunction
+
 function! gita#command#rm#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

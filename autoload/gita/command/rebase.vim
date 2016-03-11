@@ -42,6 +42,7 @@ function! s:execute_command(git, commits, paths, options) abort
         \ 'quiet', 'fail_silently',
         \]))
 endfunction
+
 function! gita#command#rebase#call(...) abort
   let options = extend({
         \}, get(a:000, 0, {}))

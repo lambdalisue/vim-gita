@@ -1,53 +1,35 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:pick_available_options(options) abort
-  " Note:
-  " Let me know or send me a PR if you need options not listed below
-  let options = s:Dict.pick(a:options, [
-        \ 'cached',
-        \ 'no-index',
-        \ 'untracked',
-        \ 'no-exclude-standard',
-        \ 'exclude-standard',
-        \ 'text',
-        \ 'ignore-case',
-        \ 'I',
-        \ 'max-depth',
-        \ 'word-regexp',
-        \ 'invert-match',
-        \ 'extended-regexp',
-        \ 'basic-regexp',
-        \ 'perl-regexp',
-        \ 'fixed-strings',
-        \ 'all-match',
-        \ 'full-name',
-        \ 'line-number',
-        \])
-  return options
+function! s:execute_command(git, pattern, commit, directories, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'cached': 1,
+        \ 'no-index': 1,
+        \ 'untracked': 1,
+        \ 'no-exclude-standard': 1,
+        \ 'exclude-standard': 1,
+        \ 'text': 1,
+        \ 'ignore-case': 1,
+        \ 'I': 1,
+        \ 'max-depth': 1,
+        \ 'word-regexp': 1,
+        \ 'invert-match': 1,
+        \ 'extended-regexp': 1,
+        \ 'basic-regexp': 1,
+        \ 'perl-regexp': 1,
+        \ 'fixed-strings': 1,
+        \ 'all-match': 1,
+        \ 'full-name': 1,
+        \ 'line-number': 1,
+        \})
+  let args = ['grep'] + args + [a:commit] + [a:pattern] + ['--'] + a:directories
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
-function! s:get_grep_content(git, pattern, commit, directories, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['pattern'] = a:pattern
-  if !empty(a:commit)
-    let options['commit'] = a:commit
-  endif
-  if !empty(a:directories)
-    let options['--'] = a:directories
-  endif
-  let result = gita#execute_old(a:git, 'grep', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
-endfunction
 
 function! gita#command#grep#call(...) abort
   let options = extend({
@@ -59,7 +41,7 @@ function! gita#command#grep#call(...) abort
   let commit = gita#variable#get_valid_commit(options.commit, {
         \ '_allow_empty': 1,
         \})
-  let content = s:get_grep_content(
+  let content = s:execute_command(
         \ git, options.pattern, commit, options.directories, options
         \)
   let result = {

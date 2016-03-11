@@ -6,6 +6,8 @@ let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 let s:file = s:Path.realpath('autoload/vital/__latest__/Git/Process.vim')
 let s:is_windows = s:Prelude.is_windows()
 
+finish
+
 Describe Git.ProcessOld
   Before
     let GitProcessOld = s:V.import('Git.ProcessOld')

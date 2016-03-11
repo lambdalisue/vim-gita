@@ -3,7 +3,6 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitProcess = s:V.import('Git.Process')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 
 function! gita#vital() abort
   return s:V
@@ -34,35 +33,6 @@ function! gita#execute(git, args, ...) abort
     echo join(result.content, "\n")
   endif
   return result.content
-endfunction
-
-function! gita#execute_old(git, name, ...) abort
-  call s:GitProcessOld.set_config({
-        \ 'executable': g:gita#executable,
-        \ 'arguments':  g:gita#arguments,
-        \})
-  let options = get(a:000, 0, {})
-  let config  = get(a:000, 1, {})
-  if !&verbose
-    return s:GitProcessOld.execute(a:git, a:name, options, config)
-  else
-    let result = s:GitProcessOld.execute(a:git, a:name, options, config)
-    call s:Prompt.debug(printf(
-          \ 'o %s: %s', (result.status ? 'Fail' : 'OK'), join(result.args),
-          \))
-    if &verbose >= 2
-      call s:Prompt.debug(printf(
-            \ '| status: %d', result.status,
-            \))
-      call s:Prompt.debug('| --- content ---')
-      for line in result.content
-        call s:Prompt.debug(line)
-      endfor
-      call s:Prompt.debug('| ----- end -----')
-    endif
-    call s:Prompt.debug('')
-    return result
-  endif
 endfunction
 
 function! gita#get_git_version() abort

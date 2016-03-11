@@ -2,13 +2,14 @@ let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 let s:registry = {}
+
 function! gita#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
 endfunction
+
 function! gita#command#register(name, command, complete, ...) abort
   if has_key(s:registry, a:name)
     call gita#throw(printf(
@@ -25,6 +26,7 @@ function! gita#command#register(name, command, complete, ...) abort
         \   : a:complete,
         \}
 endfunction
+
 function! gita#command#unregister(name) abort
   if !has_key(s:registry, a:name)
     call gita#throw(printf(
@@ -74,10 +76,12 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
 function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
   let available_commands = keys(s:registry)
   return filter(available_commands, 'v:val =~# "^" . a:arglead')
 endfunction
+
 function! gita#command#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -98,6 +102,7 @@ function! gita#command#command(...) abort
     endif
   endif
 endfunction
+
 function! gita#command#complete(arglead, cmdline, cursorpos, ...) abort
   let bang    = a:cmdline =~# '\v^Gita!'
   let cmdline = substitute(a:cmdline, '\C^Gita!\?\s', '', '')

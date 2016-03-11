@@ -1,7 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:GitProcessOld = s:V.import('Git.ProcessOld')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:is_untracked_files_supported() abort
@@ -13,33 +12,20 @@ function! s:is_untracked_files_supported() abort
   return s:untracked_files_supported
 endfunction
 
-function! s:pick_available_options(options) abort
-  let options = s:Dict.pick(a:options, [
-        \ 'untracked-files',
-        \ 'ignore-submodules',
-        \ 'ignored',
-        \ 'porcelain',
-        \])
-  if !s:is_untracked_files_supported()
-    let options = s:Dict.omit(options, ['u', 'untracked-files'])
+function! s:execute_command(git, filenames, options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'untracked-files': 1,
+        \ 'ignore-submodules': 1,
+        \ 'ignored': 1,
+        \ 'porcelain': 1,
+        \})
+  if s:is_untracked_files_supported() && has_key(a:options, 'untracked-files')
+    let args += ['--untracked-files']
   endif
-  return options
-endfunction
-
-function! s:get_status_content(git, filenames, options) abort
-  let options = s:pick_available_options(a:options)
-  let options['no-column'] = 1
-  if !empty(a:filenames)
-    let options['--'] = a:filenames
-  endif
-  let result = gita#execute_old(a:git, 'status', options)
-  if result.status
-    call s:GitProcessOld.throw(result)
-  elseif !get(a:options, 'quiet')
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  let args = ['status', '--no-column'] + args + ['--'] + a:filenames
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+        \ 'quiet', 'fail_silently',
+        \]))
 endfunction
 
 function! gita#command#status#call(...) abort
@@ -55,7 +41,7 @@ function! gita#command#status#call(...) abort
   else
     let filenames = []
   endif
-  let content = s:get_status_content(git, filenames, options)
+  let content = s:execute_command(git, filenames, options)
   let result = {
         \ 'filenames': filenames,
         \ 'content': content,

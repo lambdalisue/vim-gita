@@ -11,6 +11,7 @@ function! s:_vital_loaded(V) abort
         \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
         \}
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
@@ -23,6 +24,7 @@ endfunction
 function! s:get_config() abort
   return copy(s:config)
 endfunction
+
 function! s:set_config(config) abort
   call extend(s:config, s:Dict.pick(a:config, [
         \ 'executable',
