@@ -1,35 +1,25 @@
-language: generic
-env:
-  - HEAD=yes
-    # - HEAD=no
-sudo: false
+language: viml
 
-addons:
-  apt:
-    packages:
-      - language-pack-ja
-      - vim
-      - libperl-dev
-      - python-dev
-      - python3-dev
-      - liblua5.1-0-dev
-      - lua5.1
+sudo: required
+dist: trusty
+
+os:
+  - linux
+  - osx
 
 install:
-  - bash scripts/install-vim.sh
-  - if [ x"$HEAD" = "xyes" ]; then export PATH=$HOME/vim/bin:$PATH; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install macvim --with-override-system-vim; fi
 
 before_script:
-  - git clone https://github.com/syngan/vim-vimlint /tmp/vim-vimlint
-  - git clone https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
-  - git clone https://github.com/thinca/vim-themis --branch v1.5 --single-branch --depth 1 /tmp/vim-themis
-  - git clone https://github.com/Shougo/vimproc.vim /tmp/vimproc
-  - git clone https://github.com/vim-jp/vital.vim /tmp/vital
+  - vim --version
+  - git clone --depth 1 https://github.com/Shougo/vimproc.vim    /tmp/vimproc
+  - git clone --depth 1 https://github.com/vim-jp/vital.vim      /tmp/vital
+  - git clone --depth 1 https://github.com/syngan/vim-vimlint    /tmp/vim-vimlint
+  - git clone --depth 1 https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
+  - git clone --depth 1 https://github.com/thinca/vim-themis     /tmp/vim-themis
   - (cd /tmp/vimproc && make)
 
 script:
-  - which -a vim
-  - vim --cmd version --cmd quit
   - vim --cmd "try | helptags doc/ | catch | cquit | endtry" --cmd quit
   - sh /tmp/vim-vimlint/bin/vimlint.sh -l /tmp/vim-vimlint -p /tmp/vim-vimlparser -e EVL103=1 -e EVL102.l:_=1 -c func_abort=1 autoload
-  - /tmp/vim-themis/bin/themis --runtimepath /tmp/vimproc --runtimepath /tmp/vital --reporter dot
+  - sh /tmp/vim-themis/bin/themis --runtimepath /tmp/vimproc --runtimepath /tmp/vital --reporter spec
