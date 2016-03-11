@@ -71,9 +71,10 @@ function! gita#option#assign_selection(options) abort
   if content_type =~# '^blame-\%(navi\|view\)$'
     let line_start = get(a:options.selection, 0, 0)
     let line_end = get(a:options.selection, 1, line_start)
+    let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
     let a:options.selection = [
-          \ gita#command#blame#get_pseudo_linenum(line_start),
-          \ gita#command#blame#get_pseudo_linenum(line_end),
+          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, line_start),
+          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, line_end),
           \]
   elseif !empty(content_type)
     let a:options.selection = []
