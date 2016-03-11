@@ -74,7 +74,7 @@ function! s:on_BufReadCmd(options) abort
   let options = gita#option#cascade('^blame-navi$', a:options, {
         \ 'selection': [],
         \})
-  let result = gita#command#blame#get_or_create(options)
+  let result = gita#command#blame#get_or_call(options)
   call gita#meta#set('content_type', 'blame-navi')
   call gita#meta#set('options', options)
   call gita#meta#set('previous', get(options, 'previous', []))

@@ -11,6 +11,187 @@ let s:GitParser = s:V.import('Git.Parser')
 let s:ProgressBar = s:V.import('ProgressBar')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
+function! s:execute_command(git, commit, filename) abort
+  let args = [
+        \ 'blame',
+        \ g:gita#command#blame#use_porcelain_instead ? '--porcelain' : '--incremental',
+        \ a:commit,
+        \ '--',
+        \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
+        \]
+  return gita#execute(a:git, args, {
+        \ 'quiet': 1,
+        \})
+endfunction
+
+function! s:get_parser() abort
+  if !exists('s:parser') || g:gita#develop
+    let s:parser = s:ArgumentParser.new({
+          \ 'name': 'Gita blame',
+          \ 'description': 'Show what revision and author last modified each line of a file (UI only)',
+          \ 'complete_threshold': g:gita#complete_threshold,
+          \})
+    call s:parser.add_argument(
+          \ 'commit', [
+          \   'A commit which you want to blame.',
+          \   'If nothing is specified, it show a blame of HEAD.',
+          \   'If <commit> is specified, it show a blame of the named <commit>.',
+          \ ], {
+          \   'complete': function('gita#complete#commit'),
+          \ })
+
+    call s:parser.add_argument(
+          \ 'filename', [
+          \   'A filename which you want to blame.',
+          \   'If nothing is specified, the current buffer will be used.',
+          \ ], {
+          \   'complete': function('gita#complete#filename'),
+          \ })
+  endif
+  return s:parser
+endfunction
+
+function! s:get_blameobj(content, commit, filename) abort
+  let progressbar = s:ProgressBar.new(
+        \ len(a:content), {
+        \   'barwidth': 80,
+        \   'statusline': 0,
+        \})
+  try
+    let blameobj = s:GitParser.parse_blame(a:content, {
+          \ 'progressbar': progressbar,
+          \ 'python': g:gita#command#blame#use_python,
+          \})
+    if !g:gita#command#blame#use_porcelain_instead
+      if empty(a:commit)
+        let blameobj.file_content = readfile(a:filename)
+      else
+        let blameobj.file_content = gita#command#show#call({
+              \ 'quiet': 1,
+              \ 'commit': a:commit,
+              \ 'filename': a:filename,
+              \}).content
+      endif
+    endif
+    return blameobj
+  finally
+    call progressbar.exit()
+  endtry
+endfunction
+
+function! s:get_blamemeta(blameobj, width) abort
+  let progressbar = s:ProgressBar.new(
+        \ len(a:blameobj.chunks), {
+        \   'barwidth': 80,
+        \   'statusline': 0,
+        \})
+  try
+    return s:format_blameobj(a:blameobj, a:width, progressbar)
+  finally
+    call progressbar.exit()
+  endtry
+endfunction
+
+
+
+function! gita#command#blame#call(...) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {}))
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filename = gita#variable#get_valid_filename(options.filename)
+  let git = gita#core#get_or_fail()
+  let guard = s:Guard.store('&l:statusline')
+  try
+    setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
+    redrawstatus
+    let content = s:execute_command(git, commit, filename)
+    setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
+    redrawstatus
+    let blameobj = s:get_blameobj(content, commit, filename)
+    setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
+    redrawstatus
+    let blamemeta = s:get_blamemeta(
+          \ blameobj,
+          \ g:gita#command#blame#navigator_width
+          \)
+    return blamemeta
+  finally
+    call guard.restore()
+  endtry
+endfunction
+
+function! gita#command#blame#get_or_call(...) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {}))
+  let options.commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let options.filename = gita#variable#get_valid_filename(options.filename)
+
+  let bufname_view = gita#command#ui#blame_view#bufname(options)
+  if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
+    return {
+          \ 'commit': options.commit,
+          \ 'filename': options.filename,
+          \ 'blamemeta': getbufvar(bufname_view, '_gita_blame_cache'),
+          \}
+  endif
+
+  let bufname_navi = gita#command#ui#blame_navi#bufname(options)
+  if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
+    return {
+          \ 'commit': options.commit,
+          \ 'filename': options.filename,
+          \ 'blamemeta': getbufvar(bufname_navi, '_gita_blame_cache'),
+          \}
+  endif
+
+  let blamemeta = gita#command#blame#call(options)
+  if bufexists(bufname_view)
+    call setbufvar(bufname_view, '_gita_blame_cache', blamemeta)
+  endif
+  if bufexists(bufname_navi)
+    call setbufvar(bufname_navi, '_gita_blame_cache', blamemeta)
+  endif
+
+  return {
+        \ 'commit': options.commit,
+        \ 'filename': options.filename,
+        \ 'blamemeta': blamemeta,
+        \}
+endfunction
+
+function! gita#command#blame#command(...) abort
+  let parser  = s:get_parser()
+  let options = call(parser.parse, a:000, parser)
+  if empty(options)
+    return
+  endif
+  " extend default options
+  let options = extend(
+        \ deepcopy(g:gita#command#blame#default_options),
+        \ options,
+        \)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
+  call gita#option#assign_selection(options)
+  call gita#command#ui#blame#open(options)
+endfunction
+
+function! gita#command#blame#complete(...) abort
+  let parser = s:get_parser()
+  return call(parser.complete, a:000, parser)
+endfunction
+
+
+" Utilities ------------------------------------------------------------------
+
 function! s:format_timestamp(timestamp, timezone, now) abort
   let datetime  = s:DateTime.from_unix_time(a:timestamp, a:timezone)
   let timedelta = datetime.delta(a:now)
@@ -97,7 +278,11 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
       endif
       let linenum = cursor >= n_contents ? '' : chunk.linenum.final + cursor
       call add(navi_content,
-              \ linenum_spacer[len(linenum):] . linenum . ' ' . get(formatted_chunk, float2nr(fmod(cursor, height)), '')
+              \ linenum_spacer[len(linenum):] . linenum . ' ' . get(
+              \   formatted_chunk,
+              \   float2nr(fmod(cursor, height)),
+              \   ''
+              \ )
               \)
       if empty(linenum)
         call add(view_content, '')
@@ -140,180 +325,6 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
         \ 'linenum_width': linenum_width,
         \}
   return blamemeta
-endfunction
-
-
-function! s:get_content(git, commit, filename) abort
-  let args = [
-        \ 'blame',
-        \ g:gita#command#blame#use_porcelain_instead ? '--porcelain' : '--incremental',
-        \ a:commit,
-        \ '--',
-        \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
-        \]
-  return gita#execute(a:git, args, {
-        \ 'quiet': 1,
-        \})
-endfunction
-
-function! s:get_blameobj(content, commit, filename) abort
-  let progressbar = s:ProgressBar.new(
-        \ len(a:content), {
-        \   'barwidth': 80,
-        \   'statusline': 0,
-        \})
-  try
-    let blameobj = s:GitParser.parse_blame(a:content, {
-          \ 'progressbar': progressbar,
-          \ 'python': g:gita#command#blame#use_python,
-          \})
-    if !g:gita#command#blame#use_porcelain_instead
-      if empty(a:commit)
-        let blameobj.file_content = readfile(a:filename)
-      else
-        let blameobj.file_content = gita#command#show#call({
-              \ 'quiet': 1,
-              \ 'commit': a:commit,
-              \ 'filename': a:filename,
-              \}).content
-      endif
-    endif
-    return blameobj
-  finally
-    call progressbar.exit()
-  endtry
-endfunction
-
-function! s:get_blamemeta(blameobj, width) abort
-  let progressbar = s:ProgressBar.new(
-        \ len(a:blameobj.chunks), {
-        \   'barwidth': 80,
-        \   'statusline': 0,
-        \})
-  try
-    return s:format_blameobj(a:blameobj, a:width, progressbar)
-  finally
-    call progressbar.exit()
-  endtry
-endfunction
-
-function! s:retrieve(commit, filename) abort
-  let git = gita#core#get_or_fail()
-  let guard = s:Guard.store('&l:statusline')
-  try
-    setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
-    redrawstatus
-    let content = s:get_content(git, a:commit, a:filename)
-    setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
-    redrawstatus
-    let blameobj = s:get_blameobj(content, a:commit, a:filename)
-    setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
-    redrawstatus
-    let blamemeta = s:get_blamemeta(blameobj, g:gita#command#blame#navigator_width)
-    return blamemeta
-  finally
-    call guard.restore()
-  endtry
-endfunction
-
-
-function! gita#command#blame#get_or_create(options) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'filename': '',
-        \}, a:options)
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filename = gita#variable#get_valid_filename(options.filename)
-
-  let bufname_view = gita#command#ui#blame_view#bufname({
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \})
-  if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
-    return {
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \ 'blamemeta': getbufvar(bufname_view, '_gita_blame_cache'),
-          \}
-  endif
-
-  let bufname_navi = gita#command#ui#blame_navi#bufname({
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \})
-  if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
-    return {
-          \ 'commit': commit,
-          \ 'filename': filename,
-          \ 'blamemeta': getbufvar(bufname_navi, '_gita_blame_cache'),
-          \}
-  endif
-
-  let blamemeta = s:retrieve(commit, filename)
-  if bufexists(bufname_view)
-    call setbufvar(bufname_view, '_gita_blame_cache', blamemeta)
-  endif
-  if bufexists(bufname_navi)
-    call setbufvar(bufname_navi, '_gita_blame_cache', blamemeta)
-  endif
-
-  return {
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'blamemeta': blamemeta,
-        \}
-endfunction
-
-function! gita#command#blame#get_or_fail() abort
-  if !exists('b:_gita_blame_cache')
-  endif
-  return b:_gita_blame_cache
-endfunction
-
-
-function! s:get_parser() abort
-  if !exists('s:parser') || g:gita#develop
-    let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Gita blame',
-          \ 'description': 'Show what revision and author last modified each line of a file (UI only)',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': 'filename',
-          \ 'complete_threshold': g:gita#complete_threshold,
-          \})
-    call s:parser.add_argument(
-          \ 'commit', [
-          \   'A commit which you want to blame.',
-          \   'If nothing is specified, it show a blame of HEAD.',
-          \   'If <commit> is specified, it show a blame of the named <commit>.',
-          \ ], {
-          \   'complete': function('gita#complete#commit'),
-          \ })
-  endif
-  return s:parser
-endfunction
-
-function! gita#command#blame#command(...) abort
-  let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
-  if empty(options)
-    return
-  endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#blame#default_options),
-        \ options,
-        \)
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#command#ui#blame#open(options)
-endfunction
-
-function! gita#command#blame#complete(...) abort
-  let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
 endfunction
 
 

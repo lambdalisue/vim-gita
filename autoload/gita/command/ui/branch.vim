@@ -3,10 +3,6 @@ let s:Dict = s:V.import('Data.Dict')
 let s:GitParser = s:V.import('Git.Parser')
 let s:candidate_offset = 0
 
-function! s:format_branches(branches) abort
-  return map(copy(a:branches), 'v:val.record')
-endfunction
-
 function! s:get_header_string(git) abort
   let branches = gita#meta#get_for('branch', 'branches', [])
   let nbranches = len(branches)
@@ -62,6 +58,7 @@ function! s:on_BufReadCmd(options) abort
   let options['no-column'] = 1
   let options['no-color'] = 1
   let options['no-abbrev'] = 1
+  let options['list'] = get(options, 'list', 1)
   let result = gita#command#branch#call(options)
   let branches = s:GitParser.parse_branch(result.content)
   call gita#meta#set('content_type', 'branch')
@@ -113,7 +110,7 @@ function! gita#command#ui#branch#redraw() abort
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
   let branches = gita#meta#get_for('branch', 'branches', [])
-  let contents = s:format_branches(branches)
+  let contents = map(copy(branches), 'v:val.record')
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
         \ gita#autocmd#parse_cmdarg(),

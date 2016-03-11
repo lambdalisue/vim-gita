@@ -4,7 +4,6 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 
 function! s:clear_complete_cache() abort
-  echomsg 'clear_complete_cache called'
   let git = gita#core#get()
   if git.is_enabled
     for key in filter(
@@ -45,8 +44,10 @@ function! s:get_available_filenames(git, args) abort
         \})
   " NOTE:
   " git -C <rep> ls-files returns unix relative paths from the repository
-  let prefix = expand(a:git.worktree) . s:Path.separator()
+  " so make it relative from current working directory
+  let prefix  = expand(a:git.worktree) . s:Path.separator()
   let content = map(content, 's:Path.realpath(prefix . v:val)')
+  let content = map(content, 'fnamemodify(v:val, '':~:.'')')
   return content
 endfunction
 
@@ -156,10 +157,10 @@ function! gita#complete#modified_filename(arglead, cmdline, cursorpos, ...) abor
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
-    let candidates = s:Git.get_cache_content(git, 'index', slug, '')
+    let candidates = s:Git.get_cache_content(git, '.', slug, '')
     if empty(candidates)
       let candidates = s:get_available_filenames(git, ['--modified'])
-      call s:Git.set_cache_content(git, 'index', slug, candidates)
+      call s:Git.set_cache_content(git, '.', slug, candidates)
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
@@ -175,7 +176,21 @@ function! gita#complete#others_filename(arglead, cmdline, cursorpos, ...) abort
     let candidates = s:get_available_filenames(git, [
           \ '--others', '--', a:arglead,
           \])
-    return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
+    return candidates
+  catch
+    call s:Prompt.debug(v:exception)
+    call s:Prompt.debug(v:throwpoint)
+    return ''
+  endtry
+endfunction
+
+function! gita#complete#unstaged_filename(arglead, cmdline, cursorpos, ...) abort
+  try
+    let git = gita#core#get_or_fail()
+    let candidates = s:get_available_filenames(git, [
+          \ '--others', '--modified', '--', a:arglead,
+          \])
+    return candidates
   catch
     call s:Prompt.debug(v:exception)
     call s:Prompt.debug(v:throwpoint)

@@ -1,4 +1,5 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Prompt = s:V.import('Vim.Prompt')
 
 function! gita#option#cascade(content_type, options, ...) abort
@@ -11,18 +12,20 @@ endfunction
 function! gita#option#assign_commit(options) abort
   if has_key(a:options, 'commit')
     return
-  endif
-
-  let content_type = gita#meta#get('content_type')
-  if content_type =~# '^\%(status\|commit\|ls\|diff-ls\)$'
-    let candidate = get(gita#action#get_candidates(), 0, {})
-    if has_key(candidate, 'commit')
-      let a:options.commit = candidate.commit
+  elseif gita#action#is_attached()
+    let candidates = filter(
+          \ gita#action#get_candidates(),
+          \ 'gita#action#is_satisfied(v:val, [''commit''])',
+          \)
+    if !empty(candidates)
+      let a:options.commit = candidates[0].commit
     endif
   endif
+
   if empty(get(a:options, 'commit'))
-    if !empty(gita#meta#get('commit'))
-      let a:options.commit = gita#meta#get('commit')
+    let commit = gita#meta#get('commit')
+    if !empty(commit)
+      let a:options.commit = commit
     endif
   endif
 endfunction
@@ -30,33 +33,51 @@ endfunction
 function! gita#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
-  elseif len(get(a:options, '__unknown__')) > 0
+  elseif !empty(get(a:options, '__unknown__'))
     let a:options.filename = a:options.__unknown__[0]
-  endif
-  let content_type = gita#meta#get('content_type')
-  if content_type =~# '^\%(status\|commit\|ls\|diff-ls\)$'
-    let candidate = get(gita#action#get_candidates(), 0, {})
-    if has_key(candidate, 'path')
-      let a:options.filename = candidate.path
+  elseif gita#action#is_attached()
+    let candidates = filter(
+          \ gita#action#get_candidates(),
+          \ 'gita#action#is_satisfied(v:val, [''path''])',
+          \)
+    if !empty(candidates)
+      let a:options.filename = candidates[0].path
     endif
   endif
+
   if empty(get(a:options, 'filename'))
-    if !empty(gita#meta#get('filename'))
-      let a:options.filename = gita#meta#get('filename')
-    elseif !empty(gita#meta#expand('%'))
-      " NOTE:
-      " gita#meta#expand() always return a real absolute path or ''
-      let a:options.filename = gita#meta#expand('%')
+    " NOTE:
+    " gita#meta#expand() always return a real absolute path or ''
+    let filename = gita#meta#expand('%')
+    if !empty(filename)
+      let a:options.filename = filename
     endif
+  endif
+endfunction
+
+function! gita#option#assign_filenames(options) abort
+  if has_key(a:options, 'filenames')
+    return
+  elseif !empty(get(a:options, '__unknown__'))
+    let a:options.filenames = a:options.__unknown__
+    return
+  elseif gita#action#is_attached()
+    let candidates = filter(
+          \ gita#action#get_candidates(),
+          \ 'gita#action#is_satisfied(v:val, [''path''])',
+          \)
+    let a:options.filenames = map(candidates, 'v:val.path')
   endif
 endfunction
 
 function! gita#option#assign_selection(options) abort
   if has_key(a:options, 'selection')
-    let a:options.selection = map(
-          \ split(a:options.selection, '-'),
-          \ 'str2nr(v:val)',
-          \)
+    if s:Prelude.is_string(a:options.selection)
+      let a:options.selection = map(
+            \ split(a:options.selection, '-'),
+            \ 'str2nr(v:val)',
+            \)
+    endif
   else
     let a:options.selection = get(
           \ a:options,
@@ -69,14 +90,17 @@ function! gita#option#assign_selection(options) abort
 
   let content_type = gita#meta#get('content_type')
   if content_type =~# '^blame-\%(navi\|view\)$'
-    let line_start = get(a:options.selection, 0, 0)
-    let line_end = get(a:options.selection, 1, line_start)
+    let ls = get(a:options.selection, 0, 0)
+    let le = get(a:options.selection, 1, ls)
     let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
     let a:options.selection = [
-          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, line_start),
-          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, line_end),
+          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, ls),
+          \ gita#command#ui#blame#get_pseudo_linenum(blamemeta, le),
           \]
   elseif !empty(content_type)
+    " No selection should be available for other manipulation panels
+    " Note that candidates of 'grep' has 'selection' so that selection
+    " will be used from 'grep' window
     let a:options.selection = []
   endif
 endfunction

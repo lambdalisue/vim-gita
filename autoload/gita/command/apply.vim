@@ -1,6 +1,5 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:execute_command(git, filenames, options) abort
@@ -36,35 +35,14 @@ function! s:execute_command(git, filenames, options) abort
         \]))
 endfunction
 
-function! gita#command#apply#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if empty(options.filenames)
-    call gita#throw('ValidationError: "filenames" cannot be empty')
-  endif
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
-        \)
-  let content = s:execute_command(git, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita apply',
           \ 'description': 'Apply a patch to files and/or to the index',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<patch>...',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<patch>...',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -123,7 +101,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--build-fake-ancestor',
           \ 'build a temporary index based on embedded index information', {
-          \   'complete': s:ArgumentParser.complete_files,
+          \   'complete': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '-C',
@@ -172,27 +150,48 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--directory',
           \ 'prepend <DIRECTORY> to all filenames', {
-          \   'complete': s:ArgumentParser.complete_files,
+          \   'type': s:ArgumentParser.types.value,
           \})
   endif
   return s:parser
 endfunction
+
+function! gita#command#apply#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  if empty(options.filenames)
+    call gita#throw('ValidationError: "filenames" cannot be empty')
+  endif
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#apply#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  if !empty(options.__unknown__)
-    let options.filenames = options.__unknown__
-  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#apply#default_options),
         \ options,
         \)
+  call gita#option#assign_filenames(options)
   call gita#command#apply#call(options)
 endfunction
+
 function! gita#command#apply#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

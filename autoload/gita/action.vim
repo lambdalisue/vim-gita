@@ -1,4 +1,8 @@
-function! s:is_satisfied(candidate, requirements) abort
+function! gita#action#is_attached() abort
+  return exists('b:_gita_action_holder')
+endfunction
+
+function! gita#action#is_satisfied(candidate, requirements) abort
   for requirement in a:requirements
     if !has_key(a:candidate, requirement)
       return 0
@@ -51,7 +55,7 @@ function! gita#action#do(name, candidates) abort
   let action = gita#action#get_action(a:name)
   let candidates = filter(
         \ copy(a:candidates),
-        \ 's:is_satisfied(v:val, action.requirements)',
+        \ 'gita#action#is_satisfied(v:val, action.requirements)',
         \)
   if !empty(action.requirements) && empty(candidates)
     return
