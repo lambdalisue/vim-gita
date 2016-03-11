@@ -19,11 +19,12 @@ function! gita#execute(git, args, ...) abort
         \ 'executable': g:gita#executable,
         \ 'arguments':  g:gita#arguments,
         \})
+  let args = filter(copy(a:args), '!empty(v:val)')
   let options = extend({
         \ 'quiet': 0,
         \ 'fail_silently': 0,
         \}, get(a:000, 0, {}))
-  let result = s:GitProcess.execute(a:git, a:args, s:Dict.omit(options, [
+  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
         \ 'quiet', 'fail_silently'
         \]))
   if !options.fail_silently && !result.success
