@@ -17,8 +17,9 @@ function! gita#command#register(name, ...) abort
           \ a:name,
           \))
   endif
-  let command  = get(a:000, 0, printf('gita#command#%s#command', a:name))
-  let complete = get(a:000, 0, printf('gita#command#%s#complete', a:name))
+  let name = substitute(a:name, '-', '_', 'g')
+  let command  = get(a:000, 0, printf('gita#command#%s#command', name))
+  let complete = get(a:000, 0, printf('gita#command#%s#complete', name))
   let s:registry[a:name] = {
         \ 'command': s:Prelude.is_string(command)
         \   ? function(command)
