@@ -26,7 +26,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
           \   'If <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
   endif
   return s:parser

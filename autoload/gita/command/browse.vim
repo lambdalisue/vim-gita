@@ -145,7 +145,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita browse',
           \ 'description': 'Open/Yank/Echo a URL of a content of the remote',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -187,7 +187,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it try to open a diff page of the remote content',
           \   'If <commit1>...<commit2> is specified, it try to open a diff open of the remote content',
           \], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     function! s:parser.hooks.pre_validate(options) abort
       if empty(s:parser.get_conflicted_arguments('open', a:options))

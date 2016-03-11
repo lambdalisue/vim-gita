@@ -89,7 +89,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--onto',
           \ 'rebase onto given branch instead of upstream', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--preserve-merges', '-p',
@@ -197,12 +197,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'upstream',
           \ 'upstream branch to compare against', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ 'branch',
           \ 'working branch; defaults to HEAD', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
   endif
   return s:parser

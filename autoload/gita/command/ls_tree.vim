@@ -61,7 +61,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita ls-tree',
           \ 'description': 'List the contents of a tree object',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>...',
           \})
     call s:parser.add_argument(
@@ -134,7 +134,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it ls a content between the named <commit1> and <commit2>',
           \   'If <commit1>...<commit2> is specified, it ls a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
   endif
   return s:parser

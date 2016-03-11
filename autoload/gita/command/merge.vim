@@ -54,7 +54,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita merge',
           \ 'description': 'Join two or more development histories together',
-          \ 'complete_unknown': function('gita#variable#complete_commit'),
+          \ 'complete_unknown': function('gita#complete#commit'),
           \ 'unknown_description': '<commits>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})

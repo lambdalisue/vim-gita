@@ -87,7 +87,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita show',
           \ 'description': 'Show a content of a commit or a file',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -151,7 +151,7 @@ function! s:get_parser() abort
           \   'if <commit1>..<commit2> is specified, it show a content of the named <commit1>',
           \   'if <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
           \], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'repository')

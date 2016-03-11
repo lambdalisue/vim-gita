@@ -57,7 +57,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita ls-files',
           \ 'description': 'Show information about files in the index and the working tree',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<file>...',
           \})
     call s:parser.add_argument(
@@ -112,12 +112,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--exclude-from', '-X',
           \ 'read exclude patterns from file; 1 per line', {
-          \   'complete': function('gita#variable#complete_filename'),
+          \   'complete': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--exclude-per-directory',
           \ 'read additional exclude patterns that apply only to the directory and its subdirectories', {
-          \   'complete': function('gita#variable#complete_filename'),
+          \   'complete': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--exclude-standard',

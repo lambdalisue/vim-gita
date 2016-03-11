@@ -67,7 +67,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita reset',
           \ 'description': 'Reset current HEAD to the specified state',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -118,7 +118,7 @@ function! s:get_parser() abort
           \   'if nothing is specified, it reset a content of the index to HEAD.',
           \   'if <commit> is specified, it reset a content of the index to the named <commit>.',
           \], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
   endif
   return s:parser

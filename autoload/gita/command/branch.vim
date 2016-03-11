@@ -90,7 +90,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--contains',
           \ 'print only branches that contains the commit', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--all', '-a',
@@ -127,12 +127,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--no-merged',
           \ 'print only not merged branches', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--merged',
           \ 'print only merged branches', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--ui',

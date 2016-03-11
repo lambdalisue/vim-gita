@@ -36,7 +36,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'filename',
           \ 'a filename going to be patched. if omited, the current buffer is used', {
-          \   'complete': function('gita#variable#complete_filename'),
+          \   'complete': function('gita#complete#filename'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'one')

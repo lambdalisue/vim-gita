@@ -105,7 +105,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita diff',
           \ 'description': 'Show changes between commits, commit and working tree, etc',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -344,7 +344,7 @@ function! s:get_parser() abort
           \   'if <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
           \   'if <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \})
     " TODO: Add more arguments
     function! s:parser.hooks.post_validate(options) abort

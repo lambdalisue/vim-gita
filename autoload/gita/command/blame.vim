@@ -278,7 +278,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita blame',
           \ 'description': 'Show what revision and author last modified each line of a file (UI only)',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': 'filename',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -288,7 +288,7 @@ function! s:get_parser() abort
           \   'If nothing is specified, it show a blame of HEAD.',
           \   'If <commit> is specified, it show a blame of the named <commit>.',
           \ ], {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \ })
   endif
   return s:parser

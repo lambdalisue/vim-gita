@@ -72,7 +72,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita commit',
           \ 'description': 'Show a status of the repository',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': 'files to index for commit',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})

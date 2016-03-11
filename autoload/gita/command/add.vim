@@ -57,7 +57,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita add',
           \ 'description': 'Add file contents to the index',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<pathspec>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})

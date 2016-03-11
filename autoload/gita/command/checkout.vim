@@ -64,7 +64,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita checkout',
           \ 'description': 'Switch branches or restore working tree files',
-          \ 'complete_unknown': function('gita#variable#complete_filename'),
+          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -137,7 +137,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'commit',
           \ '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.', {
-          \   'complete': function('gita#variable#complete_commit'),
+          \   'complete': function('gita#complete#commit'),
           \ })
   endif
   return s:parser
