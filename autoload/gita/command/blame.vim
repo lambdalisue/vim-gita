@@ -76,6 +76,7 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   let linenum_width  = len(s:get_max_linenum(chunks))
   let linenum_spacer = repeat(' ', linenum_width)
   let linenum_pseudo = 1
+  let height = winheight(0)
   let width = a:width - linenum_width - 2
   let whitespaces = repeat(' ', width)
   let navi_content = []
@@ -86,17 +87,17 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   for chunk in chunks
     call extend(chunk, revisions[chunk.revision])
     let n_contents = get(chunk, 'nlines', 1)
-    let height = max([2, n_contents])
+    let chunk_height = max([2, n_contents])
     let formatted_chunk = s:format_chunk(
-          \ chunk, width, height-1, cache, now, whitespaces
+          \ chunk, width, chunk_height-1, cache, now, whitespaces
           \)
-    for cursor in range(height)
+    for cursor in range(chunk_height)
       if cursor < n_contents
         call add(linerefs, linenum_pseudo)
       endif
       let linenum = cursor >= n_contents ? '' : chunk.linenum.final + cursor
       call add(navi_content,
-              \ linenum_spacer[len(linenum):] . linenum . ' ' . get(formatted_chunk, cursor, '')
+              \ linenum_spacer[len(linenum):] . linenum . ' ' . get(formatted_chunk, float2nr(fmod(cursor, height)), '')
               \)
       if empty(linenum)
         call add(view_content, '')
@@ -120,8 +121,8 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
     call add(lineinfos, {
           \ 'chunkref': chunk.index,
           \ 'linenum': {
-          \   'original': chunk.linenum.original + (height - 1),
-          \   'final': chunk.linenum.final + (height - 1),
+          \   'original': chunk.linenum.original + (chunk_height - 1),
+          \   'final': chunk.linenum.final + (chunk_height - 1),
           \ },
           \})
     call add(separators, linenum_pseudo)
