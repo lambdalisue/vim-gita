@@ -10,20 +10,22 @@ function! gita#command#is_registered(name) abort
   return index(keys(s:registry), a:name) != -1
 endfunction
 
-function! gita#command#register(name, command, complete, ...) abort
+function! gita#command#register(name, ...) abort
   if has_key(s:registry, a:name)
     call gita#throw(printf(
           \ 'ValidationError: A command "%s" has already been registered',
           \ a:name,
           \))
   endif
+  let command  = get(a:000, 0, printf('gita#command#%s#command', a:name))
+  let complete = get(a:000, 0, printf('gita#command#%s#complete', a:name))
   let s:registry[a:name] = {
-        \ 'command': s:Prelude.is_string(a:command)
-        \   ? function(a:command)
-        \   : a:command,
-        \ 'complete': s:Prelude.is_string(a:complete)
-        \   ? function(a:complete)
-        \   : a:complete,
+        \ 'command': s:Prelude.is_string(command)
+        \   ? function(command)
+        \   : command,
+        \ 'complete': s:Prelude.is_string(complete)
+        \   ? function(complete)
+        \   : complete,
         \}
 endfunction
 
@@ -126,83 +128,23 @@ function! gita#command#complete(arglead, cmdline, cursorpos, ...) abort
 endfunction
 
 " Register sub commands
-call gita#command#register('add',
-      \ 'gita#command#add#command',
-      \ 'gita#command#add#complete',
-      \)
-call gita#command#register('apply',
-      \ 'gita#command#apply#command',
-      \ 'gita#command#apply#complete',
-      \)
-call gita#command#register('blame',
-      \ 'gita#command#blame#command',
-      \ 'gita#command#blame#complete',
-      \)
-call gita#command#register('branch',
-      \ 'gita#command#branch#command',
-      \ 'gita#command#branch#complete',
-      \)
-call gita#command#register('browse',
-      \ 'gita#command#browse#command',
-      \ 'gita#command#browse#complete',
-      \)
-call gita#command#register('commit',
-      \ 'gita#command#commit#command',
-      \ 'gita#command#commit#complete',
-      \)
-call gita#command#register('chaperone',
-      \ 'gita#command#chaperone#command',
-      \ 'gita#command#chaperone#complete',
-      \)
-call gita#command#register('checkout',
-      \ 'gita#command#checkout#command',
-      \ 'gita#command#checkout#complete',
-      \)
-call gita#command#register('diff',
-      \ 'gita#command#diff#command',
-      \ 'gita#command#diff#complete',
-      \)
-call gita#command#register('diff-ls',
-      \ 'gita#command#diff_ls#command',
-      \ 'gita#command#diff_ls#complete',
-      \)
-call gita#command#register('grep',
-      \ 'gita#command#grep#command',
-      \ 'gita#command#grep#complete',
-      \)
-call gita#command#register('ls-files',
-      \ 'gita#command#ls_files#command',
-      \ 'gita#command#ls_files#complete',
-      \)
-call gita#command#register('ls-tree',
-      \ 'gita#command#ls_tree#command',
-      \ 'gita#command#ls_tree#complete',
-      \)
-call gita#command#register('merge',
-      \ 'gita#command#merge#command',
-      \ 'gita#command#merge#complete',
-      \)
-call gita#command#register('patch',
-      \ 'gita#command#patch#command',
-      \ 'gita#command#patch#complete',
-      \)
-call gita#command#register('rebase',
-      \ 'gita#command#rebase#command',
-      \ 'gita#command#rebase#complete',
-      \)
-call gita#command#register('reset',
-      \ 'gita#command#reset#command',
-      \ 'gita#command#reset#complete',
-      \)
-call gita#command#register('rm',
-      \ 'gita#command#rm#command',
-      \ 'gita#command#rm#complete',
-      \)
-call gita#command#register('show',
-      \ 'gita#command#show#command',
-      \ 'gita#command#show#complete',
-      \)
-call gita#command#register('status',
-      \ 'gita#command#status#command',
-      \ 'gita#command#status#complete',
-      \)
+call gita#command#register('add')
+call gita#command#register('apply')
+call gita#command#register('blame')
+call gita#command#register('branch')
+call gita#command#register('browse')
+call gita#command#register('commit')
+call gita#command#register('chaperone')
+call gita#command#register('checkout')
+call gita#command#register('diff')
+call gita#command#register('diff-ls')
+call gita#command#register('grep')
+call gita#command#register('ls-files')
+call gita#command#register('ls-tree')
+call gita#command#register('merge')
+call gita#command#register('patch')
+call gita#command#register('rebase')
+call gita#command#register('reset')
+call gita#command#register('rm')
+call gita#command#register('show')
+call gita#command#register('status')
