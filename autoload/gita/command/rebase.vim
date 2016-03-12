@@ -3,6 +3,10 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
+"
+" TODO: Refactoring
+"
+
 function! s:execute_command(git, commits, paths, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'onto': '--%k %v',
@@ -41,18 +45,6 @@ function! s:execute_command(git, commits, paths, options) abort
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
-endfunction
-
-function! gita#command#rebase#call(...) abort
-  let options = extend({
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let content = s:execute_command(git, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'content': content,
-        \ 'options': options,
-        \}
 endfunction
 
 function! s:get_parser() abort
@@ -207,6 +199,19 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
+function! gita#command#rebase#call(...) abort
+  let options = extend({
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let content = s:execute_command(git, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#rebase#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -223,6 +228,7 @@ function! gita#command#rebase#command(...) abort
         \)
   call gita#command#rebase#call(options)
 endfunction
+
 function! gita#command#rebase#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

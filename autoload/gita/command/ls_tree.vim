@@ -5,7 +5,7 @@ let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-function! s:execute_command(git, commit, paths, options) abort
+function! s:execute_command(git, commit, filenames, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'd': 1,
         \ 'r': 1,
@@ -17,42 +17,10 @@ function! s:execute_command(git, commit, paths, options) abort
         \ 'full-name': 1,
         \ 'full-tree': 1,
         \})
-  let args = ['ls-tree'] + args + ['--'] + a:paths
+  let args = ['ls-tree'] + args + ['--'] + a:filenames
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
-endfunction
-
-
-function! gita#command#ls_tree#call(...) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'paths': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit)
-  let paths = map(
-        \ copy(options.paths),
-        \ 'gita#variable#get_valid_filename(v:val)',
-        \)
-  if commit =~# '^.\{-}\.\.\..\{-}$'
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let _commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-    let content = s:execute_command(git, _commit, paths, options)
-  elseif commit =~# '^.\{-}\.\..\{-}$'
-    let _commit  = s:GitTerm.split_range(commit)[0]
-    let content = s:execute_command(git, _commit, paths, options)
-  else
-    let content = s:execute_command(git, commit, paths, options)
-  endif
-  let result = {
-        \ 'commit': commit,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
 endfunction
 
 function! s:get_parser() abort
@@ -61,8 +29,8 @@ function! s:get_parser() abort
           \ 'name': 'Gita ls-tree',
           \ 'description': 'List the contents of a tree object',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>...',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -91,18 +59,6 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--name-status',
           \ 'list only filenames instead of the "long" output, one per line',
-          \)
-    call s:parser.add_argument(
-          \ '--abbrev', [
-          \   'instead of showing the full 40-byte hexadecimal object lines',
-          \   'show only a partial prefix.',
-          \ ], {
-          \   'pattern': '^\d\+$',
-          \   'conflicts': ['ui'],
-          \})
-    call s:parser.add_argument(
-          \ '--full-name',
-          \ 'show the full path names',
           \)
     call s:parser.add_argument(
           \ '--full-tree',
@@ -140,6 +96,38 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+
+function! gita#command#ls_tree#call(...) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit)
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  if commit =~# '^.\{-}\.\.\..\{-}$'
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let _commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
+    let content = s:execute_command(git, _commit, filenames, options)
+  elseif commit =~# '^.\{-}\.\..\{-}$'
+    let _commit  = s:GitTerm.split_range(commit)[0]
+    let content = s:execute_command(git, _commit, filenames, options)
+  else
+    let content = s:execute_command(git, commit, filenames, options)
+  endif
+  let result = {
+        \ 'commit': commit,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+  return result
+endfunction
+
 function! gita#command#ls_tree#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -152,6 +140,7 @@ function! gita#command#ls_tree#command(...) abort
         \ options,
         \)
   call gita#option#assign_commit(options)
+  call gita#option#assign_filenames(options)
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)

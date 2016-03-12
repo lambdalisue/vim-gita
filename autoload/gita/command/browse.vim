@@ -30,6 +30,7 @@ function! s:find_commit_meta(git, commit) abort
   let remote_url = s:GitInfo.get_remote_url(config, remote)
   return [lhs, rhs, remote, remote_url]
 endfunction
+
 function! s:translate_url(url, scheme_name, translation_patterns, repository) abort
   let symbol = a:repository ? '^' : '_'
   for [domain, info] in items(a:translation_patterns)
@@ -44,6 +45,7 @@ function! s:translate_url(url, scheme_name, translation_patterns, repository) ab
   endfor
   return ''
 endfunction
+
 function! s:find_url(git, commit, filename, options) abort
   let relpath = s:Path.unixpath(
         \ s:Git.get_relative_path(a:git, a:filename),
@@ -100,44 +102,6 @@ function! s:find_url(git, commit, filename, options) abort
           \))
   endif
   return s:StringExt.format(url, format_map, data)
-endfunction
-
-function! gita#command#browse#call(...) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let local_branch = s:GitInfo.get_local_branch(git)
-  let commit = empty(options.commit) ? local_branch.name : options.commit
-  let commit = gita#variable#get_valid_range(commit)
-  if empty(options.filename)
-    let filename = ''
-  else
-    let filename = gita#variable#get_valid_filename(options.filename)
-  endif
-  let url = s:find_url(git, commit, filename, options)
-  return {
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'url': url,
-        \ 'options': options,
-        \}
-endfunction
-function! gita#command#browse#open(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  call s:File.open(result.url)
-endfunction
-function! gita#command#browse#echo(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  echo result.url
-endfunction
-function! gita#command#browse#yank(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  call gita#util#clip(result.url)
 endfunction
 
 function! s:get_parser() abort
@@ -204,21 +168,62 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
+function! gita#command#browse#call(...) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let local_branch = s:GitInfo.get_local_branch(git)
+  let commit = empty(options.commit) ? local_branch.name : options.commit
+  let commit = gita#variable#get_valid_range(commit)
+  if empty(options.filename)
+    let filename = ''
+  else
+    let filename = gita#variable#get_valid_filename(options.filename)
+  endif
+  let url = s:find_url(git, commit, filename, options)
+  return {
+        \ 'commit': commit,
+        \ 'filename': filename,
+        \ 'url': url,
+        \ 'options': options,
+        \}
+endfunction
+
+function! gita#command#browse#open(...) abort
+  let options = get(a:000, 0, {})
+  let result = gita#command#browse#call(options)
+  call s:File.open(result.url)
+endfunction
+
+function! gita#command#browse#echo(...) abort
+  let options = get(a:000, 0, {})
+  let result = gita#command#browse#call(options)
+  echo result.url
+endfunction
+
+function! gita#command#browse#yank(...) abort
+  let options = get(a:000, 0, {})
+  let result = gita#command#browse#call(options)
+  call gita#util#clip(result.url)
+endfunction
+
 function! gita#command#browse#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#browse#default_options),
         \ options,
         \)
+  call gita#option#assign_commit(options)
+  call gita#option#assign_filename(options)
+  call gita#option#assign_selection(options)
   if get(options, 'yank')
     call gita#command#browse#yank(options)
   elseif get(options, 'echo')
@@ -227,6 +232,7 @@ function! gita#command#browse#command(...) abort
     call gita#command#browse#open(options)
   endif
 endfunction
+
 function! gita#command#browse#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

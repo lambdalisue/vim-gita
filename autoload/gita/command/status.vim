@@ -28,36 +28,14 @@ function! s:execute_command(git, filenames, options) abort
         \]))
 endfunction
 
-function! gita#command#status#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if !empty(options.filenames)
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  else
-    let filenames = []
-  endif
-  let content = s:execute_command(git, filenames, options)
-  let result = {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita status',
           \ 'description': 'Show a status of the repository',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': 'filenames',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': 'filenames',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -99,6 +77,24 @@ function! s:get_parser() abort
           \})
   endif
   return s:parser
+endfunction
+
+function! gita#command#status#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  let result = {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+  return result
 endfunction
 
 function! gita#command#status#command(...) abort

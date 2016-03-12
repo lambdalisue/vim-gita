@@ -22,36 +22,14 @@ function! s:execute_command(git, filenames, options) abort
         \]))
 endfunction
 
-function! gita#command#rm#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if empty(options.filenames)
-    let filenames = []
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  endif
-  let content = s:execute_command(git, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita rm',
           \ 'description': 'Remove files from the working tree and from the index',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<file>...',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<file>...',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -81,20 +59,37 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+
+function! gita#command#rm#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#rm#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  if !empty(options.__unknown__)
-    let options.filenames = options.__unknown__
-  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#rm#default_options),
         \ options,
         \)
+  call gita#option#assin_filenames(options)
   call gita#command#rm#call(options)
 endfunction
 

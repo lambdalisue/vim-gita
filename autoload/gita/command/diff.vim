@@ -61,53 +61,14 @@ function! s:execute_command(git, commit, filenames, options) abort
         \]))
 endfunction
 
-function! gita#command#diff#call(...) abort
-  let options = extend({
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  if empty(options.filenames)
-    let filenames = []
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)'
-          \)
-  endif
-  if !empty(options.filename)
-    call insert(
-          \ filenames,
-          \ gita#variable#get_valid_filename(options.filename)
-          \)
-    " remove duplicate filenames
-    let filenames = uniq(filenames)
-  endif
-  let content = s:execute_command(git, commit, filenames, options)
-  let result = {
-        \ 'commit': commit,
-        \ 'filename': empty(filenames) ? '' : filenames[0],
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita diff',
           \ 'description': 'Show changes between commits, commit and working tree, etc',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<path>',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -346,7 +307,6 @@ function! s:get_parser() abort
           \ ], {
           \   'complete': function('gita#complete#commit'),
           \})
-    " TODO: Add more arguments
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'repository')
         let a:options.filename = ''
@@ -357,6 +317,42 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
+function! gita#command#diff#call(...) abort
+  let options = extend({
+        \ 'cached': 0,
+        \ 'reverse': 0,
+        \ 'commit': '',
+        \ 'filename': '',
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)'
+        \)
+  if !empty(options.filename)
+    call insert(
+          \ filenames,
+          \ gita#variable#get_valid_filename(options.filename)
+          \)
+    " remove duplicate filenames
+    let filenames = uniq(filenames)
+  endif
+  let content = s:execute_command(git, commit, filenames, options)
+  let result = {
+        \ 'commit': commit,
+        \ 'filename': empty(filenames) ? '' : filenames[0],
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+  return result
+endfunction
+
 function! gita#command#diff#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -378,6 +374,7 @@ function! gita#command#diff#command(...) abort
     call gita#command#diff#call(options)
   endif
 endfunction
+
 function! gita#command#diff#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

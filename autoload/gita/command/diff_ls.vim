@@ -38,12 +38,12 @@ function! gita#command#diff_ls#command(...) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#diff_ls#default_options),
         \ options,
         \)
+  call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
   call gita#command#ui#diff_ls#open(options)

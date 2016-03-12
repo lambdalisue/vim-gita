@@ -3,6 +3,10 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
+"
+" TODO: Refactoring
+"
+
 function! s:execute_command(git, commits, paths, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'commit': 1,
@@ -29,24 +33,6 @@ function! s:execute_command(git, commits, paths, options) abort
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
-endfunction
-
-function! gita#command#merge#call(...) abort
-  let options = extend({
-        \ 'commits': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commits = map(
-        \ copy(options.commits),
-        \ 'gita#variable#get_valid_commit(v:val)',
-        \)
-  let content = s:execute_command(git, commits, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'commits': commits,
-        \ 'content': content,
-        \ 'options': options,
-        \}
 endfunction
 
 function! s:get_parser() abort
@@ -159,6 +145,25 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
+function! gita#command#merge#call(...) abort
+  let options = extend({
+        \ 'commits': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let commits = map(
+        \ copy(options.commits),
+        \ 'gita#variable#get_valid_commit(v:val)',
+        \)
+  let content = s:execute_command(git, commits, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'commits': commits,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#merge#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
@@ -173,6 +178,7 @@ function! gita#command#merge#command(...) abort
         \)
   call gita#command#merge#call(options)
 endfunction
+
 function! gita#command#merge#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

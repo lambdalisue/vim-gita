@@ -3,6 +3,10 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
+"
+" TODO: Refactoring
+"
+
 function! s:execute_command(git, pattern, commit, directories, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'cached': 1,

@@ -137,7 +137,7 @@ function! gita#command#add#command(...) abort
   if get(options, 'edit') || get(options, 'patch')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#add#call(options)
+    call gita#command#ui#add#open(options)
   else
     call gita#command#add#call(options)
   endif
@@ -147,3 +147,7 @@ function! gita#command#add#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)
 endfunction
+
+call gita#util#define_variables('command#add', {
+      \ 'default_options': {},
+      \})

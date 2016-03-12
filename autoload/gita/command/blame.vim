@@ -93,7 +93,6 @@ function! s:get_blamemeta(blameobj, width) abort
 endfunction
 
 
-
 function! gita#command#blame#call(...) abort
   let options = extend({
         \ 'commit': '',

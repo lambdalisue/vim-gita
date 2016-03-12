@@ -32,25 +32,6 @@ function! s:execute_command(git, filenames, options) abort
         \]))
 endfunction
 
-
-function! gita#command#ls_files#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
-        \)
-  let content = s:execute_command(git, filenames, options)
-  let result = {
-        \ 'content': content,
-        \ 'options': options,
-        \ 'filenames': filenames,
-        \}
-  return result
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
@@ -124,18 +105,6 @@ function! s:get_parser() abort
           \ 'add the standard Git exclusion',
           \)
     call s:parser.add_argument(
-          \ '--abbrev', [
-          \   'instead of showing the full 40-byte hexadecimal object lines',
-          \   'show only a partial prefix.',
-          \ ], {
-          \   'pattern': '^\d\+$',
-          \   'conflicts': ['ui'],
-          \})
-    call s:parser.add_argument(
-          \ '--full-name',
-          \ 'show the full path names',
-          \)
-    call s:parser.add_argument(
           \ '--ui',
           \ 'show a buffer instead of echo the result. imply --quiet', {
           \   'default': 1,
@@ -157,19 +126,38 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+
+function! gita#command#ls_files#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  let result = {
+        \ 'content': content,
+        \ 'options': options,
+        \ 'filenames': filenames,
+        \}
+  return result
+endfunction
+
 function! gita#command#ls_files#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  let options.filenames = options.__unknown__
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#ls_files#default_options),
         \ options,
         \)
   call gita#option#assign_commit(options)
+  call gita#option#assign_filenames(options)
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)

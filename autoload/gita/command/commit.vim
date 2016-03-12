@@ -43,38 +43,14 @@ function! s:execute_command(git, filenames, options) abort
         \]))
 endfunction
 
-
-function! gita#command#commit#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \ 'amend': 0,
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if !empty(options.filenames)
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  else
-    let filenames = []
-  endif
-  let content = s:execute_command(git, filenames, options)
-  let result = {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita commit',
           \ 'description': 'Show a status of the repository',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': 'files to index for commit',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': 'files to index for commit',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -94,6 +70,7 @@ function! s:get_parser() abort
           \ '--message', '-m',
           \ 'commit message. imply --no-ui', {
           \   'type': s:ArgumentParser.types.value,
+          \   'conflicts': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--gpg-sign', '-S',
@@ -135,8 +112,8 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--ui',
           \ 'show a buffer instead of echo the result. imply --quiet', {
-          \   'default': 1,
           \   'deniable': 1,
+          \   'conflicts': ['message'],
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -150,14 +127,39 @@ function! s:get_parser() abort
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \   'superordinates': ['ui'],
           \})
-    function! s:parser.hooks.post_validate(options) abort
-      if get(a:options, 'message')
-        let a:options.ui = 0
+    function! s:parser.hooks.pre_complete(options) abort
+      if empty(s:parser.get_conflicted_arguments('ui', a:options))
+        let a:options.ui = 1
+      endif
+    endfunction
+    function! s:parser.hooks.pre_validate(options) abort
+      if empty(s:parser.get_conflicted_arguments('ui', a:options))
+        let a:options.ui = 1
       endif
     endfunction
     call s:parser.hooks.validate()
   endif
   return s:parser
+endfunction
+
+
+function! gita#command#commit#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \ 'amend': 0,
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  let result = {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+  return result
 endfunction
 
 function! gita#command#commit#command(...) abort

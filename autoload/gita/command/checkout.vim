@@ -32,41 +32,14 @@ function! s:execute_command(git, commit, filenames, options) abort
         \]))
 endfunction
 
-function! gita#command#checkout#call(...) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  if empty(options.filenames)
-    let filenames = []
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  endif
-  let content = s:execute_command(git, commit, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'commit': commit,
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita checkout',
           \ 'description': 'Switch branches or restore working tree files',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<paths>...',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet', '-q',
@@ -142,22 +115,45 @@ function! s:get_parser() abort
   endif
   return s:parser
 endfunction
+
+function! gita#command#checkout#call(...) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, commit, filenames, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'commit': commit,
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#checkout#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  if !empty(options.__unknown__)
-    let options.filenames = options.__unknown__
-  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#checkout#default_options),
         \ options,
         \)
+  call gita#option#assign_filenames(options)
   call gita#command#checkout#call(options)
 endfunction
+
 function! gita#command#checkout#complete(...) abort
   let parser = s:get_parser()
   return call(parser.complete, a:000, parser)

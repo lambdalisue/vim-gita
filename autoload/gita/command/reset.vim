@@ -17,49 +17,15 @@ function! s:execute_command(git, filenames, options) abort
        \ 'hard': 1,
        \ 'merge': 1,
        \ 'keep': 1,
-       \ 'commit': 1,
        \})
-  let args = ['reset'] + args + ['--'] + filenames
+  if gita#util#any(a:options, ['soft', 'mixed', 'hard', 'merge', 'keep'])
+    let args = ['reset'] + args + [get(a:options, 'commit', '')]
+  else
+    let args = ['reset'] + args + ['--'] + filenames
+  endif
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
-endfunction
-
-function! gita#command#reset#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if empty(options.filenames)
-    let filenames = []
-  else
-    let filenames = map(
-          \ copy(options.filenames),
-          \ 'gita#variable#get_valid_filename(v:val)',
-          \)
-  endif
-  let content = s:execute_command(git, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
-function! gita#command#reset#patch(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \ 'split': 0,
-        \}, get(a:000, 0, {}))
-  let filename = len(options.filenames) > 0
-        \ ? options.filenames[0]
-        \ : '%'
-  call gita#command#patch#open({
-        \ 'reverse': 1,
-        \ 'method': options.split ? 'two' : 'one',
-        \ 'filename': filename,
-        \})
 endfunction
 
 function! s:get_parser() abort
@@ -67,9 +33,9 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita reset',
           \ 'description': 'Reset current HEAD to the specified state',
-          \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<paths>...',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<paths>...',
+          \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--quiet', '-q',
@@ -77,40 +43,48 @@ function! s:get_parser() abort
           \)
     call s:parser.add_argument(
           \ '--mixed',
-          \ 'reset HEAD and index',
-          \)
-    call s:parser.add_argument(
-          \ '--intent-to-add', '-N',
-          \ 'record only the fact that removed paths will be added later', {
-          \   'superordinates': ['mixed'],
+          \ 'reset HEAD and index', {
+          \   'conflicts': ['edit', 'patch'],
           \})
     call s:parser.add_argument(
           \ '--soft',
-          \ 'reset only HEAD',
-          \)
+          \ 'reset only HEAD', {
+          \   'conflicts': ['edit', 'patch'],
+          \})
     call s:parser.add_argument(
           \ '--hard',
-          \ 'reset HEAD, index and working tree',
-          \)
+          \ 'reset HEAD, index and working tree', {
+          \   'conflicts': ['edit', 'patch'],
+          \})
     call s:parser.add_argument(
           \ '--merge',
-          \ 'reset HEAD, index and working tree',
-          \)
+          \ 'reset HEAD, index and working tree', {
+          \   'conflicts': ['edit', 'patch'],
+          \})
     call s:parser.add_argument(
           \ '--keep',
-          \ 'reset HEAD but keep local changes',
-          \)
+          \ 'reset HEAD but keep local changes', {
+          \   'conflicts': ['edit', 'patch'],
+          \})
     call s:parser.add_argument(
-          \ '--patch', '-p',
-          \ 'An alias option for ":Gita patch --one --reverse %" to perform HEAD -> index patch', {
+          \ '--edit', '-e', [
+          \   'open the diff vs. the index in a buffer and let the user edit it.',
+          \   'this is an alias option for :Gita patch --one %',
+          \], {
           \   'conflicts': [
+          \     'patch',
           \     'mixed', 'soft', 'hard', 'merge', 'keep',
           \   ],
           \})
     call s:parser.add_argument(
-          \ '--split', '-s',
-          \ 'A subordinate option of --patch to show two buffers instead of a single diff.', {
-          \   'superordinates': ['patch'],
+          \ '--patch', '-p', [
+          \   'open the diff vs. the index in two buffers and let the user edit it.',
+          \   'this is an alias option for :Gita patch --two %',
+          \], {
+          \   'conflicts': [
+          \     'edit',
+          \     'mixed', 'soft', 'hard', 'merge', 'keep',
+          \   ],
           \})
     call s:parser.add_argument(
           \ 'commit', [
@@ -124,22 +98,40 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! gita#command#reset#call(...) abort
+  let options = extend({
+        \ 'filenames': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let filenames = map(
+        \ copy(options.filenames),
+        \ 'gita#variable#get_valid_filename(v:val)',
+        \)
+  let content = s:execute_command(git, filenames, options)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
+  return {
+        \ 'filenames': filenames,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+endfunction
+
 function! gita#command#reset#command(...) abort
   let parser  = s:get_parser()
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
   endif
-  if !empty(options.__unknown__)
-    let options.filenames = options.__unknown__
-  endif
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#reset#default_options),
         \ options,
         \)
-  if get(options, 'patch')
-    call gita#command#reset#patch(options)
+  call gita#option#assign_filenames(options)
+  if get(options, 'edit') || get(options, 'patch')
+    call gita#option#assign_selection(options)
+    call gita#option#assign_opener(options)
+    call gita#command#ui#add#open(options)
   else
     call gita#command#reset#call(options)
   endif
