@@ -134,6 +134,7 @@ function! s:translate(key, options, scheme) abort
         \))
   endif
 endfunction
+
 function! gita#util#args_from_options(options, schemes) abort
   let args = []
   for key in sort(keys(a:schemes))
@@ -146,4 +147,13 @@ function! gita#util#args_from_options(options, schemes) abort
     call extend(args, s:translate(key, a:options, scheme))
   endfor
   return args
+endfunction
+
+function! gita#util#any(object, keys) abort
+  for key in a:keys
+    if !empty(get(a:object, key))
+      return 1
+    endif
+  endfor
+  return 0
 endfunction

@@ -2,16 +2,6 @@ let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-let s:BRANCHNAME_PATTERN = '^\w\+$'
-
-function! s:oneof(options, keys) abort
-  for key in a:keys
-    if get(a:options, key)
-      return 1
-    endif
-  endfor
-  return 0
-endfunction
 
 function! s:execute_command(git, options) abort
   let args = gita#util#args_from_options(a:options, {
@@ -33,22 +23,19 @@ function! s:execute_command(git, options) abort
         \ 'merged': '--%k %v',
         \ 'no-merged': '--%k %v',
         \})
-  if s:oneof(a:options, [
-        \ 'set-upstream', 'track', 'no-track',
-        \ 'set-upstream-to', 'unset-upstream',
-        \ 'move', 'M', 'delete', 'D'
-        \])
-    let args += [get(a:options, 'branch', '')]
+  if has_key(a:options, 'branch')
+    let args += [a:options.branch]
   endif
-  if has_key(a:options, 'start-point') && s:oneof(a:options, [
+  if has_key(a:options, 'start-point') && gita#util#any(a:options, [
         \ 'set-upstream', 'track', 'no-track',
         \])
     let args += [a:options['start-point']]
   endif
-  if s:oneof(a:options, ['move', 'M'])
+  if has_key(a:options, 'newbranch') && gita#util#any(a:options, [
+        \ 'move', 'M',
+        \])
     let args += [get(a:options, 'newbranch', '')]
   endif
-
   let args = ['branch', '--no-color', '--verbose'] + args
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
@@ -183,26 +170,18 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'branch',
           \ 'the name of the branch to create', {
-          \   'type': s:ArgumentParser.types.value,
           \   'complete': function('gita#complete#branch'),
-          \   'superordinates': [
-          \     'set-upstream', 'track', 'no-track',
-          \     'set-upstream-to', 'unset-upstream',
-          \     'move', 'M',
-          \     'delete', 'D',
-          \   ],
+          \   'conflicts': ['ui'],
           \})
     call s:parser.add_argument(
           \ 'newbranch',
           \ 'the new name for an existing branch', {
-          \   'type': s:ArgumentParser.types.value,
           \   'complete': function('gita#complete#local_branch'),
           \   'superordinates': ['move', 'M'],
           \})
     call s:parser.add_argument(
           \ 'start-point',
           \ 'the new branch head will point to this commit', {
-          \   'type': s:ArgumentParser.types.value,
           \   'complete': function('gita#complete#commit'),
           \   'superordinates': [
           \     'set-upstream', 'track', 'no-track',
@@ -215,6 +194,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'delete', 'D',
+          \     'branch',
           \   ],
           \})
     call s:parser.add_argument(
@@ -245,6 +225,32 @@ function! gita#command#branch#call(...) abort
         \ 'remotes': 0,
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
+  if gita#util#any(options, ['set-upstream', 'track', 'no-track'])
+    let options.branch = gita#variable#get_valid_commit(
+          \ options.branch,
+          \)
+    let options['start-point'] = gita#variable#get_valid_commit(
+          \ get(options, 'start-point', ''),
+          \ { '_allow_empty': 1 },
+          \)
+  elseif gita#util#any(options, ['set-upstream-to', 'unset-upstream'])
+    let options.branch = gita#variable#get_valid_commit(
+          \ options.branch,
+          \ { '_allow_empty': 1 },
+          \)
+  elseif gita#util#any(options, ['move', 'M'])
+    let options.branch = gita#variable#get_valid_commit(
+          \ options.branch,
+          \)
+    let options.newbranch = gita#variable#get_valid_commit(
+          \ get(options, 'newbranch', ''),
+          \ { '_allow_empty': 1 },
+          \)
+  elseif gita#util#any(options, ['delete', 'D'])
+    let options.branch = gita#variable#get_valid_commit(
+          \ options.branch,
+          \)
+  endif
   let content = s:execute_command(git, options)
   if options.remotes
     let content = map(
@@ -252,10 +258,11 @@ function! gita#command#branch#call(...) abort
           \ 'substitute(v:val, ''^\(..\)'', ''\1remotes/'', '''')'
           \)
   endif
-  if s:oneof(options, [
+  if gita#util#any(options, [
         \ 'set-upstream', 'track', 'no-track',
         \ 'set-upstream-to', 'unset-upstream',
-        \ 'move', 'M', 'delete', 'D'
+        \ 'move', 'M', 'delete', 'D',
+        \ 'branch',
         \])
     call gita#util#doautocmd('User', 'GitaStatusModified')
   endif
