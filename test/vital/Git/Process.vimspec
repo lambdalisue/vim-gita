@@ -1,285 +1,102 @@
 let s:V = vital#of('vital')
-let s:Prelude = s:V.import('Prelude')
+let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
-let s:Guard = s:V.import('Vim.Guard')
 let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 let s:file = s:Path.realpath('autoload/vital/__latest__/Git/Process.vim')
-let s:is_windows = s:Prelude.is_windows()
 
-finish
-
-Describe Git.ProcessOld
-  Before
-    let GitProcessOld = s:V.import('Git.ProcessOld')
-    let sf = s:ScriptLocal.sfuncs(s:file)
+Describe Git.Process
+  Before all
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = s:Path.join(root, 'i n s i d e')
+    let repository = s:Path.join(worktree, '.git')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    call mkdir(worktree, 'p')
+    call system(printf('cd %s && git init', shellescape(worktree)))
   End
-
-  Describe s:_shellescape({val})
-    if !s:is_windows
-      It should not enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = sf._shellescape('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with single quotes if {val} contains spaces
-        let ret = sf._shellescape('foo bar')
-        let exp = "'foo bar'"
-        Assert Equals(ret, exp)
-      End
-    elseif exists('&shellslash')
-      Before
-        let saved_shellslash = &shellslash
-      End
-      After
-        let &shellslash = saved_shellslash
-      End
-      It should enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = sf._shellescape('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with single quotes if {val} contains spaces and &shellslash=1
-        set shellslash
-        let ret = sf._shellescape('foo bar')
-        let exp = "'foo bar'"
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with double quotes if {val} contains spaces and &shellslash=0
-        set noshellslash
-        let ret = sf._shellescape('foo bar')
-        let exp = '"foo bar"'
-        Assert Equals(ret, exp)
-      End
-    else
-      It should enclose {val} with quotes if {val} doesn't contain spaces
-        let ret = sf._shellescape('foobar')
-        let exp = 'foobar'
-        Assert Equals(ret, exp)
-      End
-      It should enclose {val} with double quotes if {val} contains spaces and -shellslash
-        let ret = sf._shellescape('foo bar')
-        let exp = '"foo bar"'
-        Assert Equals(ret, exp)
-      End
-    endif
+  After all
+    " remove a temp directory
+    call s:File.rmdir(root, 'r')
+  End
+  Before
+    let GitProcess = s:V.import('Git.Process')
+    let sf = s:ScriptLocal.sfuncs(s:file)
   End
 
   Describe .get_config()
     It returns a copy of a config dictionary
-      let config = GitProcessOld.get_config()
+      let config = GitProcess.get_config()
       Assert IsDict(config)
       Assert KeyExists(config, 'executable')
       Assert KeyExists(config, 'arguments')
 
-      let config2 = GitProcessOld.get_config()
-      Assert Equal(config, config2)
+      let config2 = GitProcess.get_config()
+      Assert Equals(config, config2)
       Assert NotSame(config, config2)
     End
   End
 
   Describe .set_config({config})
     Before
-      let _config = GitProcessOld.get_config()
+      let _config = GitProcess.get_config()
     End
     After
-      call GitProcessOld.set_config(_config)
+      call GitProcess.set_config(_config)
     End
     It overwrites existing config with {config}
-      call GitProcessOld.set_config({
+      call GitProcess.set_config({
             \ 'executable': 'hub',
             \ 'arguments': [],
             \})
-      let config = GitProcessOld.get_config()
-      Assert Equal(config, {
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
             \ 'executable': 'hub',
             \ 'arguments': [],
             \})
     End
     It ignores unknown attributes
-      call GitProcessOld.set_config({
+      call GitProcess.set_config({
             \ 'executable': 'hub',
             \ 'arguments': [],
             \ 'unknown_attribute': 'bar',
             \})
-      let config = GitProcessOld.get_config()
-      Assert Equal(config, {
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
             \ 'executable': 'hub',
             \ 'arguments': [],
             \})
     End
     It ignores missing attributes
-      call GitProcessOld.set_config({
+      call GitProcess.set_config({
             \ 'executable': 'hub',
             \})
-      let config = GitProcessOld.get_config()
-      Assert Equal(config, {
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
             \ 'executable': 'hub',
             \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
             \})
     End
   End
 
-  Describe .translate_option({key}, {val}, {pattern})
-    Context Long format
-      It returns ["--key=value"] for ('key', 'value', '')
-        let ret = GitProcessOld.translate_option('key', 'value', '')
-        Assert Equals(ret, ['--key=value'])
-      End
-      if !s:is_windows || (exists('&shellslash') && &shellslash)
-        It returns ["--key='v a l u e'"] for ('key', 'v a l u e', '')
-          let ret = GitProcessOld.translate_option('key', 'v a l u e', '')
-          Assert Equals(ret, ['--key=''v a l u e'''])
-        End
-      else
-        It returns ['--key="v a l u e"'] for ('key', 'v a l u e', '')
-          let ret = GitProcessOld.translate_option('key', 'v a l u e', '')
-          Assert Equals(ret, ['--key="v a l u e"'])
-        End
-      endif
-      It returns ["--key"] for ('key', 1, '')
-        let ret = GitProcessOld.translate_option('key', 1, '')
-        Assert Equals(ret, ['--key'])
-      End
-      It returns [] for ('key', 0, '')
-        let ret = GitProcessOld.translate_option('key', 0, '')
-        Assert Equals(ret, [])
-      End
-      It returns ['-key-value-'] for ('key', 'value', '-%k-%v-')
-        let ret = GitProcessOld.translate_option('key', 'value', '-%k-%v-')
-        Assert Equals(ret, ['-key-value-'])
-      End
-      It returns ['--h-e-l-l-o'] for ('h_e_l_l_o', 1, '')
-        let ret = GitProcessOld.translate_option('h_e_l_l_o', 1, '')
-        Assert Equals(ret, ['--h-e-l-l-o'])
-
-        let ret = GitProcessOld.translate_option('h_e_l_l_o', 1, '--%K')
-        Assert Equals(ret, ['--h-e-l-l-o'])
-      End
-      It returns ['--h_e_l_l_o'] for ('h_e_l_l_o', 1, '--%k')
-        let ret = GitProcessOld.translate_option('h_e_l_l_o', 1, '--%k')
-        Assert Equals(ret, ['--h_e_l_l_o'])
-      End
-      It returns ["--key=value"] for ('key', 'value', '--%K%{=}v')
-        let ret = GitProcessOld.translate_option('key', 'value', '--%K%{=}v')
-        Assert Equals(ret, ['--key=value'])
-      End
-      It returns ["--key", "value"] for ('key', 'value', '--%K %v')
-        let ret = GitProcessOld.translate_option('key', 'value', '--%K %v')
-        Assert Equals(ret, ['--key', 'value'])
-      End
-      It returns ["--key=a", "--key=b"] for ('key', ['a', 'b'], '--%K%{=}v')
-        let ret = GitProcessOld.translate_option('key', ['a', 'b'], '--%K%{=}v')
-        Assert Equals(ret, ['--key=a', '--key=b'])
-      End
+  Describe .execute({git}, {args}[, {options}])
+    It execute git command in {git.worktree} and return {result}
+      let git = { 'worktree': worktree }
+      let result = GitProcess.execute(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(result.success, 1, result.output)
+      Assert Equals(result.content, [worktree])
     End
-    Context Short format
-      It returns ["-kvalue"] for ('k', 'value', '')
-        let ret = GitProcessOld.translate_option('k', 'value', '')
-        Assert Equals(ret, ['-kvalue'])
-      End
-      It returns ["-k"] for ('k', 1, '')
-        let ret = GitProcessOld.translate_option('k', 1, '')
-        Assert Equals(ret, ['-k'])
-      End
-      It returns [] for ('k', 0, '')
-        let ret = GitProcessOld.translate_option('k', 0, '')
-        Assert Equals(ret, [])
-      End
-      It returns ["-kvalue"] for ('k', 'value', '-%k%V')
-        let ret = GitProcessOld.translate_option('k', 'value', '-%k%V')
-        Assert Equals(ret, ['-kvalue'])
-      End
-      It returns ["-ka", "-kb"] for ('k', ['a', 'b'], '-%k%v')
-        let ret = GitProcessOld.translate_option('k', ['a', 'b'], '-%k%v')
-        Assert Equals(ret, ['-ka', '-kb'])
-      End
-      if !s:is_windows || (exists('&shellslash') && &shellslash)
-        It returns ["-k'v a l u e'"] for ('k', 'v a l u e', '-%k%V')
-          let ret = GitProcessOld.translate_option('k', 'v a l u e', '-%k%V')
-          Assert Equals(ret, ['-k''v a l u e'''])
-        End
-      else
-        It returns ['-k"v a l u e"'] for ('k', 'v a l u e', '-%k%V')
-          let ret = GitProcessOld.translate_option('k', 'v a l u e', '-%k%V')
-          Assert Equals(ret, ['-k"v a l u e"'])
-        End
-      endif
-    End
-  End
 
-  Describe .translate_options({options}, {scheme})
-    It translates options (dict) into arguments (list)
-      let options = {
-            \ 'foo': 1,
-            \ 'bar': 0,
-            \ 'hoge': 'hoge',
-            \ 'f': 1,
-            \ 'b': 0,
-            \ 'h': 'hoge',
-            \}
-      let ret = GitProcessOld.translate_options(options, {})
-      Assert Equals(sort(ret), sort([
-            \ '--foo',
-            \ '--hoge=hoge',
-            \ '-f',
-            \ '-hhoge',
-            \]))
+    It execute git command in the current working directory and return {result} if empty {git} is specified
+      let git = {}
+      let result = GitProcess.execute(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(result.success, 1, result.output)
+      Assert Equals(result.content, [getcwd()])
     End
-    It applies specified schemes of each option
-      let options = {
-            \ 'foo': 1,
-            \ 'bar': 0,
-            \ 'hoge': 'hoge',
-            \}
-      let scheme = {
-            \ 'foo': '---%k',
-            \ 'hoge': '%v',
-            \}
-      let ret = GitProcessOld.translate_options(options, scheme)
-      Assert Equals(sort(ret), sort([
-            \ '---foo',
-            \ 'hoge',
-            \]))
-    End
-  End
-
-  Describe .translate_extra_options({options})
-    It returns an empty list if {options} does not have entry for '--'
-      let options = {
-            \ 'foo': 1,
-            \ 'bar': 0,
-            \ 'hoge': 'hoge',
-            \ 'f': 1,
-            \ 'b': 0,
-            \ 'h': 'hoge',
-            \}
-      let ret = GitProcessOld.translate_extra_options(options)
-      Assert Empty(ret)
-    End
-    It append expanded entries in '--'
-      let options = {
-            \ 'foo': 1,
-            \ '--': ['foo', '~/bar', '$HOME/hoge'],
-            \}
-      let scheme = {}
-      let ret = GitProcessOld.translate_extra_options(options)
-      Assert Equals(sort(ret), sort([
-            \ 'foo',
-            \ expand('~/bar'),
-            \ expand('$HOME/hoge'),
-            \]))
-    End
-  End
-
-  Describe .build_args({name}[, {options}])
-    " TODO Write test
-  End
-
-  Describe .execute({git}, {name}[, {options}, {config}])
-    " TODO Write test
-  End
-
-  Describe .system({args}[, {config}])
-    " TODO Write test
   End
 End
