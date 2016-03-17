@@ -7,7 +7,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 " TODO: Refactoring
 "
 
-function! s:execute_command(git, commits, paths, options) abort
+function! s:execute_command(git, commits, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'commit': 1,
         \ 'no-commit': 1,
@@ -40,9 +40,9 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita merge',
           \ 'description': 'Join two or more development histories together',
-          \ 'complete_unknown': function('gita#complete#commit'),
-          \ 'unknown_description': '<commits>...',
           \ 'complete_threshold': g:gita#complete_threshold,
+          \ 'unknown_description': '<commits>...',
+          \ 'complete_unknown': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--quiet',
@@ -170,12 +170,12 @@ function! gita#command#merge#command(...) abort
   if empty(options)
     return
   endif
-  let options.commits = options.__unknown__
   " extend default options
   let options = extend(
         \ deepcopy(g:gita#command#merge#default_options),
         \ options,
         \)
+  let options.commits = options.__unknown__
   call gita#command#merge#call(options)
 endfunction
 

@@ -7,7 +7,7 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 " TODO: Refactoring
 "
 
-function! s:execute_command(git, commits, paths, options) abort
+function! s:execute_command(git, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'onto': '--%k %v',
         \ 'continue': 1,
@@ -41,7 +41,13 @@ function! s:execute_command(git, commits, paths, options) abort
         \ 'upstream': '%v',
         \ 'branch': '%v',
        \})
-  let args = ['rebase', '--verbose'] + args + a:commits
+  let args = ['rebase', '--verbose'] + args
+  if has_key(a:options, 'upstream')
+    let args += [a:options.upstream]
+  endif
+  if has_key(a:options, 'branch')
+    let args += [a:options.branch]
+  endif
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
@@ -217,9 +223,6 @@ function! gita#command#rebase#command(...) abort
   let options = call(parser.parse, a:000, parser)
   if empty(options)
     return
-  endif
-  if !empty(options.__unknown__)
-    let options.commits = options.__unknown__
   endif
   " extend default options
   let options = extend(
