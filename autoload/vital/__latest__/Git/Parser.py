@@ -90,7 +90,7 @@ def _vim_vital_Git_Parser_main():
     namespace = {}
     try:
         kwargs = vim.eval('kwargs')
-        if vim.eval('!empty(get(l:, \'progressbar\'))'):
+        if vim.eval('get(l:, \'progressbar\')'):
             kwargs['callback'] = callback_vim
         blameobj = parse_blame(**kwargs)
         namespace['blameobj'] = blameobj

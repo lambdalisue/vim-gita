@@ -3,6 +3,10 @@ if exists('b:current_syntax')
 endif
 let b:current_syntax = 'gita-blame-navi'
 
+sign define GitaPseudoSeparatorSign texthl=SignColumn linehl=GitaPseudoSeparator
+sign define GitaPseudoEmptySign
+
+highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
 highlight default link GitaHorizontal Comment
 highlight default link GitaSummary    Title
 highlight default link GitaMetaInfo   Comment

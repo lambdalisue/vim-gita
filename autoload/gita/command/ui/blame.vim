@@ -1,6 +1,13 @@
 let s:V = gita#vital()
 let s:Prompt = s:V.import('Vim.Prompt')
 
+function! s:define_highlights() abort
+  highlight GitaPseudoSeparatorDefault term=underline cterm=underline ctermfg=242 gui=underline guifg=#363636
+  highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
+  sign define GitaPseudoSeparatorSign texthl=SignColumn linehl=GitaPseudoSeparator
+  sign define GitaPseudoEmptySign
+endfunction
+
 function! s:call_pseudo_command() abort range
   let prefix = a:firstline == a:lastline ? '' : "'<,'>"
   let ret = s:Prompt.input('None', ':', prefix)
@@ -223,16 +230,11 @@ function! gita#command#ui#blame#set_pseudo_separators(blamemeta) abort
   endfor
 endfunction
 
-highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
-highlight GitaPseudoSeparatorDefault
-      \ term=underline cterm=underline ctermfg=8 gui=underline guifg=#363636
-
-if !exists('s:_sign_defined')
-  sign define GitaPseudoSeparatorSign
-        \ texthl=SignColumn linehl=GitaPseudoSeparator
-  sign define GitaPseudoEmptySign
-  let s:_sign_defined = 1
-endif
+augroup vim_gita_internal_blame
+  autocmd! *
+  autocmd ColorScheme * call s:define_highlights()
+augroup END
+call s:define_highlights()
 
 call gita#util#define_variables('command#ui#blame', {
       \ 'default_opener': 'tabedit',
