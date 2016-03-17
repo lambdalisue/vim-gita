@@ -79,19 +79,26 @@ function! s:_parse_blame_python(content, ...) abort
         \ 'progressbar': {},
         \ 'python': 1,
         \}, get(a:000, 0, {}))
+  let python = options.python == 1 ? 0 : options.python
   let progressbar = options.progressbar
   let kwargs = {
         \ 'content': a:content,
         \}
-  let namespace = {}
-  execute s:Python.exec_file(
-        \ s:Path.join(s:root, 'Parser.py'),
-        \ options.python == 1 ? 0 : options.python,
-        \)
-  if has_key(namespace, 'exception')
-    call s:_throw(namespace.exception)
+  execute s:Python.exec_file(s:Path.join(s:root, 'Parser.py'), python)
+  " NOTE:
+  " To support neovim, bindeval cannot be used for now.
+  " That's why eval_expr is required to call separatly
+  let prefix = '_vim_vital_Git_Parser'
+  let response = s:Python.eval_expr(prefix . '_response', python)
+  let code = [
+        \ printf('del %s_main', prefix),
+        \ printf('del %s_response', prefix),
+        \]
+  execute s:Python.exec_code(code, python)
+  if has_key(response, 'exception')
+    call s:_throw(response.exception)
   endif
-  return namespace.blameobj
+  return response.blameobj
 endfunction
 " @vimlint(EVL102, 0, l:progressbar)
 " @vimlint(EVL102, 0, l:kwargs)

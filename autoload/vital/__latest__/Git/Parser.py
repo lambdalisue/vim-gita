@@ -1,15 +1,21 @@
 try:
     import vim
 except ImportError:
-    raise ImportError('"vim" is not available. This module require to be loaded from Vim.')
+    raise ImportError(
+        '"vim" is not available. This module require to be loaded from Vim.'
+    )
+
+
 #
 # NOTE
 #   Vim use a global namespace for python/python3 so define a unique name
 #   function and write a code inside of the function to prevent conflicts.
 #
-def _vim_gita_vital_Git_Parser_main():
+def _vim_vital_Git_Parser_main():
+    import sys
     import re
     NON_WORD = re.compile(r'\W')
+
     def parse_blame(content, callback=None):
         revisions = {}
         chunks = []
@@ -23,8 +29,8 @@ def _vim_gita_vital_Git_Parser_main():
             bits = NON_WORD.split(line)
             if len(bits[0]) == 40:
                 if len(bits) < 4:
-                    # nlines column does not exists, mean that this line is in a
-                    # current chunk
+                    # nlines column does not exists, mean that this line is in
+                    # a current chunk
                     continue
                 revision = bits[0]
                 headline = {
@@ -45,7 +51,7 @@ def _vim_gita_vital_Git_Parser_main():
                 chunks.append(current_chunk)
             elif len(bits[0]) == 0:
                 has_content = True
-                current_chunk['contents'].append(line[1:])    # remove leading \t
+                current_chunk['contents'].append(line[1:])  # remove leading \t
             elif line == 'boundary':
                 current_revision.boundary = 1
             else:
@@ -81,16 +87,16 @@ def _vim_gita_vital_Git_Parser_main():
         vim.command('call progressbar.update(%d)' % i)
 
     # Execute a main code
+    namespace = {}
     try:
-        namespace = vim.bindeval('namespace')
-        progressbar = vim.bindeval('progressbar')
         kwargs = vim.eval('kwargs')
-        if progressbar:
+        if vim.eval('!empty(get(l:, \'progressbar\'))'):
             kwargs['callback'] = callback_vim
         blameobj = parse_blame(**kwargs)
         namespace['blameobj'] = blameobj
     except:
         namespace['exception'] = format_exception()
+    return namespace
 
 # Call main code
-_vim_gita_vital_Git_Parser_main()
+_vim_vital_Git_Parser_response = _vim_vital_Git_Parser_main()
