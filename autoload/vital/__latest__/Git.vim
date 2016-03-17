@@ -1,9 +1,9 @@
 function! s:_vital_loaded(V) abort
+  let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
   let s:Path = a:V.import('System.Filepath')
   let s:DummyCache = a:V.import('System.Cache.Dummy')
   let s:MemoryCache = a:V.import('System.Cache.Memory')
-  let s:StringExt = a:V.import('Data.StringExt')
   let s:config = {
         \ 'instance_cache': {
         \   'class': s:MemoryCache,
@@ -21,7 +21,6 @@ function! s:_vital_depends() abort
         \ 'System.Filepath',
         \ 'System.Cache.Dummy',
         \ 'System.Cache.Memory',
-        \ 'Data.StringExt',
         \]
 endfunction
 
@@ -88,7 +87,7 @@ function! s:get_relative_path(git, path) abort
   if s:Path.is_relative(path)
     return path
   endif
-  let prefix = s:StringExt.escape_regex(
+  let prefix = s:Prelude.escape_pattern(
         \ a:git.worktree[-1] ==# s:Path.separator()
         \   ? expand(a:git.worktree)
         \   : expand(a:git.worktree) . s:Path.separator()
@@ -130,7 +129,7 @@ function! s:_find_worktree(dirpath) abort
   let dgit = s:_fnamemodify(finddir('.git',  fnameescape(a:dirpath) . ';'), ':p:h')
   let fgit = s:_fnamemodify(findfile('.git', fnameescape(a:dirpath) . ';'), ':p')
   " inside '.git' directory is not a working directory
-  let dgit = a:dirpath =~# '^' . s:StringExt.escape_regex(dgit) ? '' : dgit
+  let dgit = a:dirpath =~# '^' . s:Prelude.escape_pattern(dgit) ? '' : dgit
   " use deepest dotgit found
   let dotgit = strlen(dgit) >= strlen(fgit) ? dgit : fgit
   return strlen(dotgit) ? s:_fnamemodify(dotgit, ':h') : ''
