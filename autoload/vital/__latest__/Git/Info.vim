@@ -39,22 +39,22 @@ function! s:get_bisect_log(git) abort
   return s:Git.readline(a:git, 'BISECT_LOG')
 endfunction
 function! s:get_rebase_merge_head(git) abort
-  return s:Git.readline(a:git, 'rebase-merge', 'head-name')
+  return s:Git.readline(a:git, s:Path.join('rebase-merge', 'head-name'))
 endfunction
 function! s:get_rebase_merge_step(git) abort
-  return s:Git.readline(a:git, 'rebase-merge', 'msgnum')
+  return s:Git.readline(a:git, s:Path.join('rebase-merge', 'msgnum'))
 endfunction
 function! s:get_rebase_merge_total(git) abort
-  return s:Git.readline(a:git, 'rebase-merge', 'end')
+  return s:Git.readline(a:git, s:Path.join('rebase-merge', 'end'))
 endfunction
 function! s:get_rebase_apply_head(git) abort
-  return s:Git.readline(a:git, 'rebase-apply', 'head-name')
+  return s:Git.readline(a:git, s:Path.join('rebase-apply', 'head-name'))
 endfunction
 function! s:get_rebase_apply_step(git) abort
-  return s:Git.readline(a:git, 'rebase-apply', 'next')
+  return s:Git.readline(a:git, s:Path.join('rebase-apply', 'next'))
 endfunction
 function! s:get_rebase_apply_total(git) abort
-  return s:Git.readline(a:git, 'rebase-apply', 'last')
+  return s:Git.readline(a:git, s:Path.join('rebase-apply', 'last'))
 endfunction
 function! s:get_commit_editmsg(git) abort
   return s:Git.readfile(a:git, 'COMMIT_EDITMSG')
@@ -79,16 +79,16 @@ function! s:is_rebase_merging(git) abort
   return s:Git.isdirectory(a:git, 'rebase-merge')
 endfunction
 function! s:is_rebase_merging_interactive(git) abort
-  return s:Git.filereadable(a:git, 'rebase-merge', 'interactive')
+  return s:Git.filereadable(a:git, s:Path.join('rebase-merge', 'interactive'))
 endfunction
 function! s:is_rebase_applying(git) abort
   return s:Git.isdirectory(a:git, 'rebase-apply')
 endfunction
 function! s:is_rebase_applying_rebase(git) abort
-  return s:Git.filereadable(a:git, 'rebase-apply', 'rebasing')
+  return s:Git.filereadable(a:git, s:Path.join('rebase-apply', 'rebasing'))
 endfunction
 function! s:is_rebase_applying_am(git) abort
-  return s:Git.filereadable(a:git, 'rebase-apply', 'applying')
+  return s:Git.filereadable(a:git, s:Path.join('rebase-apply', 'applying'))
 endfunction
 
 function! s:get_current_mode(git) abort
