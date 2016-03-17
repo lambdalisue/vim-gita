@@ -1,7 +1,7 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
-let s:StringExt = s:V.import('Data.StringExt')
 let s:Git = s:V.import('Git')
 let s:candidate_offset = 0
 
@@ -149,7 +149,7 @@ function! s:define_syntax() abort
   let pattern = gita#meta#get('pattern')
   execute printf(
         \ 'syntax match GitaKeyword /%s/',
-        \ s:StringExt.escape_regex(pattern),
+        \ s:Prelude.escape_pattern(pattern),
         \)
 endfunction
 
