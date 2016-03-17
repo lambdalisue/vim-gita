@@ -5,21 +5,19 @@ function! s:_vital_loaded(V) abort
   let s:Path = a:V.import('System.Filepath')
   let s:Python = a:V.import('Vim.Python')
   let s:StringExt = a:V.import('Data.StringExt')
-  " NOTE:
-  " Support 'T' as well
   let s:STATUS = {}
   let s:STATUS.patterns = {}
   let s:STATUS.patterns.status = [
-        \ '\v^([ MDARCU\?!])([ MDUA\?!])\s("[^"]+"|[^ ]+)%(\s-\>\s("[^"]+"|[^ ]+)|)$',
-        \ '\v^([ MDARCU\?!])([ MDUA\?!])\s("[^"]+"|.+)$',
+        \ '\v^([ MDARCUT\?!])([ MDUAT\?!])\s("[^"]+"|[^ ]+)%(\s-\>\s("[^"]+"|[^ ]+)|)$',
+        \ '\v^([ MDARCUT\?!])([ MDUAT\?!])\s("[^"]+"|.+)$',
         \]
   let s:STATUS.patterns.header = [
         \ '\v^##\s([^.]+)\.\.\.([^ ]+).*$',
         \ '\v^##\s([^ ]+).*$',
         \]
   let s:STATUS.patterns.conflicted = '\v^%(DD|AU|UD|UA|DU|AA|UU)$'
-  let s:STATUS.patterns.staged     = '\v^%([MARC][ MD]|D[ M])$'
-  let s:STATUS.patterns.unstaged   = '\v^%([ MARC][MD]|DM)$'
+  let s:STATUS.patterns.staged     = '\v^%([MARC][ MD]|D[ M]|T )$'
+  let s:STATUS.patterns.unstaged   = '\v^%([ MARC][MD]|DM| T)$'
   let s:STATUS.patterns.untracked  = '\v^\?\?$'
   let s:STATUS.patterns.ignored    = '\v^!!$'
   let s:CONFLICT = {}
@@ -41,6 +39,7 @@ function! s:_vital_loaded(V) abort
         \ s:CONFLICT.markers.theirs
         \)
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
@@ -177,6 +176,7 @@ function! s:_parse_blame_vim(content, ...) abort
         \ 'has_content': has_content,
         \}
 endfunction
+
 function! s:_compare_chunks(lhs, rhs) abort
   return a:lhs.linenum.final - a:rhs.linenum.final
 endfunction
@@ -193,6 +193,7 @@ function! s:_extend_status(status) abort
         \ 'is_ignored':    sign =~# s:STATUS.patterns.ignored,
         \})
 endfunction
+
 function! s:_subtract_path(path) abort
   if a:path =~# '^".*"$'
     let path = substitute(a:path, '^"\|"$', '', 'g')
@@ -454,6 +455,7 @@ function! s:parse_branch_record(line) abort
   let candidate.record = a:line
   return candidate
 endfunction
+
 function! s:parse_branch(content) abort
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)

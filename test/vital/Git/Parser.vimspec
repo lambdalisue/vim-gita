@@ -183,6 +183,40 @@ Describe Git.Parser
             \}
       Assert Equals(result, expected)
     End
+    It should be able to parse 'T  foo/bar/hoge.vim'
+      let record = 'T  foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'T',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'T ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse ' T foo/bar/hoge.vim'
+      let record = ' T foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': ' ',
+            \ 'worktree': 'T',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': ' T',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 1,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
   End
 
   Describe .parse_status({status})
