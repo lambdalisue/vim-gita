@@ -83,11 +83,16 @@ Describe Git.Process
   Describe .execute({git}, {args}[, {options}])
     It execute git command in {git.worktree} and return {result}
       let git = { 'worktree': worktree }
+      let Path = s:Path
       let result = GitProcess.execute(git, [
             \ 'rev-parse', '--show-toplevel',
             \])
       Assert Equals(result.success, 1, result.output)
-      Assert Equals(result.content, [worktree])
+      " NOTE:
+      " git rev-parse --show-toplevel returns an UNIX path even in Windows
+      " NOTE:
+      " A temporary directory is symlinked in Mac OS X
+      Assert Equals(result.content, [Path.unixpath(resolve(worktree))])
     End
 
     It execute git command in the current working directory and return {result} if empty {git} is specified
@@ -96,7 +101,11 @@ Describe Git.Process
             \ 'rev-parse', '--show-toplevel',
             \])
       Assert Equals(result.success, 1, result.output)
-      Assert Equals(result.content, [getcwd()])
+      " NOTE:
+      " git rev-parse --show-toplevel returns an UNIX path even in Windows
+      " NOTE:
+      " A temporary directory is symlinked in Mac OS X
+      Assert Equals(result.content, [Path.unixpath(resolve(getcwd()))])
     End
   End
 End
