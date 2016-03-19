@@ -117,12 +117,12 @@ Describe gita#meta
   Describe #expand({expr})
     It expand {expr}
       file foobar
-      Assert Equals(gita#meta#expand('%'), Path.abspath('foobar'))
+      Assert Equals(gita#meta#expand('%'), 'foobar')
     End
     It expand filename in meta if available
       file foobar
       call gita#meta#set('filename', 'hogehoge')
-      Assert Equals(gita#meta#expand('%'), Path.abspath('hogehoge'))
+      Assert Equals(gita#meta#expand('%'), 'hogehoge')
     End
   End
 End

@@ -55,7 +55,5 @@ function! gita#meta#expand(expr) abort
   let real_filename = expand(
         \ s:Prelude.is_string(a:expr) ? a:expr : bufname(a:expr)
         \)
-  let filename = empty(meta_filename) ? real_filename : meta_filename
-  " NOTE: Always return a real absolute path
-  return s:Path.abspath(s:Path.realpath(filename))
+  return empty(meta_filename) ? real_filename : meta_filename
 endfunction
