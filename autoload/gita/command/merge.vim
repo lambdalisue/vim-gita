@@ -153,7 +153,7 @@ function! gita#command#merge#call(...) abort
   let git = gita#core#get_or_fail()
   let commits = map(
         \ copy(options.commits),
-        \ 'gita#variable#get_valid_commit(v:val)',
+        \ 'gita#variable#get_valid_commit(git, v:val)',
         \)
   let content = s:execute_command(git, commits, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')

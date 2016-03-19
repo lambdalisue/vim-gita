@@ -86,6 +86,7 @@ function! s:get_bufname(...) abort
         \ 'theirs': 0,
         \ 'worktree': 0,
         \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
   if options.worktree || options.commit ==# s:WORKTREE
     if !filereadable(options.filename)
       call gita#throw(
@@ -94,18 +95,18 @@ function! s:get_bufname(...) abort
             \   options.filename,
             \))
     endif
-    return gita#variable#get_valid_filename(options.filename)
+    return gita#variable#get_valid_filename(git, options.filename)
   endif
   if options.ancestors || options.ours || options.theirs
     let commit = ''
   else
-    let commit = gita#variable#get_valid_range(options.commit, {
+    let commit = gita#variable#get_valid_range(git, options.commit, {
           \ '_allow_empty': 1,
           \})
   endif
   let filename = empty(options.filename)
         \ ? ''
-        \ : gita#variable#get_valid_filename(options.filename)
+        \ : gita#variable#get_valid_filename(git, options.filename)
   return gita#autocmd#bufname({
         \ 'content_type': 'show',
         \ 'extra_option': [
@@ -128,11 +129,12 @@ function! s:on_BufReadCmd(options) abort
         \ 'theirs': 0,
         \ 'selection': [],
         \})
+  let git = gita#core#get_or_fail()
   if options.patch || options.ancestors || options.ours || options.theirs
     " - INDEX content, naemly 'commit' should be an empty value
     " - file content, namely 'filename' is reqiured
     let options.commit = ''
-    let options.filename = gita#variable#get_valid_filename(
+    let options.filename = gita#variable#get_valid_filename(git, 
           \ get(options, 'filename', ''),
           \)
   endif
@@ -179,7 +181,7 @@ function! s:on_FileReadCmd(options) abort
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
-    call gita#util#doautocmd('BufWritePre')
+  call gita#util#doautocmd('BufWritePre')
   " This autocmd is executed ONLY when the buffer is shown as PATCH mode
   let tempfile = tempname()
   try

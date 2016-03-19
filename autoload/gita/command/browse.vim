@@ -177,11 +177,11 @@ function! gita#command#browse#call(...) abort
   let git = gita#core#get_or_fail()
   let local_branch = s:GitInfo.get_local_branch(git)
   let commit = empty(options.commit) ? local_branch.name : options.commit
-  let commit = gita#variable#get_valid_range(commit)
+  let commit = gita#variable#get_valid_range(git, commit)
   if empty(options.filename)
     let filename = ''
   else
-    let filename = gita#variable#get_valid_filename(options.filename)
+    let filename = gita#variable#get_valid_filename(git, options.filename)
   endif
   let url = s:find_url(git, commit, filename, options)
   return {

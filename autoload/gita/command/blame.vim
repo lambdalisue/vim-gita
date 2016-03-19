@@ -98,11 +98,11 @@ function! gita#command#blame#call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = gita#variable#get_valid_filename(options.filename)
-  let git = gita#core#get_or_fail()
+  let filename = gita#variable#get_valid_filename(git, options.filename)
   let guard = s:Guard.store('&l:statusline')
   try
     setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
@@ -128,10 +128,11 @@ function! gita#command#blame#get_or_call(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let options.commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let options.commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
-  let options.filename = gita#variable#get_valid_filename(options.filename)
+  let options.filename = gita#variable#get_valid_filename(git, options.filename)
 
   let bufname_view = gita#command#ui#blame_view#bufname(options)
   if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))

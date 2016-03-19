@@ -2,6 +2,7 @@ let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Guard = s:V.import('Vim.Guard')
+let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 
 function! s:validate_filename(filename, ...) abort
@@ -18,7 +19,7 @@ function! s:validate_filename(filename, ...) abort
   endif
 endfunction
 
-function! gita#variable#get_valid_commit(commit, ...) abort
+function! gita#variable#get_valid_commit(git, commit, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -44,7 +45,7 @@ function! gita#variable#get_valid_commit(commit, ...) abort
   return commit
 endfunction
 
-function! gita#variable#get_valid_commitish(commitish, ...) abort
+function! gita#variable#get_valid_commitish(git, commitish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -70,7 +71,7 @@ function! gita#variable#get_valid_commitish(commitish, ...) abort
   return commitish
 endfunction
 
-function! gita#variable#get_valid_treeish(treeish, ...) abort
+function! gita#variable#get_valid_treeish(git, treeish, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -96,7 +97,7 @@ function! gita#variable#get_valid_treeish(treeish, ...) abort
   return treeish
 endfunction
 
-function! gita#variable#get_valid_range(range, ...) abort
+function! gita#variable#get_valid_range(git, range, ...) abort
   let options = extend({
         \ '_allow_empty': 0,
         \}, get(a:000, 0, {}))
@@ -122,7 +123,7 @@ function! gita#variable#get_valid_range(range, ...) abort
   return range
 endfunction
 
-function! gita#variable#get_valid_filename(filename, ...) abort
+function! gita#variable#get_valid_filename(git, filename, ...) abort
   let options = get(a:000, 0, {})
   if empty(a:filename)
     let guard = s:Guard.store(['_complete_options', s:])
@@ -144,7 +145,7 @@ function! gita#variable#get_valid_filename(filename, ...) abort
   endif
   " NOTE:
   " Alwasy return a real absolute path
-  let filename = s:Path.abspath(s:Path.realpath(filename))
+  let filename = s:Path.realpath(s:Git.get_absolute_path(a:git, filename))
   call s:validate_filename(filename, options)
   return filename
 endfunction

@@ -107,7 +107,8 @@ function! s:get_bufname(options) abort
   let options = extend({
         \ 'commit': '',
         \}, a:options)
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
   return gita#autocmd#bufname({
@@ -183,8 +184,9 @@ function! gita#command#ui#diff_ls#autocmd(name) abort
           \ expand('<afile>'),
           \))
   endif
+  let git = gita#core#get_or_fail()
   let options = gita#util#cascade#get('diff-ls')
-  let options.commit = gita#variable#get_valid_range(m[1], {
+  let options.commit = gita#variable#get_valid_range(git, m[1], {
         \ '_allow_empty': 1,
         \})
   call call('s:on_' . a:name, [options])

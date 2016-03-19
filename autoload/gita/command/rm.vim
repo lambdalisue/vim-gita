@@ -67,7 +67,7 @@ function! gita#command#rm#call(...) abort
   let git = gita#core#get_or_fail()
   let filenames = map(
         \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
+        \ 'gita#variable#get_valid_filename(git, v:val)',
         \)
   let content = s:execute_command(git, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')

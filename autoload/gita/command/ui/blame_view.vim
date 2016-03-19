@@ -92,10 +92,11 @@ function! gita#command#ui#blame_view#bufname(...) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, get(a:000, 0, {}))
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
-  let filename = gita#variable#get_valid_filename(options.filename)
+  let filename = gita#variable#get_valid_filename(git, options.filename)
   return gita#autocmd#bufname({
         \ 'content_type': 'blame-view',
         \ 'extra_option': [],

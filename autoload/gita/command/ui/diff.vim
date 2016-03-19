@@ -59,11 +59,12 @@ function! s:open2(options) abort
         \ 'selection': [],
         \}, a:options)
   call s:configure_options(options)
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filename) ? '%' : options.filename
-  let filename = gita#variable#get_valid_filename(filename)
+  let filename = gita#variable#get_valid_filename(git, filename)
   if empty(commit)
     " git diff          : INDEX vs TREE
     " git diff --cached :  HEAD vs INDEX
@@ -130,12 +131,13 @@ function! s:get_bufname(options) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, a:options)
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let git = gita#core#get_or_fail()
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
   let filename = empty(options.filename)
         \ ? ''
-        \ : gita#variable#get_valid_filename(options.filename)
+        \ : gita#variable#get_valid_filename(git, options.filename)
   if empty(filename)
     return gita#autocmd#bufname({
           \ 'content_type': 'diff',

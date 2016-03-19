@@ -103,10 +103,10 @@ function! gita#command#ls_tree#call(...) abort
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit)
+  let commit = gita#variable#get_valid_range(git, options.commit)
   let filenames = map(
         \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
+        \ 'gita#variable#get_valid_filename(git, v:val)',
         \)
   if commit =~# '^.\{-}\.\.\..\{-}$'
     let [lhs, rhs] = s:GitTerm.split_range(commit)

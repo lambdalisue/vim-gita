@@ -122,12 +122,12 @@ function! gita#command#checkout#call(...) abort
         \ 'filenames': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(options.commit, {
+  let commit = gita#variable#get_valid_range(git, options.commit, {
         \ '_allow_empty': 1,
         \})
   let filenames = map(
         \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(v:val)',
+        \ 'gita#variable#get_valid_filename(git, v:val)',
         \)
   let content = s:execute_command(git, commit, filenames, options)
   call gita#util#doautocmd('User', 'GitaStatusModified')

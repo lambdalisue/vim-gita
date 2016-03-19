@@ -226,28 +226,28 @@ function! gita#command#branch#call(...) abort
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
   if gita#util#any(options, ['set-upstream', 'track', 'no-track'])
-    let options.branch = gita#variable#get_valid_commit(
+    let options.branch = gita#variable#get_valid_commit(git, 
           \ options.branch,
           \)
-    let options['start-point'] = gita#variable#get_valid_commit(
+    let options['start-point'] = gita#variable#get_valid_commit(git, 
           \ get(options, 'start-point', ''),
           \ { '_allow_empty': 1 },
           \)
   elseif gita#util#any(options, ['set-upstream-to', 'unset-upstream'])
-    let options.branch = gita#variable#get_valid_commit(
+    let options.branch = gita#variable#get_valid_commit(git, 
           \ options.branch,
           \ { '_allow_empty': 1 },
           \)
   elseif gita#util#any(options, ['move', 'M'])
-    let options.branch = gita#variable#get_valid_commit(
+    let options.branch = gita#variable#get_valid_commit(git, 
           \ options.branch,
           \)
-    let options.newbranch = gita#variable#get_valid_commit(
+    let options.newbranch = gita#variable#get_valid_commit(git, 
           \ get(options, 'newbranch', ''),
           \ { '_allow_empty': 1 },
           \)
   elseif gita#util#any(options, ['delete', 'D'])
-    let options.branch = gita#variable#get_valid_commit(
+    let options.branch = gita#variable#get_valid_commit(git, 
           \ options.branch,
           \)
   endif

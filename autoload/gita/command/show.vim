@@ -132,7 +132,7 @@ function! gita#command#show#call(...) abort
   elseif options.theirs
     let commit = ':3'
   else
-    let commit = gita#variable#get_valid_range(options.commit, {
+    let commit = gita#variable#get_valid_range(git, options.commit, {
           \ '_allow_empty': 1,
           \})
   endif
@@ -143,7 +143,7 @@ function! gita#command#show#call(...) abort
     endif
     let content = s:get_revision_content(git, commit, filename, options)
   else
-    let filename = gita#variable#get_valid_filename(options.filename)
+    let filename = gita#variable#get_valid_filename(git, options.filename)
     if commit ==# s:WORKTREE
       let content = readfile(filename)
     elseif commit =~# '^.\{-}\.\.\..\{-}$'

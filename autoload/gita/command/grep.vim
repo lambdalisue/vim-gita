@@ -42,7 +42,7 @@ function! gita#command#grep#call(...) abort
         \ 'directories': [],
         \}, get(a:000, 0, {}))
   let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_commit(options.commit, {
+  let commit = gita#variable#get_valid_commit(git, options.commit, {
         \ '_allow_empty': 1,
         \})
   let content = s:execute_command(

@@ -9,8 +9,9 @@ function! s:open2(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
+  let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? '%' : options.filename
-  let filename = gita#variable#get_valid_filename(filename)
+  let filename = gita#variable#get_valid_filename(git, filename)
   let loptions = {
         \ 'ours': 1,
         \ 'filename': filename,
@@ -56,8 +57,9 @@ function! s:open3(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
+  let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? '%' : options.filename
-  let filename = gita#variable#get_valid_filename(filename)
+  let filename = gita#variable#get_valid_filename(git, filename)
   let loptions = {
         \ 'ours': 1,
         \ 'filename': filename,
