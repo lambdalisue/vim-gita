@@ -231,7 +231,7 @@ function! s:new_argument(name, ...) abort
       call s:_throw(
             \ '"default" option cannot be specified to a positional argument'
             \)
-    elseif argument.type != s:const.types.value && argument.type != s:const.types.choice
+    elseif argument.type ==# s:const.types.any || argument.type ==# s:const.types.switch
       call s:_throw(
             \ '"type" option cannot be ANY or SWITCH for a positional argument'
             \)
@@ -518,7 +518,13 @@ function! s:parser._parse_args(args, ...) abort
         elseif !empty(self.arguments[name].dependencies) && !empty(self.get_missing_dependencies(name, options))
           continue
         endif
-        let options[name] = s:strip_quotes(cword)
+        if self.arguments[name].type ==# s:const.types.multiple
+          let options[name] = get(options, name, [])
+          call add(options[name], s:strip_quotes(cword))
+          let positional_cursor -= 1
+        else
+          let options[name] = s:strip_quotes(cword)
+        endif
         break
       endwhile
       if !has_key(options, name)

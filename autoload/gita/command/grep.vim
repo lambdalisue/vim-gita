@@ -115,7 +115,7 @@ function! s:get_parser() abort
           \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
-          \ '--patterns', '-e', [
+          \ 'patterns', [
           \   'match patterns',
           \ ], {
           \   'type': s:ArgumentParser.types.multiple,
@@ -138,14 +138,6 @@ function! s:get_parser() abort
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \   'superordinates': ['ui'],
           \})
-    function! s:parser.hooks.post_validate(options) abort
-      if !has_key(a:options, 'patterns')
-        if !empty(a:options.__unknown__)
-          let a:options.patterns = [a:options.__unknown__[0]]
-          let a:options.__unknown__ = a:options.__unknown__[1:]
-        endif
-      endif
-    endfunction
   endif
   return s:parser
 endfunction
