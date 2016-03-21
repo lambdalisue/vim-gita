@@ -235,20 +235,19 @@ function! gita#command#branch#call(...) abort
           \)
   elseif gita#util#any(options, ['set-upstream-to', 'unset-upstream'])
     let options.branch = gita#variable#get_valid_commit(git, 
-          \ options.branch,
+          \ get(options, 'branch', ''),
           \ { '_allow_empty': 1 },
           \)
   elseif gita#util#any(options, ['move', 'M'])
     let options.branch = gita#variable#get_valid_commit(git, 
-          \ options.branch,
+          \ get(options, 'branch', ''),
           \)
     let options.newbranch = gita#variable#get_valid_commit(git, 
           \ get(options, 'newbranch', ''),
-          \ { '_allow_empty': 1 },
           \)
   elseif gita#util#any(options, ['delete', 'D'])
     let options.branch = gita#variable#get_valid_commit(git, 
-          \ options.branch,
+          \ get(options, 'branch', ''),
           \)
   endif
   let content = s:execute_command(git, options)

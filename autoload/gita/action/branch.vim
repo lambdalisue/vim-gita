@@ -1,12 +1,32 @@
 function! s:action_checkout(candidate, options) abort
   let options = extend({
-        \ 'force': 0,
-        \ 'no-track': 0,
+        \ 'track': 0,
         \}, a:options)
   call gita#command#checkout#call({
-        \ 'force': options.force,
-        \ 'no-track': options['no-track'],
+        \ 'track': options.track,
         \ 'commit': a:candidate.name,
+        \})
+endfunction
+
+function! s:action_rename(candidate, options) abort
+  let options = extend({
+        \ 'force': 0,
+        \}, a:options)
+  call gita#command#branch#call({
+        \ 'move': 1,
+        \ 'force': options.force,
+        \ 'branch': a:candidate.name,
+        \})
+endfunction
+
+function! s:action_delete(candidate, options) abort
+  let options = extend({
+        \ 'force': 0,
+        \}, a:options)
+  call gita#command#branch#call({
+        \ 'delete': 1,
+        \ 'force': options.force,
+        \ 'branch': a:candidate.name,
         \})
 endfunction
 
@@ -17,16 +37,42 @@ function! gita#action#branch#define(disable_mapping) abort
         \ 'requirements': ['name'],
         \ 'options': {},
         \})
-  call gita#action#define('branch:checkout:no-track', function('s:action_checkout'), {
-        \ 'description': 'Checkout a branch (no-tracking)',
+  call gita#action#define('branch:checkout:track', function('s:action_checkout'), {
+        \ 'description': 'Checkout a branch (track)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['name'],
-        \ 'options': { 'no-track': 1 },
+        \ 'options': { 'track': 1 },
+        \})
+  call gita#action#define('branch:rename', function('s:action_rename'), {
+        \ 'description': 'Rename a branch',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': {},
+        \})
+  call gita#action#define('branch:rename:force', function('s:action_rename'), {
+        \ 'description': 'Rename a branch',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': { 'force': 1 },
+        \})
+  call gita#action#define('branch:delete', function('s:action_delete'), {
+        \ 'description': 'Rename a branch',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': {},
+        \})
+  call gita#action#define('branch:delete:force', function('s:action_delete'), {
+        \ 'description': 'Rename a branch',
+        \ 'mapping_mode': 'n',
+        \ 'requirements': ['name'],
+        \ 'options': { 'force': 1 },
         \})
   if a:disable_mapping
     return
   endif
-  nmap <buffer> ct <Plug>(gita-branch-checkout)
-  nmap <buffer> cn <Plug>(gita-branch-checkout-no-track)
+  nmap <silent><expr><nowait> dd gita#action#smart_map('dd', '<Plug>(gita-branch-delete)')
+  nmap <silent><expr><nowait> DD gita#action#smart_map('DD', '<Plug>(gita-branch-delete-force)')
+  nmap <silent><expr><nowait> rr gita#action#smart_map('rr', '<Plug>(gita-branch-rename)')
+  nmap <silent><expr><nowait> RR gita#action#smart_map('RR', '<Plug>(gita-branch-rename-force)')
 endfunction
 

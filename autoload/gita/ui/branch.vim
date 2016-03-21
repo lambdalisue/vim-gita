@@ -33,6 +33,10 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <Return> %s',
         \ g:gita#ui#branch#primary_action_mapping
         \)
+  execute printf(
+        \ 'nmap <buffer> <S-Return> %s',
+        \ g:gita#ui#branch#secondary_action_mapping
+        \)
 endfunction
 
 function! s:get_bufname(options) abort
@@ -123,5 +127,6 @@ endfunction
 call gita#util#define_variables('ui#branch', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-branch-checkout)',
+      \ 'secondary_action_mapping': '<Plug>(gita-branch-checkout-track)',
       \ 'disable_default_mappings': 0,
       \})
