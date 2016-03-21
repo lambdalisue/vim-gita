@@ -507,6 +507,7 @@ function! s:parser._parse_args(args, ...) abort
         call add(options.__unknown__, cword)
       endif
     else
+      let name = ''
       while positional_cursor < positional_length
         let positional_cursor += 1
         let name = self.positional[positional_cursor - 1]
