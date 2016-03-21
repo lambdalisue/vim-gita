@@ -153,7 +153,6 @@ function! s:define_syntax() abort
 endfunction
 
 function! gita#ui#grep#autocmd(name) abort
-  let bufname = expand('<afile>')
   let options = gita#util#cascade#get('grep')
   call call('s:on_' . a:name, [options])
 endfunction
