@@ -8,7 +8,7 @@ function! s:action(candidate, options) abort
   call gita#option#assign_opener(options)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  call gita#command#ui#show#open({
+  call gita#ui#show#open({
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,
         \ 'filename': a:candidate.path,

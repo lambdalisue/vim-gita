@@ -18,14 +18,14 @@ function! s:define_actions() abort
         \ 'common', 'index', 'blame', 'browse', 'checkout',
         \ 'commit', 'diff', 'discard', 'edit', 'patch', 'chaperone',
         \ 'show',
-        \], g:gita#command#ui#status#disable_default_mappings)
+        \], g:gita#ui#status#disable_default_mappings)
 
-  if g:gita#command#ui#status#disable_default_mappings
+  if g:gita#ui#status#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#status#primary_action_mapping
+        \ g:gita#ui#status#primary_action_mapping
         \)
   nmap <buffer> <C-^> <Plug>(gita-commit)
 endfunction
@@ -112,7 +112,7 @@ function! s:on_BufReadCmd(options) abort
   let options['porcelain'] = 1
   let options['quiet'] = 1
   let result   = gita#command#status#call(options)
-  let statuses = gita#command#ui#status#parse_statuses(result.content)
+  let statuses = gita#ui#status#parse_statuses(result.content)
   call gita#meta#set('content_type', 'status')
   call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'opener', 'selection', 'quiet', 'porcelain',
@@ -128,17 +128,17 @@ function! s:on_BufReadCmd(options) abort
   setlocal filetype=gita-status
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  call gita#command#ui#status#redraw()
+  call gita#ui#status#redraw()
   call gita#util#select(options.selection)
 endfunction
 
 
-function! gita#command#ui#status#autocmd(name) abort
+function! gita#ui#status#autocmd(name) abort
   let options = gita#util#cascade#get('status')
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#status#open(...) abort
+function! gita#ui#status#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
@@ -148,7 +148,7 @@ function! gita#command#ui#status#open(...) abort
     return
   endif
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#status#default_opener
+        \ ? g:gita#ui#status#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -160,7 +160,7 @@ function! gita#command#ui#status#open(...) abort
         \})
 endfunction
 
-function! gita#command#ui#status#redraw() abort
+function! gita#ui#status#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
@@ -171,7 +171,7 @@ function! gita#command#ui#status#redraw() abort
         \)
 endfunction
 
-function! gita#command#ui#status#parse_statuses(content) abort
+function! gita#ui#status#parse_statuses(content) abort
   if len(a:content) == 1 && empty(a:content[0])
     return []
   endif
@@ -185,7 +185,7 @@ function! gita#command#ui#status#parse_statuses(content) abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#status', {
+call gita#util#define_variables('ui#status', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-edit)',
       \ 'disable_default_mappings': 0,

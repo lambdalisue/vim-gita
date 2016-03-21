@@ -24,14 +24,14 @@ function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
         \ 'common', 'branch', 'merge', 'rebase',
-        \], g:gita#command#ui#branch#disable_default_mappings)
+        \], g:gita#ui#branch#disable_default_mappings)
 
-  if g:gita#command#ui#branch#disable_default_mappings
+  if g:gita#ui#branch#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#branch#primary_action_mapping
+        \ g:gita#ui#branch#primary_action_mapping
         \)
 endfunction
 
@@ -76,24 +76,24 @@ function! s:on_BufReadCmd(options) abort
   setlocal nowrap
   setlocal cursorline
   setlocal nomodifiable
-  call gita#command#ui#branch#redraw()
+  call gita#ui#branch#redraw()
   call gita#util#select(options.selection)
 endfunction
 
 
-function! gita#command#ui#branch#autocmd(name) abort
+function! gita#ui#branch#autocmd(name) abort
   let options = gita#util#cascade#get('branch')
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#branch#open(...) abort
+function! gita#ui#branch#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#branch#default_opener
+        \ ? g:gita#ui#branch#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -105,7 +105,7 @@ function! gita#command#ui#branch#open(...) abort
         \})
 endfunction
 
-function! gita#command#ui#branch#redraw() abort
+function! gita#ui#branch#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
@@ -117,7 +117,7 @@ function! gita#command#ui#branch#redraw() abort
         \)
 endfunction
 
-call gita#util#define_variables('command#ui#branch', {
+call gita#util#define_variables('ui#branch', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-branch-checkout)',
       \ 'disable_default_mappings': 0,

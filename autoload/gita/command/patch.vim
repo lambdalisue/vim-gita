@@ -66,7 +66,7 @@ function! gita#command#patch#command(...) abort
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#command#ui#patch#open(options)
+  call gita#ui#patch#open(options)
 endfunction
 
 function! gita#command#patch#complete(...) abort

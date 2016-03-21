@@ -6,14 +6,14 @@ function! s:open1(options) abort
         \ 'selection': [],
         \}, a:options)
   let options.opener = empty(options.opener)
-        \ ? g:gita#command#ui#patch#default_opener
+        \ ? g:gita#ui#patch#default_opener
         \ : options.opener
   if options.reverse
     let options.cached = 1
   endif
   let options['commit'] = ''
   let options['split'] = 0
-  call gita#command#ui#diff#open(options)
+  call gita#ui#diff#open(options)
 endfunction
 
 function! s:open2(options) abort
@@ -48,15 +48,15 @@ function! s:open2(options) abort
   endif
   let vertical = matchstr(&diffopt, 'vertical')
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#patch#default_opener
+        \ ? g:gita#ui#patch#default_opener
         \ : options.opener
-  call gita#command#ui#show#open(extend(roptions, {
+  call gita#ui#show#open(extend(roptions, {
         \ 'anchor': options.anchor,
         \ 'opener': opener,
         \ 'window': 'patch2_rhs',
         \}))
   call gita#util#diffthis()
-  call gita#command#ui#show#open(extend(loptions, {
+  call gita#ui#show#open(extend(loptions, {
         \ 'anchor': 0,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
@@ -95,9 +95,9 @@ function! s:open3(options) abort
         \}
   let vertical = matchstr(&diffopt, 'vertical')
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#patch#default_opener
+        \ ? g:gita#ui#patch#default_opener
         \ : options.opener
-  call gita#command#ui#show#open(extend(roptions, {
+  call gita#ui#show#open(extend(roptions, {
         \ 'anchor': options.anchor,
         \ 'opener': opener,
         \ 'window': 'patch3_rhs',
@@ -105,7 +105,7 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let rhs_bufnum = bufnr('%')
 
-  call gita#command#ui#show#open(extend(coptions, {
+  call gita#ui#show#open(extend(coptions, {
         \ 'anchor': 0,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
@@ -115,7 +115,7 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let chs_bufnum = bufnr('%')
 
-  call gita#command#ui#show#open(extend(loptions, {
+  call gita#ui#show#open(extend(loptions, {
         \ 'anchor': 0,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
@@ -130,7 +130,7 @@ function! s:open3(options) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffput) :diffput %d<BAR>diffupdate<CR>',
         \ chs_bufnum,
         \)
-  if !g:gita#command#ui#patch#disable_default_mappings
+  if !g:gita#ui#patch#disable_default_mappings
     nmap <buffer> dp <Plug>(gita-diffput)
   endif
 
@@ -139,7 +139,7 @@ function! s:open3(options) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffput) :diffput %d<BAR>diffupdate<CR>',
         \ chs_bufnum,
         \)
-  if !g:gita#command#ui#patch#disable_default_mappings
+  if !g:gita#ui#patch#disable_default_mappings
     nmap <buffer> dp <Plug>(gita-diffput)
   endif
 
@@ -152,7 +152,7 @@ function! s:open3(options) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffget-r) :diffget %d<BAR>diffupdate<CR>',
         \ rhs_bufnum,
         \)
-  if !g:gita#command#ui#patch#disable_default_mappings
+  if !g:gita#ui#patch#disable_default_mappings
     nmap <buffer> dol <Plug>(gita-diffget-l)
     nmap <buffer> dor <Plug>(gita-diffget-r)
   endif
@@ -161,12 +161,12 @@ function! s:open3(options) abort
   diffupdate
 endfunction
 
-function! gita#command#ui#patch#open(...) abort
+function! gita#ui#patch#open(...) abort
   let options = extend({
         \ 'method': '',
         \}, get(a:000, 0, {}))
   let method = empty(options.method)
-        \ ? g:gita#command#ui#patch#default_method
+        \ ? g:gita#ui#patch#default_method
         \ : options.method
   if method ==# 'one'
     call s:open1(options)
@@ -177,7 +177,7 @@ function! gita#command#ui#patch#open(...) abort
   endif
 endfunction
 
-call gita#util#define_variables('command#ui#patch', {
+call gita#util#define_variables('ui#patch', {
       \ 'default_opener': '',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,

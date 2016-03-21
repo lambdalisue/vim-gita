@@ -23,18 +23,18 @@ function! s:define_actions() abort
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
         \ 'status', 'commit',
-        \], g:gita#command#ui#commit#disable_default_mappings)
+        \], g:gita#ui#commit#disable_default_mappings)
   call gita#action#define('commit:do', function('s:action_commit_do'), {
         \ 'description': 'Commit changes',
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  if g:gita#command#ui#commit#disable_default_mappings
+  if g:gita#ui#commit#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#commit#primary_action_mapping
+        \ g:gita#ui#commit#primary_action_mapping
         \)
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
   nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
@@ -158,7 +158,7 @@ function! s:on_BufReadCmd(options) abort
   let options['porcelain'] = 1
   let options['dry-run'] = 1
   let result = gita#command#commit#call(options)
-  let statuses = gita#command#ui#status#parse_statuses(result.content)
+  let statuses = gita#ui#status#parse_statuses(result.content)
   call gita#meta#set('content_type', 'commit')
   call gita#meta#set('options', s:Dict.omit(options, [
         \ 'opener', 'selection', 'quiet', 'porcelain', 'dry-run',
@@ -185,7 +185,7 @@ function! s:on_BufReadCmd(options) abort
   " Used for template system
   call gita#util#doautocmd('BufReadPre')
   setlocal filetype=gita-commit
-  call gita#command#ui#commit#redraw()
+  call gita#ui#commit#redraw()
   call gita#util#select(options.selection)
 endfunction
 
@@ -210,7 +210,7 @@ function! s:on_QuitPre() abort
 endfunction
 
 
-function! gita#command#ui#commit#autocmd(name) abort
+function! gita#ui#commit#autocmd(name) abort
   let bufname = expand('<afile>')
   let options = gita#util#cascade#get('commit')
   let extra = matchstr(bufname, 'gita:[^:\\/]\+:commit:\zs.*$')
@@ -220,14 +220,14 @@ function! gita#command#ui#commit#autocmd(name) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#commit#open(...) abort
+function! gita#ui#commit#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#commit#default_opener
+        \ ? g:gita#ui#commit#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -239,7 +239,7 @@ function! gita#command#ui#commit#open(...) abort
         \})
 endfunction
 
-function! gita#command#ui#commit#redraw() abort
+function! gita#ui#commit#redraw() abort
   let git = gita#core#get_or_fail()
   let options = gita#meta#get_for('commit', 'options')
 
@@ -275,7 +275,7 @@ function! gita#command#ui#commit#redraw() abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#commit', {
+call gita#util#define_variables('ui#commit', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,

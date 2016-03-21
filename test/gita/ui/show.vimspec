@@ -3,10 +3,10 @@ let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
 
-Describe gita#command#ui#show
+Describe gita#ui#show
   Before
     let scriptfile = s:Path.realpath(
-          \ 'autoload/gita/command/ui/show.vim',
+          \ 'autoload/gita/ui/show.vim',
           \)
     let sf = s:ScriptLocal.sfuncs(scriptfile)
   End

@@ -199,7 +199,7 @@ function! gita#command#grep#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#grep#open(options)
+    call gita#ui#grep#open(options)
   else
     call gita#command#grep#call(options)
   endif

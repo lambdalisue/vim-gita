@@ -369,7 +369,7 @@ function! gita#command#diff#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#diff#open(options)
+    call gita#ui#diff#open(options)
   else
     call gita#command#diff#call(options)
   endif

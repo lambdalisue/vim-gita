@@ -46,7 +46,7 @@ function! gita#command#diff_ls#command(...) abort
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#command#ui#diff_ls#open(options)
+  call gita#ui#diff_ls#open(options)
 endfunction
 
 function! gita#command#diff_ls#complete(...) abort

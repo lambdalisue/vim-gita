@@ -180,7 +180,7 @@ function! gita#command#show#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#show#open(options)
+    call gita#ui#show#open(options)
   else
     call gita#command#show#call(options)
   endif

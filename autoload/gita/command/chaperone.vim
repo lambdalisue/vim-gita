@@ -61,7 +61,7 @@ function! gita#command#chaperone#command(...) abort
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#command#ui#chaperone#open(options)
+  call gita#ui#chaperone#open(options)
 endfunction
 
 function! gita#command#chaperone#complete(...) abort

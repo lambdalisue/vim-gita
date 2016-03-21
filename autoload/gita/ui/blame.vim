@@ -14,7 +14,7 @@ function! s:call_pseudo_command() abort range
   redraw | echo
   if ret =~# '\v^[0-9]+$'
     let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
-    call gita#command#ui#blame#select(blamemeta, [str2nr(ret)])
+    call gita#ui#blame#select(blamemeta, [str2nr(ret)])
   else
     try
       execute ret
@@ -58,11 +58,11 @@ function! s:action_enter(candidate, options) abort
     let filename = a:candidate.filename
   endif
   let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
-  let linenum = gita#command#ui#blame#get_pseudo_linenum(blamemeta, line('.'))
+  let linenum = gita#ui#blame#get_pseudo_linenum(blamemeta, line('.'))
   let linenum_next = a:candidate.linenum.original + (linenum - a:candidate.linenum.final)
   let winnum = winnr()
   redraw | echo printf('Opening a blame content of "%s" in %s', filename, revision)
-  call gita#command#ui#blame#open({
+  call gita#ui#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,
         \ 'selection': [linenum_next],
@@ -87,7 +87,7 @@ function! s:action_back(candidate, options) abort
   let [revision, filename, selection] = previous
   let winnum = winnr()
   redraw | echo printf('Opening a blame content of "%s" in %s', filename, revision)
-  call gita#command#ui#blame#open({
+  call gita#ui#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,
         \ 'selection': selection,
@@ -104,7 +104,7 @@ function! s:action_previous_chunk(candidate, options) abort
     return
   endif
   let prev_chunk = chunks[a:candidate.index - 1]
-  call gita#command#ui#blame#select(blamemeta, [prev_chunk.linenum.final])
+  call gita#ui#blame#select(blamemeta, [prev_chunk.linenum.final])
 endfunction
 
 function! s:action_next_chunk(candidate, options) abort
@@ -115,11 +115,11 @@ function! s:action_next_chunk(candidate, options) abort
     return
   endif
   let next_chunk = chunks[a:candidate.index + 1]
-  call gita#command#ui#blame#select(blamemeta, [next_chunk.linenum.final])
+  call gita#ui#blame#select(blamemeta, [next_chunk.linenum.final])
 endfunction
 
 
-function! gita#command#ui#blame#define_actions() abort
+function! gita#ui#blame#define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#define('blame:echo', function('s:action_echo'), {
         \ 'description': 'Echo a chunk',
@@ -156,20 +156,20 @@ function! gita#command#ui#blame#define_actions() abort
   vmap <silent><buffer> : :call <SID>call_pseudo_command()<CR>
 endfunction
 
-function! gita#command#ui#blame#open(...) abort
+function! gita#ui#blame#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
         \ 'navigator_width': 50,
         \}, get(a:000, 0, {}))
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#blame#default_opener
+        \ ? g:gita#ui#blame#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
   endif
   call gita#util#cascade#set('blame-navi', options)
-  call gita#util#buffer#open(gita#command#ui#blame_navi#bufname(options), {
+  call gita#util#buffer#open(gita#ui#blame_navi#bufname(options), {
         \ 'opener': opener,
         \ 'window': 'blame_navi',
         \})
@@ -179,18 +179,18 @@ function! gita#command#ui#blame#open(...) abort
   " blame_view automatically opened from blame_navi
 endfunction
 
-function! gita#command#ui#blame#select(blamemeta, selection) abort
+function! gita#ui#blame#select(blamemeta, selection) abort
   " pseudo -> actual
   let line_start = get(a:selection, 0, 1)
   let line_end = get(a:selection, 1, line_start)
   let actual_selection = [
-        \ gita#command#ui#blame#get_actual_linenum(a:blamemeta, line_start),
-        \ gita#command#ui#blame#get_actual_linenum(a:blamemeta, line_end),
+        \ gita#ui#blame#get_actual_linenum(a:blamemeta, line_start),
+        \ gita#ui#blame#get_actual_linenum(a:blamemeta, line_end),
         \]
   call gita#util#select(actual_selection)
 endfunction
 
-function! gita#command#ui#blame#get_pseudo_linenum(blamemeta, linenum) abort
+function! gita#ui#blame#get_pseudo_linenum(blamemeta, linenum) abort
   " actual -> pseudo
   let lineinfos = a:blamemeta.lineinfos
   if a:linenum > len(lineinfos)
@@ -203,7 +203,7 @@ function! gita#command#ui#blame#get_pseudo_linenum(blamemeta, linenum) abort
   return lineinfo.linenum.final
 endfunction
 
-function! gita#command#ui#blame#get_actual_linenum(blamemeta, linenum) abort
+function! gita#ui#blame#get_actual_linenum(blamemeta, linenum) abort
   " pseudo -> actual
   let linerefs = a:blamemeta.linerefs
   if a:linenum > len(linerefs)
@@ -215,7 +215,7 @@ function! gita#command#ui#blame#get_actual_linenum(blamemeta, linenum) abort
   endif
 endfunction
 
-function! gita#command#ui#blame#set_pseudo_separators(blamemeta) abort
+function! gita#ui#blame#set_pseudo_separators(blamemeta) abort
   let bufnum = bufnr('%')
   execute printf('sign unplace * buffer=%d', bufnum)
   execute printf(
@@ -236,7 +236,7 @@ augroup vim_gita_internal_blame
 augroup END
 call s:define_highlights()
 
-call gita#util#define_variables('command#ui#blame', {
+call gita#util#define_variables('ui#blame', {
       \ 'default_opener': 'tabedit',
       \})
 

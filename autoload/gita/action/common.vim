@@ -103,7 +103,7 @@ function! s:action_redraw(candidate, options) abort
   if &filetype =~# '^gita-'
     let name = matchstr(&filetype, '^gita-\zs.*$')
     let name = substitute(name, '-', '_', 'g')
-    call call(function(printf('gita#command#ui#%s#redraw', name)), [])
+    call call(function(printf('gita#ui#%s#redraw', name)), [])
   endif
 endfunction
 

@@ -9,7 +9,7 @@ function! s:action(candidate, options) abort
   call gita#option#assign_opener(options)
   let options.commit = get(options, 'commit', '')
   let options.selection = get(options, 'selection', [])
-  call gita#command#ui#diff#open({
+  call gita#ui#diff#open({
         \ 'split': options.split,
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,

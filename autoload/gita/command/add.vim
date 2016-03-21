@@ -137,7 +137,7 @@ function! gita#command#add#command(...) abort
   if get(options, 'edit') || get(options, 'patch')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#add#open(options)
+    call gita#ui#add#open(options)
   else
     call gita#command#add#call(options)
   endif

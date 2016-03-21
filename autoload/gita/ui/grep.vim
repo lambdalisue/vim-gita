@@ -86,13 +86,13 @@ function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
-        \], g:gita#command#ui#grep#disable_default_mappings)
-  if g:gita#command#ui#grep#disable_default_mappings
+        \], g:gita#ui#grep#disable_default_mappings)
+  if g:gita#ui#grep#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#grep#primary_action_mapping
+        \ g:gita#ui#grep#primary_action_mapping
         \)
 endfunction
 
@@ -135,7 +135,7 @@ function! s:on_BufReadCmd(options) abort
   setlocal nowrap
   setlocal cursorline
   setlocal nomodifiable
-  call gita#command#ui#grep#redraw()
+  call gita#ui#grep#redraw()
   call gita#util#select(options.selection)
 endfunction
 
@@ -152,20 +152,20 @@ function! s:define_syntax() abort
   endfor
 endfunction
 
-function! gita#command#ui#grep#autocmd(name) abort
+function! gita#ui#grep#autocmd(name) abort
   let bufname = expand('<afile>')
   let options = gita#util#cascade#get('grep')
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#grep#open(...) abort
+function! gita#ui#grep#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#grep#default_opener
+        \ ? g:gita#ui#grep#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -177,7 +177,7 @@ function! gita#command#ui#grep#open(...) abort
         \})
 endfunction
 
-function! gita#command#ui#grep#redraw() abort
+function! gita#ui#grep#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
@@ -191,7 +191,7 @@ function! gita#command#ui#grep#redraw() abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#grep', {
+call gita#util#define_variables('ui#grep', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,

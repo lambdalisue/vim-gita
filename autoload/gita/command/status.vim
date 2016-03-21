@@ -111,7 +111,7 @@ function! gita#command#status#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#status#open(options)
+    call gita#ui#status#open(options)
   else
     call gita#command#status#call(options)
   endif

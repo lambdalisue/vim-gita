@@ -35,7 +35,7 @@ function! s:open1(options) abort
         \}, a:options)
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#diff#default_opener
+        \ ? g:gita#ui#diff#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -100,18 +100,18 @@ function! s:open2(options) abort
         \}
   let vertical = matchstr(&diffopt, 'vertical')
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#diff#default_opener
+        \ ? g:gita#ui#diff#default_opener
         \ : options.opener
   if opener =~# 'pedit'
     call gita#throw('"pedit" is not supported for split diff')
   endif
-  call gita#command#ui#show#open(extend(options.reverse ? loptions : roptions, {
+  call gita#ui#show#open(extend(options.reverse ? loptions : roptions, {
         \ 'anchor': options.anchor,
         \ 'opener': opener,
         \ 'window': 'diff2_rhs',
         \}))
   call gita#util#diffthis()
-  call gita#command#ui#show#open(extend(options.reverse ? roptions : loptions, {
+  call gita#ui#show#open(extend(options.reverse ? roptions : loptions, {
         \ 'anchor': 0,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
@@ -251,7 +251,7 @@ function! s:on_FileWriteCmd() abort
 endfunction
 
 
-function! gita#command#ui#diff#autocmd(name) abort
+function! gita#ui#diff#autocmd(name) abort
   let git = gita#core#get_or_fail()
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita://[^:\\/]\+:diff\%(:\([^\\/]\+\)\)\?[\\/]\(.*\)$')
@@ -272,7 +272,7 @@ function! gita#command#ui#diff#autocmd(name) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#diff#open(...) abort
+function! gita#ui#diff#open(...) abort
   let options = extend({
         \ 'split': 0,
         \}, get(a:000, 0, {}))
@@ -284,6 +284,6 @@ function! gita#command#ui#diff#open(...) abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#diff', {
+call gita#util#define_variables('ui#diff', {
       \ 'default_opener': '',
       \})

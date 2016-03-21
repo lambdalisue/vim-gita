@@ -16,13 +16,13 @@ function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
-        \], g:gita#command#ui#diff_ls#disable_default_mappings)
-  if g:gita#command#ui#diff_ls#disable_default_mappings
+        \], g:gita#ui#diff_ls#disable_default_mappings)
+  if g:gita#ui#diff_ls#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#diff_ls#primary_action_mapping
+        \ g:gita#ui#diff_ls#primary_action_mapping
         \)
 endfunction
 
@@ -150,14 +150,14 @@ function! s:on_BufReadCmd(options) abort
   setlocal filetype=gita-diff-ls
   setlocal buftype=nofile nobuflisted
   setlocal nomodifiable
-  call gita#command#ui#diff_ls#redraw()
+  call gita#ui#diff_ls#redraw()
   call gita#util#select(options.selection)
 endfunction
 
 function! s:on_VimResized() abort
   try
     if gita#meta#get_for('diff_ls', 'winwidth', winwidth(0)) != winwidth(0)
-      call gita#command#ui#diff_ls#redraw()
+      call gita#ui#diff_ls#redraw()
     endif
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
@@ -175,7 +175,7 @@ function! s:on_WinEnter() abort
 endfunction
 
 
-function! gita#command#ui#diff_ls#autocmd(name) abort
+function! gita#ui#diff_ls#autocmd(name) abort
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita:[^:\\/]\+:diff-ls:\(.*\)$')
   if empty(m)
@@ -192,14 +192,14 @@ function! gita#command#ui#diff_ls#autocmd(name) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#diff_ls#open(...) abort
+function! gita#ui#diff_ls#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#diff_ls#default_opener
+        \ ? g:gita#ui#diff_ls#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -211,7 +211,7 @@ function! gita#command#ui#diff_ls#open(...) abort
         \})
 endfunction
 
-function! gita#command#ui#diff_ls#redraw() abort
+function! gita#ui#diff_ls#redraw() abort
   let git = gita#core#get_or_fail()
   let prologue = [s:get_header_string(git)]
   let s:candidate_offset = len(prologue)
@@ -224,7 +224,7 @@ function! gita#command#ui#diff_ls#redraw() abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#diff_ls', {
+call gita#util#define_variables('ui#diff_ls', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,

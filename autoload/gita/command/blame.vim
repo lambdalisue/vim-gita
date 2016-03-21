@@ -134,7 +134,7 @@ function! gita#command#blame#get_or_call(...) abort
         \})
   let options.filename = gita#variable#get_valid_filename(git, options.filename)
 
-  let bufname_view = gita#command#ui#blame_view#bufname(options)
+  let bufname_view = gita#ui#blame_view#bufname(options)
   if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
     return {
           \ 'commit': options.commit,
@@ -143,7 +143,7 @@ function! gita#command#blame#get_or_call(...) abort
           \}
   endif
 
-  let bufname_navi = gita#command#ui#blame_navi#bufname(options)
+  let bufname_navi = gita#ui#blame_navi#bufname(options)
   if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
     return {
           \ 'commit': options.commit,
@@ -181,7 +181,7 @@ function! gita#command#blame#command(...) abort
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
-  call gita#command#ui#blame#open(options)
+  call gita#ui#blame#open(options)
 endfunction
 
 function! gita#command#blame#complete(...) abort

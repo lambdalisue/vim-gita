@@ -13,7 +13,7 @@ function! s:action(candidate, options) abort
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
   let options.selection = get(options, 'selection', [])
-  call gita#command#ui#chaperone#open({
+  call gita#ui#chaperone#open({
         \ 'method': options.method,
         \ 'anchor': options.anchor,
         \ 'opener': options.opener,

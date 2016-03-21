@@ -213,7 +213,7 @@ function! s:on_FileWriteCmd(options) abort
 endfunction
 
 
-function! gita#command#ui#show#autocmd(name) abort
+function! gita#ui#show#autocmd(name) abort
   let git = gita#core#get_or_fail()
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita://[^:\\/]\+\%(:show\)\?:\([^\\/]\+\)[\\/]\(.*\)$')
@@ -234,7 +234,7 @@ function! gita#command#ui#show#autocmd(name) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#show#open(...) abort
+function! gita#ui#show#open(...) abort
   let options = extend({
         \ 'anchor': 0,
         \ 'opener': '',
@@ -243,7 +243,7 @@ function! gita#command#ui#show#open(...) abort
         \}, get(a:000, 0, {}))
   let bufname = s:get_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#command#ui#show#default_opener
+        \ ? g:gita#ui#show#default_opener
         \ : options.opener
   if options.anchor && gita#util#anchor#is_available(opener)
     call gita#util#anchor#focus()
@@ -267,6 +267,6 @@ function! gita#command#ui#show#open(...) abort
 endfunction
 
 
-call gita#util#define_variables('command#ui#show', {
+call gita#util#define_variables('ui#show', {
       \ 'default_opener': '',
       \})

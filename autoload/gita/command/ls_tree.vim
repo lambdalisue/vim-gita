@@ -144,7 +144,7 @@ function! gita#command#ls_tree#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#ls_tree#open(options)
+    call gita#ui#ls_tree#open(options)
   else
     call gita#command#ls_tree#call(options)
   endif

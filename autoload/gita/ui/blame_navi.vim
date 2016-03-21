@@ -3,21 +3,21 @@ let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 
 function! s:define_actions() abort
-  call gita#command#ui#blame#define_actions()
+  call gita#ui#blame#define_actions()
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff',
-        \], g:gita#command#ui#blame_navi#disable_default_mappings)
+        \], g:gita#ui#blame_navi#disable_default_mappings)
 
-  if g:gita#command#ui#blame_navi#disable_default_mappings
+  if g:gita#ui#blame_navi#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#command#ui#blame_navi#primary_action_mapping
+        \ g:gita#ui#blame_navi#primary_action_mapping
         \)
   execute printf(
         \ 'nmap <buffer> <S-Return> %s',
-        \ g:gita#command#ui#blame_navi#secondary_action_mapping
+        \ g:gita#ui#blame_navi#secondary_action_mapping
         \)
   nmap <buffer><nowait> [c <Plug>(gita-blame-previous-chunk)
   nmap <buffer><nowait> ]c <Plug>(gita-blame-next-chunk)
@@ -39,7 +39,7 @@ endfunction
 
 function! s:on_BufEnter() abort
   let options = gita#meta#get_for('blame-navi', 'options')
-  let bufname = gita#command#ui#blame_view#bufname(options)
+  let bufname = gita#ui#blame_view#bufname(options)
   let bufnum  = bufnr(bufname)
   if bufnum > -1 || bufwinnr(bufnum) > -1
     " force to follow same linnum as the partner
@@ -55,7 +55,7 @@ endfunction
 
 function! s:on_BufWinEnter() abort
   let options = gita#meta#get_for('blame-navi', 'options')
-  let bufname = gita#command#ui#blame_view#bufname(options)
+  let bufname = gita#ui#blame_view#bufname(options)
   let bufnum  = bufnr(bufname)
   if bufnum == -1 || bufwinnr(bufnum) == -1
     call gita#util#cascade#set('blame-view', options)
@@ -97,12 +97,12 @@ function! s:on_BufReadCmd(options) abort
   setlocal scrollopt=ver
   setlocal filetype=gita-blame-navi
   setlocal winfixwidth
-  call gita#command#ui#blame_navi#redraw()
-  call gita#command#ui#blame#select(result.blamemeta, options.selection)
+  call gita#ui#blame_navi#redraw()
+  call gita#ui#blame#select(result.blamemeta, options.selection)
 endfunction
 
 
-function! gita#command#ui#blame_navi#bufname(...) abort
+function! gita#ui#blame_navi#bufname(...) abort
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
@@ -120,7 +120,7 @@ function! gita#command#ui#blame_navi#bufname(...) abort
         \})
 endfunction
 
-function! gita#command#ui#blame_navi#autocmd(name) abort
+function! gita#ui#blame_navi#autocmd(name) abort
   let git = gita#core#get_or_fail()
   let bufname = expand('<afile>')
   let m = matchlist(bufname, '^gita://[^:\\/]\+:blame-navi[\\/]\(.*\)$')
@@ -137,17 +137,17 @@ function! gita#command#ui#blame_navi#autocmd(name) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-function! gita#command#ui#blame_navi#redraw() abort
+function! gita#ui#blame_navi#redraw() abort
   let blamemeta = gita#meta#get_for('blame-navi', 'blamemeta')
   call gita#util#buffer#edit_content(
         \ blamemeta.navi_content,
         \ gita#autocmd#parse_cmdarg(),
         \)
-  call gita#command#ui#blame#set_pseudo_separators(blamemeta)
+  call gita#ui#blame#set_pseudo_separators(blamemeta)
 endfunction
 
 
-call gita#util#define_variables('command#ui#blame_navi', {
+call gita#util#define_variables('ui#blame_navi', {
       \ 'primary_action_mapping': '<Plug>(gita-blame-enter)',
       \ 'secondary_action_mapping': '<Plug>(gita-blame-back)',
       \ 'disable_default_mappings': 0,

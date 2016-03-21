@@ -4,11 +4,11 @@ function! s:action(candidate, options) abort
         \}, a:options)
   let filenames = gita#meta#get('filenames', [])
   if options.amend == -1
-    call gita#command#ui#commit#open({
+    call gita#ui#commit#open({
           \ 'filenames': filenames,
           \})
   else
-    call gita#command#ui#commit#open({
+    call gita#ui#commit#open({
           \ 'amend': options.amend,
           \ 'filenames': filenames,
           \})

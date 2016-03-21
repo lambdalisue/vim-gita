@@ -51,7 +51,7 @@ function! gita#autocmd#call(name) abort
   try
     let content_type = gita#autocmd#parse_bufname()[1]
     let fname = printf(
-          \ 'gita#command#ui#%s#autocmd',
+          \ 'gita#ui#%s#autocmd',
           \ substitute(content_type, '-', '_', 'g'),
           \)
     call call(fname, [a:name])

@@ -287,7 +287,7 @@ function! gita#command#branch#command(...) abort
   if get(options, 'ui')
     call gita#option#assign_selection(options)
     call gita#option#assign_opener(options)
-    call gita#command#ui#branch#open(options)
+    call gita#ui#branch#open(options)
   else
     call gita#command#branch#call(options)
   endif
