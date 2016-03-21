@@ -82,8 +82,8 @@ Describe Git.Process
 
   Describe .execute({git}, {args}[, {options}])
     It execute git command in {git.worktree} and return {result}
-      let git = { 'worktree': worktree }
       let Path = s:Path
+      let git = { 'worktree': worktree }
       let result = GitProcess.execute(git, [
             \ 'rev-parse', '--show-toplevel',
             \])
@@ -96,6 +96,7 @@ Describe Git.Process
     End
 
     It execute git command in the current working directory and return {result} if empty {git} is specified
+      let Path = s:Path
       let git = {}
       let result = GitProcess.execute(git, [
             \ 'rev-parse', '--show-toplevel',
