@@ -97,15 +97,9 @@ function! s:define_actions() abort
 endfunction
 
 function! s:get_bufname(options) abort
-  let options = extend({
-        \ 'pattern': '',
-        \}, a:options)
   return gita#autocmd#bufname({
         \ 'nofile': 1,
         \ 'content_type': 'grep',
-        \ 'extra_option': [
-        \   options.pattern,
-        \ ],
         \})
 endfunction
 
@@ -127,8 +121,9 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('options', s:Dict.omit(result.options, [
         \ 'force', 'opener', 'selection',
         \]))
-  call gita#meta#set('pattern', result.pattern)
+  call gita#meta#set('patterns', result.patterns)
   call gita#meta#set('commit', result.commit)
+  call gita#meta#set('directories', result.directories)
   call gita#meta#set('candidates', candidates)
   call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
@@ -146,24 +141,20 @@ endfunction
 
 function! s:define_syntax() abort
   syntax match GitaComment    /\%^.*$/
-  let pattern = gita#meta#get('pattern')
-  execute printf(
-        \ 'syntax match GitaKeyword /%s/',
-        \ s:Prelude.escape_pattern(pattern),
-        \)
+  syntax match GitaMatchFilename /^.*:\d\+/
+  syntax match GitaMatchContent /| \zs.*$/ contains=GitaKeyword
+  let patterns = gita#meta#get('patterns')
+  for pattern in patterns
+    execute printf(
+          \ 'syntax match GitaKeyword /%s/ contained',
+          \ s:Prelude.escape_pattern(pattern),
+          \)
+  endfor
 endfunction
 
 function! gita#command#ui#grep#autocmd(name) abort
   let bufname = expand('<afile>')
-  let m = matchlist(bufname, '^gita:[^:\\/]\+:grep:\(.*\)$')
-  if empty(m)
-    call gita#throw(printf(
-          \ 'A bufname %s does not have required components',
-          \ expand('<afile>'),
-          \))
-  endif
   let options = gita#util#cascade#get('grep')
-  let options.pattern = m[1]
   call call('s:on_' . a:name, [options])
 endfunction
 

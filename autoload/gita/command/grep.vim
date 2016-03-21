@@ -3,11 +3,7 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-"
-" TODO: Refactoring
-"
-
-function! s:execute_command(git, pattern, commit, directories, options) abort
+function! s:execute_command(git, patterns, commit, directories, options) abort
   let args = gita#util#args_from_options(a:options, {
         \ 'cached': 1,
         \ 'no-index': 1,
@@ -28,33 +24,17 @@ function! s:execute_command(git, pattern, commit, directories, options) abort
         \ 'full-name': 1,
         \ 'line-number': 1,
         \})
-  let args = ['grep'] + args + [a:commit] + [a:pattern] + ['--'] + a:directories
+  let args = ['grep'] + args
+  for pattern in a:patterns
+    let args += ['-e', pattern]
+  endfor
+  if !empty(a:commit)
+    let args += ['--tree', a:commit]
+  endif
+  let args += ['--'] + a:directories
   return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
-endfunction
-
-
-function! gita#command#grep#call(...) abort
-  let options = extend({
-        \ 'pattern': '',
-        \ 'commit': '',
-        \ 'directories': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_commit(git, options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let content = s:execute_command(
-        \ git, options.pattern, commit, options.directories, options
-        \)
-  let result = {
-        \ 'pattern': options.pattern,
-        \ 'commit': commit,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
 endfunction
 
 function! s:get_parser() abort
@@ -130,6 +110,17 @@ function! s:get_parser() abort
           \ 'use Perl-compatible regular expressions',
           \)
     call s:parser.add_argument(
+          \ '--commit',
+          \ 'search blobs in the given commit', {
+          \   'complete': function('gita#complete#commit'),
+          \})
+    call s:parser.add_argument(
+          \ '--patterns', '-e', [
+          \   'match patterns',
+          \ ], {
+          \   'type': s:ArgumentParser.types.multiple,
+          \})
+    call s:parser.add_argument(
           \ '--ui',
           \ 'show a buffer instead of echo the result. imply --quiet', {
           \   'default': 1,
@@ -147,13 +138,57 @@ function! s:get_parser() abort
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \   'superordinates': ['ui'],
           \})
-    call s:parser.add_argument(
-          \ 'pattern', [
-          \   'a match pattern',
-          \ ], {
-          \})
+    function! s:parser.hooks.post_validate(options) abort
+      if !has_key(a:options, 'patterns')
+        if !empty(a:options.__unknown__)
+          let a:options.patterns = [a:options.__unknown__[0]]
+          let a:options.__unknown__ = a:options.__unknown__[1:]
+        endif
+      endif
+    endfunction
   endif
   return s:parser
+endfunction
+
+
+function! gita#command#grep#call(...) abort
+  let options = extend({
+        \ 'patterns': [],
+        \ 'commit': '',
+        \ 'directories': [],
+        \}, get(a:000, 0, {}))
+  let git = gita#core#get_or_fail()
+  let options.commit = gita#variable#get_valid_commit(git, options.commit, {
+        \ '_allow_empty': 1,
+        \})
+  let options.directories = map(
+        \ options.directories,
+        \ 'gita#variable#get_valid_filename(git, v:val)',
+        \)
+  if empty(options.patterns)
+    let pattern = s:Prompt.ask(
+          \ 'Please input a grep pattern: ', '',
+          \)
+    if empty(pattern)
+      call gita#throw('Cancel')
+    endif
+    let options.patterns = [pattern]
+  endif
+  let content = s:execute_command(
+        \ git,
+        \ options.patterns,
+        \ options.commit,
+        \ options.directories,
+        \ options
+        \)
+  let result = {
+        \ 'patterns': options.patterns,
+        \ 'commit': options.commit,
+        \ 'directories': options.directories,
+        \ 'content': content,
+        \ 'options': options,
+        \}
+  return result
 endfunction
 
 function! gita#command#grep#command(...) abort
@@ -167,6 +202,7 @@ function! gita#command#grep#command(...) abort
         \ deepcopy(g:gita#command#grep#default_options),
         \ options,
         \)
+  let options.directories = options.__unknown__
   call gita#option#assign_commit(options)
   if get(options, 'ui')
     call gita#option#assign_selection(options)
@@ -185,4 +221,3 @@ endfunction
 call gita#util#define_variables('command#grep', {
       \ 'default_options': {},
       \})
-
