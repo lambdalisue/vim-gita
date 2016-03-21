@@ -43,7 +43,7 @@ function! s:get_bufname(options) abort
   return gita#autocmd#bufname({
         \ 'nofile': 1,
         \ 'content_type': 'branch',
-        \ 'extra_options': [
+        \ 'extra_option': [
         \   empty(options.all) ? '' : 'all',
         \   empty(options.remotes) ? '' : 'remotes',
         \ ],
@@ -82,7 +82,10 @@ endfunction
 
 
 function! gita#ui#branch#autocmd(name) abort
+  let bufname = expand('<amatch>')
   let options = gita#util#cascade#get('branch')
+  let options.all = bufname =~# ':all\%(:\|$\)'
+  let options.remotes = bufname =~# ':remotes\%(:\|$\)'
   call call('s:on_' . a:name, [options])
 endfunction
 
