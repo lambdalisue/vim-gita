@@ -70,9 +70,9 @@ function! gita#action#branch#define(disable_mapping) abort
   if a:disable_mapping
     return
   endif
-  nmap <silent><expr><nowait> dd gita#action#smart_map('dd', '<Plug>(gita-branch-delete)')
-  nmap <silent><expr><nowait> DD gita#action#smart_map('DD', '<Plug>(gita-branch-delete-force)')
-  nmap <silent><expr><nowait> rr gita#action#smart_map('rr', '<Plug>(gita-branch-rename)')
-  nmap <silent><expr><nowait> RR gita#action#smart_map('RR', '<Plug>(gita-branch-rename-force)')
+  nmap <buffer><silent><expr><nowait> dd gita#action#smart_map('dd', '<Plug>(gita-branch-delete)')
+  nmap <buffer><silent><expr><nowait> DD gita#action#smart_map('DD', '<Plug>(gita-branch-delete-force)')
+  nmap <buffer><silent><expr><nowait> rr gita#action#smart_map('rr', '<Plug>(gita-branch-rename)')
+  nmap <buffer><silent><expr><nowait> RR gita#action#smart_map('RR', '<Plug>(gita-branch-rename-force)')
 endfunction
 
