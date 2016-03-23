@@ -107,6 +107,24 @@ function! gita#complete#commit(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
+function! gita#complete#commitish(arglead, cmdline, cursorpos, ...) abort
+  try
+    let git = gita#core#get_or_fail()
+    let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
+    let candidates = s:Git.get_cache_content(git, 'index', slug, [])
+    if empty(candidates)
+      let candidates = s:get_available_branches(git, ['--all'])
+      let candidates += s:get_available_commits(git, [])
+      call s:Git.set_cache_content(git, 'index', slug, candidates)
+    endif
+    return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
+  catch
+    call s:Prompt.debug(v:exception)
+    call s:Prompt.debug(v:throwpoint)
+    return ''
+  endtry
+endfunction
+
 function! gita#complete#cached_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()

@@ -105,6 +105,12 @@ function! s:action_redraw(candidate, options) abort
   endif
 endfunction
 
+function! s:action_echo(candidates, options) abort
+  for candidate in a:candidates
+    echo string(candidate)
+  endfor
+endfunction
+
 function! gita#action#common#define(disable_mapping) abort
   call gita#action#define('common:help', function('s:action_help'), {
         \ 'alias': 'help',
@@ -121,6 +127,11 @@ function! gita#action#common#define(disable_mapping) abort
         \ 'alias': 'redraw',
         \ 'description': 'Redraw the buffer',
         \ 'mapping_mode': 'n',
+        \ 'options': {},
+        \})
+  call gita#action#define('common:echo', function('s:action_echo'), {
+        \ 'alias': 'echo',
+        \ 'description': 'Echo instances of selected candidates (Debug)',
         \ 'options': {},
         \})
   if a:disable_mapping

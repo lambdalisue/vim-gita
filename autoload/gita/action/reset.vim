@@ -1,13 +1,9 @@
 function! s:action(candidates, options) abort
-  let options = deepcopy(a:options)
-  call gita#option#assign_commit(options)
-  let options.commit = get(options, 'commit', '')
-  let filenames = map(copy(a:candidates), 'v:val.path')
-  call gita#command#reset#call({
-        \ 'quiet': 1,
-        \ 'commit': options.commit,
-        \ 'filenames': filenames,
-        \})
+  let args = ['--'] + map(
+        \ copy(a:candidates),
+        \ 'fnameescape(v:val.path)',
+        \)
+  execute 'Gita reset --quiet ' . join(args)
 endfunction
 
 function! gita#action#reset#define(disable_mappings) abort

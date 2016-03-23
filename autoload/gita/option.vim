@@ -71,7 +71,7 @@ function! gita#option#assign_filenames(options) abort
 endfunction
 
 function! gita#option#assign_selection(options) abort
-  if has_key(a:options, 'selection')
+  if !empty(get(a:options, 'selection'))
     if s:Prelude.is_string(a:options.selection)
       let a:options.selection = map(
             \ split(a:options.selection, '-'),
@@ -84,13 +84,13 @@ function! gita#option#assign_selection(options) abort
           \ '__range__',
           \ mode() =~# '^\c\%(v\|CTRL-V\|s\)$'
           \   ? [line("'<"), line("'>")]
-          \   : [line('.')],
+          \   : [line('.'), line('.')],
           \)
   endif
 
   let content_type = gita#meta#get('content_type')
   if content_type =~# '^blame-\%(navi\|view\)$'
-    let ls = get(a:options.selection, 0, 0)
+    let ls = get(a:options.selection, 0, 1)
     let le = get(a:options.selection, 1, ls)
     let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
     let a:options.selection = [

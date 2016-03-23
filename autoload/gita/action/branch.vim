@@ -2,10 +2,17 @@ function! s:action_checkout(candidate, options) abort
   let options = extend({
         \ 'track': 0,
         \}, a:options)
-  call gita#command#checkout#call({
-        \ 'track': options.track,
-        \ 'commit': a:candidate.name,
-        \})
+  if a:candidate.is_remote
+    let name = substitute(a:candidate.name, '^origin', '', '')
+    let args = [
+          \ '-b', shellescape(name),
+          \ empty(options.track) ? '' : '--track',
+          \ shellescape(a:candidate.remote),
+          \]
+  else
+    let args = [shellescape(a:candidate.name)]
+  endif
+  execute 'Gita checkout ' . join(args)
 endfunction
 
 function! s:action_rename(candidate, options) abort

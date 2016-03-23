@@ -2,12 +2,12 @@ function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let filenames = map(copy(a:candidates), 'v:val.path')
-  call gita#command#rm#call({
-        \ 'quiet': 1,
-        \ 'filenames': filenames,
-        \ 'force': options.force,
-        \})
+  let args = options.force ? ['--force'] : []
+  let args += ['--'] + map(
+        \ copy(a:candidates),
+        \ 'fnameescape(get(v:val, "path2", v:val.path))',
+        \)
+  execute 'Gita rm --quiet ' . join(args)
 endfunction
 
 function! gita#action#rm#define(disable_mappings) abort

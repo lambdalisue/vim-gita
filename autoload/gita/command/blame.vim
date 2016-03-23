@@ -32,14 +32,27 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
+          \ '--anchor',
+          \ 'find and focus an anchor window before open a new buffer',
+          \)
+    call s:parser.add_argument(
+          \ '--opener', '-o',
+          \ 'a way to open a new buffer such as "edit", "split", etc.', {
+          \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--selection',
+          \ 'a line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \})
+    call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to blame.',
           \   'If nothing is specified, it show a blame of HEAD.',
           \   'If <commit> is specified, it show a blame of the named <commit>.',
           \ ], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#commitish'),
           \ })
-
     call s:parser.add_argument(
           \ 'filename', [
           \   'A filename which you want to blame.',

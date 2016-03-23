@@ -101,4 +101,3 @@ endfunction
 call gita#util#define_variables('command#rm', {
       \ 'default_options': {},
       \})
-
