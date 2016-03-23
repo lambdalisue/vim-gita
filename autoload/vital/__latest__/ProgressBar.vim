@@ -8,13 +8,12 @@ function! s:_vital_loaded(V) abort
         \ 'default_format': '%(prefix)s|%(fill)s%(null)s| %(percent)s%%(suffix)s',
         \}
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Data.Dict',
         \ 'Vim.Guard',
         \]
-endfunction
-function! s:_vital_created(module) abort
 endfunction
 
 function! s:_throw(msg) abort
@@ -24,6 +23,7 @@ endfunction
 function! s:get_config() abort
   return copy(s:config)
 endfunction
+
 function! s:set_config(config) abort
   call extend(s:config, s:Dict.pick(a:config, [
         \ 'default_barwidth',
@@ -82,6 +82,7 @@ endfunction
 
 
 let s:instance = {}
+
 function! s:instance.construct() abort
   let percent = float2nr(self.current / str2float(self.maxvalue) * 100)
   let fillwidth = float2nr(ceil(self.current * self.alpha))
@@ -96,9 +97,10 @@ function! s:instance.construct() abort
   let indicator = substitute(indicator, '%(percent)s', percent, '')
   return indicator
 endfunction
-function! s:instance.redraw(...) abort
+
+function! s:instance.redraw() abort
   let indicator = self.construct()
-  if a:0 > 0 && indicator ==# a:1
+  if indicator ==# get(self, '_previous', '')
     " skip
     return
   endif
@@ -108,13 +110,15 @@ function! s:instance.redraw(...) abort
   else
     redraw | echo indicator
   endif
+  let self._previous = indicator
 endfunction
+
 function! s:instance.update(...) abort
   let value = get(a:000, 0, self.current + 1)
-  let previous = self.construct()
   let self.current = value > self.maxvalue ? self.maxvalue : value
-  call self.redraw(previous)
+  call self.redraw()
 endfunction
+
 function! s:instance.exit() abort
   let self.current = self.maxvalue
   call self.redraw()
