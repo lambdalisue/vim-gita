@@ -5,7 +5,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     brew update
     brew install macvim --with-override-system-vim
 else
-  git clone --single-branch --depth 1 https://github.com/vim/vim /tmp/vim
+  git clone --depth 1 https://github.com/vim/vim /tmp/vim
   cd /tmp/vim
   ./configure --prefix="$HOME/vim" \
       --enable-fail-if-missing \

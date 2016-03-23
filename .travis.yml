@@ -23,11 +23,11 @@ install:
   - bash ./scripts/install-vim.sh
 
 before_script:
-  - git clone --single-branch --depth 1 https://github.com/Shougo/vimproc.vim    /tmp/vimproc
-  - git clone --single-branch --depth 1 https://github.com/vim-jp/vital.vim      /tmp/vital
-  - git clone --single-branch --depth 1 https://github.com/syngan/vim-vimlint    /tmp/vim-vimlint
-  - git clone --single-branch --depth 1 https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
-  - git clone --single-branch --depth 1 https://github.com/thinca/vim-themis     /tmp/vim-themis
+  - git clone --depth 1 https://github.com/Shougo/vimproc.vim    /tmp/vimproc
+  - git clone --depth 1 https://github.com/vim-jp/vital.vim      /tmp/vital
+  - git clone --depth 1 https://github.com/syngan/vim-vimlint    /tmp/vim-vimlint
+  - git clone --depth 1 https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
+  - git clone --depth 1 https://github.com/thinca/vim-themis     /tmp/vim-themis
   - (cd /tmp/vimproc && make)
 
 script:
