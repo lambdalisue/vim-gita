@@ -10,7 +10,6 @@ else
   ./configure --prefix="$HOME/vim" \
       --enable-fail-if-missing \
       --with-features=huge \
-      --with-luajit \
       --enable-luainterp \
       --enable-pythoninterp \
       --enable-python3interp \

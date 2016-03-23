@@ -14,10 +14,8 @@ addons:
       - vim-nox
       - python-dev
       - python3-dev
-      - lua5.2
-      - liblua5.2-0-dev
-      - luajit
-      - libluajit-5.1
+      - lua5.1
+      - liblua5.1-0-dev
 
 install:
   - bash ./scripts/install-vim.sh
