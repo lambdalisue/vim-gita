@@ -15,6 +15,7 @@ function! s:_vital_loaded(V) abort
         \ },
         \}
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Data.Dict',
@@ -24,24 +25,29 @@ function! s:_vital_depends() abort
         \]
 endfunction
 
+
 function! s:_create_cache_instance(config) abort
   return a:config.class.new(get(a:config, 'options', {}))
 endfunction
+
 function! s:_get_instance_cache() abort
   if !exists('s:_instance_cache')
     let s:_instance_cache = s:_create_cache_instance(s:config.instance_cache)
   endif
   return s:_instance_cache
 endfunction
+
 function! s:_get_repository_cache() abort
   " NOTE:
   " Always return a fresh instance
   return s:_create_cache_instance(s:config.repository_cache)
 endfunction
 
+
 function! s:get_config() abort
   return copy(s:config)
 endfunction
+
 function! s:set_config(config) abort
   let config = s:Dict.pick(a:config, [
         \ 'instance_cache',
@@ -50,6 +56,7 @@ function! s:set_config(config) abort
   call extend(s:config, config)
 endfunction
 
+
 function! s:readfile(git, path) abort
   let path = s:Path.join(
         \ a:git.repository,
@@ -57,9 +64,11 @@ function! s:readfile(git, path) abort
         \)
   return filereadable(path) ? readfile(path) : []
 endfunction
+
 function! s:readline(git, path) abort
   return get(s:readfile(a:git, a:path), 0, '')
 endfunction
+
 function! s:filereadable(git, path) abort
   let path = s:Path.join(
         \ a:git.repository,
@@ -67,6 +76,7 @@ function! s:filereadable(git, path) abort
         \)
   return filereadable(path)
 endfunction
+
 function! s:isdirectory(git, path) abort
   let path = s:Path.join(
         \ a:git.repository,
@@ -74,6 +84,7 @@ function! s:isdirectory(git, path) abort
         \)
   return isdirectory(path)
 endfunction
+
 function! s:getftime(git, path) abort
   let path = s:Path.join(
         \ a:git.repository,
@@ -81,6 +92,7 @@ function! s:getftime(git, path) abort
         \)
   return getftime(path)
 endfunction
+
 
 function! s:get_relative_path(git, path) abort
   let path = s:Path.realpath(a:path)
@@ -94,6 +106,7 @@ function! s:get_relative_path(git, path) abort
         \)
   return substitute(expand(path), '^' . prefix, '', '')
 endfunction
+
 function! s:get_absolute_path(git, path) abort
   let path = s:Path.realpath(a:path)
   if s:Path.is_absolute(path)
@@ -101,6 +114,7 @@ function! s:get_absolute_path(git, path) abort
   endif
   return s:Path.join(a:git.worktree, path)
 endfunction
+
 
 function! s:get_cache_content(git, path, slug, ...) abort
   let path   = s:Path.relpath(s:Path.realpath(a:path))
@@ -110,6 +124,7 @@ function! s:get_cache_content(git, path, slug, ...) abort
         \ ? get(a:000, 0)
         \ : cached.content
 endfunction
+
 function! s:set_cache_content(git, path, slug, content) abort
   let path   = s:Path.relpath(s:Path.realpath(a:path))
   let uptime = s:getftime(a:git, path)
@@ -119,12 +134,14 @@ function! s:set_cache_content(git, path, slug, content) abort
         \})
 endfunction
 
+
 function! s:_fnamemodify(path, mods) abort
   if empty(a:path)
     return ''
   endif
   return s:Path.remove_last_separator(fnamemodify(a:path, a:mods))
 endfunction
+
 function! s:_find_worktree(dirpath) abort
   let dgit = s:_fnamemodify(finddir('.git',  fnameescape(a:dirpath) . ';'), ':p:h')
   let fgit = s:_fnamemodify(findfile('.git', fnameescape(a:dirpath) . ';'), ':p')
@@ -134,6 +151,7 @@ function! s:_find_worktree(dirpath) abort
   let dotgit = strlen(dgit) >= strlen(fgit) ? dgit : fgit
   return strlen(dotgit) ? s:_fnamemodify(dotgit, ':h') : ''
 endfunction
+
 function! s:_find_repository(worktree) abort
   let dotgit = s:Path.join([s:_fnamemodify(a:worktree, ':p'), '.git'])
   if isdirectory(dotgit)
@@ -150,6 +168,7 @@ function! s:_find_repository(worktree) abort
   endif
   return ''
 endfunction
+
 function! s:_find(path) abort
   if empty(a:path)
     return {'worktree': '', 'repository': ''}
@@ -163,6 +182,7 @@ function! s:_find(path) abort
         \}
   return meta
 endfunction
+
 function! s:_new(meta) abort
   let git = {}
   if empty(a:meta.worktree)
@@ -180,6 +200,7 @@ function! s:_new(meta) abort
   endif
   return git
 endfunction
+
 function! s:get(path, ...) abort
   let options = extend({
         \ 'force': 0,
@@ -216,6 +237,7 @@ function! s:get(path, ...) abort
   endif
   return git
 endfunction
+
 function! s:clear() abort
   let instance_cache = s:_get_instance_cache()
   call instance_cache.clear()

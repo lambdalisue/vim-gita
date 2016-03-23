@@ -21,13 +21,19 @@ Describe Git
     call mkdir(inside, 'p')
     call mkdir(outside, 'p')
   End
+
   After all
     " remote a temp directory
     call s:File.rmdir(root, 'r')
   End
+
   Before
     let Git = s:V.import('Git')
     let sf = s:ScriptLocal.sfuncs(s:file)
+  End
+
+  After
+    call Git.clear()
   End
 
   Describe .get_config()
