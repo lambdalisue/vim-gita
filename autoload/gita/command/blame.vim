@@ -55,7 +55,7 @@ function! s:get_blameobj(content, commit, filename) abort
   let progressbar = s:ProgressBar.new(
         \ len(a:content), {
         \   'barwidth': 80,
-        \   'statusline': 0,
+        \   'method': 'echo',
         \})
   try
     let blameobj = s:GitParser.parse_blame(a:content, {
@@ -83,7 +83,7 @@ function! s:get_blamemeta(blameobj, width) abort
   let progressbar = s:ProgressBar.new(
         \ len(a:blameobj.chunks), {
         \   'barwidth': 80,
-        \   'statusline': 0,
+        \   'method': 'echo',
         \})
   try
     return s:format_blameobj(a:blameobj, a:width, progressbar)
