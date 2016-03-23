@@ -20,7 +20,7 @@ addons:
       - libluajit-5.1
 
 install:
-  - bash ./script/install-vim.sh
+  - bash ./scripts/install-vim.sh
 
 before_script:
   - git clone --single-branch --depth 1 https://github.com/Shougo/vimproc.vim    /tmp/vimproc
