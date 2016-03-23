@@ -95,15 +95,13 @@ function! s:action_choice(candidates, options) abort
   call gita#action#do(action_name, a:candidates)
 endfunction
 
-function! s:action_close(candidate, options) abort
-  close
-endfunction
-
 function! s:action_redraw(candidate, options) abort
   if &filetype =~# '^gita-'
     let name = matchstr(&filetype, '^gita-\zs.*$')
     let name = substitute(name, '-', '_', 'g')
     call call(function(printf('gita#ui#%s#redraw', name)), [])
+  else
+    normal! <C-l>
   endif
 endfunction
 
@@ -119,12 +117,6 @@ function! gita#action#common#define(disable_mapping) abort
         \ 'description': 'Select action to perform',
         \ 'options': {},
         \})
-  call gita#action#define('common:close', function('s:action_close'), {
-        \ 'alias': 'close',
-        \ 'description': 'Close and focus an anchor',
-        \ 'mapping_mode': 'n',
-        \ 'options': {},
-        \})
   call gita#action#define('common:redraw', function('s:action_redraw'), {
         \ 'alias': 'redraw',
         \ 'description': 'Redraw the buffer',
@@ -136,7 +128,6 @@ function! gita#action#common#define(disable_mapping) abort
   endif
   nmap <buffer><nowait> ?     <Plug>(gita-help)
   nmap <buffer><nowait> <Tab> <Plug>(gita-choice)
-  nmap <buffer><nowait> q     <Plug>(gita-close)
   nmap <buffer><nowait> <C-l> <Plug>(gita-redraw)
   vmap <buffer><nowait> <Tab> <Plug>(gita-choice)
 endfunction
