@@ -19,6 +19,7 @@ addons:
 
 install:
   - bash ./scripts/install-vim.sh
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then export PATH="$HOME/vim/bin:$PATH"; fi
 
 before_script:
   - git clone --depth 1 https://github.com/Shougo/vimproc.vim    /tmp/vimproc
