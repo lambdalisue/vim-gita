@@ -186,15 +186,6 @@ function! s:on_BufWritePost() abort
   endif
   silent! unlet! b:_gita_statusline_modified
 endfunction
-function! s:on_GitaStatusModified() abort
-  let git = gita#core#get()
-  if git.is_enabled
-    call s:get_format_cache(git).clear()
-    for key in filter(git.repository_cache.keys(), 'v:val =~# "^gita#statusline"')
-      call git.repository_cache.remove(key)
-    endfor
-  endif
-endfunction
 
 function! gita#statusline#format(format) abort
   try
@@ -244,6 +235,24 @@ function! gita#statusline#get_remote_branch(git) abort
   endif
   return content
 endfunction
+function! gita#statusline#get_traffic_count(git) abort
+  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
+  let content = s:Git.get_cache_content(a:git, 'index', slug, {})
+  if empty(content)
+    let content = {
+          \ 'incoming': 0,
+          \ 'outgoing': 0,
+          \}
+    try
+      let content.incoming = s:GitInfo.count_commits_behind_remote(a:git)
+      let content.outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
+    catch /^vital: Git[:.]/
+      " fail silently
+    endtry
+    call s:Git.set_cache_content(a:git, 'index', slug, content)
+  endif
+  return content
+endfunction
 function! gita#statusline#get_status_count(git) abort
   let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
   let content = s:Git.get_cache_content(a:git, 'index', slug, {})
@@ -258,12 +267,12 @@ function! gita#statusline#get_status_count(git) abort
           \ 'modified': 0,
           \}
     try
-      let result = gita#command#status#call({
-            \ 'quiet': 1,
-            \ 'porcelain': 1,
-            \ 'ignore_submodules': 1,
-            \})
-      let result = s:GitParser.parse_status(result.content)
+      let git = gita#core#get_or_fail()
+      let result = s:GitParser.parse_status(gita#execute(
+            \ git,
+            \ ['status', '--porcelain', '--ignore-submodules'],
+            \ { 'quiet': 1 },
+            \))
       let status_count.conflicted = len(result.conflicted)
       let status_count.unstaged = len(result.unstaged)
       let status_count.staged = len(result.staged)
@@ -294,28 +303,10 @@ function! gita#statusline#get_status_count(git) abort
   endif
   return content
 endfunction
-function! gita#statusline#get_traffic_count(git) abort
-  let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
-  let content = s:Git.get_cache_content(a:git, 'index', slug, {})
-  if empty(content)
-    let content = {
-          \ 'incoming': 0,
-          \ 'outgoing': 0,
-          \}
-    try
-      let content.incoming = s:GitInfo.count_commits_behind_remote(a:git)
-      let content.outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
-    catch /^vital: Git[:.]/
-      " fail silently
-    endtry
-    call s:Git.set_cache_content(a:git, 'index', slug, content)
-  endif
-  return content
-endfunction
 
 augroup vim_gita_internal_statusline_clear_cache
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * call s:on_BufWritePost()
-  autocmd User GitaStatusModified call s:on_GitaStatusModified()
+  autocmd User GitaStatusModified call gita#core#remove_repository_cache('^gita#statusline')
 augroup END

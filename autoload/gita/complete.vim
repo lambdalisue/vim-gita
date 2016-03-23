@@ -3,19 +3,6 @@ let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 
-function! s:clear_complete_cache() abort
-  for git in gita#core#list()
-    if git.is_enabled
-      for key in filter(
-            \ git.repository_cache.keys(),
-            \ 'v:val =~# ''^gita#complete'''
-            \)
-        call git.repository_cache.remove(key)
-      endfor
-    endif
-  endfor
-endfunction
-
 function! s:get_available_branches(git, args) abort
   let args = ['branch', '--no-color', '--list'] + a:args
   let content = gita#execute(a:git, args, {
@@ -215,5 +202,5 @@ endfunction
 
 augroup vim_gita_internal_complete
   autocmd! *
-  autocmd User GitaStatusModified * call s:clear_complete_cache()
+  autocmd User GitaStatusModified call gita#core#remove_repository_cache('^gita#complete')
 augroup END
