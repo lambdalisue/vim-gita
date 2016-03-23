@@ -6,7 +6,7 @@ function! s:action(candidate, options) abort
         \}, a:options)
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
-
+  let options.selection = get(a:candidate, 'selection', options.selection)
   let args = [
         \ empty(options.repository) ? '' : '--repository',
         \ empty(options.scheme) ? '' : '--scheme=' . options.scheme,

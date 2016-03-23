@@ -6,6 +6,7 @@ function! s:action(candidate, options) abort
         \}, a:options)
   call gita#option#assign_opener(options)
   call gita#option#assign_selection(options)
+  let options.selection = get(a:candidate, 'selection', options.selection)
   let args = [
         \ empty(options.anchor) ? '' : '--anchor',
         \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
