@@ -10,16 +10,18 @@ function! s:action(candidate, options) abort
         \ 'opener': '',
         \ 'method': g:gita#action#chaperone#default_method,
         \}, a:options)
-  call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  let options.selection = get(options, 'selection', [])
-  call gita#ui#chaperone#open({
-        \ 'method': options.method,
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'filename': a:candidate.path,
-        \ 'selection': get(a:candidate, 'selection', options.selection)
-        \})
+  call gita#option#assign_selection(options)
+  let args = [
+        \ empty(options.anchor) ? '' : '--anchor',
+        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
+        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
+        \   options.selection[0], get(options.selection, 1, options.selection[0])
+        \ ),
+        \]
+  let args += empty(options.method) ? [] : ['--' . options.method]
+  let args += [fnameescape(a:candidate.path)]
+  execute 'Gita chaperone ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#chaperone#define(disable_mapping) abort
@@ -59,4 +61,3 @@ endfunction
 call gita#util#define_variables('action#chaperone', {
       \ 'default_method': '',
       \})
-

@@ -5,9 +5,9 @@ function! s:action_checkout(candidate, options) abort
   if a:candidate.is_remote
     let name = substitute(a:candidate.name, '^origin/', '', '')
     let args = [
-          \ '-b', name,
+          \ '-b', shellescape(name),
           \ empty(options.track) ? '' : '--track',
-          \ a:candidate.name,
+          \ shellescape(a:candidate.name),
           \]
   else
     let args = [shellescape(a:candidate.name)]
@@ -19,22 +19,16 @@ function! s:action_rename(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  call gita#command#branch#call({
-        \ 'move': 1,
-        \ 'force': options.force,
-        \ 'branch': a:candidate.name,
-        \})
+  let args = options.force ? ['-M'] : ['--move']
+  execute 'Gita branch ' . join(args) . ' ' . shellescape(a:candidate.name)
 endfunction
 
 function! s:action_delete(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  call gita#command#branch#call({
-        \ 'delete': 1,
-        \ 'force': options.force,
-        \ 'branch': a:candidate.name,
-        \})
+  let args = options.force ? ['-D'] : ['--delete']
+  execute 'Gita branch ' . join(args) . ' ' . shellescape(a:candidate.name)
 endfunction
 
 function! gita#action#branch#define(disable_mapping) abort

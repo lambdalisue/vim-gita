@@ -2,18 +2,21 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'anchor': 1,
         \ 'opener': '',
+        \ 'selection': [],
         \ 'method': g:gita#action#patch#default_method,
         \}, a:options)
-  call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  let options.selection = get(options, 'selection', [])
-  call gita#ui#patch#open({
-        \ 'method': options.method,
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'filename': a:candidate.path,
-        \ 'selection': get(a:candidate, 'selection', options.selection)
-        \})
+  call gita#option#assign_selection(options)
+  let args = [
+        \ empty(options.anchor) ? '' : '--anchor',
+        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
+        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
+        \   options.selection[0], get(options.selection, 1, options.selection[0])
+        \ ),
+        \]
+  let args += empty(options.method) ? [] : ['--' . options.method]
+  let args += ['--', fnameescape(a:candidate.path)]
+  execute 'Gita patch ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#patch#define(disable_mapping) abort

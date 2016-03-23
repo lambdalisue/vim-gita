@@ -1,32 +1,27 @@
-function! s:action(candidate, options) abort
+function! s:action_open(candidate, options) abort
+  let filenames = gita#meta#get_for(
+        \ '^gita-\%(status\|commit\)$', 'filenames', []
+        \)
   let options = extend({
-        \ 'amend': -1,
+        \ 'amend': 0,
         \}, a:options)
-  let filenames = gita#meta#get('filenames', [])
-  if options.amend == -1
-    call gita#ui#commit#open({
-          \ 'filenames': filenames,
-          \})
-  else
-    call gita#ui#commit#open({
-          \ 'amend': options.amend,
-          \ 'filenames': filenames,
-          \})
-  endif
+  let args = [
+        \ empty(options.amend) ? '' : '--amend'
+        \]
+  let args += ['--'] + map(
+        \ copy(filenames),
+        \ 'fnameescape(v:val)',
+        \)
+  execute 'Gita commit ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#commit#define(disable_mapping) abort
-  call gita#action#define('commit', function('s:action'), {
+  call gita#action#define('commit', function('s:action_open'), {
         \ 'description': 'Open gita-commit window',
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  call gita#action#define('commit:new', function('s:action'), {
-        \ 'description': 'Open a NEW gita-commit window',
-        \ 'mapping_mode': 'n',
-        \ 'options': { 'amend': 0 },
-        \})
-  call gita#action#define('commit:amend', function('s:action'), {
+  call gita#action#define('commit:amend', function('s:action_open'), {
         \ 'description': 'Open an AMEND gita-commit window',
         \ 'mapping_mode': 'n',
         \ 'options': { 'amend': 1 },

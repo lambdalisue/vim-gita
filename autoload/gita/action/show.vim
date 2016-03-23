@@ -2,19 +2,21 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'anchor': 1,
         \ 'opener': ''
+        \ 'selection': [],
         \}, a:options)
   call gita#option#assign_commit(options)
-  call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  let options.commit = get(options, 'commit', '')
-  let options.selection = get(options, 'selection', [])
-  call gita#ui#show#open({
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'filename': a:candidate.path,
-        \ 'commit': get(a:candidate, 'commit', options.commit),
-        \ 'selection': get(a:candidate, 'selection', options.selection),
-        \})
+  call gita#option#assign_selection(options)
+  let args = [
+        \ empty(options.anchor) ? '' : '--anchor',
+        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
+        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
+        \   options.selection[0], get(options.selection, 1, options.selection[0])
+        \ ),
+        \ get(a:candidate, 'commit', get(options, 'commit', '')),
+        \]
+  let args += ['--', fnameescape(a:candidate.path)]
+  execute 'Gita show ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#show#define(disable_mapping) abort

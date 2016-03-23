@@ -2,17 +2,19 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'anchor': 1,
         \ 'opener': '',
+        \ 'selection': [],
         \}, a:options)
-  call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  let options.selection = get(options, 'selection', [])
-  call gita#ui#show#open({
-        \ 'worktree': 1,
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'filename': get(a:candidate, 'path2', a:candidate.path),
-        \ 'selection': get(a:candidate, 'selection', options.selection),
-        \})
+  call gita#option#assign_selection(options)
+  let args = [
+        \ empty(options.anchor) ? '' : '--anchor',
+        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
+        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
+        \   options.selection[0], get(options.selection, 1, options.selection[0])
+        \ ),
+        \]
+  let args += ['--', fnameescape(a:candidate.path)]
+  execute 'Gita show --worktree ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#edit#define(disable_mapping) abort

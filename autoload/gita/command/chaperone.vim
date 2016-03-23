@@ -9,6 +9,10 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
+          \ '--anchor',
+          \ 'find and focus an anchor window before open a new buffer',
+          \)
+    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
@@ -72,4 +76,3 @@ endfunction
 call gita#util#define_variables('command#chaperone', {
       \ 'default_options': {},
       \})
-

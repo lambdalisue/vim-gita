@@ -4,13 +4,16 @@ function! s:action(candidates, options) abort
         \ 'ff-only': 0,
         \ 'squash': 0,
         \}, a:options)
-  let branch_names = map(copy(a:candidates), 'v:val.name')
-  call gita#command#merge#call({
-        \ 'commits': branch_names,
-        \ 'no-ff': options['no-ff'],
-        \ 'ff-only': options['ff-only'],
-        \ 'squash': options.squash,
-        \})
+  let args = [
+        \ empty(options['no-ff']) ? '' : '--no-ff',
+        \ empty(options['ff-only']) ? '' : '--ff-only',
+        \ empty(options.squash) ? '' : '--squash',
+        \]
+  let args += ['--'] + map(
+        \ copy(a:candidates),
+        \ 'shellescape(v:val.name)',
+        \)
+  execute 'Gita merge ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#merge#define(disable_mapping) abort

@@ -76,6 +76,11 @@ function! s:get_parser() abort
           \   'deniable': 1,
           \})
     call s:parser.add_argument(
+          \ '--anchor',
+          \ 'find and focus an anchor window before open a new buffer', {
+          \   'superordinates': ['ui'],
+          \})
+    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,

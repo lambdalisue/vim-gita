@@ -5,18 +5,17 @@ function! s:action(candidates, options) abort
         \ 'theirs': 0,
         \}, a:options)
   call gita#option#assign_commit(options)
-  let options.commit = get(options, 'commit', '')
-  let filenames = map(
+  let args = [
+        \ empty(options.force) ? '' : '--force',
+        \ empty(options.ours) ? '' : '--ours',
+        \ empty(options.theirs) ? '' : '--theirs',
+        \ get(a:options, 'commit', ''),
+        \]
+  let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'v:val.path',
+        \ 'fnameescape(v:val.path)',
         \)
-  call gita#command#checkout#call({
-        \ 'force': options.force,
-        \ 'ours': options.ours,
-        \ 'theirs': options.theirs,
-        \ 'commit': options.commit,
-        \ 'filenames': filenames,
-        \})
+  execute 'Gita checkout --quiet ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#checkout#define(disable_mappings) abort

@@ -5,19 +5,20 @@ function! s:action(candidate, options) abort
         \ 'split': g:gita#action#diff#default_split,
         \}, a:options)
   call gita#option#assign_commit(options)
-  call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  let options.commit = get(options, 'commit', '')
-  let options.selection = get(options, 'selection', [])
-  call gita#ui#diff#open({
-        \ 'split': options.split,
-        \ 'anchor': options.anchor,
-        \ 'opener': options.opener,
-        \ 'filename': a:candidate.path,
-        \ 'commit': get(a:candidate, 'commit', options.commit),
-        \ 'selection': get(a:candidate, 'selection', options.selection),
-        \ 'cached': !get(a:candidate, 'is_unstaged', 1),
-        \})
+  call gita#option#assign_selection(options)
+  let args = [
+        \ empty(options.anchor) ? '' : '--anchor',
+        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
+        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
+        \   options.selection[0], get(options.selection, 1, options.selection[0])
+        \ ),
+        \ empty(options.split) ? '' : '--split',
+        \ get(a:candidate, 'is_unstaged', 1) ? '' : '--cached',
+        \ get(a:candidate, 'commit', get(options, 'commit', ''))
+        \]
+  let args += ['--', fnameescape(a:candidate.path)]
+  execute 'Gita diff ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#diff#define(disable_mapping) abort

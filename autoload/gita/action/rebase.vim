@@ -2,12 +2,11 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'merge': 0,
         \}, a:options)
-  let branch_name = a:candidate.name
-  call gita#command#rebase#call({
-        \ 'quiet': 0,
-        \ 'branch': branch_name,
-        \ 'merge': options.merge,
-        \})
+  let args = [
+        \ empty(options.merge) ? '' : '--merge',
+        \ shellescape(a:candidate.name),
+        \]
+  execute 'Gita rebase ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#rebase#define(disable_mapping) abort

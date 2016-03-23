@@ -1,8 +1,12 @@
 function! s:action(candidate, options) abort
-  let filenames = gita#meta#get('filenames', [])
-  call gita#ui#status#open({
-        \ 'filenames': filenames,
-        \})
+  let filenames = gita#meta#get_for(
+        \ '^gita-\%(status\|commit\)$', 'filenames', []
+        \)
+  let args = ['--'] + map(
+        \ copy(filenames),
+        \ 'fnameescape(v:val)',
+        \)
+  execute 'Gita status ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! gita#action#status#define(disable_mapping) abort
