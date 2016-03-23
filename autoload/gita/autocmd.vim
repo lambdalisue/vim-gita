@@ -2,7 +2,7 @@ let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 
-function! gita#autocmd#bufname(options, ...) abort
+function! gita#autocmd#bufname(options) abort
   let options = extend({
         \ 'nofile': 0,
         \ 'content_type': 'show',
@@ -10,8 +10,8 @@ function! gita#autocmd#bufname(options, ...) abort
         \ 'commitish': '',
         \ 'path': '',
         \}, a:options)
-  let git = call('gita#core#get_or_fail', a:000)
-  let refinfo = call('gita#core#get_refinfo', a:000)
+  let git = gita#core#get_or_fail()
+  let refinfo = gita#core#get_refinfo()
   let refname = empty(get(refinfo, 'refname'))
         \ ? git.repository_name
         \ : refinfo.refname
@@ -49,7 +49,7 @@ endfunction
 
 function! gita#autocmd#call(name) abort
   try
-    let content_type = gita#autocmd#parse_bufname()[1]
+    let content_type = gita#autocmd#parse_bufname(expand('<afile>'))[1]
     let fname = printf(
           \ 'gita#ui#%s#autocmd',
           \ substitute(content_type, '-', '_', 'g'),
@@ -84,13 +84,15 @@ function! gita#autocmd#parse_cmdarg(...) abort
   return options
 endfunction
 
-function! gita#autocmd#parse_bufname(...) abort
-  let bufname = get(a:000, 0, expand('<afile>'))
-  let m = matchlist(bufname, '^gita:\%(//\)\?\([^:\\/]\+\)\%(:\([^:\\/]\+\)\)\?')
+function! gita#autocmd#parse_bufname(bufname) abort
+  let m = matchlist(
+        \ a:bufname,
+        \ '^gita:\%(//\)\?\([^:\\/]\+\)\%(:\([^:\\/]\+\)\)\?'
+        \)
   if empty(m)
     call gita#throw(printf(
           \ 'A buffer name %s does not contain required components',
-          \ bufname,
+          \ a:bufname,
           \))
   endif
   let refname = m[1]
