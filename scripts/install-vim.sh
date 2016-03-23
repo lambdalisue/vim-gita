@@ -1,11 +1,21 @@
 #!/bin/sh
 set -e
-if [ x"$HEAD" = "xyes" ]; then
-  git clone --depth 1 https://github.com/vim/vim /tmp/vim
+
+if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+    brew update
+    brew install macvim --with-override-system-vim
+else
+  git clone --single-branch --depth 1 https://github.com/vim/vim /tmp/vim
   cd /tmp/vim
-  ./configure --prefix="$HOME/vim" --with-features=huge \
-    --enable-perlinterp --enable-pythoninterp --enable-python3interp \
-    --enable-rubyinterp --enable-luainterp --enable-fail-if-missing
-  make -j2
+  ./configure --prefix="$HOME/vim" \
+      --enable-fail-if-missing \
+      --with-features=huge \
+      --with-luajit \
+      --enable-luainterp \
+      --enable-pythoninterp \
+      --enable-python3interp \
+      --enable-multibyte
+  make -j 2
   make install
+  export PATH="$HOME/vim/bin:$PATH"
 fi
