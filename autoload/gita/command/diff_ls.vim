@@ -5,9 +5,13 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita diff-ls',
-          \ 'description': 'Show a diff content of a commit or files (UI only)',
+          \ 'description': 'Show a list of changed files between commits (UI only)',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
+    call s:parser.add_argument(
+          \ '--anchor',
+          \ 'find and focus an anchor window before open a new buffer',
+          \)
     call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {

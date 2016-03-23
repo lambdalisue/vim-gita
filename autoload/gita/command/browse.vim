@@ -108,7 +108,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita browse',
-          \ 'description': 'Open/Yank/Echo a URL of a content of the remote',
+          \ 'description': 'Browse a URL of the remote content',
           \ 'complete_unknown': function('gita#complete#filename'),
           \ 'unknown_description': '<path>...',
           \ 'complete_threshold': g:gita#complete_threshold,

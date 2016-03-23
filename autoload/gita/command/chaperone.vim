@@ -5,7 +5,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita chaperone',
-          \ 'description': 'Help to solve conflict (UI only)',
+          \ 'description': 'Compare differences and help to solve conflictions (UI only)',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(

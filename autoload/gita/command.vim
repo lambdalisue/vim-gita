@@ -4,59 +4,42 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-let s:registry = {}
 
-function! gita#command#is_registered(name) abort
-  return index(keys(s:registry), a:name) != -1
+function! s:normalize(name) abort
+  return substitute(a:name, '-', '_', 'g')
 endfunction
 
-function! gita#command#register(name, ...) abort
-  if has_key(s:registry, a:name)
-    call gita#throw(printf(
-          \ 'ValidationError: A command "%s" has already been registered',
-          \ a:name,
-          \))
-  endif
-  let name = substitute(a:name, '-', '_', 'g')
-  let command  = get(a:000, 0, printf('gita#command#%s#command', name))
-  let complete = get(a:000, 0, printf('gita#command#%s#complete', name))
-  let s:registry[a:name] = {
-        \ 'command': s:Prelude.is_string(command)
-        \   ? function(command)
-        \   : command,
-        \ 'complete': s:Prelude.is_string(complete)
-        \   ? function(complete)
-        \   : complete,
-        \}
-endfunction
-
-function! gita#command#unregister(name) abort
-  if !has_key(s:registry, a:name)
-    call gita#throw(printf(
-          \ 'ValidationError: A command "%s" has not been registered yet',
-          \ a:name,
-          \))
-  endif
-  unlet s:registry[a:name]
-endfunction
-
-function! s:apply_command(name, options) abort
-  let args = [a:name] + a:options.__unknown__
-  let git = gita#core#get()
-  if git.is_enabled
-    let args = ['-C', git.worktree] + args
-  endif
-  let args = [g:gita#executable] + g:gita#arguments + args
-  execute printf('!%s', join(args))
-  if !v:shell_error
-    if a:name ==# 'init'
-      " Likely need to clear the cache of the current buffer
-      call gita#core#expire()
-    else
-      " Maybe status is modified
-      call gita#util#doautocmd('User', 'GitaStatusModified')
-    endif
-  endif
+function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
+let candidates = filter([
+      \ 'add',
+      \ 'apply',
+      \ 'blame',
+      \ 'branch',
+      \ 'browse',
+      \ 'chaperone',
+      \ 'checkout',
+      \ 'commit',
+      \ 'diff',
+      \ 'diff-ls',
+      \ 'grep',
+      \ 'ls-files',
+      \ 'ls-tree',
+      \ 'merge',
+      \ 'patch',
+      \ 'rebase',
+      \ 'reset',
+      \ 'rm',
+      \ 'show',
+      \ 'status',
+      \ 'init',
+      \ 'pull',
+      \ 'push',
+      \ 'stash',
+      \ 'remote',
+      \ 'tag',
+      \ 'log',
+      \], 'v:val =~# ''^'' . a:arglead')
+  return candidates
 endfunction
 
 function! s:get_parser() abort
@@ -69,7 +52,30 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ 'action', [
-          \   'An action name of vim-gita. The following actions are available:',
+          \   'A name of a gita action (followings). If a non gita action is specified, git command will be called directly.',
+          \   '',
+          \   'add       : Add file contents to the index',
+          \   'apply     : Apply a patch to files and/or to the index',
+          \   'blame     : Show what revision and author last modified each line of a file',
+          \   'branch    : List, create, or delete branches',
+          \   'browse    : Browse a URL of the remote content',
+          \   'chaperone : Compare differences and help to solve conflictions',
+          \   'checkout  : Switch branches or restore working tree files',
+          \   'commit    : Record changes to the repository',
+          \   'diff      : Show changes between commits, commit and working tree, etc',
+          \   'diff-ls   : Show a list of changed files between commits',
+          \   'grep      : Print lines matching patterns',
+          \   'ls-files  : Show information about files in the index and the working tree',
+          \   'ls-tree   : List the contents of a tree object',
+          \   'merge     : Join two or more development histories together',
+          \   'patch     : Partially add/reset changes to/from index',
+          \   'rebase    : Forward-port local commits to the update upstream head',
+          \   'reset     : Reset current HEAD to the specified state',
+          \   'rm        : Remove files from the working tree and from the index',
+          \   'show      : Show a content of a commit or a file',
+          \   'status    : Show and manipulate s status of the repository',
+          \   '',
+          \   'Note that each sub-commands also have -h/--help option',
           \ ], {
           \   'required': 1,
           \   'terminal': 1,
@@ -80,72 +86,62 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
-  let available_commands = keys(s:registry)
-  return filter(available_commands, 'v:val =~# "^" . a:arglead')
-endfunction
-
-function! gita#command#command(...) abort
+function! gita#command#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if !empty(options)
-    let bang  = a:1
-    let range = a:2
     let args  = join(options.__unknown__)
     let name  = get(options, 'action', '')
-    if bang !=# '!'  && gita#command#is_registered(name)
-      try
-        call s:registry[name].command(bang, range, args)
-      catch /^\%(vital: Git[:.]\|vim-gita:\)/
-        call gita#util#handle_exception()
-      endtry
-    else
-      call s:apply_command(name, options)
+    try
+      if a:bang !=# '!'
+        try
+          let fname = printf('gita#command#%s#command', s:normalize(name))
+          return call(fname, [a:bang, a:range, args])
+        catch /^Vim\%((\a\+)\)\=:E117/
+          " fail silently
+        endtry
+      endif
+      call gita#execute(
+            \ gita#core#get(),
+            \ s:ArgumentParser.splitargs(a:args),
+            \)
       call gita#util#doautocmd('User', 'GitaStatusModified')
-    endif
+      if a:args =~# '^init'
+        " Likely need to clear the cache of the current buffer
+        call gita#core#expire()
+      endif
+    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+      call gita#util#handle_exception()
+    endtry
   endif
 endfunction
 
-function! gita#command#complete(arglead, cmdline, cursorpos, ...) abort
-  let bang    = a:cmdline =~# '\v^Gita!'
+function! gita#command#complete(arglead, cmdline, cursorpos) abort
+  let bang    = a:cmdline =~# '\v^Gita!' ? '!' : ''
   let cmdline = substitute(a:cmdline, '\C^Gita!\?\s', '', '')
   let cmdline = substitute(cmdline, '[^ ]\+$', '', '')
+
   let parser  = s:get_parser()
-  let options = call(parser.parse, [bang, [0, 0], cmdline], parser)
+  let options = parser.parse(bang, [0, 0], cmdline)
   if !empty(options)
     let name = get(options, 'action', '')
-    if gita#command#is_registered(name)
-      try
-        return s:registry[name].complete(a:arglead, cmdline, a:cursorpos)
-      catch
-        " fail silently
-        call s:Prompt.debug(v:exception)
-        call s:Prompt.debug(v:throwpoint)
-        return []
-      endtry
-    endif
+    try
+      if bang !=# '!'
+        try
+          let fname = printf('gita#command#%s#complete', s:normalize(name))
+          return call(fname, [a:arglead, cmdline, a:cursorpos])
+        catch /^Vim\%((\a\+)\)\=:E117/
+          " fail silently
+        endtry
+      endif
+      " complete filename
+      return gita#complete#filename(a:arglead, cmdline, a:cursorpos)
+    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+      " fail silently
+      call s:Prompt.debug(v:exception)
+      call s:Prompt.debug(v:throwpoint)
+      return []
+    endtry
   endif
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-" Register sub commands
-call gita#command#register('add')
-call gita#command#register('apply')
-call gita#command#register('blame')
-call gita#command#register('branch')
-call gita#command#register('browse')
-call gita#command#register('commit')
-call gita#command#register('chaperone')
-call gita#command#register('checkout')
-call gita#command#register('diff')
-call gita#command#register('diff-ls')
-call gita#command#register('grep')
-call gita#command#register('ls-files')
-call gita#command#register('ls-tree')
-call gita#command#register('merge')
-call gita#command#register('patch')
-call gita#command#register('rebase')
-call gita#command#register('reset')
-call gita#command#register('rm')
-call gita#command#register('show')
-call gita#command#register('status')

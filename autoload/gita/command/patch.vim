@@ -5,7 +5,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita patch',
-          \ 'description': 'Partially add/reset changes of index (UI only)',
+          \ 'description': 'Partially add/reset changes to/from index (UI only)',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
