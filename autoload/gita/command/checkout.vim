@@ -40,6 +40,7 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<paths>...',
           \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'enable_positional_assign': 1,
           \})
     call s:parser.add_argument(
           \ '--quiet', '-q',
@@ -49,11 +50,13 @@ function! s:get_parser() abort
           \ '-b',
           \ 'create and checkout a new branch', {
           \   'conflicts': ['B', 'orphan'],
+          \   'complete': function('gita#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '-B',
           \ 'create/reset and checkout a branch', {
           \   'conflicts': ['b', 'orphan'],
+          \   'complete': function('gita#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '-l',
@@ -75,6 +78,7 @@ function! s:get_parser() abort
           \ '--orphan',
           \ 'new unparented branch', {
           \   'conflicts': ['b', 'B'],
+          \   'complete': function('gita#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '--ours', '-2',

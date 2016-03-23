@@ -3,16 +3,16 @@ function! s:action_checkout(candidate, options) abort
         \ 'track': 0,
         \}, a:options)
   if a:candidate.is_remote
-    let name = substitute(a:candidate.name, '^origin', '', '')
+    let name = substitute(a:candidate.name, '^origin/', '', '')
     let args = [
-          \ '-b', shellescape(name),
+          \ '-b', name,
           \ empty(options.track) ? '' : '--track',
-          \ shellescape(a:candidate.remote),
+          \ a:candidate.name,
           \]
   else
     let args = [shellescape(a:candidate.name)]
   endif
-  execute 'Gita checkout ' . join(args)
+  execute 'Gita checkout ' . join(filter(args, '!empty(v:val)'))
 endfunction
 
 function! s:action_rename(candidate, options) abort
