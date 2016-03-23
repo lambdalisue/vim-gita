@@ -1,4 +1,4 @@
-language: viml
+language: generic
 
 sudo: required
 dist: trusty
@@ -8,7 +8,12 @@ os:
   - osx
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install macvim --with-override-system-vim; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update && brew install macvim --with-override-system-vim;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo add-apt-repository ppa:pkg-vim/vim-daily && sudo apt-get update && sudo apt-get upgrade;
+    fi
 
 before_script:
   - vim --version
