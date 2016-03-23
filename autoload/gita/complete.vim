@@ -4,15 +4,16 @@ let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
 
 function! s:clear_complete_cache() abort
-  let git = gita#core#get()
-  if git.is_enabled
-    for key in filter(
-          \ git.repository_cache.keys(),
-          \ 'v:val =~# ''^gita#complete'''
-          \)
-      call git.repository_cache.remove(key)
-    endfor
-  endif
+  for git in gita#core#list()
+    if git.is_enabled
+      for key in filter(
+            \ git.repository_cache.keys(),
+            \ 'v:val =~# ''^gita#complete'''
+            \)
+        call git.repository_cache.remove(key)
+      endfor
+    endif
+  endfor
 endfunction
 
 function! s:get_available_branches(git, args) abort

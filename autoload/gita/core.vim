@@ -130,3 +130,7 @@ function! gita#core#get_refinfo(...) abort
   let refinfo = s:Compat.getbufvar(expr, s:NAME, {})
   return refinfo
 endfunction
+
+function! gita#core#list() abort
+  return values(s:references)
+endfunction
