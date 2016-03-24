@@ -45,19 +45,19 @@ function! gita#util#observer#update_all() abort
   for bufnum in keys(s:registry)
     let winnum = bufwinnr(str2nr(bufnum))
     if winnum >= 0
-      execute printf('noautocmd keepjumps %dwincmd w', winnum)
+      noautocmd execute printf('keepjumps %dwincmd w', winnum)
       call gita#util#observer#update()
     else
       call setbufvar(str2nr(bufnum), '_gita_observer_internal_update_required', 1)
     endif
   endfor
-  execute printf('noautocmd keepjumps %dwincmd w', winnum_saved)
+  noautocmd execute printf('keepjumps %dwincmd w', winnum_saved)
 endfunction
 
 " Automatically start observation when it's sourced
 augroup vim_gita_internal_observer
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
-  autocmd BufWritePost * call s:on_BufWritePost()
+  autocmd BufWritePost * nested call s:on_BufWritePost()
   autocmd User GitaStatusModified nested call gita#util#observer#update_all()
 augroup END

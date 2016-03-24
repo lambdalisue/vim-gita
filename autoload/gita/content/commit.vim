@@ -198,7 +198,7 @@ function! s:on_BufReadCmd(options) abort
   let options = gita#option#cascade('^status$', a:options, {
         \ 'untracked-files': 0,
         \})
-  let content = s:execute_command(options)
+  let content = filter(s:execute_command(options), '!empty(v:val)')
   let statuses = s:GitParser.parse_status(content, { 'flatten': 1 })
   let statuses = sort(statuses, function('s:compare_statuses'))
   call gita#meta#set('content_type', 'commit')
