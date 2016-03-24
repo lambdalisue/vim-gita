@@ -1,13 +1,19 @@
 function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
+        \ 'cached' 0,
         \}, a:options)
-  let args = options.force ? ['--force'] : []
+  let args = [
+        \ 'rm',
+        \ '--ignore-unmatch',
+        \ options.cached ? '--cached' : '',
+        \ options.force ? '--force' : '',
+        \]
   let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'fnameescape(get(v:val, "path2", v:val.path))',
+        \ 'get(v:val, "path2", v:val.path)',
         \)
-  execute 'Gita rm --quiet ' . join(args)
+  call gita#execute(args, { 'quiet': 1 })
 endfunction
 
 function! gita#action#rm#define(disable_mappings) abort
@@ -15,6 +21,11 @@ function! gita#action#rm#define(disable_mappings) abort
         \ 'description': 'Remove files from the working tree and from the index',
         \ 'requirements': ['path'],
         \ 'options': {},
+        \})
+  call gita#action#define('rm:cached', function('s:action'), {
+        \ 'description': 'Remove files from the index but the working tree',
+        \ 'requirements': ['path'],
+        \ 'options': { 'cached': 1 },
         \})
   call gita#action#define('rm:force', function('s:action'), {
         \ 'description': 'Remove files from the working tree and from the index (force)',

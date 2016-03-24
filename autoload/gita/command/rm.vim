@@ -1,26 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
-let s:Git = s:V.import('Git')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-
-function! s:execute_command(git, filenames, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'force': 1,
-        \ 'dry-run': 1,
-        \ 'r': 1,
-        \ 'cached': 1,
-        \ 'ignore-unmatch': 1,
-        \})
-  if !has_key(a:options, 'r') && get(a:options, 'recursive')
-    let args += ['-r']
-  endif
-  let args = ['rm'] + args + ['--'] + a:filenames
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -32,10 +11,6 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
-    call s:parser.add_argument(
           \ '--dry-run', '-n',
           \ 'dry run',
           \)
@@ -44,7 +19,7 @@ function! s:get_parser() abort
           \ 'override the up-to-date check',
           \)
     call s:parser.add_argument(
-          \ '--recursive', '-r',
+          \ '-r',
           \ 'allow recursive removal',
           \)
     call s:parser.add_argument(
@@ -59,45 +34,19 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-
-function! gita#command#rm#call(...) abort
-  let options = extend({
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(git, v:val)',
-        \)
-  let content = s:execute_command(git, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
-function! gita#command#rm#command(...) abort
+function! gita#command#rm#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#rm#default_options),
-        \ options,
-        \)
-  call gita#option#assin_filenames(options)
-  call gita#command#rm#call(options)
+  call gita#execute(['rm'] + options.__args__ + ['--'] + options.__unknown__)
+  if !get(options, 'dry-run')
+    call gita#util#doautocmd('User', 'GitaStatusModified')
+  endif
 endfunction
 
-function! gita#command#rm#complete(...) abort
+function! gita#command#rm#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#rm', {
-      \ 'default_options': {},
-      \})
