@@ -268,8 +268,7 @@ function! gita#statusline#get_status_count(git) abort
           \}
     try
       let git = gita#core#get_or_fail()
-      let result = s:GitParser.parse_status(gita#execute(
-            \ git,
+      let result = s:GitParser.parse_status(gita#command#execute(
             \ ['status', '--porcelain', '--ignore-submodules'],
             \ { 'quiet': 1 },
             \))

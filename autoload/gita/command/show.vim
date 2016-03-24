@@ -26,7 +26,7 @@ function! s:get_revision_content(git, commit, filename, options) abort
           \ ], ':')
   endif
   let args = ['show'] + [object]
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction

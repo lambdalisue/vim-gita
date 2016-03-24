@@ -189,10 +189,7 @@ function! s:on_BufWriteCmd(options) abort
     let filename = gita#meta#get_for('show', 'filename', '')
     let content  = s:get_diff_content(git, getline(1, '$'), filename)
     call writefile(content, tempfile)
-    call gita#execute(
-          \ ['apply', '--cached', '--', tempfile],
-          \ { 'quiet': 1 },
-          \)
+    call gita#execute(['apply', '--cached', '--', tempfile], { 'quiet': 1 })
     setlocal nomodified
     diffupdate
     call gita#util#doautocmd('BufWritePost')

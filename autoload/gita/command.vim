@@ -119,10 +119,7 @@ function! gita#command#command(bang, range, args) abort
           " fail silently
         endtry
       endif
-      call gita#execute(
-            \ gita#core#get(),
-            \ s:ArgumentParser.splitargs(a:args),
-            \)
+      call gita#execute(s:ArgumentParser.splitargs(a:args))
       call gita#util#doautocmd('User', 'GitaStatusModified')
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()

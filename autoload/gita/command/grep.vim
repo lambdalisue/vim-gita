@@ -32,7 +32,7 @@ function! s:execute_command(git, patterns, commit, directories, options) abort
     let args += ['--tree', a:commit]
   endif
   let args += ['--'] + a:directories
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction

@@ -18,7 +18,7 @@ function! s:execute_command(git, commit, filenames, options) abort
         \ 'full-tree': 1,
         \})
   let args = ['ls-tree'] + args + ['--'] + a:filenames
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
+  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction
