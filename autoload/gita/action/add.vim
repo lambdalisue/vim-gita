@@ -2,12 +2,17 @@ function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let args = options.force ? ['--force'] : []
+  let args = [
+        \ 'add',
+        \ '--ignore-errors',
+        \ options.force ? '--force' : '',
+        \]
   let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'fnameescape(get(v:val, "path2", v:val.path))',
+        \ 'get(v:val, "path2", v:val.path)',
         \)
-  execute 'Gita add --quiet --ignore-errors ' . join(args)
+  call gita#execute(args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#add#define(disable_mappings) abort
