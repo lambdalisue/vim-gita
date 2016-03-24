@@ -9,13 +9,14 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--anchor',
-          \ 'find and focus an anchor window before open a new buffer',
-          \)
-    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--selection',
+          \ 'a line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     "call s:parser.add_argument(
     "      \ '--one', '-1',
@@ -51,28 +52,19 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#chaperone#command(...) abort
+function! gita#command#chaperone#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#chaperone#default_options),
-        \ options,
-        \)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#ui#chaperone#open(options)
+  call gita#content#chaperone#open(options)
 endfunction
 
-function! gita#command#chaperone#complete(...) abort
+function! gita#command#chaperone#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#chaperone', {
-      \ 'default_options': {},
-      \})

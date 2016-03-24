@@ -51,10 +51,12 @@ function! s:get_parser() abort
           \ 'a line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
-    call s:parser.add_argument(
-          \ '--patch',
-          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
-          \)
+    if g:gita#develop
+      call s:parser.add_argument(
+            \ '--patch',
+            \ 'show a content of a file in PATCH mode. It force to open an INDEX file content (ONLY IN DEVELOPMENT MODE)',
+            \)
+    endif
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to see.',

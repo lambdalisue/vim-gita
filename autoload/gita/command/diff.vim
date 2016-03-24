@@ -219,10 +219,12 @@ function! s:get_parser() abort
           \   'open two buffer to compare by vimdiff rather than to open a single diff file.',
           \   'see ":help &diffopt" if you would like to control default split direction',
           \])
-    call s:parser.add_argument(
-          \ '--patch',
-          \ 'diff a content in PATCH mode. most of options will be disabled',
-          \)
+    if g:gita#develop
+      call s:parser.add_argument(
+            \ '--patch',
+            \ 'diff a content in PATCH mode. most of options will be disabled (ONLY IN DEVELOPMENT MODE)',
+            \)
+    endif
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to diff.',

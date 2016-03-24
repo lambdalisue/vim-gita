@@ -14,6 +14,11 @@ function! s:get_parser() abort
           \   'type': s:ArgumentParser.types.value,
           \})
     call s:parser.add_argument(
+          \ '--selection',
+          \ 'a line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
+          \})
+    call s:parser.add_argument(
           \ '--reverse',
           \ 'compare difference from HEAD instead of working tree', {
           \   'superordinates': ['one', 'two'],

@@ -2,39 +2,82 @@ let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
+let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
-let s:candidate_offset = 0
+let s:GitParser = s:V.import('Git.Parser')
 
-function! s:get_candidate(index) abort
-  let offset = 0
-  for line in getline(1, '$')
-    if line =~# '^#'
-      break
-    endif
-    let offset += 1
-  endfor
-  let index = a:index - s:candidate_offset - offset
-  let statuses = gita#meta#get_for('commit', 'statuses', [])
-  return index >= 0 ? get(statuses, index, {}) : {}
+function! s:build_bufname(options) abort
+  let options = extend({
+        \ 'amend': 0,
+        \}, a:options)
+  return gita#content#build_bufname('commit', {
+        \ 'nofile': 1,
+        \ 'extra_options': [
+        \   options.amend ? 'amend' : '',
+        \ ],
+        \})
 endfunction
+
+function! s:execute_command(options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'untracked-files': 1,
+        \})
+  let args = [
+        \ 'commit',
+        \ '--porcelain',
+        \ '--dry-run',
+        \] + args
+  let args += ['--'] + get(a:options, 'filenames', [])
+  return gita#command#execute(args, {
+        \ 'quiet': 1,
+        \ 'success_status': 1,
+        \})
+endfunction
+
+function! s:execute_commit_command(options) abort
+  let args = gita#util#args_from_options(a:options, {
+        \ 'all': 1,
+        \ 'reset-author': 1,
+        \ 'file': 1,
+        \ 'author': 1,
+        \ 'date': 1,
+        \ 'message': 1,
+        \ 'allow-empty': 1,
+        \ 'allow-empty-message': 1,
+        \ 'amend': 1,
+        \ 'untracked-files': 1,
+        \ 'dry-run': 1,
+        \ 'gpg-sign': 1,
+        \ 'no-gpg-sign': 1,
+        \})
+  let args = ['commit', '--verbose'] + args
+  let args += ['--'] + get(a:options, 'filenames', [])
+  return gita#command#execute(args)
+endfunction
+
 
 function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
-        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
-        \ 'status', 'commit',
-        \], g:gita#ui#commit#disable_default_mappings)
+        \ 'common', 'blame', 'browse',
+        \ 'status', 'diff', 'edit', 'show',
+        \], g:gita#content#commit#disable_default_mappings)
   call gita#action#define('commit:do', function('s:action_commit_do'), {
         \ 'description': 'Commit changes',
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  if g:gita#ui#commit#disable_default_mappings
+
+  if g:gita#content#commit#disable_default_mappings
     return
   endif
   execute printf(
         \ 'nmap <buffer> <Return> %s',
-        \ g:gita#ui#commit#primary_action_mapping
+        \ g:gita#content#commit#primary_action_mapping
+        \)
+  execute printf(
+        \ 'nmap <buffer> <S-Return> %s',
+        \ g:gita#content#commit#secondary_action_mapping
         \)
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
   nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
@@ -42,7 +85,24 @@ function! s:define_actions() abort
   nmap <buffer> <C-^> <Plug>(gita-status)
 endfunction
 
-function! s:get_header_string(git) abort
+function! s:get_candidate(index) abort
+  let record = matchstr(getline(a:index + 1), '^# \zs.*$')
+  let statuses = gita#meta#get_for('^commit$', 'statuses', [])
+  return gita#action#find_candidate(statuses, record, 'record')
+endfunction
+
+function! s:compare_statuses(lhs, rhs) abort
+  if a:lhs.path ==# a:rhs.path
+    return 0
+  elseif a:lhs.path > a:rhs.path
+    return 1
+  else
+    return -1
+  endif
+endfunction
+
+function! s:get_prologue(git) abort
+  let git = gita#core#get_or_fail()
   let local = s:GitInfo.get_local_branch(a:git)
   let remote = s:GitInfo.get_remote_branch(a:git)
   let mode = s:GitInfo.get_current_mode(a:git)
@@ -67,11 +127,11 @@ function! s:get_header_string(git) abort
       let connection = printf('%d commit(s) behind of remote', incoming)
     endif
   endif
-  return printf('# Gita status of %s%s%s %s',
+  return printf('# Gita commit of %s%s%s %s',
         \ branchinfo,
         \ empty(connection) ? '' : printf(' (%s)', connection),
         \ empty(mode) ? '' : printf(' [%s]', mode),
-        \ '| Press ? to toggle a mapping help',
+        \ '| Press ? or <Tab> to show help or do action',
         \)
 endfunction
 
@@ -109,8 +169,7 @@ function! s:commit_commitmsg() abort
   let tempfile = tempname()
   try
     call writefile(commitmsg, tempfile)
-    call gita#command#commit#call(extend(copy(options), {
-          \ 'quiet': 0,
+    call s:execute_commit_command(extend(copy(options), {
           \ 'file': tempfile,
           \}))
     call gita#meta#remove('commitmsg_saved', '')
@@ -134,39 +193,17 @@ function! s:action_commit_do(candidate, options) abort
   call gita#action#call('status')
 endfunction
 
-function! s:get_bufname(options) abort
-  let options = extend({
-        \ 'amend': 0,
-        \ 'allow-empty': 0,
-        \ 'filenames': [],
-        \}, a:options)
-  return gita#autocmd#bufname({
-        \ 'nofile': 1,
-        \ 'content_type': 'commit',
-        \ 'extra_option': [
-        \   empty(options['amend']) ? '' : 'amend',
-        \   empty(options['allow-empty']) ? '' : 'allow-empty',
-        \ ],
-        \})
-endfunction
-
 function! s:on_BufReadCmd(options) abort
-  let options = gita#option#cascade('^commit$', a:options, {
-        \ 'selection': [],
+  call gita#util#doautocmd('BufReadPre')
+  let options = gita#option#cascade('^status$', a:options, {
+        \ 'untracked-files': 0,
         \})
-  let options['quiet'] = 1
-  let options['porcelain'] = 1
-  let options['dry-run'] = 1
-  let result = gita#command#commit#call(options)
-  let statuses = gita#ui#status#parse_statuses(result.content)
+  let content = s:execute_command(options)
+  let statuses = s:GitParser.parse_status(content, { 'flatten': 1 })
+  let statuses = sort(statuses, function('s:compare_statuses'))
   call gita#meta#set('content_type', 'commit')
-  call gita#meta#set('options', s:Dict.omit(options, [
-        \ 'opener', 'selection', 'quiet', 'porcelain', 'dry-run',
-        \]))
+  call gita#meta#set('options', options)
   call gita#meta#set('statuses', statuses)
-  call gita#meta#set('filename', len(result.filenames) == 1 ? result.filenames[0] : '')
-  call gita#meta#set('filenames', result.filenames)
-  call gita#meta#set('winwidth', winwidth(0))
   call s:define_actions()
   augroup vim_gita_internal_commit
     autocmd! * <buffer>
@@ -182,11 +219,8 @@ function! s:on_BufReadCmd(options) abort
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
   setlocal modifiable
-  " Used for template system
-  call gita#util#doautocmd('BufReadPre')
-  setlocal filetype=gita-commit
-  call gita#ui#commit#redraw()
-  call gita#util#select(options.selection)
+  call gita#content#commit#redraw()
+  call gita#util#doautocmd('BufReadPost')
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
@@ -209,37 +243,26 @@ function! s:on_QuitPre() abort
   let w:_vim_gita_commit_QuitPre = 1
 endfunction
 
-
-function! gita#ui#commit#autocmd(name) abort
-  let bufname = expand('<afile>')
-  let options = gita#util#cascade#get('commit')
-  let extra = matchstr(bufname, 'gita:[^:\\/]\+:commit:\zs.*$')
-  for option_name in split(extra, ':')
-    let options[option_name] = 1
-  endfor
-  call call('s:on_' . a:name, [options])
-endfunction
-
-function! gita#ui#commit#open(...) abort
+function! gita#content#commit#open(options) abort
   let options = extend({
-        \ 'anchor': 0,
         \ 'opener': '',
-        \}, get(a:000, 0, {}))
-  let bufname = s:get_bufname(options)
+        \ 'window': 'manipulation_window',
+        \}, a:options)
+  let bufname = s:build_bufname(options)
   let opener = empty(options.opener)
-        \ ? g:gita#ui#commit#default_opener
+        \ ? g:gita#content#commit#default_opener
         \ : options.opener
-  if options.anchor && gita#util#anchor#is_available(opener)
-    call gita#util#anchor#focus()
-  endif
-  call gita#util#cascade#set('commit', options)
+  call gita#util#cascade#set('commit', s:Dict.pick(options, [
+        \ 'untracked-files',
+        \ 'filenames',
+        \]))
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
-        \ 'window': 'manipulation_panel',
+        \ 'window': options.window,
         \})
 endfunction
 
-function! gita#ui#commit#redraw() abort
+function! gita#content#commit#redraw() abort
   let git = gita#core#get_or_fail()
   let options = gita#meta#get_for('commit', 'options')
 
@@ -261,22 +284,31 @@ function! gita#ui#commit#redraw() abort
   endif
 
   let prologue = s:List.flatten([
-        \ [s:get_header_string(git)],
+        \ [s:get_prologue(git)],
         \ commit_mode ==# 'merge' ? ['# This branch is in MERGE mode.'] : [],
         \ commit_mode ==# 'amend' ? ['# This branch is in AMEND mode.'] : [],
         \])
-  let s:candidate_offset = len(prologue)
-  let statuses = gita#meta#get_for('commit', 'statuses', [])
-  let contents = map(copy(statuses), '"# " . v:val.record')
+  let contents = map(
+        \ copy(gita#meta#get_for('^commit$', 'statuses', [])),
+        \ '''# '' . v:val.record',
+        \)
   call gita#util#buffer#edit_content(
-        \ commitmsg + prologue + contents,
+        \ extend(prologue, contents),
         \ gita#util#buffer#parse_cmdarg(),
-        \0)
+        \)
 endfunction
 
+function! gita#content#commit#autocmd(name, bufinfo) abort
+  let options = gita#util#cascade#get('status')
+  for attribute in a:bufinfo.extra_options
+    let options[attribute] = 1
+  endfor
+  call call('s:on_' . a:name, [options])
+endfunction
 
-call gita#util#define_variables('ui#commit', {
+call gita#util#define_variables('content#commit', {
       \ 'default_opener': 'botright 10 split',
-      \ 'primary_action_mapping': '<Plug>(gita-diff)',
+      \ 'primary_action_mapping': '<Plug>(gita-show)',
+      \ 'secondary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})

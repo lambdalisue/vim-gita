@@ -5,14 +5,10 @@ function! s:action_open(candidate, options) abort
   let options = extend({
         \ 'amend': 0,
         \}, a:options)
-  let args = [
-        \ empty(options.amend) ? '' : '--amend'
-        \]
-  let args += ['--'] + map(
-        \ copy(filenames),
-        \ 'fnameescape(v:val)',
-        \)
-  execute 'Gita commit ' . join(filter(args, '!empty(v:val)'))
+  call gita#content#status#open({
+        \ 'amend': options.amend,
+        \ 'filenames': filenames,
+        \})
 endfunction
 
 function! gita#action#commit#define(disable_mapping) abort
