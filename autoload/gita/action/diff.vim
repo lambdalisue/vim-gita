@@ -8,18 +8,17 @@ function! s:action(candidate, options) abort
   call gita#option#assign_opener(options)
   call gita#option#assign_selection(options)
   let options.selection = get(a:candidate, 'selection', options.selection)
-  let args = [
-        \ empty(options.anchor) ? '' : '--anchor',
-        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
-        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
-        \   options.selection[0], get(options.selection, 1, options.selection[0])
-        \ ),
-        \ empty(options.split) ? '' : '--split',
-        \ get(a:candidate, 'is_unstaged', 1) ? '' : '--cached',
-        \ get(a:candidate, 'commit', get(options, 'commit', ''))
-        \]
-  let args += ['--', fnameescape(a:candidate.path)]
-  execute 'Gita diff ' . join(filter(args, '!empty(v:val)'))
+  let options.opener = empty(options.opener) ? 'edit' : options.opener
+  if options.anchor && gita#util#anchor#is_available(options.opener)
+    call gita#util#anchor#focus()
+  endif
+  call gita#content#diff#open({
+        \ 'commit': get(a:candidate, 'commit', get(options, 'commit', '')),
+        \ 'filename': a:candidate.path,
+        \ 'opener': options.opener,
+        \ 'selection': options.selection,
+        \ 'cached': !get(a:candidate, 'is_unstaged'),
+        \})
 endfunction
 
 function! gita#action#diff#define(disable_mapping) abort

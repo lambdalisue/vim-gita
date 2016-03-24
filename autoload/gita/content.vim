@@ -20,12 +20,9 @@ function! gita#content#build_bufname(content_type, options) abort
   let refname = empty(get(refinfo, 'refname'))
         \ ? git.repository_name
         \ : refinfo.refname
-  let content_type = a:content_type ==# 'show' && empty(options.extra_options)
-        \ ? ''
-        \ : a:content_type
   let bits = [
         \ refname,
-        \ content_type,
+        \ a:content_type,
         \ join(filter(options.extra_options, '!empty(v:val)'), ':'),
         \]
   let prefix = options.nofile ? 'gita:' : 'gita://'
@@ -41,19 +38,19 @@ function! gita#content#parse_bufname(bufname) abort
   if a:bufname =~# '^gita://'
     let m = matchlist(
           \ a:bufname,
-          \ '^gita://\([^:/]\+\)\([^:/]*\):\?\([^/]*\)/\(.*\)$'
+          \ '^gita://\([^:/]\+\):\([^:/]*\):\?\([^/]*\)/\(.*\)$'
           \)
     if empty(m)
       call gita#throw(printf(
             \ 'A buffer name "%s" does not follow "%s" pattern',
-            \ a:bufname, 'gita://<refname>[:<content_type>][:<extra_options>]/<treeish>',
+            \ a:bufname, 'gita://<refname>:<content_type>[:<extra_options>]/<treeish>',
             \))
     endif
     return {
           \ 'bufname': a:bufname,
           \ 'nofile': 0,
           \ 'refname': m[1],
-          \ 'content_type': empty(m[2]) ? 'show' : m[2],
+          \ 'content_type': m[2],
           \ 'extra_options': split(m[3], ':'),
           \ 'treeish': m[4],
           \}

@@ -25,12 +25,13 @@ function! gita#execute(git, args, options) abort
   let options = extend({
         \ 'quiet': 0,
         \ 'fail_silently': 0,
+        \ 'success_status': 0,
         \}, a:options)
   let args = filter(copy(a:args), '!empty(v:val)')
   let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
         \ 'quiet', 'fail_silently'
         \]))
-  if !options.fail_silently && !result.success
+  if !options.fail_silently && result.status != options.success_status
     call s:GitProcess.throw(result)
   elseif !options.quiet
     call s:Prompt.debug('OK: ' . join(result.args, ' '))

@@ -1,65 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-let s:WORKTREE = '@@'  " @@ is not valid commit thus
-
-function! s:execute_command(git, commit, filenames, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'unified': 1,
-        \ 'minimal': 1,
-        \ 'patience': 1,
-        \ 'histogram': 1,
-        \ 'diff-algorithm': 1,
-        \ 'submodule': 1,
-        \ 'word-diff-regex': 1,
-        \ 'no-renames': 1,
-        \ 'full-index': 1,
-        \ 'binary': 1,
-        \ 'abbrev': 1,
-        \ 'B': 1,
-        \ 'M': 1,
-        \ 'C': 1,
-        \ 'find-copies-harder': 1,
-        \ 'irreversible-delete': 1,
-        \ 'l': 1,
-        \ 'diff-filter': 1,
-        \ 'S': 1,
-        \ 'G': 1,
-        \ 'pickaxe-all': 1,
-        \ 'O': 1,
-        \ 'R': 1,
-        \ 'relative': 1,
-        \ 'text': 1,
-        \ 'ignore-space-at-eol': 1,
-        \ 'ignore-space-change': 1,
-        \ 'ignore-all-space': 1,
-        \ 'ignore-blank-lines': 1,
-        \ 'inter-hunk-context': 1,
-        \ 'function-context': 1,
-        \ 'ignore-submodules': 1,
-        \ 'src-prefix': 1,
-        \ 'dst-prefix': 1,
-        \ 'no-prefix': 1,
-        \ 'numstat': 1,
-        \ 'no-index': 1,
-        \ 'cached': 1,
-        \})
-  if !has_key(a:options, 'R') && get(a:options, 'reverse')
-    let args += ['-R']
-  endif
-  let args = ['diff', '--no-color'] + args + [a:commit] + ['--'] + a:filenames
-  " NOTE:
-  " --no-index force --exit-code option.
-  " --exit-code mean that the program exits with 1 if there were differences
-  " and 0 means no differences
-  let options = extend(copy(a:options), {
-        \ 'fail_silently': get(a:options, 'no-index') || get(a:options, 'exit-code'),
-        \})
-  return gita#execute(a:git, filter(args, '!empty(v:val)'), s:Dict.pick(options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -70,10 +10,6 @@ function! s:get_parser() abort
           \ 'unknown_description': '<path>',
           \ 'complete_unknown': function('gita#complete#filename'),
           \})
-    call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
     call s:parser.add_argument(
           \ '--unified', '-U',
           \ 'generate diffs with <N> lines of context', {
@@ -209,7 +145,7 @@ function! s:get_parser() abort
           \   'superordinates': ['S'],
           \})
     call s:parser.add_argument(
-          \ '--reverse', '-R',
+          \ '-R',
           \ 'swap two inputs; that is, show differences from index or on-disk file to tree contents',
           \)
     call s:parser.add_argument(
@@ -274,34 +210,19 @@ function! s:get_parser() abort
           \ 'compare with a content in the index',
           \)
     call s:parser.add_argument(
-          \ '--ui',
-          \ 'show a buffer instead of echo the result. imply --quiet', {
-          \   'default': 1,
-          \   'deniable': 1,
-          \})
-    call s:parser.add_argument(
-          \ '--anchor',
-          \ 'find and focus an anchor window before open a new buffer', {
-          \   'superordinates': ['ui'],
-          \})
-    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
-          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--split', '-s', [
           \   'open two buffer to compare by vimdiff rather than to open a single diff file.',
           \   'see ":help &diffopt" if you would like to control default split direction',
-          \], {
-          \   'superordinates': ['ui'],
-          \})
+          \])
     call s:parser.add_argument(
           \ '--patch',
-          \ 'diff a content in PATCH mode. most of options will be disabled', {
-          \   'superordinates': ['ui'],
-          \})
+          \ 'diff a content in PATCH mode. most of options will be disabled',
+          \)
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to diff.',
@@ -323,68 +244,32 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#diff#call(...) abort
-  let options = extend({
-        \ 'cached': 0,
-        \ 'reverse': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(git, options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(git, v:val)'
-        \)
-  if !empty(options.filename)
-    call insert(
-          \ filenames,
-          \ gita#variable#get_valid_filename(git, options.filename)
-          \)
-    " remove duplicate filenames
-    let filenames = uniq(filenames)
-  endif
-  let content = s:execute_command(git, commit, filenames, options)
-  let result = {
-        \ 'commit': commit,
-        \ 'filename': empty(filenames) ? '' : filenames[0],
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
+function! gita#command#diff#execute(args, options) abort
+  " NOTE:
+  " --no-index force --exit-code option.
+  " --exit-code mean that the program exits with 1 if there were differences
+  " and 0 means no differences
+  let a:options.success_status =
+        \ index(a:args, '--no-index') >= 0 ||
+        \ index(a:args, '--exit-code') >= 0
+  let git = gita#core#get()
+  return gita#execute(git, ['diff'] + a:args, a:options)
 endfunction
 
-function! gita#command#diff#command(...) abort
+function! gita#command#diff#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#diff#default_options),
-        \ options,
-        \)
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
-  if get(options, 'ui')
-    call gita#option#assign_selection(options)
-    call gita#option#assign_opener(options)
-    call gita#ui#diff#open(options)
-  else
-    call gita#command#diff#call(options)
-  endif
+  call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options)
+  call gita#content#diff#open(options)
 endfunction
 
-function! gita#command#diff#complete(...) abort
+function! gita#command#diff#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#diff', {
-      \ 'default_options': {},
-      \})
