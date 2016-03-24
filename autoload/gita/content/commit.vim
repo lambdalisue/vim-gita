@@ -55,12 +55,11 @@ function! s:execute_commit_command(options) abort
   return gita#command#execute(args)
 endfunction
 
-
 function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidate'))
   call gita#action#include([
         \ 'common', 'blame', 'browse',
-        \ 'status', 'diff', 'edit', 'show',
+        \ 'status', 'diff', 'edit', 'show', 'commit',
         \], g:gita#content#commit#disable_default_mappings)
   call gita#action#define('commit:do', function('s:action_commit_do'), {
         \ 'description': 'Commit changes',
