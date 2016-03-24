@@ -1,3 +1,6 @@
+let s:V = gita#vital()
+let s:Prompt = s:V.import('Vim.Prompt')
+
 function! s:action_checkout(candidate, options) abort
   let options = extend({
         \ 'track': 0,
@@ -5,30 +8,49 @@ function! s:action_checkout(candidate, options) abort
   if a:candidate.is_remote
     let name = substitute(a:candidate.name, '^origin/', '', '')
     let args = [
-          \ '-b', shellescape(name),
+          \ '-b ' . name,
           \ empty(options.track) ? '' : '--track',
-          \ shellescape(a:candidate.name),
+          \ a:candidate.name,
           \]
   else
-    let args = [shellescape(a:candidate.name)]
+    let args = [a:candidate.name]
   endif
-  execute 'Gita checkout ' . join(filter(args, '!empty(v:val)'))
+  call gita#command#execute(['checkout'] + args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! s:action_rename(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let args = options.force ? ['-M'] : ['--move']
-  execute 'Gita branch ' . join(args) . ' ' . shellescape(a:candidate.name)
+  let newname = s:Prompt.ask(
+        \ printf('Please input a new branch name of "%s": ', a:candidate.name),
+        \ a:candidate.name,
+        \)
+  if empty(newname)
+    call gita#throw('Cancel')
+  endif
+  let args = [
+        \ 'branch',
+        \ options.force ? '-M' : '--move'
+        \ a:candidate.name,
+        \ newname,
+        \]
+  call gita#command#execute(['branch'] + args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! s:action_delete(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let args = options.force ? ['-D'] : ['--delete']
-  execute 'Gita branch ' . join(args) . ' ' . shellescape(a:candidate.name)
+  let args = [
+        \ 'branch',
+        \ options.force ? '-D' : '--delete'
+        \ a:candidate.name,
+        \]
+  call gita#command#execute(['branch'] + args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#branch#define(disable_mapping) abort
