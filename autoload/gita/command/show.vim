@@ -105,7 +105,7 @@ function! s:get_parser() abort
           \   'if <commit1>..<commit2> is specified, it show a content of the named <commit1>',
           \   'if <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
           \], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#commitish'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'repository')

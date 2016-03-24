@@ -31,11 +31,6 @@ function! s:get_available_filenames(git, args) abort
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
-  " NOTE:
-  " git -C <rep> ls-files returns unix relative paths from the repository
-  " so make it relative from current working directory
-  let prefix  = expand(a:git.worktree) . s:Path.separator()
-  let content = map(content, 's:Path.realpath(prefix . v:val)')
   let content = map(content, 'fnamemodify(v:val, '':~:.'')')
   return content
 endfunction
