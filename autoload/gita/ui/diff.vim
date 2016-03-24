@@ -234,7 +234,7 @@ function! s:on_BufWriteCmd() abort
             \ '--',
             \ tempfile,
             \]
-      call gita#execute(args, { 'quiet': 1 })
+      call gita#command#execute(args, { 'quiet': 1 })
     finally
       call delete(tempfile)
     endtry

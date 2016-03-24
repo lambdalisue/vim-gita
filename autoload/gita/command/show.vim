@@ -6,30 +6,6 @@ let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-let s:WORKTREE = '@@'
-
-function! s:get_ancestor_content(git, commit, filename, options) abort
-  let [lhs, rhs] = s:GitTerm.split_range(a:commit)
-  let lhs = empty(lhs) ? 'HEAD' : lhs
-  let rhs = empty(rhs) ? 'HEAD' : rhs
-  let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
-  return s:get_revision_content(a:git, commit, a:filename, a:options)
-endfunction
-
-function! s:get_revision_content(git, commit, filename, options) abort
-  if empty(a:filename)
-    let object = a:commit
-  else
-    let object = join([
-          \ a:commit,
-          \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
-          \ ], ':')
-  endif
-  let args = ['show'] + [object]
-  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -40,10 +16,6 @@ function! s:get_parser() abort
           \ 'unknown_description': '<path>',
           \ 'complete_unknown': function('gita#complete#filename'),
           \})
-    call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
     call s:parser.add_argument(
           \ '--repository', '-r',
           \ 'show a summary of the repository instead of a file content', {
@@ -70,33 +42,19 @@ function! s:get_parser() abort
           \   'conflicts': ['repository', 'worktree', 'ancestors', 'ours'],
           \})
     call s:parser.add_argument(
-          \ '--ui',
-          \ 'show a buffer instead of echo the result. imply --quiet', {
-          \   'default': 1,
-          \   'deniable': 1,
-          \})
-    call s:parser.add_argument(
-          \ '--anchor',
-          \ 'find and focus an anchor window before open a new buffer', {
-          \   'superordinates': ['ui'],
-          \})
-    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
-          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--selection',
           \ 'a line number or range of the selection', {
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
-          \   'superordinates': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--patch',
-          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content', {
-          \   'superordinates': ['ui'],
-          \})
+          \ 'show a content of a file in PATCH mode. It force to open an INDEX file content',
+          \)
     call s:parser.add_argument(
           \ 'commit', [
           \   'a commit which you want to see.',
@@ -111,6 +69,15 @@ function! s:get_parser() abort
       if get(a:options, 'repository')
         let a:options.filename = ''
         unlet a:options.repository
+      elseif get(a:options, 'ancestor')
+        let a:options.commit = ':1'
+        unlet a:options.ancestor
+      elseif get(a:options, 'ours')
+        let a:options.commit = ':2'
+        unlet a:options.ours
+      elseif get(a:options, 'theirs')
+        let a:options.commit = ':3'
+        unlet a:options.theirs
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -118,84 +85,40 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#show#call(...) abort
-  let options = extend({
-        \ 'ancestors': 0,
-        \ 'ours': 0,
-        \ 'theirs': 0,
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'worktree': 0,
-        \}, get(a:000, 0, {}))
+function! gita#command#show#execute(args, options) abort
   let git = gita#core#get_or_fail()
-  if options.worktree || options.commit ==# s:WORKTREE
-    let commit = s:WORKTREE
-  elseif options.ancestors
-    let commit = ':1'
-  elseif options.ours
-    let commit = ':2'
-  elseif options.theirs
-    let commit = ':3'
-  else
-    let commit = gita#variable#get_valid_range(git, options.commit, {
-          \ '_allow_empty': 1,
-          \})
+  let object = a:args[0]
+  let commit = matchstr(object, '^[^:]*')
+  let filename = matchstr(object, '^[^:]*:\zs.*$')
+  if commit =~# '^.\{-}\.\.\..\{-}$'
+    " support A...B style
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
+  elseif commit =~# '^.\{-}\.\..\{-}$'
+    " support A..B style
+    let commit  = s:GitTerm.split_range(commit)[0]
   endif
-  if empty(options.filename)
-    let filename = ''
-    if commit ==# s:WORKTREE
-      call gita#throw('Cannot show a summary of worktree')
-    endif
-    let content = s:get_revision_content(git, commit, filename, options)
-  else
-    let filename = gita#variable#get_valid_filename(git, options.filename)
-    if commit ==# s:WORKTREE
-      let content = readfile(filename)
-    elseif commit =~# '^.\{-}\.\.\..\{-}$'
-      let content = s:get_ancestor_content(git, commit, filename, options)
-    elseif commit =~# '^.\{-}\.\..\{-}$'
-      let commit  = s:GitTerm.split_range(commit)[0]
-      let content = s:get_revision_content(git, commit, filename, options)
-    else
-      let content = s:get_revision_content(git, commit, filename, options)
-    endif
-  endif
-  let result = {
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
+  let object = empty(filename) ? commit : commit . ':' . filename
+  let args = ['show'] + [object]
+  return gita#execute(git, args, a:options)
 endfunction
 
-function! gita#command#show#command(...) abort
+function! gita#command#show#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#show#default_options),
-        \ options,
-        \)
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
-  if get(options, 'ui')
-    call gita#option#assign_selection(options)
-    call gita#option#assign_opener(options)
-    call gita#ui#show#open(options)
-  else
-    call gita#command#show#call(options)
-  endif
+  call gita#option#assign_selection(options)
+  call gita#option#assign_opener(options)
+  call gita#content#show#open(options)
 endfunction
 
-function! gita#command#show#complete(...) abort
+function! gita#command#show#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#show', {
-      \ 'default_options': {},
-      \})

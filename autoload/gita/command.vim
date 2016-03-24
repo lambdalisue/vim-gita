@@ -55,7 +55,6 @@ function! s:get_parser() abort
           \   'A name of a gita action (followings). If a non gita action is specified, git command will be called directly.',
           \   '',
           \   'add       : Add file contents to the index',
-          \   'apply     : Apply a patch to files and/or to the index',
           \   'blame     : Show what revision and author last modified each line of a file',
           \   'branch    : List, create, or delete branches',
           \   'browse    : Browse a URL of the remote content',
@@ -86,22 +85,18 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#execute(git, args, options) abort
-  let options = extend({
-        \ 'quiet': 0,
-        \ 'fail_silently': 0,
-        \}, a:options)
-  let args = filter(copy(a:args), '!empty(v:val)')
-  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
-        \ 'quiet', 'fail_silently'
-        \]))
-  if !options.fail_silently && !result.success
-    call s:GitProcess.throw(result)
-  elseif !options.quiet
-    call s:Prompt.debug('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! gita#command#execute(args, ...) abort
+  let options = get(a:000, 0, {})
+  try
+    let name = a:args[0]
+    let funcname = printf('gita#command#%s#execute', s:normalize(name))
+    return call(funcname, [a:args[1:], options])
+  catch /^Vim\%((\a\+)\)\=:E117/
+    let git = gita#core#get()
+    return gita#execute(git, a:args, options)
+  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    call gita#util#handle_exception()
+  endtry
 endfunction
 
 function! gita#command#command(bang, range, args) abort
@@ -113,13 +108,13 @@ function! gita#command#command(bang, range, args) abort
     try
       if a:bang !=# '!'
         try
-          let fname = printf('gita#command#%s#command', s:normalize(name))
-          return call(fname, [a:bang, a:range, args])
+          let funcname = printf('gita#command#%s#command', s:normalize(name))
+          return call(funcname, [a:bang, a:range, args])
         catch /^Vim\%((\a\+)\)\=:E117/
           " fail silently
         endtry
       endif
-      call gita#execute(s:ArgumentParser.splitargs(a:args))
+      call gita#command#execute(s:ArgumentParser.splitargs(a:args))
       call gita#util#doautocmd('User', 'GitaStatusModified')
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()
@@ -139,8 +134,8 @@ function! gita#command#complete(arglead, cmdline, cursorpos) abort
     try
       if bang !=# '!'
         try
-          let fname = printf('gita#command#%s#complete', s:normalize(name))
-          return call(fname, [a:arglead, cmdline, a:cursorpos])
+          let funcname = printf('gita#command#%s#complete', s:normalize(name))
+          return call(funcname, [a:arglead, cmdline, a:cursorpos])
         catch /^Vim\%((\a\+)\)\=:E117/
           " fail silently
         endtry

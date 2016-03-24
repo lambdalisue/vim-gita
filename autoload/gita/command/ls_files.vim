@@ -27,7 +27,7 @@ function! s:execute_command(git, filenames, options) abort
         \ 'with-tree': '--%k %v',
         \})
   let args = ['ls-files'] + args + ['--'] + a:filenames
-  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction

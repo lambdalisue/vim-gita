@@ -37,7 +37,7 @@ function! s:execute_command(options) abort
         \ '--no-color',
         \ '--no-abbrev',
         \] + args
-  return gita#execute(args, { 'quiet': 1 })
+  return gita#command#execute(args, { 'quiet': 1 })
 endfunction
 
 function! s:define_actions() abort

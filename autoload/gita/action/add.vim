@@ -11,7 +11,7 @@ function! s:action(candidates, options) abort
         \ copy(a:candidates),
         \ 'get(v:val, ''path2'', v:val.path)',
         \)
-  call gita#execute(args, { 'quiet': 1 })
+  call gita#command#execute(args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

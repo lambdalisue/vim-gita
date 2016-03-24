@@ -38,7 +38,7 @@ function! s:execute_command(git, filenames, options) abort
   let options = extend(copy(a:options), {
         \ 'fail_silently': get(a:options, 'dry-run'),
         \})
-  return gita#command#execute(a:git, args, s:Dict.pick(options, [
+  return gita#execute(a:git, args, s:Dict.pick(options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction

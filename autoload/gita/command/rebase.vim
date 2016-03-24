@@ -156,7 +156,7 @@ function! gita#command#rebase#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#execute(['rebase'] + options.__args__)
+  call gita#command#execute(['rebase'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

@@ -19,7 +19,7 @@ function! s:execute_command(git, commit, filename) abort
         \ '--',
         \ s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename)),
         \]
-  return gita#command#execute(a:git, args, {
+  return gita#execute(a:git, args, {
         \ 'quiet': 1,
         \})
 endfunction

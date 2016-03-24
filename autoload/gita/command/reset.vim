@@ -51,7 +51,7 @@ function! gita#command#reset#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#execute(['reset'] + options.__args__)
+  call gita#command#execute(['reset'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

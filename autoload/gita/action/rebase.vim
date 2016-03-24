@@ -7,7 +7,7 @@ function! s:action(candidate, options) abort
         \ options.merge ? '--merge': '',
         \ a:candidate.name,
         \]
-  call gita#execute(args)
+  call gita#command#execute(args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

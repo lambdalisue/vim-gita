@@ -21,17 +21,22 @@ function! gita#get_git_version() abort
   return s:git_version
 endfunction
 
-function! gita#execute(git_or_args, ...) abort
-  if s:Prelude.is_dict(a:git_or_args)
-    let git = a:git_or_args
-    let args = a:1
-    let options = get(a:000, 1, {})
-  else
-    let git = gita#core#get()
-    let args = a:git_or_args
-    let options = get(a:000, 0, {})
+function! gita#execute(git, args, options) abort
+  let options = extend({
+        \ 'quiet': 0,
+        \ 'fail_silently': 0,
+        \}, a:options)
+  let args = filter(copy(a:args), '!empty(v:val)')
+  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
+        \ 'quiet', 'fail_silently'
+        \]))
+  if !options.fail_silently && !result.success
+    call s:GitProcess.throw(result)
+  elseif !options.quiet
+    call s:Prompt.debug('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
   endif
-  return gita#command#execute(git, args, options)
+  return result.content
 endfunction
 
 call gita#util#define_variables('', {

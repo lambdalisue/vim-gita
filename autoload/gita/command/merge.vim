@@ -132,7 +132,7 @@ function! gita#command#merge#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#execute(['merge', '--no-edit', '--verbose'] + options.__args__)
+  call gita#command#execute(['merge', '--no-edit', '--verbose'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

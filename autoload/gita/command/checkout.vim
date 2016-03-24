@@ -91,7 +91,7 @@ function! gita#command#checkout#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#execute(['checkout'] + options.__args__)
+  call gita#command#execute(['checkout'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

@@ -23,7 +23,7 @@ function! s:execute_command(git, filenames, options) abort
     let args += ['--untracked-files']
   endif
   let args = ['status', '--no-column'] + args + ['--'] + a:filenames
-  return gita#command#execute(a:git, args, s:Dict.pick(a:options, [
+  return gita#execute(a:git, args, s:Dict.pick(a:options, [
         \ 'quiet', 'fail_silently',
         \]))
 endfunction

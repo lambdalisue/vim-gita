@@ -39,7 +39,7 @@ function! gita#command#init#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#execute(['init'] + options.__args__)
+  call gita#command#execute(['init'] + options.__args__)
   call gita#core#expire()
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
