@@ -1,0 +1,355 @@
+let s:V = gita#vital()
+let s:String = s:V.import('Data.String')
+let s:DateTime = s:V.import('DateTime')
+let s:MemoryCache = s:V.import('System.Cache.Memory')
+let s:Guard = s:V.import('Vim.Guard')
+let s:Python = s:V.import('Vim.Python')
+let s:Prompt = s:V.import('Vim.Prompt')
+let s:ProgressBar = s:V.import('ProgressBar')
+let s:GitParser = s:V.import('Git.Parser')
+
+function! s:execute_command(options) abort
+  let guard = s:Guard.store('&l:statusline')
+  try
+    setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
+    redrawstatus
+    let args = [
+          \ 'blame',
+          \ g:gita#command#blame#use_porcelain_instead
+          \   ? '--porcelain'
+          \   : '--incremental',
+          \ a:options.commit,
+          \ '--',
+          \ a:options.filename,
+          \]
+    let content = gita#command#execute(args, { 'quiet': 1 })
+    setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
+    redrawstatus
+    let blameobj = s:get_blameobj(content, commit, filename)
+    setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
+    redrawstatus
+    let blamemeta = s:get_blamemeta(
+          \ blameobj,
+          \ g:gita#command#blame#navigator_width
+          \)
+    return blamemeta
+  finally
+    call guard.restore()
+  endtry
+endfunction
+
+function! s:call_pseudo_command() abort range
+  let prefix = a:firstline == a:lastline ? '' : "'<,'>"
+  let ret = s:Prompt.input('None', ':', prefix)
+  redraw | echo
+  if ret =~# '\v^[0-9]+$'
+    let blamemeta = gita#meta#get_for('^blame-', 'blamemeta')
+    call gita#content#blame#select(blamemeta, [str2nr(ret)])
+  else
+    try
+      execute ret
+    catch /^Vim.\{-}:/
+      call s:Prompt.error(substitute(v:exception, '^Vim.\{-}:', '', ''))
+    endtry
+  endif
+endfunction
+
+function! s:get_candidate(index) abort
+  let blamemeta = gita#meta#get_for('^blame-', 'blamemeta', { 'lineinfos': {}})
+  let lineinfo = get(blamemeta.lineinfos, a:index, {})
+  if empty(lineinfo)
+    return {}
+  endif
+  return blamemeta.chunks[lineinfo.chunkref]
+endfunction
+
+function! s:get_blameobj(content, commit, filename) abort
+  let progressbar = s:ProgressBar.new(
+        \ len(a:content), {
+        \   'barwidth': 80,
+        \   'method': 'echo',
+        \})
+  try
+    let blameobj = s:GitParser.parse_blame(a:content, {
+          \ 'progressbar': progressbar,
+          \ 'python': g:gita#content#blame#use_python,
+          \})
+    if !g:gita#content#blame#use_porcelain_instead
+      if empty(a:commit)
+        let blameobj.file_content = readfile(a:filename)
+      else
+        let blameobj.file_content = gita#execute([
+              \ 'show', a:commit . ':' . a:filename,
+              \], { 'quiet': 1 },
+              \)
+      endif
+    endif
+    return blameobj
+  finally
+    call progressbar.exit()
+  endtry
+endfunction
+
+function! s:get_blamemeta(blameobj, width) abort
+  let progressbar = s:ProgressBar.new(
+        \ len(a:blameobj.chunks), {
+        \   'barwidth': 80,
+        \   'method': 'echo',
+        \})
+  try
+    return s:format_blameobj(a:blameobj, a:width, progressbar)
+  finally
+    call progressbar.exit()
+  endtry
+endfunction
+
+function! s:format_timestamp(timestamp, timezone, now) abort
+  let datetime  = s:DateTime.from_unix_time(a:timestamp, a:timezone)
+  let timedelta = datetime.delta(a:now)
+  if timedelta.duration().months() < 3
+    return timedelta.about()
+  elseif datetime.year() == a:now.year()
+    return 'on ' . datetime.strftime('%d %b')
+  else
+    return 'on ' . datetime.strftime('%d %b, %Y')
+  endif
+endfunction
+
+function! s:get_max_linenum(chunks) abort
+  let chunk = a:chunks[len(a:chunks) - 1]
+  return chunk.linenum.final + get(chunk, 'nlines', 1)
+endfunction
+
+function! s:build_chunkinfo(chunk, width, now, whitespaces) abort
+  let summary = s:String.wrap(a:chunk.summary, a:width)
+  let revision = (get(a:chunk, 'boundary') ? '^' : ' ') . a:chunk.revision[:6]
+  let author = a:chunk.author
+  let timestr = s:format_timestamp(
+        \ a:chunk.author_time,
+        \ a:chunk.author_tz,
+        \ a:now,
+        \)
+  if author =~# 'Not Committed Yet'
+    let author_info = 'Not committed yet ' . timestr
+  else
+    let author_info = author . ' authored ' . timestr
+  endif
+  let epilogue = author_info . a:whitespaces[9+len(author_info):] . revision
+  return { 'nlines': len(summary), 'summary': summary, 'epilogue': epilogue }
+endfunction
+
+function! s:format_chunk(chunk, width, height, cache, now, whitespaces) abort
+  let chunkinfo = a:cache.get(a:chunk.revision, {})
+  if empty(chunkinfo)
+    let chunkinfo = s:build_chunkinfo(a:chunk, a:width, a:now, a:whitespaces)
+    call a:cache.set(a:chunk.revision, chunkinfo)
+  endif
+  if a:height == 1
+    if !has_key(chunkinfo, 'linesummary')
+      " produce a linesummary only when it becomes necessary
+      let linesummary = s:String.truncate(a:chunk.summary, a:width - 1)
+      let chunkinfo.linesummary = substitute(linesummary, '\s\+$', '', '')
+      call a:cache.set(a:chunk.revision, chunkinfo)
+    endif
+    return [chunkinfo.linesummary, chunkinfo.epilogue]
+  else
+    let summary = chunkinfo.nlines > a:height
+          \ ? chunkinfo.summary[:(a:height-1)]
+          \ : chunkinfo.summary
+    return summary + [chunkinfo.epilogue]
+  endif
+endfunction
+
+function! s:format_blameobj(blameobj, width, progressbar) abort
+  let chunks    = a:blameobj.chunks
+  let revisions = a:blameobj.revisions
+  let now   = s:DateTime.now()
+  let cache = s:MemoryCache.new()
+  let linenum_width  = len(s:get_max_linenum(chunks))
+  let linenum_spacer = repeat(' ', linenum_width)
+  let linenum_pseudo = 1
+  let height = winheight(0)
+  let width = a:width - linenum_width - 2
+  let whitespaces = repeat(' ', width)
+  let navi_content = []
+  let view_content = []
+  let lineinfos = []
+  let linerefs = []
+  let separators = []
+  for chunk in chunks
+    call extend(chunk, revisions[chunk.revision])
+    let n_contents = get(chunk, 'nlines', 1)
+    let chunk_height = max([2, n_contents])
+    let formatted_chunk = s:format_chunk(
+          \ chunk, width, chunk_height-1, cache, now, whitespaces
+          \)
+    for cursor in range(chunk_height)
+      if cursor < n_contents
+        call add(linerefs, linenum_pseudo)
+      endif
+      let linenum = cursor >= n_contents ? '' : chunk.linenum.final + cursor
+      call add(navi_content,
+              \ linenum_spacer[len(linenum):] . linenum . ' ' . get(
+              \   formatted_chunk,
+              \   float2nr(fmod(cursor, height)),
+              \   ''
+              \ )
+              \)
+      if empty(linenum)
+        call add(view_content, '')
+      elseif len(chunk.contents) == n_contents
+        call add(view_content, chunk.contents[cursor])
+      else
+        call add(view_content, a:blameobj.file_content[linenum-1])
+      endif
+      call add(lineinfos, {
+            \ 'chunkref': chunk.index,
+            \ 'linenum': {
+            \   'original': chunk.linenum.original + cursor,
+            \   'final': chunk.linenum.final + cursor,
+            \ },
+            \})
+      let linenum_pseudo += 1
+    endfor
+    " add pseudo separator line
+    call add(navi_content, '')
+    call add(view_content, '')
+    call add(lineinfos, {
+          \ 'chunkref': chunk.index,
+          \ 'linenum': {
+          \   'original': chunk.linenum.original + (chunk_height - 1),
+          \   'final': chunk.linenum.final + (chunk_height - 1),
+          \ },
+          \})
+    call add(separators, linenum_pseudo)
+    let linenum_pseudo += 1
+    call a:progressbar.update()
+  endfor
+  let offset = -2
+  let blamemeta = {
+        \ 'chunks':       chunks,
+        \ 'lineinfos':    lineinfos[:offset],
+        \ 'linerefs':     linerefs,
+        \ 'separators':   len(separators) < 2 ? [] : separators[:offset],
+        \ 'navi_content': navi_content[:offset],
+        \ 'view_content': view_content[:offset],
+        \ 'linenum_width': linenum_width,
+        \}
+  return blamemeta
+endfunction
+
+function! gita#content#blame#retrieve(options) abort
+  let bufname_view = gita#ui#blame_view#build_bufname(options)
+  if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
+    return getbufvar(bufname_view, '_gita_blame_cache')
+  endif
+
+  let bufname_navi = gita#ui#blame_navi#build_bufname(options)
+  if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
+    return getbufvar(bufname_navi, '_gita_blame_cache')
+  endif
+
+  let blamemeta = s:execute_command(a:options)
+  if bufexists(bufname_view)
+    call setbufvar(bufname_view, '_gita_blame_cache', blamemeta)
+  endif
+  if bufexists(bufname_navi)
+    call setbufvar(bufname_navi, '_gita_blame_cache', blamemeta)
+  endif
+
+  return blamemeta
+endfunction
+
+function! gita#content#blame#open(options) abort
+  let options = extend({
+        \ 'opener': '',
+        \ 'window': 'blame_navi',
+        \ 'navigator_width': g:gita#content#blame#navigator_width,
+        \}, a:options)
+  let bufname = gita#content#blame_navi#build_bufname(options)
+  let opener = empty(options.opener)
+        \ ? g:gita#content#blame#default_opener
+        \ : options.opener
+  call gita#util#cascade#set('blame-navi', s:Dict.pick(options, [
+        \ 'commit',
+        \ 'filename',
+        \]))
+  call gita#util#buffer#open(bufname, {
+        \ 'opener': opener,
+        \ 'window': options.window,
+        \})
+  setlocal scrollbind
+  silent syncbind
+endfunction
+
+function! gita#content#blame#define_actions() abort
+  call gita#action#attach(function('s:get_candidate'))
+  nmap <silent><buffer> : :<C-u>call <SID>call_pseudo_command()<CR>
+  vmap <silent><buffer> : :call <SID>call_pseudo_command()<CR>
+endfunction
+
+function! gita#content#blame#define_highlights() abort
+  highlight GitaPseudoSeparatorDefault
+        \ term=underline cterm=underline ctermfg=242 gui=underline guifg=#363636
+  highlight default link GitaPseudoSeparator GitaPseudoSeparatorDefault
+  sign define GitaPseudoSeparatorSign texthl=SignColumn linehl=GitaPseudoSeparator
+  sign define GitaPseudoEmptySign
+endfunction
+
+function! gita#content#blame#select(blamemeta, selection) abort
+  " pseudo -> actual
+  let line_start = get(a:selection, 0, 1)
+  let line_end = get(a:selection, 1, line_start)
+  let actual_selection = [
+        \ gita#content#blame#get_actual_linenum(a:blamemeta, line_start),
+        \ gita#content#blame#get_actual_linenum(a:blamemeta, line_end),
+        \]
+  call gita#util#select(actual_selection)
+endfunction
+
+function! gita#content#blame#get_pseudo_linenum(blamemeta, linenum) abort
+  " actual -> pseudo
+  let lineinfos = a:blamemeta.lineinfos
+  if a:linenum > len(lineinfos)
+    let lineinfo = lineinfos[-1]
+  elseif a:linenum <= 0
+    let lineinfo = lineinfos[0]
+  else
+    let lineinfo = lineinfos[a:linenum - 1]
+  endif
+  return lineinfo.linenum.final
+endfunction
+
+function! gita#content#blame#get_actual_linenum(blamemeta, linenum) abort
+  " pseudo -> actual
+  let linerefs = a:blamemeta.linerefs
+  if a:linenum > len(linerefs)
+    return linerefs[-1]
+  elseif a:linenum <= 0
+    return linerefs[0]
+  else
+    return linerefs[a:linenum-1]
+  endif
+endfunction
+
+function! gita#content#blame#set_pseudo_separators(blamemeta) abort
+  let bufnum = bufnr('%')
+  execute printf('sign unplace * buffer=%d', bufnum)
+  execute printf(
+        \ 'sign place 1 line=1 name=GitaPseudoEmptySign buffer=%d',
+        \ bufnum,
+        \)
+  for linenum in a:blamemeta.separators
+    execute printf(
+          \ 'sign place %d line=%d name=GitaPseudoSeparatorSign buffer=%d',
+          \ linenum, linenum, bufnum,
+          \)
+  endfor
+endfunction
+
+call gita#util#define_variables('content#blame', {
+      \ 'default_opener': 'tabedit',
+      \ 'use_porcelain_instead': 0,
+      \ 'use_python': s:Python.is_enabled(),
+      \ 'navigator_width': 50,
+      \})
