@@ -467,3 +467,44 @@ function! s:parse_branch(content) abort
   endfor
   return branches
 endfunction
+
+
+" *** GrepParser *************************************************************
+function! s:parse_match_record(match) abort
+  let candidate = {}
+  let candidate.record = a:match
+  if a:match =~# '^[^:]\+:.\{-}:\d\+:.*$'
+    let m = matchlist(
+          \ a:match,
+          \ '^\([^:]\+\):\(.\{-}\):\(\d\+\):\(.*\)$',
+          \)
+    let candidate.commit = m[1]
+    let candidate.path = m[2]
+    let candidate.selection = [str2nr(m[3])]
+    let candidate.content = m[4]
+  else
+    let m = matchlist(
+          \ a:match,
+          \ '^\(.\{-}\):\(\d\+\):\(.*\)$',
+          \)
+    let candidate.commit = ''
+    let candidate.path = m[1]
+    let candidate.selection = [str2nr(m[2])]
+    let candidate.content = m[3]
+  endif
+  return candidate
+endfunction
+
+function! s:parse_match(content) abort
+  let content = s:Prelude.is_string(a:content)
+        \ ? split(a:content, '\r\?\n', 1)
+        \ : a:content
+  let matches = []
+  for line in content
+    if empty(line)
+      continue
+    endif
+    call add(matches, s:parse_match_record(line))
+  endfor
+  return matches
+endfunction

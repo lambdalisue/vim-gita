@@ -986,4 +986,26 @@ Describe Git.Parser
       Assert Equals(branch.is_selected, 0)
     End
   End
+
+  Describe .parse_match_record({line})
+    It returns a candidate for 'README.md:5:foobar'
+      let match = GitParser.parse_match_record(
+            \ 'README.md:5:foobar',
+            \)
+      Assert Equals(match.commit, '')
+      Assert Equals(match.path, 'README.md')
+      Assert Equals(match.selection, [5])
+      Assert Equals(match.content, 'foobar')
+    End
+
+    It returns a candidate for 'HEAD:README.md:5:foobar'
+      let match = GitParser.parse_match_record(
+            \ 'HEAD:README.md:5:foobar',
+            \)
+      Assert Equals(match.commit, 'HEAD')
+      Assert Equals(match.path, 'README.md')
+      Assert Equals(match.selection, [5])
+      Assert Equals(match.content, 'foobar')
+    End
+  End
 End
