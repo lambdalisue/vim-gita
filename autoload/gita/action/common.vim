@@ -99,7 +99,7 @@ function! s:action_redraw(candidate, options) abort
   if &filetype =~# '^gita-'
     let name = matchstr(&filetype, '^gita-\zs.*$')
     let name = substitute(name, '-', '_', 'g')
-    call call(function(printf('gita#ui#%s#redraw', name)), [])
+    call call(function(printf('gita#content#%s#redraw', name)), [])
   else
     normal! <C-l>
   endif
@@ -142,7 +142,6 @@ function! gita#action#common#define(disable_mapping) abort
   nmap <buffer><nowait> <C-l> <Plug>(gita-redraw)
   vmap <buffer><nowait> <Tab> <Plug>(gita-choice)
 endfunction
-
 
 function! gita#action#common#_complete_alias(arglead, cmdline, cursorpos) abort
   return g:gita#action#common#_aliases
