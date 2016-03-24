@@ -97,7 +97,7 @@ function! gita#command#show#execute(args, options) abort
     let [lhs, rhs] = s:GitTerm.split_range(commit)
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
-    let commit = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
+    let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
   elseif commit =~# '^.\{-}\.\..\{-}$'
     " support A..B style
     let commit  = s:GitTerm.split_range(commit)[0]

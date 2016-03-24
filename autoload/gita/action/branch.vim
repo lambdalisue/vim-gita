@@ -32,7 +32,7 @@ function! s:action_rename(candidate, options) abort
   endif
   let args = [
         \ 'branch',
-        \ options.force ? '-M' : '--move'
+        \ options.force ? '-M' : '--move',
         \ a:candidate.name,
         \ newname,
         \]

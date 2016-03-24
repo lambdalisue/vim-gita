@@ -3,6 +3,9 @@ let s:Path = s:V.import('System.Filepath')
 let s:Guard = s:V.import('Vim.Guard')
 
 Describe gita#util
+  Describe #doautocmd({name}[, {pattern})
+  End
+
   Describe #define_variables({prefix}, {defaults})
     Before
       let guard = s:Guard.store(

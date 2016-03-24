@@ -101,7 +101,6 @@ function! s:compare_statuses(lhs, rhs) abort
 endfunction
 
 function! s:get_prologue(git) abort
-  let git = gita#core#get_or_fail()
   let local = s:GitInfo.get_local_branch(a:git)
   let remote = s:GitInfo.get_remote_branch(a:git)
   let mode = s:GitInfo.get_current_mode(a:git)

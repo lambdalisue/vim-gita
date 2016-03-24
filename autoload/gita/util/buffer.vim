@@ -34,6 +34,7 @@ function! gita#util#buffer#open(name, ...) abort
   if !empty(config.selection)
     call gita#util#select(config.selection)
   endif
+  return result
 endfunction
 
 function! gita#util#buffer#read_content(...) abort

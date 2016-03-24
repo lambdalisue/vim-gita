@@ -25,7 +25,7 @@ function! s:get_parser() abort
           \   'complete': function('gita#complete#directory'),
           \})
     call s:parser.add_argument(
-          \ '--shared', [
+          \ '--shared',
           \ 'specify that the Git repository is to be shared amongst several users', {
           \   'pattern': '^\%(false\|true\|umask\|group|all\|world\|everyone\|0\d\{3}\)$',
           \})

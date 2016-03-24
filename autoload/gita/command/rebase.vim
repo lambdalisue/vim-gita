@@ -152,7 +152,7 @@ endfunction
 
 function! gita#command#rebase#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let optiosn = parser.parse(a:bang, a:range, a:args)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif

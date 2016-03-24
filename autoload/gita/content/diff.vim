@@ -226,7 +226,6 @@ function! s:open2(options) abort
         \ 'selection': [],
         \}, a:options)
   call s:configure_options(options)
-  let git = gita#core#get_or_fail()
   let commit = options.commit
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
   if empty(commit)

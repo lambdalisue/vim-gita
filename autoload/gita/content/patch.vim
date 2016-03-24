@@ -24,7 +24,6 @@ function! s:open2(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
-  let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
   if options.reverse
     let loptions = {
@@ -76,7 +75,6 @@ function! s:open3(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
-  let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
   let loptions = {
         \ 'commit': 'HEAD',
