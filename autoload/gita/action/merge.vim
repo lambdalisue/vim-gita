@@ -5,15 +5,19 @@ function! s:action(candidates, options) abort
         \ 'squash': 0,
         \}, a:options)
   let args = [
-        \ empty(options['no-ff']) ? '' : '--no-ff',
-        \ empty(options['ff-only']) ? '' : '--ff-only',
-        \ empty(options.squash) ? '' : '--squash',
+        \ 'merge',
+        \ '--no-edit',
+        \ '--verbose',
+        \ options['no-ff'] ? '--no-ff' : '',
+        \ options['ff-only'] ? '--ff-only' : '',
+        \ options.squash ? '--squash' : '',
         \]
   let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'shellescape(v:val.name)',
+        \ 'v:val.name',
         \)
-  execute 'Gita merge ' . join(filter(args, '!empty(v:val)'))
+  call gita#execute(args)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#merge#define(disable_mapping) abort

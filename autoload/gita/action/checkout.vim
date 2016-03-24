@@ -1,21 +1,32 @@
+let s:V = gita#vital()
+let s:Path = s:V.import('System.Filepath')
+let s:Git = s:V.import('Git')
+
 function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
         \ 'ours': 0,
         \ 'theirs': 0,
+        \ 'treeish': '',
         \}, a:options)
-  call gita#option#assign_commit(options)
+  if !options.ours && !options.theirs && empty(options.treeish)
+    let treeish = gita#meta#get('commit', '')
+  else
+    let treeish = options.treeish
+  endif
   let args = [
-        \ empty(options.force) ? '' : '--force',
-        \ empty(options.ours) ? '' : '--ours',
-        \ empty(options.theirs) ? '' : '--theirs',
-        \ get(a:options, 'commit', ''),
+        \ 'checkout',
+        \ options.force ? '--force' : '',
+        \ options.ours ? '--ours' : '',
+        \ options.theirs ? '--theirs' : '',
+        \ treeish,
         \]
   let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'fnameescape(v:val.path)',
+        \ 's:Path.unixpath(s:Git.get_relative_path(git, v:val.path))',
         \)
-  execute 'Gita checkout --quiet ' . join(filter(args, '!empty(v:val)'))
+  call gita#execute(args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#checkout#define(disable_mappings) abort
@@ -36,34 +47,40 @@ function! gita#action#checkout#define(disable_mappings) abort
         \})
   call gita#action#define('checkout:ours:force', function('s:action'), {
         \ 'description': 'Checkout a contents (force)',
-        \ 'requirements': ['path'],
+        \ 'requirements': ['path', 'is_conflicted'],
         \ 'options': { 'ours': 1, 'force': 1 },
         \})
   call gita#action#define('checkout:theirs', function('s:action'), {
         \ 'description': 'Checkout a contents',
-        \ 'requirements': ['path'],
+        \ 'requirements': ['path', 'is_conflicted'],
         \ 'options': { 'theirs': 1 },
         \})
   call gita#action#define('checkout:theirs:force', function('s:action'), {
         \ 'description': 'Checkout a contents (force)',
-        \ 'requirements': ['path'],
+        \ 'requirements': ['path', 'is_conflicted'],
         \ 'options': { 'theirs': 1, 'force': 1 },
         \})
   call gita#action#define('checkout:HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD',
-        \ 'requirements': ['path'],
-        \ 'options': { 'commit': 'HEAD' },
+        \ 'requirements': ['path', 'is_conflicted'],
+        \ 'options': { 'treeish': 'HEAD' },
         \})
   call gita#action#define('checkout:HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD (force)',
         \ 'requirements': ['path'],
-        \ 'options': { 'commit': 'HEAD', 'force': 1 },
+        \ 'options': { 'treeish': 'HEAD', 'force': 1 },
+        \})
+  call gita#action#define('checkout:origin/HEAD', function('s:action'), {
+        \ 'description': 'Checkout a contents from origin/HEAD',
+        \ 'requirements': ['path'],
+        \ 'options': { 'treeish': 'origin/HEAD' },
+        \})
+  call gita#action#define('checkout:origin/HEAD:force', function('s:action'), {
+        \ 'description': 'Checkout a contents from origin/HEAD (force)',
+        \ 'requirements': ['path'],
+        \ 'options': { 'treeish': 'origin/HEAD', 'force': 1 },
         \})
   if a:disable_mappings
     return
   endif
-  nmap <buffer><nowait><expr> -c gita#action#smart_map('-c', '<Plug>(gita-checkout)')
-  nmap <buffer><nowait><expr> -C gita#action#smart_map('-C', '<Plug>(gita-checkout-force)')
-  vmap <buffer><nowait><expr> -c gita#action#smart_map('-c', '<Plug>(gita-checkout)')
-  vmap <buffer><nowait><expr> -C gita#action#smart_map('-C', '<Plug>(gita-checkout-force)')
 endfunction

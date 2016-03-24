@@ -1,39 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-
-"
-" TODO: Refactoring
-"
-
-function! s:execute_command(git, commits, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'commit': 1,
-        \ 'no-commit': 1,
-        \ 'ff': 1,
-        \ 'no-ff': 1,
-        \ 'ff-only': 1,
-        \ 'log': 1,
-        \ 'no-log': 1,
-        \ 'stat': 1,
-        \ 'no-stat': 1,
-        \ 'squash': 1,
-        \ 'no-squash': 1,
-        \ 'strategy': 1,
-        \ 'strategy-option': 1,
-        \ 'verify-signatures': 1,
-        \ 'no-verify-signatures': 1,
-        \ 'gpg-sign': 1,
-        \ 'm': 1,
-        \ 'rerere-autoupdate': 1,
-        \ 'abort': 1,
-        \})
-  let args = ['merge', '--no-edit', '--verbose'] + args + a:commits
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -44,10 +10,6 @@ function! s:get_parser() abort
           \ 'unknown_description': '<commits>...',
           \ 'complete_unknown': function('gita#complete#commit'),
           \})
-    call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
     call s:parser.add_argument(
           \ '--stat',
           \ 'show a diffstat at the end of the merge', {
@@ -164,27 +126,18 @@ function! gita#command#merge#call(...) abort
         \}
 endfunction
 
-function! gita#command#merge#command(...) abort
+function! gita#command#merge#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#merge#default_options),
-        \ options,
-        \)
-  let options.commits = options.__unknown__
-  call gita#command#merge#call(options)
+  call gita#execute(['merge', '--no-edit', '--verbose'] + options.__args__)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
-function! gita#command#merge#complete(...) abort
+function! gita#command#merge#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#merge', {
-      \ 'default_options': {},
-      \})
 

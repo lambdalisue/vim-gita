@@ -1,4 +1,5 @@
 let s:V = vital#of('vim_gita')
+let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitInfo = s:V.import('Git.Info')
@@ -8,31 +9,8 @@ function! gita#vital() abort
   return s:V
 endfunction
 
-function! gita#throw(...) abort
-  let msg = join(a:000)
-  throw printf('vim-gita: %s', msg)
-endfunction
-
-function! gita#execute(git, args, ...) abort
-  call s:GitProcess.set_config({
-        \ 'executable': g:gita#executable,
-        \ 'arguments':  g:gita#arguments,
-        \})
-  let args = filter(copy(a:args), '!empty(v:val)')
-  let options = extend({
-        \ 'quiet': 0,
-        \ 'fail_silently': 0,
-        \}, get(a:000, 0, {}))
-  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
-        \ 'quiet', 'fail_silently'
-        \]))
-  if !options.fail_silently && !result.success
-    call s:GitProcess.throw(result)
-  elseif !options.quiet
-    call s:Prompt.title('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+function! gita#throw(msg) abort
+  throw 'vim-gita: ' . a:msg
 endfunction
 
 function! gita#get_git_version() abort
@@ -43,24 +21,46 @@ function! gita#get_git_version() abort
   return s:git_version
 endfunction
 
-function! s:is_debug() abort
-  " Used to tell if gita is in debug mode
-  return &verbose
+function! gita#execute(git_or_args, ...) abort
+  if s:Prelude.is_dict(a:git_or_args)
+    let git = a:git_or_args
+    let args = a:1
+    let options = get(a:000, 1, {})
+  else
+    let git = gita#core#get()
+    let args = a:git_or_args
+    let options = get(a:000, 0, {})
+  endif
+  let args = filter(copy(args), '!empty(v:val)')
+  let options = extend({
+        \ 'quiet': 0,
+        \ 'fail_silently': 0,
+        \}, options)
+  let result = s:GitProcess.execute(git, args, s:Dict.omit(options, [
+        \ 'quiet', 'fail_silently'
+        \]))
+  if !options.fail_silently && !result.success
+    call s:GitProcess.throw(result)
+  elseif !options.quiet
+    call s:Prompt.debug('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
+  endif
+  return result.content
 endfunction
 
-function! s:is_batch() abort
-  " Used to tell if gita is in batch mode (test mode)
-  return g:gita#test
-endfunction
-
-call s:Prompt.set_config({
-      \ 'debug': function('s:is_debug'),
-      \ 'batch': function('s:is_batch'),
-      \})
 call gita#util#define_variables('', {
       \ 'test': 0,
       \ 'develop': 1,
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'complete_threshold': 100,
+      \})
+
+call s:Prompt.set_config({
+      \ 'batch': g:gita#test,
+      \})
+
+call s:GitProcess.set_config({
+      \ 'executable': g:gita#executable,
+      \ 'arguments':  g:gita#arguments,
       \})

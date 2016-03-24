@@ -113,11 +113,11 @@ function! gita#core#get_or_fail(...) abort
     return git
   endif
   let expr = get(a:000, 0, '%')
-  call gita#throw(
+  call gita#throw(join([
         \ 'Attention:',
         \ printf('Git is not available on "%s" buffer.', expand(expr)),
-        \ 'Call ":call gita#core#expire()" to remove cache if you feel it is incorrect.',
-        \)
+        \ 'Call ":GitaClear" to remove cache if you feel it is incorrect.',
+        \]))
 endfunction
 
 function! gita#core#expire(...) abort

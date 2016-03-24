@@ -3,10 +3,12 @@ function! s:action(candidate, options) abort
         \ 'merge': 0,
         \}, a:options)
   let args = [
-        \ empty(options.merge) ? '' : '--merge',
-        \ shellescape(a:candidate.name),
+        \ 'rebase',
+        \ options.merge ? '--merge': '',
+        \ a:candidate.name,
         \]
-  execute 'Gita rebase ' . join(filter(args, '!empty(v:val)'))
+  call gita#execute(args)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#rebase#define(disable_mapping) abort

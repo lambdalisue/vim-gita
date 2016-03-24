@@ -1,36 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
-let s:Git = s:V.import('Git')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-
-function! s:execute_command(git, commit, filenames, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'force': 1,
-        \ 'ours': 1,
-        \ 'theirs': 1,
-        \ 'b': '-%k %v',
-        \ 'B': '-%k %v',
-        \ 'track': 1,
-        \ 'no-track': 1,
-        \ 'l': 1,
-        \ 'detach': 1,
-        \ 'orphan': 1,
-        \ 'ignore-skip-worktree-bits': 1,
-        \ 'merge': 1,
-        \ 'conflict': 1,
-        \ 'ignore-other-worktrees': 1,
-        \})
-  let filenames = map(
-        \ copy(a:filenames),
-        \ 's:Path.unixpath(s:Git.get_relative_path(a:git, v:val))',
-        \)
-  let args = ['checkout'] + args + [a:options.commit] + ['--'] + filenames
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -42,10 +11,6 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#complete#filename'),
           \ 'enable_positional_assign': 1,
           \})
-    call s:parser.add_argument(
-          \ '--quiet', '-q',
-          \ 'be quiet',
-          \)
     call s:parser.add_argument(
           \ '-b',
           \ 'create and checkout a new branch', {
@@ -120,49 +85,17 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#checkout#call(...) abort
-  let options = extend({
-        \ 'commit': '',
-        \ 'filenames': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commit = gita#variable#get_valid_range(git, options.commit, {
-        \ '_allow_empty': 1,
-        \})
-  let filenames = map(
-        \ copy(options.filenames),
-        \ 'gita#variable#get_valid_filename(git, v:val)',
-        \)
-  let content = s:execute_command(git, commit, filenames, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'commit': commit,
-        \ 'filenames': filenames,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
-function! gita#command#checkout#command(...) abort
+function! gita#command#checkout#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#checkout#default_options),
-        \ options,
-        \)
-  call gita#option#assign_filenames(options)
-  call gita#command#checkout#call(options)
+  call gita#execute(['checkout'] + options.__args__)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
-function! gita#command#checkout#complete(...) abort
+function! gita#command#checkout#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#checkout', {
-      \ 'default_options': {},
-      \})

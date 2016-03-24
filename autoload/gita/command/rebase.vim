@@ -1,57 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-
-"
-" TODO: Refactoring
-"
-
-function! s:execute_command(git, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'onto': '--%k %v',
-        \ 'continue': 1,
-        \ 'abort': 1,
-        \ 'keep-empty': 1,
-        \ 'skip': 1,
-        \ 'merge': 1,
-        \ 'strategy': 1,
-        \ 'strategy-option': 1,
-        \ 'gpg-sign': 1,
-        \ 'stat': 1,
-        \ 'no-stat': 1,
-        \ 'verify': 1,
-        \ 'no-verify': 1,
-        \ 'C': 1,
-        \ 'force-rebase': 1,
-        \ 'fork-point': 1,
-        \ 'no-fork-point': 1,
-        \ 'ignore-whitespace': 1,
-        \ 'whitespace': 1,
-        \ 'committer-date-is-author-date': 1,
-        \ 'ignore-date': 1,
-        \ 'preserve-merges': 1,
-        \ 'exec': '--%k %v',
-        \ 'root': 1,
-        \ 'autosquash': 1,
-        \ 'no-autosquash': 1,
-        \ 'autostash': 1,
-        \ 'no-autostash': 1,
-        \ 'rerere-autoupdate': 1,
-        \ 'upstream': '%v',
-        \ 'branch': '%v',
-       \})
-  let args = ['rebase', '--verbose'] + args
-  if has_key(a:options, 'upstream')
-    let args += [a:options.upstream]
-  endif
-  if has_key(a:options, 'branch')
-    let args += [a:options.branch]
-  endif
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -60,10 +8,6 @@ function! s:get_parser() abort
           \ 'description': 'Forward-port local commits to the updated upstream head',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
-    call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
     call s:parser.add_argument(
           \ '--autostash',
           \ 'automatically stash/stash pop before and after', {
@@ -206,38 +150,17 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#rebase#call(...) abort
-  let options = extend({
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let content = s:execute_command(git, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
-function! gita#command#rebase#command(...) abort
+function! gita#command#rebase#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let optiosn = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#rebase#default_options),
-        \ options,
-        \)
-  call gita#command#rebase#call(options)
+  call gita#execute(['rebase'] + options.__args__)
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
-function! gita#command#rebase#complete(...) abort
+function! gita#command#rebase#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#rebase', {
-      \ 'default_options': {},
-      \})
-

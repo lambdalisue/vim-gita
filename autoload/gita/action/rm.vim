@@ -1,7 +1,7 @@
 function! s:action(candidates, options) abort
   let options = extend({
         \ 'force': 0,
-        \ 'cached' 0,
+        \ 'cached': 0,
         \}, a:options)
   let args = [
         \ 'rm',
@@ -11,9 +11,10 @@ function! s:action(candidates, options) abort
         \]
   let args += ['--'] + map(
         \ copy(a:candidates),
-        \ 'get(v:val, "path2", v:val.path)',
+        \ 'get(v:val, ''path2'', v:val.path)',
         \)
   call gita#execute(args, { 'quiet': 1 })
+  call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! gita#action#rm#define(disable_mappings) abort
