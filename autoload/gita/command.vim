@@ -106,10 +106,6 @@ function! gita#command#command(bang, range, args) abort
             \ s:ArgumentParser.splitargs(a:args),
             \)
       call gita#util#doautocmd('User', 'GitaStatusModified')
-      if a:args =~# '^init'
-        " Likely need to clear the cache of the current buffer
-        call gita#core#expire()
-      endif
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()
     endtry
