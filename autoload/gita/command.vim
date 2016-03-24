@@ -4,13 +4,8 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
-
-function! s:normalize(name) abort
-  return substitute(a:name, '-', '_', 'g')
-endfunction
-
 function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
-let candidates = filter([
+  let candidates = filter([
       \ 'add',
       \ 'apply',
       \ 'blame',
@@ -88,10 +83,13 @@ endfunction
 function! gita#command#execute(args, ...) abort
   let options = get(a:000, 0, {})
   try
-    let name = a:args[0]
-    let funcname = printf('gita#command#%s#execute', s:normalize(name))
-    return call(funcname, [a:args[1:], options])
-  catch /^Vim\%((\a\+)\)\=:E117/
+  "  let name = a:args[0]
+  "  let funcname = printf(
+  "        \ 'gita#command#%s#execute',
+  "        \ substitute(name, '-', '_', 'g'),
+  "        \)
+  "  return call(funcname, [a:args[1:], options])
+  "catch /^Vim\%((\a\+)\)\=:E117/
     let git = gita#core#get()
     return gita#execute(git, a:args, options)
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -108,13 +106,16 @@ function! gita#command#command(bang, range, args) abort
     try
       if a:bang !=# '!'
         try
-          let funcname = printf('gita#command#%s#command', s:normalize(name))
+          let funcname = printf(
+                \ 'gita#command#%s#command',
+                \ substitute(name, '-', '_', 'g'),
+                \)
           return call(funcname, [a:bang, a:range, args])
         catch /^Vim\%((\a\+)\)\=:E117/
           " fail silently
         endtry
       endif
-      call gita#command#execute(s:ArgumentParser.splitargs(a:args))
+      call gita#command#execute(gita#util#splitargs(a:args))
       call gita#util#doautocmd('User', 'GitaStatusModified')
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()
@@ -134,7 +135,10 @@ function! gita#command#complete(arglead, cmdline, cursorpos) abort
     try
       if bang !=# '!'
         try
-          let funcname = printf('gita#command#%s#complete', s:normalize(name))
+          let funcname = printf(
+                \ 'gita#command#%s#complete',
+                \ substitute(name, '-', '_', 'g'),
+                \)
           return call(funcname, [a:arglead, cmdline, a:cursorpos])
         catch /^Vim\%((\a\+)\)\=:E117/
           " fail silently

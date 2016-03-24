@@ -51,7 +51,7 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <S-Return> %s',
         \ g:gita#content#status#secondary_action_mapping
         \)
-  nmap <buffer> <C-^> <Plug>(gita-commit)
+  nmap <buffer><nowait> <C-^> <Plug>(gita-commit)
 endfunction
 
 function! s:get_candidate(index) abort
@@ -70,21 +70,20 @@ function! s:compare_statuses(lhs, rhs) abort
   endif
 endfunction
 
-function! s:get_prologue() abort
-  let git = gita#core#get_or_fail()
-  let local = s:GitInfo.get_local_branch(git)
-  let remote = s:GitInfo.get_remote_branch(git)
-  let mode = s:GitInfo.get_current_mode(git)
+function! s:get_prologue(git) abort
+  let local = s:GitInfo.get_local_branch(a:git)
+  let remote = s:GitInfo.get_remote_branch(a:git)
+  let mode = s:GitInfo.get_current_mode(a:git)
   let is_connected = !empty(remote.remote)
 
-  let name = git.repository_name
+  let name = a:git.repository_name
   let branchinfo = is_connected
         \ ? printf('%s/%s <> %s/%s', name, local.name, remote.remote, remote.name)
         \ : printf('%s/%s', name, local.name)
   let connection = ''
   if is_connected
-    let outgoing = s:GitInfo.count_commits_ahead_of_remote(git)
-    let incoming = s:GitInfo.count_commits_behind_remote(git)
+    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
+    let incoming = s:GitInfo.count_commits_behind_remote(a:git)
     if outgoing > 0 && incoming > 0
       let connection = printf(
             \ '%d commit(s) ahead and %d commit(s) behind of remote',
@@ -149,7 +148,8 @@ function! gita#content#status#open(options) abort
 endfunction
 
 function! gita#content#status#redraw() abort
-  let prologue = [s:get_prologue()]
+  let git = gita#core#get_or_fail()
+  let prologue = [s:get_prologue(git)]
   let contents = map(
         \ copy(gita#meta#get_for('^status$', 'statuses', [])),
         \ 'v:val.record',

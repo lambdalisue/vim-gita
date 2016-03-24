@@ -41,7 +41,7 @@ function! s:get_parser() abort
 endfunction
 
 function! gita#command#status#command(bang, range, args) abort
-  let parser  = s:get_parser()
+  let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return

@@ -293,7 +293,7 @@ function! gita#content#commit#redraw() abort
         \ '''# '' . v:val.record',
         \)
   call gita#util#buffer#edit_content(
-        \ extend(prologue, contents),
+        \ commitmsg + extend(prologue, contents),
         \ gita#util#buffer#parse_cmdarg(),
         \)
 endfunction

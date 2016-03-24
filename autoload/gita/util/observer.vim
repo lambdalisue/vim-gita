@@ -45,13 +45,13 @@ function! gita#util#observer#update_all() abort
   for bufnum in keys(s:registry)
     let winnum = bufwinnr(str2nr(bufnum))
     if winnum >= 0
-      execute printf('keepjumps %dwincmd w', winnum)
+      execute printf('noautocmd keepjumps %dwincmd w', winnum)
       call gita#util#observer#update()
     else
       call setbufvar(str2nr(bufnum), '_gita_observer_internal_update_required', 1)
     endif
   endfor
-  execute printf('keepjumps %dwincmd w', winnum_saved)
+  execute printf('noautocmd keepjumps %dwincmd w', winnum_saved)
 endfunction
 
 " Automatically start observation when it's sourced

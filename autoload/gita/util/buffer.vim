@@ -6,18 +6,19 @@ let s:BufferManager = s:V.import('Vim.BufferManager')
 function! gita#util#buffer#open(name, ...) abort
   let config = extend({
         \ 'opener': '',
+        \ 'window': '',
+        \ 'selection': [],
         \}, get(a:000, 0, {}))
   let config.opener = empty(config.opener) ? 'edit' : config.opener
-  let window  = get(config, 'window', '')
-  if empty(window)
+  if empty(config.window)
     let loaded = s:Buffer.open(a:name, config.opener)
     let bufnum = bufnr('%')
-    return {
+    let result = {
           \ 'loaded': loaded,
           \ 'bufnum': bufnum,
           \}
   else
-    let vname = printf('_buffer_manager_%s', window)
+    let vname = printf('_buffer_manager_%s', config.window)
     if !has_key(s:, vname)
       let s:{vname} = s:BufferManager.new()
     endif
@@ -25,10 +26,13 @@ function! gita#util#buffer#open(name, ...) abort
           \ 'opener',
           \ 'range',
           \]))
-    return {
+    let result = {
           \ 'loaded': ret.loaded,
           \ 'bufnum': ret.bufnr,
           \}
+  endif
+  if !empty(config.selection)
+    call gita#util#select(config.selection)
   endif
 endfunction
 

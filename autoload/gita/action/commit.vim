@@ -5,7 +5,7 @@ function! s:action_open(candidate, options) abort
   let options = extend({
         \ 'amend': 0,
         \}, a:options)
-  call gita#content#status#open({
+  call gita#content#commit#open({
         \ 'amend': options.amend,
         \ 'filenames': filenames,
         \})
