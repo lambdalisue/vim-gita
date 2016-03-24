@@ -3,21 +3,21 @@ function! s:action(candidate, options) abort
         \ 'anchor': 1,
         \ 'opener': '',
         \ 'selection': [],
-        \ 'method': g:gita#action#patch#default_method,
+        \ 'method': '',
         \}, a:options)
   call gita#option#assign_opener(options)
   call gita#option#assign_selection(options)
   let options.selection = get(a:candidate, 'selection', options.selection)
-  let args = [
-        \ empty(options.anchor) ? '' : '--anchor',
-        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
-        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
-        \   options.selection[0], get(options.selection, 1, options.selection[0])
-        \ ),
-        \]
-  let args += empty(options.method) ? [] : ['--' . options.method]
-  let args += ['--', fnameescape(a:candidate.path)]
-  execute 'Gita patch ' . join(filter(args, '!empty(v:val)'))
+  let options.opener = empty(options.opener) ? 'tabedit' : options.opener
+  if options.anchor && gita#util#anchor#is_available(options.opener)
+    call gita#util#anchor#focus()
+  endif
+  call gita#content#patch#open({
+        \ 'filename': a:candidate.path,
+        \ 'opener': options.opener,
+        \ 'selection': options.selection,
+        \ 'method': options.method,
+        \})
 endfunction
 
 function! gita#action#patch#define(disable_mapping) abort
@@ -53,7 +53,3 @@ function! gita#action#patch#define(disable_mapping) abort
   nmap <buffer><nowait><expr> p2 gita#action#smart_map('p2', '<Plug>(gita-patch-two)')
   nmap <buffer><nowait><expr> p3 gita#action#smart_map('p3', '<Plug>(gita-patch-three)')
 endfunction
-
-call gita#util#define_variables('action#patch', {
-      \ 'default_method': '',
-      \})

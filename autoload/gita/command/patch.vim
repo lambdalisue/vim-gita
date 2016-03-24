@@ -41,10 +41,13 @@ function! s:get_parser() abort
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'one')
         let a:options.method = 'one'
+        unlet a:options.one
       elseif get(a:options, 'two')
         let a:options.method = 'two'
+        unlet a:options.two
       else
         let a:options.method = 'three'
+        unlet a:options.three
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -52,28 +55,19 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#patch#command(...) abort
+function! gita#command#patch#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#patch#default_options),
-        \ options,
-        \)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#ui#patch#open(options)
+  call gita#content#patch#open(options)
 endfunction
 
-function! gita#command#patch#complete(...) abort
+function! gita#command#patch#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#patch', {
-      \ 'default_options': {},
-      \})
