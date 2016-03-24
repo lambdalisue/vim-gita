@@ -51,6 +51,15 @@ function! gita#action#get_candidates(...) abort
   return candidates
 endfunction
 
+function! gita#action#find_candidate(candidates, record, attrname) abort
+  for candidate in a:candidates
+    if candidate[a:attrname] ==# a:record
+      return candidate
+    endif
+  endfor
+  return {}
+endfunction
+
 function! gita#action#do(name, candidates) abort
   let action = gita#action#get_action(a:name)
   let candidates = filter(

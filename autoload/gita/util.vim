@@ -126,12 +126,12 @@ function! s:translate(key, options, scheme) abort
   elseif s:Prelude.is_number(value)
     return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
   else
-  let value = value =~# '\s' ? printf("'%s'", value) : value
-  return s:StringExt.splitargs(s:StringExt.format(
-        \ a:scheme,
-        \ { 'k': 'key', 'v': 'val' },
-        \ { 'key': a:key, 'val': value },
-        \))
+    let value = value =~# '\s' ? printf("'%s'", value) : value
+    return s:StringExt.splitargs(s:StringExt.format(
+          \ a:scheme,
+          \ { 'k': 'key', 'v': 'val' },
+          \ { 'key': a:key, 'val': value },
+          \))
   endif
 endfunction
 

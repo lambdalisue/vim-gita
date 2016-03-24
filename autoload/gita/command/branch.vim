@@ -1,46 +1,5 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ArgumentParser = s:V.import('ArgumentParser')
-
-function! s:execute_command(git, options) abort
-  let args = gita#util#args_from_options(a:options, {
-        \ 'delete': 1,
-        \ 'D': 1,
-        \ 'create-reflog': 1,
-        \ 'force': 1,
-        \ 'move': 1,
-        \ 'M': 1,
-        \ 'remotes': 1,
-        \ 'all': 1,
-        \ 'list': '--%k %v',
-        \ 'track': 1,
-        \ 'no-track': 1,
-        \ 'set-upstream': 1,
-        \ 'set-upstream-to': 1,
-        \ 'unset-upstream': 1,
-        \ 'contains': '--%k %v',
-        \ 'merged': '--%k %v',
-        \ 'no-merged': '--%k %v',
-        \})
-  if has_key(a:options, 'branch')
-    let args += [a:options.branch]
-  endif
-  if has_key(a:options, 'start-point') && gita#util#any(a:options, [
-        \ 'set-upstream', 'track', 'no-track',
-        \])
-    let args += [a:options['start-point']]
-  endif
-  if has_key(a:options, 'newbranch') && gita#util#any(a:options, [
-        \ 'move', 'M',
-        \])
-    let args += [get(a:options, 'newbranch', '')]
-  endif
-  let args = ['branch', '--no-color', '--verbose'] + args
-  return gita#execute(a:git, args, s:Dict.pick(a:options, [
-        \ 'quiet', 'fail_silently',
-        \]))
-endfunction
 
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
@@ -50,16 +9,12 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
-    call s:parser.add_argument(
           \ '--track', '-t',
           \ 'set up tracking mode (see git-pull(1))', {
           \   'conflicts': [
           \     'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -68,7 +23,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -78,7 +33,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'unset-upstream',
           \     'move', 'M', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -87,7 +42,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to',
           \     'move', 'M', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -109,7 +64,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -118,7 +73,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'delete',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -127,7 +82,7 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'M', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
@@ -136,13 +91,13 @@ function! s:get_parser() abort
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'delete', 'D',
-          \     'list', 'ui',
+          \     'list',
           \   ],
           \})
     call s:parser.add_argument(
           \ '--list',
-          \ 'list branch names. the value is used to filter branches. imply --ui', {
-          \   'type': s:ArgumentParser.types.value,
+          \ 'list branch names. the value is used to filter branches', {
+          \   'type': s:ArgumentParser.types.any,
           \   'conflicts': [
           \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
           \     'move', 'M', 'delete', 'D',
@@ -155,8 +110,9 @@ function! s:get_parser() abort
           \})
     call s:parser.add_argument(
           \ '--force', '-f',
-          \ 'force creation, mov/rename, deletion',
-          \)
+          \ 'force creation, move/rename, deletion', {
+          \   'conflicts': ['list'],
+          \})
     call s:parser.add_argument(
           \ '--no-merged',
           \ 'print only not merged branches', {
@@ -171,7 +127,7 @@ function! s:get_parser() abort
           \ 'branch',
           \ 'the name of the branch to create', {
           \   'complete': function('gita#complete#branch'),
-          \   'conflicts': ['ui'],
+          \   'conflicts': ['list'],
           \})
     call s:parser.add_argument(
           \ 'newbranch',
@@ -188,30 +144,14 @@ function! s:get_parser() abort
           \   ],
           \})
     call s:parser.add_argument(
-          \ '--ui',
-          \ 'show a buffer instead of echo the result. imply --quiet', {
-          \   'deniable': 1,
-          \   'conflicts': [
-          \     'track', 'no-track', 'set-upstream-to', 'unset-upstream',
-          \     'move', 'M', 'delete', 'D',
-          \     'branch',
-          \   ],
-          \})
-    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
-          \   'superordinates': ['ui'],
-          \})
-    call s:parser.add_argument(
-          \ '--selection',
-          \ 'a line number or range of the selection', {
-          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
-          \   'superordinates': ['ui'],
+          \   'superordinates': ['list'],
           \})
     function! s:parser.hooks.pre_validate(options) abort
-      if empty(s:parser.get_conflicted_arguments('ui', a:options))
-        let a:options.ui = 1
+      if empty(s:parser.get_conflicted_arguments('list', a:options))
+        let a:options.list = get(a:options, 'list', 1)
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -219,84 +159,22 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-
-function! gita#command#branch#call(...) abort
-  let options = extend({
-        \ 'remotes': 0,
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  if gita#util#any(options, ['set-upstream', 'track', 'no-track'])
-    let options.branch = gita#variable#get_valid_commit(git, 
-          \ options.branch,
-          \)
-    let options['start-point'] = gita#variable#get_valid_commit(git, 
-          \ get(options, 'start-point', ''),
-          \ { '_allow_empty': 1 },
-          \)
-  elseif gita#util#any(options, ['set-upstream-to', 'unset-upstream'])
-    let options.branch = gita#variable#get_valid_commit(git, 
-          \ get(options, 'branch', ''),
-          \ { '_allow_empty': 1 },
-          \)
-  elseif gita#util#any(options, ['move', 'M'])
-    let options.branch = gita#variable#get_valid_commit(git, 
-          \ get(options, 'branch', ''),
-          \)
-    let options.newbranch = gita#variable#get_valid_commit(git, 
-          \ get(options, 'newbranch', ''),
-          \)
-  elseif gita#util#any(options, ['delete', 'D'])
-    let options.branch = gita#variable#get_valid_commit(git, 
-          \ get(options, 'branch', ''),
-          \)
-  endif
-  let content = s:execute_command(git, options)
-  if options.remotes
-    let content = map(
-          \ content,
-          \ 'substitute(v:val, ''^\(..\)'', ''\1remotes/'', '''')'
-          \)
-  endif
-  if gita#util#any(options, [
-        \ 'set-upstream', 'track', 'no-track',
-        \ 'set-upstream-to', 'unset-upstream',
-        \ 'move', 'M', 'delete', 'D',
-        \ 'branch',
-        \])
-    call gita#util#doautocmd('User', 'GitaStatusModified')
-  endif
-  let result = {
-        \ 'content': content,
-        \ 'options': options,
-        \}
-  return result
-endfunction
-
-function! gita#command#branch#command(...) abort
-  let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+function! gita#command#branch#command(bang, range, args) abort
+  let parser = s:get_parser()
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#branch#default_options),
-        \ options,
-        \)
-  if get(options, 'ui')
-    call gita#option#assign_selection(options)
-    call gita#option#assign_opener(options)
-    call gita#ui#branch#open(options)
+  if empty(get(options, 'list'))
+    call gita#execute(['branch', '--no-color', '--verbose'] + options.__args__)
+    call gita#util#doautocmd('User', 'GitaStatusModified')
   else
-    call gita#command#branch#call(options)
+    call gita#option#assign_opener(options)
+    call gita#content#branch#open(options)
   endif
 endfunction
 
-function! gita#command#branch#complete(...) abort
+function! gita#command#branch#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#branch', {
-      \ 'default_options': {},
-      \})

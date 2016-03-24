@@ -50,6 +50,9 @@ endfunction
 function! gita#autocmd#call(name) abort
   try
     let content_type = gita#autocmd#parse_bufname(expand('<afile>'))[1]
+    if content_type ==# 'branch'
+      return gita#content#autocmd(a:name)
+    endif
     let fname = printf(
           \ 'gita#ui#%s#autocmd',
           \ substitute(content_type, '-', '_', 'g'),

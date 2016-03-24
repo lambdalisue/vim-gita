@@ -39,3 +39,28 @@ endfunction
 function! gita#util#buffer#edit_content(...) abort
   call call(s:Buffer.edit_content, a:000, s:Buffer)
 endfunction
+
+function! gita#util#buffer#parse_cmdarg(...) abort
+  let cmdarg = get(a:000, 0, v:cmdarg)
+  let options = {}
+  if cmdarg =~# '++enc='
+    let options.encoding = matchstr(cmdarg, '++enc=\zs[^ ]\+\ze')
+  endif
+  if cmdarg =~# '++ff='
+    let options.fileformat = matchstr(cmdarg, '++ff=\zs[^ ]\+\ze')
+  endif
+  if cmdarg =~# '++bad='
+    let options.bad = matchstr(cmdarg, '++bad=\zs[^ ]\+\ze')
+  endif
+  if cmdarg =~# '++bin'
+    let options.binary = 1
+  endif
+  if cmdarg =~# '++nobin'
+    let options.nobinary = 1
+  endif
+  if cmdarg =~# '++edit'
+    let options.edit = 1
+  endif
+  return options
+endfunction
+
