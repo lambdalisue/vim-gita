@@ -1,4 +1,5 @@
 let s:V = gita#vital()
+let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
@@ -216,6 +217,27 @@ function! gita#complete#filename(arglead, cmdline, cursorpos, ...) abort
     call s:Prompt.debug(v:throwpoint)
     return ''
   endtry
+endfunction
+
+function! gita#complete#directory(arglead, cmdline, cursorpos, ...) abort
+  let git = gita#core#get()
+  let root = git.is_enabled ? git.worktree : getcwd()
+  let root = s:Path.realpath(s:Path.remove_last_separator(root) . s:Path.separator())
+  let candidates = split(
+        \ glob(s:Path.join(root, a:arglead . '*'), 0),
+        \ "\r\\?\n",
+        \)
+  let candidates = filter(candidates, 'isdirectory(v:val)')
+  " substitute 'root'
+  call map(candidates, printf(
+        \ 'substitute(v:val, ''^%s'', '''', '''')',
+        \ s:Prelude.escape_pattern(root),
+        \))
+  " substitute /home/<user> to ~/ if ~/ is specified
+  if a:arglead =~# '^\~'
+    call map(candidates, 'fnameescape(v:val, '':~'')')
+  endif
+  return candidates
 endfunction
 
 augroup vim_gita_internal_complete
