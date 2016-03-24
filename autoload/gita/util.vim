@@ -4,6 +4,7 @@ let s:Guard = s:V.import('Vim.Guard')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:StringExt = s:V.import('Data.StringExt')
+let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:diffoff() abort
   if !&diff
@@ -156,4 +157,11 @@ function! gita#util#any(object, keys) abort
     endif
   endfor
   return 0
+endfunction
+
+function! gita#util#splitargs(args) abort
+  let args = s:ArgumentParser.splitargs(a:args)
+  let args = map(args, 's:ArgumentParser.strip_quotes(v:val)')
+  let args = map(args, 'v:val ==# ''%'' ? gita#meta#expand(v:val) : v:val')
+  return args
 endfunction
