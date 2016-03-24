@@ -184,7 +184,7 @@ function! gita#ui#grep#redraw() abort
   let contents = s:format_matches(candidates, winwidth(0))
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \)
   call s:define_syntax()
 endfunction

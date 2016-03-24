@@ -1,0 +1,135 @@
+Describe gita#content
+  Describe #parse_bufname({bufname})
+    It throws an exception if {bufname} does not follow schemes defined
+      Throws /A buffer name "foo" does not follow a correct gita buffer name pattern/
+            \ gita#content#parse_bufname('foo')
+    End
+
+    It prases gita://<refname>:<content_type>:<extra_options>/<treeish> type names
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached:reverse/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff:cached:reverse/HEAD:README.md',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached', 'reverse',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff:cached/HEAD:README.md',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff:cached/:README.md',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': ':README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff:cached/HEAD',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff:cached/',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': '',
+            \})
+    End
+
+    It prases gita://<refname>:<content_type>/<treeish> type names
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff/HEAD:README.md',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff/:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff/:README.md',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': ':README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff/HEAD',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': 'HEAD',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://vim-gita:diff/')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://vim-gita:diff/',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': '',
+            \})
+    End
+
+    It prases gita:<refname>:<content_type>:<extra_options> type names
+      let ret = gita#content#parse_bufname('gita:vim-gita:commit:amend')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:vim-gita:commit:amend',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'commit',
+            \ 'extra_options': ['amend'],
+            \})
+    End
+
+    It prases gita:<refname>:<content_type> type names
+      let ret = gita#content#parse_bufname('gita:vim-gita:status')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:vim-gita:status',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'status',
+            \ 'extra_options': [],
+            \})
+    End
+  End
+End
+

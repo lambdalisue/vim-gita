@@ -219,7 +219,7 @@ function! gita#ui#diff_ls#redraw() abort
   let contents = s:format_stats(stats, winwidth(0))
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \)
 endfunction
 

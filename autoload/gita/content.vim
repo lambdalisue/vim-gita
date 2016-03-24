@@ -74,7 +74,7 @@ function! gita#content#parse_bufname(bufname) abort
           \}
   else
     call gita#throw(printf(
-          \ 'A buffer name "%s" does not follow correct gita buffer name pattern',
+          \ 'A buffer name "%s" does not follow a correct gita buffer name pattern',
           \ a:bufname,
           \))
   endif

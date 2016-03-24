@@ -141,7 +141,7 @@ function! gita#ui#blame_navi#redraw() abort
   let blamemeta = gita#meta#get_for('blame-navi', 'blamemeta')
   call gita#util#buffer#edit_content(
         \ blamemeta.navi_content,
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \)
   call gita#ui#blame#set_pseudo_separators(blamemeta)
 endfunction

@@ -50,7 +50,7 @@ endfunction
 function! gita#autocmd#call(name) abort
   try
     let content_type = gita#autocmd#parse_bufname(expand('<afile>'))[1]
-    if content_type =~# '^\%(branch\|show\|diff\)$'
+    if content_type =~# '^\%(branch\|show\|diff\|patch\)$'
       return gita#content#autocmd(a:name)
     endif
     let fname = printf(

@@ -115,7 +115,7 @@ function! gita#ui#ls_files#redraw() abort
   let contents = map(copy(candidates), 'v:val.relpath')
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \)
 endfunction
 

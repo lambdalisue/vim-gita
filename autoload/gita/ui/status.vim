@@ -167,7 +167,7 @@ function! gita#ui#status#redraw() abort
   let contents = s:format_statuses(gita#meta#get_for('status', 'statuses', []))
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \)
 endfunction
 

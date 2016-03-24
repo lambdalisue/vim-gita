@@ -270,7 +270,7 @@ function! gita#ui#commit#redraw() abort
   let contents = map(copy(statuses), '"# " . v:val.record')
   call gita#util#buffer#edit_content(
         \ commitmsg + prologue + contents,
-        \ gita#autocmd#parse_cmdarg(),
+        \ gita#util#buffer#parse_cmdarg(),
         \0)
 endfunction
 
