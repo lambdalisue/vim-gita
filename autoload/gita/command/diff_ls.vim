@@ -9,18 +9,9 @@ function! s:get_parser() abort
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
-          \ '--anchor',
-          \ 'find and focus an anchor window before open a new buffer',
-          \)
-    call s:parser.add_argument(
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--selection',
-          \ 'a line number or range of the selection', {
-          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
           \ 'commit', [
@@ -30,34 +21,25 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
           \   'If <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#commitish'),
           \})
   endif
   return s:parser
 endfunction
 
-function! gita#command#diff_ls#command(...) abort
+function! gita#command#diff_ls#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#diff_ls#default_options),
-        \ options,
-        \)
   call gita#option#assign_commit(options)
   call gita#option#assign_selection(options)
   call gita#option#assign_opener(options)
-  call gita#ui#diff_ls#open(options)
+  call gita#content#diff_ls#open(options)
 endfunction
 
-function! gita#command#diff_ls#complete(...) abort
+function! gita#command#diff_ls#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
-
-call gita#util#define_variables('command#diff_ls', {
-      \ 'default_options': {},
-      \})

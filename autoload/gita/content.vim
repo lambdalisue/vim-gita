@@ -57,7 +57,7 @@ function! gita#content#parse_bufname(bufname) abort
   elseif a:bufname =~# '^gita:'
     let m = matchlist(
           \ a:bufname,
-          \ '^gita:\([^:/]\+\):\([^:/]\+\):\?\([^/]*\)$'
+          \ '^gita:\([^:/]\+\):\([^:/]\+\):\?\(.*\)$'
           \)
     if empty(m)
       call gita#throw(printf(

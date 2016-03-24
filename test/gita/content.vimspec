@@ -118,6 +118,15 @@ Describe gita#content
             \ 'content_type': 'commit',
             \ 'extra_options': ['amend'],
             \})
+
+      let ret = gita#content#parse_bufname('gita:vim-gita:diff-ls:origin/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:vim-gita:diff-ls:origin/HEAD',
+            \ 'refname': 'vim-gita',
+            \ 'content_type': 'diff-ls',
+            \ 'extra_options': ['origin/HEAD'],
+            \})
     End
 
     It prases gita:<refname>:<content_type> type names
