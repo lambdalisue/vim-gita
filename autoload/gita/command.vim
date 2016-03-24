@@ -86,6 +86,24 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! gita#command#execute(git, args, options) abort
+  let options = extend({
+        \ 'quiet': 0,
+        \ 'fail_silently': 0,
+        \}, a:options)
+  let args = filter(copy(a:args), '!empty(v:val)')
+  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
+        \ 'quiet', 'fail_silently'
+        \]))
+  if !options.fail_silently && !result.success
+    call s:GitProcess.throw(result)
+  elseif !options.quiet
+    call s:Prompt.debug('OK: ' . join(result.args, ' '))
+    echo join(result.content, "\n")
+  endif
+  return result.content
+endfunction
+
 function! gita#command#command(bang, range, args) abort
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)

@@ -31,21 +31,7 @@ function! gita#execute(git_or_args, ...) abort
     let args = a:git_or_args
     let options = get(a:000, 0, {})
   endif
-  let args = filter(copy(args), '!empty(v:val)')
-  let options = extend({
-        \ 'quiet': 0,
-        \ 'fail_silently': 0,
-        \}, options)
-  let result = s:GitProcess.execute(git, args, s:Dict.omit(options, [
-        \ 'quiet', 'fail_silently'
-        \]))
-  if !options.fail_silently && !result.success
-    call s:GitProcess.throw(result)
-  elseif !options.quiet
-    call s:Prompt.debug('OK: ' . join(result.args, ' '))
-    echo join(result.content, "\n")
-  endif
-  return result.content
+  return gita#command#execute(git, args, options)
 endfunction
 
 call gita#util#define_variables('', {
