@@ -40,7 +40,7 @@ function! gita#util#doautocmd(name, ...) abort
   let nomodeline = has('patch-7.4.438') && a:name ==# 'User'
         \ ? '<nomodeline> '
         \ : ''
-  execute printf('doautocmd %s%s %s', nomodeline, a:name, pattern)
+  execute 'doautocmd ' . nomodeline . a:name . ' ' . pattern
 endfunction
 
 function! gita#util#diffthis() abort
