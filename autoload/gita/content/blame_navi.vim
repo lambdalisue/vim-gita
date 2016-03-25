@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 
 function! s:parse_bufname(bufinfo) abort
@@ -47,7 +48,7 @@ function! s:on_BufReadCmd(options) abort
     autocmd ColorScheme <buffer> call gita#content#blame#define_highlights()
   augroup END
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal buftype=nowrite noswapfile nobuflisted
