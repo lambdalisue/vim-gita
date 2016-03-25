@@ -3,6 +3,7 @@ let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
 let s:Dict = s:V.import('Data.Dict')
 let s:Git = s:V.import('Git')
+let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 
 function! s:configure_options(options) abort
@@ -66,6 +67,15 @@ function! s:parse_bufname(bufinfo) abort
 endfunction
 
 function! s:execute_command(options) abort
+  let git = gita#core#get_or_fail()
+  if a:options.commit =~# '^.\{-}\.\.\..\{-}$'
+    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(a:options.commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let lhs = s:GitInfo.find_common_ancestor(git, lhs, rhs)
+    let a:options.commit = lhs . '..' . rhs
+  endif
   let args = gita#process#args_from_options(a:options, {
         \ 'unified': 1,
         \ 'minimal': 1,
@@ -114,7 +124,6 @@ function! s:execute_command(options) abort
         \ '--',
         \ a:options.filename,
         \]
-  let git = gita#core#get_or_fail()
   return gita#process#execute(git, args, { 'quiet': 1 })
 endfunction
 

@@ -12,12 +12,15 @@ function! s:action(candidate, options) abort
   if options.anchor && gita#util#anchor#is_available(options.opener)
     call gita#util#anchor#focus()
   endif
+  let commit = get(a:candidate, 'commit', get(options, 'commit', ''))
+  let cached = empty(commit) && !get(a:candidate, 'is_unstaged')
   call gita#content#diff#open({
-        \ 'commit': get(a:candidate, 'commit', get(options, 'commit', '')),
+        \ 'commit': commit,
         \ 'filename': a:candidate.path,
         \ 'opener': options.opener,
         \ 'selection': options.selection,
-        \ 'cached': !get(a:candidate, 'is_unstaged'),
+        \ 'cached': cached,
+        \ 'split': options.split,
         \})
 endfunction
 

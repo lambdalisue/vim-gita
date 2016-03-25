@@ -124,6 +124,7 @@ function! s:on_BufReadCmd(options) abort
   let stats = s:extend_stats(stats, winwidth(0))
   call gita#meta#set('content_type', 'diff-ls')
   call gita#meta#set('options', options)
+  call gita#meta#set('commit', options.commit)
   call gita#meta#set('stats', stats)
   call s:define_actions()
   call gita#util#anchor#attach()
