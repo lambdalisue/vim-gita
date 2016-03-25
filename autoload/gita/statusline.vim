@@ -1,6 +1,5 @@
 scriptencoding utf8
 let s:V = gita#vital()
-let s:StringExt = s:V.import('Data.StringExt')
 let s:Path = s:V.import('System.Filepath')
 let s:Cache = s:V.import('System.Cache.Memory')
 let s:Prompt = s:V.import('Vim.Prompt')
@@ -196,7 +195,7 @@ function! gita#statusline#format(format) abort
     endif
     call format_cache.remove(a:format)
     let info = { '_git': git }
-    let text = s:StringExt.format(a:format, s:format_map, info)
+    let text = gita#util#formatter#format(a:format, s:format_map, info)
     call format_cache.set(a:format, text)
     return text
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
