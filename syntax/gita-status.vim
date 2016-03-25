@@ -22,8 +22,8 @@ syntax match GitaIgnored    /^!!\s.*$/
 syntax match GitaUntracked  /^??\s.*$/
 syntax match GitaConflicted /^\%(DD\|AU\|UD\|UA\|DU\|AA\|UU\)\s.*$/
 syntax match GitaComment    /^.*$/ contains=ALL
-syntax match GitaBranch     /Gita status of [^ ]\+/hs=s+15 contained
-syntax match GitaBranch     /Gita status of [^ ]\+ <> [^ ]\+/hs=s+15 contained
+syntax match GitaBranch     /status of [^ ]\+/hs=s+10 contained
+syntax match GitaBranch     /status of [^ ]\+ <> [^ ]\+/hs=s+10 contained
 syntax match GitaHighlight  /\d\+ commit(s) ahead/ contained
 syntax match GitaHighlight  /\d\+ commit(s) behind/ contained
 syntax match GitaImportant  /REBASE-[mi] \d\/\d/
