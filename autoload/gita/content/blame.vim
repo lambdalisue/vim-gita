@@ -1,11 +1,14 @@
 let s:V = gita#vital()
+let s:Dict = s:V.import('Data.Dict')
 let s:String = s:V.import('Data.String')
 let s:DateTime = s:V.import('DateTime')
+let s:Path = s:V.import('System.Filepath')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Guard = s:V.import('Vim.Guard')
 let s:Python = s:V.import('Vim.Python')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:ProgressBar = s:V.import('ProgressBar')
+let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:execute_command(options) abort
@@ -15,7 +18,7 @@ function! s:execute_command(options) abort
     redrawstatus
     let args = [
           \ 'blame',
-          \ g:gita#command#blame#use_porcelain_instead
+          \ g:gita#content#blame#use_porcelain_instead
           \   ? '--porcelain'
           \   : '--incremental',
           \ a:options.commit,
@@ -25,42 +28,17 @@ function! s:execute_command(options) abort
     let content = gita#command#execute(args, { 'quiet': 1 })
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
-    let blameobj = s:get_blameobj(content, commit, filename)
+    let blameobj = s:get_blameobj(content, a:options.commit, a:options.filename)
     setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
     redrawstatus
     let blamemeta = s:get_blamemeta(
           \ blameobj,
-          \ g:gita#command#blame#navigator_width
+          \ g:gita#content#blame#navigator_width
           \)
     return blamemeta
   finally
     call guard.restore()
   endtry
-endfunction
-
-function! s:call_pseudo_command() abort range
-  let prefix = a:firstline == a:lastline ? '' : "'<,'>"
-  let ret = s:Prompt.input('None', ':', prefix)
-  redraw | echo
-  if ret =~# '\v^[0-9]+$'
-    let blamemeta = gita#meta#get_for('^blame-', 'blamemeta')
-    call gita#content#blame#select(blamemeta, [str2nr(ret)])
-  else
-    try
-      execute ret
-    catch /^Vim.\{-}:/
-      call s:Prompt.error(substitute(v:exception, '^Vim.\{-}:', '', ''))
-    endtry
-  endif
-endfunction
-
-function! s:get_candidate(index) abort
-  let blamemeta = gita#meta#get_for('^blame-', 'blamemeta', { 'lineinfos': {}})
-  let lineinfo = get(blamemeta.lineinfos, a:index, {})
-  if empty(lineinfo)
-    return {}
-  endif
-  return blamemeta.chunks[lineinfo.chunkref]
 endfunction
 
 function! s:get_blameobj(content, commit, filename) abort
@@ -78,9 +56,15 @@ function! s:get_blameobj(content, commit, filename) abort
       if empty(a:commit)
         let blameobj.file_content = readfile(a:filename)
       else
-        let blameobj.file_content = gita#execute([
-              \ 'show', a:commit . ':' . a:filename,
-              \], { 'quiet': 1 },
+        let git = gita#core#get_or_fail()
+        let treeish = printf('%s:%s',
+              \ a:commit,
+              \ s:Path.unixpath(s:Git.get_relative_path(git, a:filename)),
+              \)
+        let blameobj.file_content = gita#execute(
+              \ git,
+              \ ['show', treeish],
+              \ { 'quiet': 1 },
               \)
       endif
     endif
@@ -239,12 +223,12 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
 endfunction
 
 function! gita#content#blame#retrieve(options) abort
-  let bufname_view = gita#ui#blame_view#build_bufname(options)
+  let bufname_view = gita#content#blame_view#build_bufname(a:options)
   if bufexists(bufname_view) && !empty(getbufvar(bufname_view, '_gita_blame_cache'))
     return getbufvar(bufname_view, '_gita_blame_cache')
   endif
 
-  let bufname_navi = gita#ui#blame_navi#build_bufname(options)
+  let bufname_navi = gita#content#blame_navi#build_bufname(a:options)
   if bufexists(bufname_navi) && !empty(getbufvar(bufname_navi, '_gita_blame_cache'))
     return getbufvar(bufname_navi, '_gita_blame_cache')
   endif
@@ -271,6 +255,7 @@ function! gita#content#blame#open(options) abort
         \ ? g:gita#content#blame#default_opener
         \ : options.opener
   call gita#util#cascade#set('blame-navi', s:Dict.pick(options, [
+        \ 'previous',
         \ 'commit',
         \ 'filename',
         \]))
@@ -280,12 +265,7 @@ function! gita#content#blame#open(options) abort
         \})
   setlocal scrollbind
   silent syncbind
-endfunction
-
-function! gita#content#blame#define_actions() abort
-  call gita#action#attach(function('s:get_candidate'))
-  nmap <silent><buffer> : :<C-u>call <SID>call_pseudo_command()<CR>
-  vmap <silent><buffer> : :call <SID>call_pseudo_command()<CR>
+  call gita#content#blame#define_highlights()
 endfunction
 
 function! gita#content#blame#define_highlights() abort
@@ -305,6 +285,15 @@ function! gita#content#blame#select(blamemeta, selection) abort
         \ gita#content#blame#get_actual_linenum(a:blamemeta, line_end),
         \]
   call gita#util#select(actual_selection)
+endfunction
+
+function! gita#content#blame#get_candidate(index) abort
+  let blamemeta = gita#meta#get_for('^blame-', 'blamemeta', { 'lineinfos': {}})
+  let lineinfo = get(blamemeta.lineinfos, a:index, {})
+  if empty(lineinfo)
+    return {}
+  endif
+  return blamemeta.chunks[lineinfo.chunkref]
 endfunction
 
 function! gita#content#blame#get_pseudo_linenum(blamemeta, linenum) abort

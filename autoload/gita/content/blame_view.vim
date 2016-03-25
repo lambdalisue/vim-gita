@@ -19,11 +19,10 @@ function! s:parse_bufname(bufinfo) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#content#blame#define_actions()
+  call gita#action#attach(function('gita#content#blame#get_candidate'))
   call gita#action#include([
         \ 'common', 'blame',
         \], g:gita#content#blame_view#disable_default_mappings)
-
   if g:gita#content#blame_view#disable_default_mappings
     return
   endif
@@ -35,8 +34,6 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <S-Return> %s',
         \ g:gita#content#blame_view#secondary_action_mapping
         \)
-  nmap <buffer><nowait> [c <Plug>(gita-blame-previous-chunk)
-  nmap <buffer><nowait> ]c <Plug>(gita-blame-next-chunk)
 endfunction
 
 function! s:on_BufReadCmd(options) abort
@@ -49,10 +46,12 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('content_type', 'blame-view')
   call gita#meta#set('options', options)
   call gita#meta#set('blamemeta', blamemeta)
+  call gita#meta#set('previous', get(options, 'previous', []))
   augroup vim_gita_internal_blame_view
     autocmd! * <buffer>
     autocmd BufEnter    <buffer> call s:on_BufEnter()
     autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()
+    autocmd ColorScheme <buffer> call gita#content#blame#define_highlights()
   augroup END
   call s:define_actions()
   call gita#util#anchor#attach()
@@ -91,7 +90,7 @@ function! s:on_BufWinEnter() abort
     call gita#util#buffer#open(bufname, {
           \ 'opener': printf(
           \   'leftabove %d vsplit',
-          \   g:gita#content#blame#viewgator_width,
+          \   g:gita#content#blame#navigator_width,
           \ ),
           \ 'window': 'blame_navi',
           \})
@@ -102,7 +101,7 @@ endfunction
 function! gita#content#blame_view#build_bufname(options) abort
   let git = gita#core#get_or_fail()
   let treeish = printf('%s:%s',
-        \ a:options.commit,
+        \ get(a:options, 'commit', ''),
         \ s:Path.unixpath(s:Git.get_relative_path(git, a:options.filename)),
         \)
   return gita#content#build_bufname('blame-view', {

@@ -54,7 +54,7 @@ function! s:open2(options) abort
         \ 'selection': options.selection,
         \}))
   call gita#util#diffthis()
-  call gita#ui#show#open(extend(loptions, {
+  call gita#content#show#open(extend(loptions, {
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
@@ -90,9 +90,9 @@ function! s:open3(options) abort
         \}
   let vertical = matchstr(&diffopt, 'vertical')
   let opener = empty(options.opener)
-        \ ? g:gita#ui#patch#default_opener
+        \ ? g:gita#content#patch#default_opener
         \ : options.opener
-  call gita#ui#show#open(extend(roptions, {
+  call gita#content#show#open(extend(roptions, {
         \ 'opener': opener,
         \ 'window': 'patch3_rhs',
         \ 'selection': options.selection,
@@ -100,7 +100,7 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let rhs_bufnum = bufnr('%')
 
-  call gita#ui#show#open(extend(coptions, {
+  call gita#content#show#open(extend(coptions, {
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
@@ -110,7 +110,7 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let chs_bufnum = bufnr('%')
 
-  call gita#ui#show#open(extend(loptions, {
+  call gita#content#show#open(extend(loptions, {
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',

@@ -263,7 +263,7 @@ function! s:open2(options) abort
         \}
   let vertical = matchstr(&diffopt, 'vertical')
   let opener = empty(options.opener)
-        \ ? g:gita#ui#diff#default_opener
+        \ ? g:gita#content#diff#default_opener
         \ : options.opener
   call gita#content#show#open(extend(options.reverse ? loptions : roptions, {
         \ 'opener': opener,

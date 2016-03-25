@@ -94,8 +94,8 @@ function! gita#option#assign_selection(options) abort
     let le = get(a:options.selection, 1, ls)
     let blamemeta = gita#meta#get_for('^blame-\%(navi\|view\)$', 'blamemeta')
     let a:options.selection = [
-          \ gita#ui#blame#get_pseudo_linenum(blamemeta, ls),
-          \ gita#ui#blame#get_pseudo_linenum(blamemeta, le),
+          \ gita#content#blame#get_pseudo_linenum(blamemeta, ls),
+          \ gita#content#blame#get_pseudo_linenum(blamemeta, le),
           \]
   elseif !empty(content_type)
     " No selection should be available for other manipulation panels

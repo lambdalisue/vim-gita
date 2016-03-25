@@ -19,11 +19,10 @@ function! s:parse_bufname(bufinfo) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#content#blame#define_actions()
+  call gita#action#attach(function('gita#content#blame#get_candidate'))
   call gita#action#include([
-        \ 'common', 'edit', 'show', 'diff', 'blame',
+        \ 'common', 'blame', 'edit', 'show', 'diff',
         \], g:gita#content#blame_navi#disable_default_mappings)
-
   if g:gita#content#blame_navi#disable_default_mappings
     return
   endif
@@ -35,8 +34,6 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <S-Return> %s',
         \ g:gita#content#blame_navi#secondary_action_mapping
         \)
-  nmap <buffer><nowait> [c <Plug>(gita-blame-previous-chunk)
-  nmap <buffer><nowait> ]c <Plug>(gita-blame-next-chunk)
 endfunction
 
 function! s:on_BufReadCmd(options) abort
@@ -49,11 +46,13 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('content_type', 'blame-navi')
   call gita#meta#set('options', options)
   call gita#meta#set('blamemeta', blamemeta)
+  call gita#meta#set('previous', get(options, 'previous', []))
   augroup vim_gita_internal_blame_navi
     autocmd! * <buffer>
     autocmd CursorMoved <buffer> call s:on_CursorMoved()
     autocmd BufEnter    <buffer> call s:on_BufEnter()
     autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()
+    autocmd ColorScheme <buffer> call gita#content#blame#define_highlights()
   augroup END
   call s:define_actions()
   call gita#util#anchor#attach()
@@ -118,8 +117,9 @@ function! s:on_BufWinEnter() abort
 endfunction
 
 function! gita#content#blame_navi#build_bufname(options) abort
+  let git = gita#core#get_or_fail()
   let treeish = printf('%s:%s',
-        \ a:options.commit,
+        \ get(a:options, 'commit', ''),
         \ s:Path.unixpath(s:Git.get_relative_path(git, a:options.filename)),
         \)
   return gita#content#build_bufname('blame-navi', {
