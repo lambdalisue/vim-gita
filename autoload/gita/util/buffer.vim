@@ -32,7 +32,7 @@ function! gita#util#buffer#open(name, ...) abort
           \}
   endif
   if !empty(config.selection)
-    call gita#util#select(config.selection)
+    call gita#util#buffer#select(config.selection)
   endif
   return result
 endfunction
