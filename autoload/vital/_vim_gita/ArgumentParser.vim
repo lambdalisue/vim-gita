@@ -419,7 +419,7 @@ endfunction
 function! s:parser.parse(bang, range, ...) abort
   let cmdline = get(a:000, 0, '')
   let args = s:Prelude.is_string(cmdline) ? s:splitargs(cmdline) : cmdline
-  let options = self._parse_args(args, extend({
+  let options = self.parse_args(args, extend({
         \ '__bang__': s:Prelude.is_string(a:bang) ? a:bang ==# '!' : a:bang,
         \ '__range__': a:range,
         \}, get(a:000, 1, {})))
@@ -451,7 +451,7 @@ endfunction
 
 " @vimlint(EVL104, 1, l:name)
 " @vimlint(EVL101, 1, l:value)
-function! s:parser._parse_args(args, ...) abort
+function! s:parser.parse_args(args, ...) abort
   let options = extend({
         \ '__unknown__': [],
         \ '__args__': [],
@@ -711,7 +711,7 @@ function! s:parser.complete(arglead, cmdline, cursorpos, ...) abort
   let cmdline = substitute(a:cmdline, '^[^ ]\+\s', '', '')
   let cmdline = substitute(cmdline, '[^ ]\+$', '', '')
   let options = extend(
-        \ self._parse_args(s:splitargs(cmdline)),
+        \ self.parse_args(s:splitargs(cmdline)),
         \ get(a:000, 0, {}),
         \)
   call self.hooks.pre_complete(options)
