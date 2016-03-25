@@ -81,6 +81,6 @@ function! gita#action#index#define(disable_mapping) abort
   vmap <buffer><nowait><expr> -- gita#action#smart_map('--', '<Plug>(gita-toggle)')
 endfunction
 
-call gita#util#define_variables('action#index', {
+call gita#define_variables('action#index', {
       \ 'prefer_unstage': 0,
       \})

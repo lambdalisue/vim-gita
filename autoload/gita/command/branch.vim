@@ -166,7 +166,8 @@ function! gita#command#branch#command(bang, range, args) abort
     return
   endif
   if empty(get(options, 'list'))
-    call gita#command#execute(['branch', '--no-color', '--verbose'] + options.__args__)
+    let git = gita#core#get_or_fail()
+    call gita#process#execute(git, ['branch', '--no-color', '--verbose'] + options.__args__)
     call gita#util#doautocmd('User', 'GitaStatusModified')
   else
     call gita#option#assign_opener(options)

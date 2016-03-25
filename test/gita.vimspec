@@ -11,4 +11,59 @@ Describe gita
       Throws /^vim-gita: foo$/ gita#throw('foo')
     End
   End
+
+  Describe #define_variables({prefix}, {defaults})
+    Before
+      let guard = s:Guard.store(
+            \ 'g:gita#foo',
+            \ 'g:gita#bar',
+            \ 'g:gita#hello#foo',
+            \ 'g:gita#hello#bar',
+            \)
+    End
+    After
+      call guard.restore()
+    End
+
+    It define 'g:gita#{key}' variables when {prefix} is empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gita#define_variables('', defaults)
+      Assert exists('g:gita#foo')
+      Assert exists('g:gita#bar')
+
+      Assert Equals(g:gita#foo, defaults.foo)
+      Assert Equals(g:gita#bar, defaults.bar)
+    End
+
+    It define 'g:gita#{prefix}#{key}' variables when {prefix} is NOT empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gita#define_variables('hello', defaults)
+      Assert exists('g:gita#hello#foo')
+      Assert exists('g:gita#hello#bar')
+
+      Assert Equals(g:gita#hello#foo, defaults.foo)
+      Assert Equals(g:gita#hello#bar, defaults.bar)
+    End
+
+    It won't overwrite the existing variables
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let g:gita#foo = 'hello'
+      let g:gita#bar = 1
+      let ret = gita#define_variables('', defaults)
+      Assert exists('g:gita#foo')
+      Assert exists('g:gita#bar')
+
+      Assert Equals(g:gita#foo, 'hello')
+      Assert Equals(g:gita#bar, 1)
+    End
+  End
 End

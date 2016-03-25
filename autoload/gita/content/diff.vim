@@ -66,7 +66,7 @@ function! s:parse_bufname(bufinfo) abort
 endfunction
 
 function! s:execute_command(options) abort
-  let args = gita#util#args_from_options(a:options, {
+  let args = gita#process#args_from_options(a:options, {
         \ 'unified': 1,
         \ 'minimal': 1,
         \ 'patience': 1,
@@ -114,7 +114,8 @@ function! s:execute_command(options) abort
         \ '--',
         \ a:options.filename,
         \]
-  return gita#command#execute(args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  return gita#process#execute(git, args, { 'quiet': 1 })
 endfunction
 
 function! s:on_BufReadCmd(options) abort
@@ -182,7 +183,8 @@ function! s:on_BufWriteCmd(options) abort
             \ '--',
             \ tempfile,
             \]
-      call gita#command#execute(args, { 'quiet': 1 })
+      let git = gita#core#get_or_fail()
+      call gita#process#execute(git, args, { 'quiet': 1 })
     finally
       call delete(tempfile)
     endtry
@@ -305,7 +307,7 @@ function! gita#content#diff#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#diff', {
+call gita#define_variables('content#diff', {
       \ 'default_opener': 'edit',
       \})
 

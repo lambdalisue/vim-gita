@@ -3,6 +3,7 @@ let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 
 function! s:action(candidates, options) abort
+  let git = gita#core#get_or_fail()
   let options = extend({
         \ 'force': 0,
         \ 'ours': 0,
@@ -25,7 +26,7 @@ function! s:action(candidates, options) abort
         \ copy(a:candidates),
         \ 's:Path.unixpath(s:Git.get_relative_path(git, v:val.path))',
         \)
-  call gita#command#execute(args, { 'quiet': 1 })
+  call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

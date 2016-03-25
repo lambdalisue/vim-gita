@@ -255,7 +255,7 @@ function! gita#command#diff#execute(args, options) abort
         \ index(a:args, '--no-index') >= 0 ||
         \ index(a:args, '--exit-code') >= 0
   let git = gita#core#get()
-  return gita#execute(git, ['diff'] + a:args, a:options)
+  return gita#process#execute(git, ['diff'] + a:args, a:options)
 endfunction
 
 function! gita#command#diff#command(bang, range, args) abort

@@ -15,7 +15,8 @@ function! s:action_checkout(candidate, options) abort
   else
     let args = [a:candidate.name]
   endif
-  call gita#command#execute(['checkout'] + args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, ['checkout'] + args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
@@ -36,7 +37,8 @@ function! s:action_rename(candidate, options) abort
         \ a:candidate.name,
         \ newname,
         \]
-  call gita#command#execute(['branch'] + args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
@@ -49,7 +51,8 @@ function! s:action_delete(candidate, options) abort
         \ options.force ? '-D' : '--delete'
         \ a:candidate.name,
         \]
-  call gita#command#execute(['branch'] + args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

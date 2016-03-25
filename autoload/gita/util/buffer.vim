@@ -45,6 +45,21 @@ function! gita#util#buffer#edit_content(...) abort
   call call(s:Buffer.edit_content, a:000, s:Buffer)
 endfunction
 
+function! gita#util#buffer#select(selection, ...) abort
+  " Original from mattn/emmet-vim
+  " https://github.com/mattn/emmet-vim/blob/master/autoload/emmet/util.vim#L75-L79
+  let prefer_visual = get(a:000, 0, 0)
+  let line_start = get(a:selection, 0, line('.'))
+  let line_end = get(a:selection, 1, line_start)
+  if line_start == line_end && !prefer_visual
+    keepjump call setpos('.', [0, line_start, 1, 0])
+  else
+    keepjump call setpos('.', [0, line_end, 1, 0])
+    keepjump normal! v
+    keepjump call setpos('.', [0, line_start, 1, 0])
+  endif
+endfunction
+
 function! gita#util#buffer#parse_cmdarg(...) abort
   let cmdarg = get(a:000, 0, v:cmdarg)
   let options = {}

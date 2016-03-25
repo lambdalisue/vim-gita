@@ -171,7 +171,7 @@ function! gita#content#patch#open(options) abort
   endif
 endfunction
 
-call gita#util#define_variables('content#patch', {
+call gita#define_variables('content#patch', {
       \ 'default_opener': '',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,

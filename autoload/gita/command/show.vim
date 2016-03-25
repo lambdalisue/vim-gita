@@ -104,7 +104,7 @@ function! gita#command#show#execute(args, options) abort
   endif
   let object = empty(filename) ? commit : commit . ':' . filename
   let args = ['show'] + [object]
-  return gita#execute(git, args, a:options)
+  return gita#process#execute(git, args, a:options)
 endfunction
 
 function! gita#command#show#command(bang, range, args) abort

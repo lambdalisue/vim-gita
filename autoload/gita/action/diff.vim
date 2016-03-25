@@ -93,6 +93,6 @@ function! gita#action#diff#define(disable_mapping) abort
   nmap <buffer><nowait><expr> DS gita#action#smart_map('DS', '<Plug>(gita-diff-split-tab)')
 endfunction
 
-call gita#util#define_variables('action#diff', {
+call gita#define_variables('action#diff', {
       \ 'default_split': 0,
       \})

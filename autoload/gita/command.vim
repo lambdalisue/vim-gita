@@ -80,23 +80,6 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#execute(args, ...) abort
-  let options = get(a:000, 0, {})
-  try
-  "  let name = a:args[0]
-  "  let funcname = printf(
-  "        \ 'gita#command#%s#execute',
-  "        \ substitute(name, '-', '_', 'g'),
-  "        \)
-  "  return call(funcname, [a:args[1:], options])
-  "catch /^Vim\%((\a\+)\)\=:E117/
-    let git = gita#core#get()
-    return gita#execute(git, a:args, options)
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
-    call gita#util#handle_exception()
-  endtry
-endfunction
-
 function! gita#command#command(bang, range, args) abort
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
@@ -115,7 +98,8 @@ function! gita#command#command(bang, range, args) abort
           " fail silently
         endtry
       endif
-      call gita#command#execute(gita#util#splitargs(a:args))
+      let git = gita#core#get()
+      call gita#process#execute(git, gita#process#splitargs(a:args))
       call gita#util#doautocmd('User', 'GitaStatusModified')
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()

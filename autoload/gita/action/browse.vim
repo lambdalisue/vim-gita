@@ -22,7 +22,7 @@ function! s:action(candidate, options) abort
   if options.yank
     call gita#util#clip(url)
   else
-    call s:File.open(url)
+    call gita#util#browse(url)
   endif
 endfunction
 
@@ -94,6 +94,6 @@ function! gita#action#browse#define(disable_mappings) abort
   nmap <buffer><nowait><expr> yy gita#action#smart_map('yy', '<Plug>(gita-browse-yank)')
 endfunction
 
-call gita#util#define_variables('action#browse', {
+call gita#define_variables('action#browse', {
       \ 'default_scheme': '_',
       \})

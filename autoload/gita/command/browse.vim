@@ -186,7 +186,7 @@ function! gita#command#browse#command(bang, range, args) abort
     call gita#util#clip(url)
   endif
   if get(options, 'open')
-    call s:File.open(url)
+    call gita#util#browse(url)
   endif
   echo url
 endfunction
@@ -196,7 +196,7 @@ function! gita#command#browse#complete(arglead, cmdline, cursorpos) abort
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
 
-call gita#util#define_variables('command#browse', {
+call gita#define_variables('command#browse', {
       \ 'translation_patterns': {
       \   'github.com': [
       \     [

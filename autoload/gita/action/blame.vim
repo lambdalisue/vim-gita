@@ -170,6 +170,6 @@ function! gita#action#blame#define(disable_mappings) abort
   endif
 endfunction
 
-call gita#util#define_variables('action#blame', {
+call gita#define_variables('action#blame', {
       \ 'default_opener': '',
       \})

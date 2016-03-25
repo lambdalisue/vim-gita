@@ -16,7 +16,8 @@ function! s:action(candidates, options) abort
         \ copy(a:candidates),
         \ 'v:val.name',
         \)
-  call gita#command#execute(args)
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

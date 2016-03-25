@@ -23,7 +23,7 @@ function! s:build_bufname(options) abort
 endfunction
 
 function! s:execute_command(options) abort
-  let args = gita#util#args_from_options(a:options, {
+  let args = gita#process#args_from_options(a:options, {
         \ 'cached': 1,
         \ 'no-index': 1,
         \ 'untracked': 1,
@@ -52,7 +52,8 @@ function! s:execute_command(options) abort
     let args += ['-e', pattern]
   endfor
   let args += ['--'] + a:options.filenames
-  return gita#command#execute(args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  return gita#process#execute(git, args, { 'quiet': 1 })
 endfunction
 
 function! s:define_actions() abort
@@ -199,7 +200,7 @@ function! gita#content#grep#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#grep', {
+call gita#define_variables('content#grep', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,

@@ -6,7 +6,7 @@ let s:Git = s:V.import('Git')
 
 function! s:get_available_branches(git, args) abort
   let args = ['branch', '--no-color', '--list'] + a:args
-  let content = gita#execute(a:git, args, {
+  let content = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
@@ -16,7 +16,7 @@ endfunction
 
 function! s:get_available_commits(git, args) abort
   let args = ['log', '--pretty=%h'] + a:args
-  let content = gita#execute(a:git, args, {
+  let content = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
@@ -27,7 +27,7 @@ function! s:get_available_filenames(git, args) abort
   let args = [
         \ 'ls-files', '--full-name',
         \] + a:args
-  let content = gita#execute(a:git, args, {
+  let content = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})

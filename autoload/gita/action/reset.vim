@@ -9,7 +9,8 @@ function! s:action(candidates, options) abort
         \ copy(a:candidates),
         \ 's:Path.unixpath(s:Git.get_relative_path(git, v:val.path))',
         \)
-  call gita#command#execute(args, { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

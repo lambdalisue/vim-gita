@@ -156,7 +156,8 @@ function! gita#command#rebase#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#command#execute(['rebase'] + options.__args__)
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, ['rebase'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

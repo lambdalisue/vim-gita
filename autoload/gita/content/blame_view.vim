@@ -122,6 +122,6 @@ function! gita#content#blame_view#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#blame_view', {
+call gita#define_variables('content#blame_view', {
       \ 'disable_default_mappings': 0,
       \})

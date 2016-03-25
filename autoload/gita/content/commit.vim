@@ -19,7 +19,7 @@ function! s:build_bufname(options) abort
 endfunction
 
 function! s:execute_command(options) abort
-  let args = gita#util#args_from_options(a:options, {
+  let args = gita#process#args_from_options(a:options, {
         \ 'untracked-files': 1,
         \})
   let args = [
@@ -28,14 +28,15 @@ function! s:execute_command(options) abort
         \ '--dry-run',
         \] + args
   let args += ['--'] + get(a:options, 'filenames', [])
-  return gita#command#execute(args, {
+  let git = gita#core#get_or_fail()
+  return gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'success_status': 1,
         \})
 endfunction
 
 function! s:execute_commit_command(options) abort
-  let args = gita#util#args_from_options(a:options, {
+  let args = gita#process#args_from_options(a:options, {
         \ 'all': 1,
         \ 'reset-author': 1,
         \ 'file': 1,
@@ -52,7 +53,8 @@ function! s:execute_commit_command(options) abort
         \})
   let args = ['commit', '--verbose'] + args
   let args += ['--'] + get(a:options, 'filenames', [])
-  return gita#command#execute(args)
+  let git = gita#core#get_or_fail()
+  return gita#process#execute(git, args)
 endfunction
 
 function! s:define_actions() abort
@@ -300,7 +302,7 @@ function! gita#content#commit#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#commit', {
+call gita#define_variables('content#commit', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,

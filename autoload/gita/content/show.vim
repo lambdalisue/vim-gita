@@ -43,11 +43,20 @@ function! s:get_diff_content(git, content, filename) abort
   let tempfile2 = tempfile . '.buffer'
   try
     " save contents to temporary files
-    let content = gita#command#execute(['show', ':' . filename], { 'quiet': 1 })
+    let git = gita#core#get_or_fail()
+    let content = gita#process#execute(
+          \ git,
+          \ ['show', ':' . filename],
+          \ { 'quiet': 1 }
+          \)
     call writefile(content, tempfile1)
     call writefile(a:content, tempfile2)
     " create a diff content between index_content and content
-    let content = gita#command#execute(['diff', '--no-index', '--', tempfile1, tempfile2], { 'quiet': 1 })
+    let content = gita#process#execute(
+          \ git,
+          \ ['diff', '--no-index', '--', tempfile1, tempfile2],
+          \ { 'quiet': 1 }
+          \)
     if empty(content) || len(content) < 4
       " fail or no differences. Assume that there are no differences
       call s:Prompt.debug(content)
@@ -129,7 +138,12 @@ function! s:on_BufReadCmd(options) abort
         \ 'filename': '',
         \ 'patch': 0,
         \})
-  let content = gita#command#execute(['show', options.treeish], { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  let content = gita#process#execute(
+        \ git,
+        \ ['show', options.treeish],
+        \ { 'quiet': 1 }
+        \)
   call gita#meta#set('content_type', 'show')
   call gita#meta#set('options', options)
   call gita#meta#set('commit', options.commit)
@@ -158,7 +172,12 @@ function! s:on_FileReadCmd(options) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, a:options)
-  let content = gita#command#execute(['show', options.treeish], { 'quiet': 1 })
+  let git = gita#core#get_or_fail()
+  let content = gita#process#execute(
+        \ git,
+        \ ['show', options.treeish],
+        \ { 'quiet': 1 }
+        \)
   call gita#util#buffer#read_content(
         \ content,
         \ gita#util#buffer#parse_cmdarg(),
@@ -175,7 +194,11 @@ function! s:on_BufWriteCmd(options) abort
     let filename = gita#meta#get_for('show', 'filename', '')
     let content = s:get_diff_content(git, getline(1, '$'), filename)
     call writefile(content, tempfile)
-    call gita#command#execute(['apply', '--cached', '--', tempfile], { 'quiet': 1 })
+    call gita#process#execute(
+          \ git,
+          \ ['apply', '--cached', '--', tempfile],
+          \ { 'quiet': 1 }
+          \)
     setlocal nomodified
     call gita#util#doautocmd('BufWritePost')
     diffupdate
@@ -229,6 +252,6 @@ function! gita#content#show#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#show', {
+call gita#define_variables('content#show', {
       \ 'default_opener': 'edit',
       \})

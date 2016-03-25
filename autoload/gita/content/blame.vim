@@ -25,7 +25,8 @@ function! s:execute_command(options) abort
           \ '--',
           \ a:options.filename,
           \]
-    let content = gita#command#execute(args, { 'quiet': 1 })
+    let git = gita#core#get_or_fail()
+    let content = gita#process#execute(git, args, { 'quiet': 1 })
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
     let blameobj = s:get_blameobj(content, a:options.commit, a:options.filename)
@@ -61,7 +62,7 @@ function! s:get_blameobj(content, commit, filename) abort
               \ a:commit,
               \ s:Path.unixpath(s:Git.get_relative_path(git, a:filename)),
               \)
-        let blameobj.file_content = gita#execute(
+        let blameobj.file_content = gita#process#execute(
               \ git,
               \ ['show', treeish],
               \ { 'quiet': 1 },
@@ -284,7 +285,7 @@ function! gita#content#blame#select(blamemeta, selection) abort
         \ gita#content#blame#get_actual_linenum(a:blamemeta, line_start),
         \ gita#content#blame#get_actual_linenum(a:blamemeta, line_end),
         \]
-  call gita#util#select(actual_selection)
+  call gita#util#buffer#select(actual_selection)
 endfunction
 
 function! gita#content#blame#get_candidate(index) abort
@@ -336,7 +337,7 @@ function! gita#content#blame#set_pseudo_separators(blamemeta) abort
   endfor
 endfunction
 
-call gita#util#define_variables('content#blame', {
+call gita#define_variables('content#blame', {
       \ 'default_opener': 'tabedit',
       \ 'use_porcelain_instead': 0,
       \ 'use_python': s:Python.is_enabled(),

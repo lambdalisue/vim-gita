@@ -140,7 +140,7 @@ function! gita#content#blame_navi#autocmd(name, bufinfo) abort
   call call('s:on_' . a:name, [options])
 endfunction
 
-call gita#util#define_variables('content#blame_navi', {
+call gita#define_variables('content#blame_navi', {
       \ 'disable_default_mappings': 0,
       \})
 

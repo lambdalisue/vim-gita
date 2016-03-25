@@ -58,6 +58,6 @@ function! gita#action#chaperone#define(disable_mapping) abort
   nmap <buffer><nowait><expr> !3 gita#action#smart_map('!3', '<Plug>(gita-chaperone-three)')
 endfunction
 
-call gita#util#define_variables('action#chaperone', {
+call gita#define_variables('action#chaperone', {
       \ 'default_method': '',
       \})

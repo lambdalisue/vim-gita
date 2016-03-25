@@ -1,5 +1,7 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
+let s:Dict = s:V.import('Data.Dict')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -63,12 +65,12 @@ function! gita#process#execute(git, args, ...) abort
   return result.content
 endfunction
 
-call gita#util#define_variables('process', {
+call gita#define_variables('process', {
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \})
 
 call s:GitProcess.set_config({
-      \ 'executable': g:gita#executable,
-      \ 'arguments':  g:gita#arguments,
+      \ 'executable': g:gita#process#executable,
+      \ 'arguments':  g:gita#process#arguments,
       \})

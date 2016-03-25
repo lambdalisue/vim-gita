@@ -1,10 +1,6 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
-let s:Guard = s:V.import('Vim.Guard')
-let s:Compat = s:V.import('Vim.Compat')
+let s:File = s:V.import('System.File')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:StringExt = s:V.import('Data.StringExt')
-let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:diffoff() abort
   if !&diff
@@ -25,6 +21,10 @@ function! gita#util#clip(content) abort
   if has('clipboard')
     call setreg(v:register, a:content)
   endif
+endfunction
+
+function! gita#util#browse(uri) abort
+  call s:File.open(a:uri)
 endfunction
 
 function! gita#util#doautocmd(name, ...) abort
@@ -88,80 +88,4 @@ function! gita#util#handle_exception() abort
   endfor
   call s:Prompt.error(v:exception)
   call s:Prompt.debug(v:throwpoint)
-endfunction
-
-function! gita#util#define_variables(prefix, defaults) abort
-  " Note:
-  "   Funcref is not supported while the variable must start with a capital
-  let prefix = empty(a:prefix)
-        \ ? 'g:gita'
-        \ : printf('g:gita#%s', a:prefix)
-  for [key, value] in items(a:defaults)
-    let name = printf('%s#%s', prefix, key)
-    if !exists(name)
-      execute printf('let %s = %s', name, string(value))
-    endif
-    unlet value
-  endfor
-endfunction
-
-function! gita#util#select(selection, ...) abort
-  " Original from mattn/emmet-vim
-  " https://github.com/mattn/emmet-vim/blob/master/autoload/emmet/util.vim#L75-L79
-  let prefer_visual = get(a:000, 0, 0)
-  let line_start = get(a:selection, 0, line('.'))
-  let line_end = get(a:selection, 1, line_start)
-  if line_start == line_end && !prefer_visual
-    keepjump call setpos('.', [0, line_start, 1, 0])
-  else
-    keepjump call setpos('.', [0, line_end, 1, 0])
-    keepjump normal! v
-    keepjump call setpos('.', [0, line_start, 1, 0])
-  endif
-endfunction
-
-function! s:translate(key, options, scheme) abort
-  let value = a:options[a:key]
-  if s:Prelude.is_list(value)
-    return map(value, 's:translate(a:key, { a:key : v:val }, a:scheme)')
-  elseif s:Prelude.is_number(value)
-    return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
-  else
-    let value = value =~# '\s' ? printf("'%s'", value) : value
-    return s:StringExt.splitargs(s:StringExt.format(
-          \ a:scheme,
-          \ { 'k': 'key', 'v': 'val' },
-          \ { 'key': a:key, 'val': value },
-          \))
-  endif
-endfunction
-
-function! gita#util#args_from_options(options, schemes) abort
-  let args = []
-  for key in sort(keys(a:schemes))
-    if !has_key(a:options, key)
-      continue
-    endif
-    let scheme = s:Prelude.is_string(a:schemes[key])
-          \ ? a:schemes[key]
-          \ : len(key) == 1 ? '-%k%v' : '--%k%{=}v'
-    call extend(args, s:translate(key, a:options, scheme))
-  endfor
-  return args
-endfunction
-
-function! gita#util#any(object, keys) abort
-  for key in a:keys
-    if !empty(get(a:object, key))
-      return 1
-    endif
-  endfor
-  return 0
-endfunction
-
-function! gita#util#splitargs(args) abort
-  let args = s:ArgumentParser.splitargs(a:args)
-  let args = map(args, 's:ArgumentParser.strip_quotes(v:val)')
-  let args = map(args, 'v:val ==# ''%'' ? gita#meta#expand(v:val) : v:val')
-  return args
 endfunction

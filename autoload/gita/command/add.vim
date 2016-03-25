@@ -58,7 +58,8 @@ function! gita#command#add#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#command#execute(['add'] + options.__args__)
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, ['add'] + options.__args__)
   if !get(options, 'dry-run')
     call gita#util#doautocmd('User', 'GitaStatusModified')
   endif

@@ -30,9 +30,10 @@ function! s:open2(options) abort
         \}))
   call gita#util#diffthis()
 
-  let content = gita#command#execute([
-        \ 'show', ':2:' . filename,
-        \], { 'quiet': 1 },
+  let content = gita#process#execute(
+        \ git,
+        \ ['show', ':2:' . filename],
+        \ { 'quiet': 1 },
         \)
   call gita#content#show#open({
         \ 'worktree': 1,
@@ -78,9 +79,10 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let rhs_bufnum = bufnr('%')
 
-  let content = gita#command#execute([
-        \ 'show', ':1:' . filename,
-        \], { 'quiet': 1 },
+  let content = gita#process#execute(
+        \ git,
+        \ ['show', ':1:' . filename],
+        \ { 'quiet': 1 },
         \)
   call gita#content#show#open({
         \ 'worktree': 1,
@@ -156,7 +158,7 @@ function! gita#content#chaperone#open(...) abort
   endif
 endfunction
 
-call gita#util#define_variables('content#chaperone', {
+call gita#define_variables('content#chaperone', {
       \ 'default_opener': 'tabedit',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,

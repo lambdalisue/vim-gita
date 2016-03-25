@@ -1,0 +1,13 @@
+Describe gita#process
+  Describe #execute({git}, {args}[, {options}])
+    It executes a {args}
+      let git = gita#core#get_or_fail()
+      let content = gita#process#execute(
+            \ git,
+            \ ['rev-parse', '--is-inside-work-tree']
+            \)
+      Assert Equals(content, ['true'])
+    End
+  End
+End
+
