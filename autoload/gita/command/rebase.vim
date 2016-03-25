@@ -139,24 +139,24 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'upstream',
           \ 'upstream branch to compare against', {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#branch'),
           \})
     call s:parser.add_argument(
           \ 'branch',
           \ 'working branch; defaults to HEAD', {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#branch'),
           \})
   endif
   return s:parser
 endfunction
 
 function! gita#command#rebase#command(bang, range, args) abort
+  let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['rebase'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

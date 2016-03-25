@@ -1,10 +1,4 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
-let s:Git = s:V.import('Git')
-let s:GitInfo = s:V.import('Git.Info')
-let s:GitTerm = s:V.import('Git.Term')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:get_parser() abort
@@ -85,26 +79,6 @@ function! s:get_parser() abort
     call s:parser.hooks.validate()
   endif
   return s:parser
-endfunction
-
-function! gita#command#show#execute(args, options) abort
-  let git = gita#core#get_or_fail()
-  let object = a:args[0]
-  let commit = matchstr(object, '^[^:]*')
-  let filename = matchstr(object, '^[^:]*:\zs.*$')
-  if commit =~# '^.\{-}\.\.\..\{-}$'
-    " support A...B style
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-  elseif commit =~# '^.\{-}\.\..\{-}$'
-    " support A..B style
-    let commit  = s:GitTerm.split_range(commit)[0]
-  endif
-  let object = empty(filename) ? commit : commit . ':' . filename
-  let args = ['show'] + [object]
-  return gita#process#execute(git, args, a:options)
 endfunction
 
 function! gita#command#show#command(bang, range, args) abort

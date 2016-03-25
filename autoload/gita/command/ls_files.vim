@@ -11,10 +11,6 @@ function! s:get_parser() abort
           \ 'unknown_description': '<file>...',
           \})
     call s:parser.add_argument(
-          \ '--quiet',
-          \ 'be quiet',
-          \)
-    call s:parser.add_argument(
           \ '--cached', '-c',
           \ 'show cached files',
           \)

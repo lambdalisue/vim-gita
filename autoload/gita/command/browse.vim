@@ -108,7 +108,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita browse',
           \ 'description': 'Browse a URL of the remote content',
           \ 'complete_unknown': function('gita#complete#filename'),
-          \ 'unknown_description': '<path>...',
+          \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(

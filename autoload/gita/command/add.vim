@@ -53,12 +53,12 @@ function! s:get_parser() abort
 endfunction
 
 function! gita#command#add#command(bang, range, args) abort
+  let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['add'] + options.__args__)
   if !get(options, 'dry-run')
     call gita#util#doautocmd('User', 'GitaStatusModified')

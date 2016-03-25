@@ -36,7 +36,7 @@ function! s:get_parser() abort
           \   'if nothing is specified, it reset a content of the index to HEAD.',
           \   'if <commit> is specified, it reset a content of the index to the named <commit>.',
           \], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#commitish'),
           \   'superordinates': [
           \     'mixed', 'soft', 'hard', 'merge', 'keep',
           \   ],
@@ -46,12 +46,12 @@ function! s:get_parser() abort
 endfunction
 
 function! gita#command#reset#command(bang, range, args) abort
+  let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['reset'] + options.__args__)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

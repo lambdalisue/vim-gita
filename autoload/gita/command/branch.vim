@@ -52,6 +52,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--contains',
           \ 'print only branches that contains the commit', {
+          \   'on_default': 'HEAD',
           \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
@@ -116,11 +117,13 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--no-merged',
           \ 'print only not merged branches', {
+          \   'on_default': 'HEAD',
           \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--merged',
           \ 'print only merged branches', {
+          \   'on_default': 'HEAD',
           \   'complete': function('gita#complete#commit'),
           \})
     call s:parser.add_argument(
@@ -138,7 +141,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'start-point',
           \ 'the new branch head will point to this commit', {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#complete#commitish'),
           \   'superordinates': [
           \     'set-upstream', 'track', 'no-track',
           \   ],
@@ -160,13 +163,13 @@ function! s:get_parser() abort
 endfunction
 
 function! gita#command#branch#command(bang, range, args) abort
+  let git = gita#core#get_or_fail()
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
   if empty(get(options, 'list'))
-    let git = gita#core#get_or_fail()
     call gita#process#execute(git, ['branch', '--no-color', '--verbose'] + options.__args__)
     call gita#util#doautocmd('User', 'GitaStatusModified')
   else

@@ -31,11 +31,6 @@ function! s:get_parser() abort
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
-    call s:parser.add_argument(
-          \ '--selection',
-          \ 'a line number or range of the selection', {
-          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
-          \})
   endif
   return s:parser
 endfunction
