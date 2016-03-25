@@ -52,7 +52,7 @@ function! s:get_parser() abort
         unlet a:options.two
       else
         let a:options.method = 'three'
-        unlet a:options.three
+        silent! unlet! a:options.three
       endif
     endfunction
     call s:parser.hooks.validate()
