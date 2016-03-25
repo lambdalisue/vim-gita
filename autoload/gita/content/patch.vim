@@ -11,8 +11,8 @@ function! s:open1(options) abort
   if options.reverse
     let options.cached = 1
   endif
-  let options['commit'] = ''
-  let options['split'] = 0
+  let options.commit = ''
+  let options.split = 0
   call gita#content#diff#open(options)
 endfunction
 

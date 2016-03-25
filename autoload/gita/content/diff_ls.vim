@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
@@ -127,7 +127,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('commit', options.commit)
   call gita#meta#set('stats', stats)
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-diff-ls
@@ -146,9 +146,7 @@ function! gita#content#diff_ls#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#diff_ls#default_opener
         \ : options.opener
-  call gita#util#cascade#set('diff-ls', s:Dict.pick(options, [
-        \ 'commit',
-        \]))
+  call gita#util#cascade#set('diff-ls', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,
@@ -181,4 +179,3 @@ call gita#define_variables('content#diff_ls', {
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})
-

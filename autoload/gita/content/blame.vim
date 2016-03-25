@@ -1,17 +1,28 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
 let s:String = s:V.import('Data.String')
 let s:DateTime = s:V.import('DateTime')
 let s:Path = s:V.import('System.Filepath')
 let s:MemoryCache = s:V.import('System.Cache.Memory')
 let s:Guard = s:V.import('Vim.Guard')
 let s:Python = s:V.import('Vim.Python')
-let s:Prompt = s:V.import('Vim.Prompt')
 let s:ProgressBar = s:V.import('ProgressBar')
 let s:Git = s:V.import('Git')
+let s:GitInfo = s:V.import('Git.Info')
+let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:execute_command(options) abort
+  let commit = a:options.commit
+  if commit =~# '^.\{-}\.\.\..\{-}$'
+    " support A...B style
+    let [lhs, rhs] = s:GitTerm.split_range(commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+    let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
+  elseif commit =~# '^.\{-}\.\..\{-}$'
+    " support A..B style
+    let commit  = s:GitTerm.split_range(commit)[0]
+  endif
   let guard = s:Guard.store('&l:statusline')
   try
     setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
@@ -21,7 +32,7 @@ function! s:execute_command(options) abort
           \ g:gita#content#blame#use_porcelain_instead
           \   ? '--porcelain'
           \   : '--incremental',
-          \ a:options.commit,
+          \ commit,
           \ '--',
           \ a:options.filename,
           \]
@@ -29,7 +40,7 @@ function! s:execute_command(options) abort
     let content = gita#process#execute(git, args, { 'quiet': 1 })
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
-    let blameobj = s:get_blameobj(content, a:options.commit, a:options.filename)
+    let blameobj = s:get_blameobj(content, commit, a:options.filename)
     setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
     redrawstatus
     let blamemeta = s:get_blamemeta(
@@ -256,11 +267,7 @@ function! gita#content#blame#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#blame#default_opener
         \ : options.opener
-  call gita#util#cascade#set('blame-navi', s:Dict.pick(options, [
-        \ 'previous',
-        \ 'commit',
-        \ 'filename',
-        \]))
+  call gita#util#cascade#set('blame-navi', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,

@@ -1,6 +1,5 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
@@ -214,7 +213,7 @@ function! s:on_BufWriteCmd(options) abort
   let tempfile = tempname()
   try
     let git = gita#core#get_or_fail()
-    let filename = gita#meta#get_for('show', 'filename', '')
+    let filename = gita#meta#get_for('^show$', 'filename', '')
     let content = s:get_diff_content(git, getline(1, '$'), filename)
     call writefile(content, tempfile)
     call gita#process#execute(
@@ -247,7 +246,7 @@ function! gita#content#show#open(options) abort
         \ ? g:gita#content#show#default_opener
         \ : options.opener
   if bufname =~# '^gita:'
-    call gita#util#cascade#set('show', s:Dict.pick(options, []))
+    call gita#util#cascade#set('show', options)
     call gita#util#buffer#open(bufname, {
           \ 'opener': opener,
           \ 'window': options.window,

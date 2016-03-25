@@ -1,8 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
-let s:Git = s:V.import('Git')
-let s:GitParser = s:V.import('Git.Parser')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 
 function! s:build_bufname(options) abort
   let options = extend({
@@ -23,9 +20,9 @@ function! s:execute_command(options) abort
         \ '--full-tree',
         \ '--name-only',
         \ '-r',
-        \ a:options.commit
-        \]
-  let args += ['--'] + a:options.filenames
+        \ a:options.commit,
+        \ '--',
+        \]  + a:options.filenames
   let git = gita#core#get_or_fail()
   return gita#process#execute(git, args, { 'quiet': 1 })
 endfunction
@@ -60,11 +57,12 @@ function! s:get_prologue(git) abort
   let candidates = gita#meta#get_for('^ls-tree$', 'candidates', [])
   let ncandidates = len(candidates)
   return printf(
-        \ 'Files in <%s> (%d file%s) %s',
-        \ empty(commit) ? 'INDEX' : commit,
+        \ '%d file%s in %s of %s %s',
         \ ncandidates,
         \ ncandidates == 1 ? '' : 's',
-        \ '| Press ? or <Tab> to show help or do action',
+        \ empty(commit) ? 'INDEX' : commit,
+        \ a:git.repository_name,
+        \ '| Press ? to show help or <Tab> to select action',
         \)
 endfunction
 
@@ -81,7 +79,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('commit', options.commit)
   call gita#meta#set('candidates', candidates)
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-ls-tree
@@ -100,10 +98,7 @@ function! gita#content#ls_tree#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#ls_tree#default_opener
         \ : options.opener
-  call gita#util#cascade#set('ls-tree', s:Dict.pick(options, [
-        \ 'commit',
-        \ 'filenames',
-        \]))
+  call gita#util#cascade#set('ls-tree', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,

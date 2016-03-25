@@ -1,7 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
 let s:Path = s:V.import('System.Filepath')
-let s:Dict = s:V.import('Data.Dict')
 let s:Git = s:V.import('Git')
 
 function! s:parse_bufname(bufinfo) abort
@@ -9,7 +7,7 @@ function! s:parse_bufname(bufinfo) abort
   if empty(m)
     call gita#throw(printf(
           \ 'A treeish part of a buffer name "%s" does not follow "%s" pattern',
-          \ a:bufinfo.bufname, '<rev>:<filename> or :<n>:<filename>',
+          \ a:bufinfo.bufname, '<rev>:<filename>',
           \))
   endif
   let git = gita#core#get_or_fail()

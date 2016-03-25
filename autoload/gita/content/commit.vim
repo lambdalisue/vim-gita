@@ -1,8 +1,7 @@
 let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
-let s:Dict = s:V.import('Data.Dict')
 let s:Prompt = s:V.import('Vim.Prompt')
-let s:Git = s:V.import('Git')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
 
@@ -210,7 +209,7 @@ function! s:on_BufReadCmd(options) abort
     autocmd WinLeave <buffer> nested call s:on_WinLeave()
     autocmd QuitPre  <buffer> call s:on_QuitPre()
   augroup END
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-commit
@@ -249,18 +248,7 @@ function! gita#content#commit#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#commit#default_opener
         \ : options.opener
-  call gita#util#cascade#set('commit', s:Dict.pick(options, [
-        \ 'untracked-files',
-        \ 'reset-author',
-        \ 'author',
-        \ 'date',
-        \ 'gpg-sign',
-        \ 'no-gpg-sign',
-        \ 'amend',
-        \ 'allow-empty',
-        \ 'allow-empty-message',
-        \ 'filenames',
-        \]))
+  call gita#util#cascade#set('commit', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,
@@ -269,15 +257,15 @@ endfunction
 
 function! gita#content#commit#redraw() abort
   let git = gita#core#get_or_fail()
-  let options = gita#meta#get_for('commit', 'options')
+  let options = gita#meta#get_for('^commit$', 'options')
 
   let commit_mode = ''
-  if !empty(gita#meta#get_for('commit', 'commitmsg_cached'))
+  if !empty(gita#meta#get_for('^commit$', 'commitmsg_cached'))
     let commitmsg = gita#meta#get('commitmsg_cached')
-    call gita#meta#get_for('commit', 'commitmsg_cached', [])
+    call gita#meta#get_for('^commit$', 'commitmsg_cached', [])
     setlocal modified
-  elseif !empty(gita#meta#get_for('commit', 'commitmsg_saved'))
-    let commitmsg = gita#meta#get_for('commit', 'commitmsg_saved')
+  elseif !empty(gita#meta#get_for('^commit$', 'commitmsg_saved'))
+    let commitmsg = gita#meta#get_for('^commit$', 'commitmsg_saved')
   elseif s:GitInfo.is_merging(git)
     let commitmsg = s:GitInfo.get_merge_msg(git)
     let commit_mode = 'merge'

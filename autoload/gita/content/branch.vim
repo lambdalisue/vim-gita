@@ -1,7 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
-let s:Git = s:V.import('Git')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:build_bufname(options) abort
@@ -62,6 +60,18 @@ function! s:get_candidate(index) abort
   return gita#action#find_candidate(branches, record, 'record')
 endfunction
 
+function! s:get_prologue(git) abort
+  let branches = gita#meta#get_for('^branch$', 'branches', [])
+  let nbranches = len(branches)
+  return printf(
+        \ '%d branch%s in %s %s',
+        \ nbranches,
+        \ nbranches == 1 ? '' : 'es',
+        \ a:git.repository_name,
+        \ '| Press ? to show help or <Tab> to select action',
+        \)
+endfunction
+
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
   let options = gita#option#cascade('^branch$', a:options, {
@@ -78,7 +88,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('options', options)
   call gita#meta#set('branches', branches)
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-branch
@@ -97,12 +107,7 @@ function! gita#content#branch#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#branch#default_opener
         \ : options.opener
-  call gita#util#cascade#set('branch', s:Dict.pick(options, [
-        \ 'contains',
-        \ 'list',
-        \ 'merge',
-        \ 'no-merge',
-        \]))
+  call gita#util#cascade#set('branch', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,
@@ -110,9 +115,8 @@ function! gita#content#branch#open(options) abort
 endfunction
 
 function! gita#content#branch#redraw() abort
-  let prologue = [
-        \ 'Gita branch : Press ? or <Tab> to show help or do action',
-        \]
+  let git = gita#core#get_or_fail()
+  let prologue = [s:get_prologue(git)]
   let contents = map(
         \ copy(gita#meta#get_for('^branch$', 'branches', [])),
         \ 'v:val.record',

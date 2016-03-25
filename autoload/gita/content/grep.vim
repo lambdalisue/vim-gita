@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 
@@ -126,7 +126,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('patterns', options.patterns)
   call gita#meta#set('candidates', candidates)
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-grep
@@ -145,27 +145,7 @@ function! gita#content#grep#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#grep#default_opener
         \ : options.opener
-  call gita#util#cascade#set('grep', s:Dict.pick(options, [
-        \ 'patterns',
-        \ 'commit',
-        \ 'filenames',
-        \ 'cached',
-        \ 'no-index',
-        \ 'untracked',
-        \ 'no-exclude-standard',
-        \ 'exclude-standard',
-        \ 'text',
-        \ 'ignore-case',
-        \ 'I',
-        \ 'max-depth',
-        \ 'word-regexp',
-        \ 'invert-match',
-        \ 'extended-regexp',
-        \ 'basic-regexp',
-        \ 'perl-regexp',
-        \ 'fixed-strings',
-        \ 'all-match',
-        \]))
+  call gita#util#cascade#set('grep', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,

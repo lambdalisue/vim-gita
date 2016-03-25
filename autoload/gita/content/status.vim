@@ -1,7 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
-let s:Dict = s:V.import('Data.Dict')
-let s:Git = s:V.import('Git')
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
 
@@ -27,8 +25,7 @@ function! s:execute_command(options) abort
         \ 'status',
         \ '--porcelain',
         \ '--no-column',
-        \] + args
-  let args += ['--'] + get(a:options, 'filenames', [])
+        \] + args + ['--'] + get(a:options, 'filenames', [])
   let git = gita#core#get_or_fail()
   return gita#process#execute(git, args, { 'quiet': 1 })
 endfunction
@@ -92,11 +89,11 @@ function! s:get_prologue(git) abort
       let connection = printf('%d commit(s) behind of remote', incoming)
     endif
   endif
-  return printf('Gita status of %s%s%s %s',
+  return printf('status of %s%s%s %s',
         \ branchinfo,
         \ empty(connection) ? '' : printf(' (%s)', connection),
         \ empty(mode) ? '' : printf(' [%s]', mode),
-        \ '| Press ? or <Tab> to show help or do action',
+        \ '| Press ? to show help or <Tab> to select action',
         \)
 endfunction
 
@@ -114,7 +111,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('options', options)
   call gita#meta#set('statuses', statuses)
   call s:define_actions()
-  call gita#util#anchor#attach()
+  call s:BufferAnchor.attach()
   call gita#util#observer#attach()
   " the following options are required so overwrite everytime
   setlocal filetype=gita-status
@@ -133,11 +130,7 @@ function! gita#content#status#open(options) abort
   let opener = empty(options.opener)
         \ ? g:gita#content#status#default_opener
         \ : options.opener
-  call gita#util#cascade#set('status', s:Dict.pick(options, [
-        \ 'untracked-files',
-        \ 'ignore-submodules',
-        \ 'filenames',
-        \]))
+  call gita#util#cascade#set('status', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
         \ 'window': options.window,
