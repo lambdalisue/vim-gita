@@ -39,7 +39,7 @@ function! s:action_enter(candidate, options) abort
     endif
     let [revision, filename] = matchlist(
           \ a:candidate.previous,
-          \ '^\([ ]\+\) \(.*\)$',
+          \ '^\([^ ]\+\) \(.*\)$',
           \)[1 : 2]
     if revision ==# commit
       call gita#throw(printf(
