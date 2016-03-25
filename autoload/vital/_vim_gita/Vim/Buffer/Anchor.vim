@@ -11,6 +11,7 @@ function! s:_vital_loaded(V) abort
         \ 'unsuitable_filetype_pattern': '',
         \}
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Data.Dict',
@@ -32,13 +33,23 @@ function! s:set_config(config) abort
 endfunction
 
 function! s:is_available(opener) abort
-  return a:opener !~# '\%(pedit\|tabedit\|tabnew\)'
+  if a:opener =~# '\%(^\|\W\)\%(pta\|ptag\)!\?\%(\W\|$\)'
+    return 0
+  elseif a:opener =~# '\%(^\|\W\)\%(ped\|pedi\|pedit\)!\?\%(\W\|$\)'
+    return 0
+  elseif a:opener =~# '\%(^\|\W\)\%(ps\|pse\|psea\|psear\|psearc\|psearch\)!\?\%(\W\|$\)'
+    return 0
+  elseif a:opener =~# '\%(^\|\W\)\%(tabe\|tabed\|tabedi\|tabedit\|tabnew\)\%(\W\|$\)'
+    return 0
+  elseif a:opener =~# '\%(^\|\W\)\%(tabf\|tabfi\|tabfin\|tabfind\)\%(\W\|$\)'
+    return 0
+  endif
+  return 1
 endfunction
 
 function! s:is_suitable(winnum) abort
   let bufnum  = winbufnr(a:winnum)
   if empty(bufname(bufnum))
-    " An initial buffer
     return 1
   elseif s:config.buflisted_required && !buflisted(bufnum)
     return 0
@@ -55,19 +66,22 @@ function! s:is_suitable(winnum) abort
   return 1
 endfunction
 
-function! s:find_suitable(winnum) abort
+function! s:find_suitable(winnum, ...) abort
   if winnr('$') == 1
-    return 0
+    return 1
   endif
+  let rangeset = get(a:000, 0, 0)
+        \ ? [reverse(range(1, a:winnum)), reverse(range(a:winnum + 1, winnr('$')))]
+        \ : [range(a:winnum, winnr('$')), range(1, a:winnum - 1)]
   " find a suitable window in rightbelow from a previous window
-  for winnum in range(a:winnum, winnr('$'))
+  for winnum in rangeset[0]
     if s:is_suitable(winnum)
       return winnum
     endif
   endfor
   if a:winnum > 1
     " find a suitable window in leftabove to before a previous window
-    for winnum in range(1, a:winnum - 1)
+    for winnum in rangeset[1]
       if s:is_suitable(winnum)
         return winnum
       endif
@@ -77,60 +91,39 @@ function! s:find_suitable(winnum) abort
   return 0
 endfunction
 
-function! s:focus() abort
+function! s:focus(...) abort
   " find suitable window from the previous window
   let previous_winnum = winnr('#')
-  let suitable_winnum = s:find_suitable(previous_winnum)
+  let suitable_winnum = s:find_suitable(previous_winnum, get(a:000, 0, 0))
   let suitable_winnum = suitable_winnum == 0
         \ ? previous_winnum
         \ : suitable_winnum
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
 endfunction
 
-function! s:_on_QuitPre() abort
-  let w:_vital_vim_buffer_anchor_quitpre = 1
-endfunction
-
-function! s:_on_QuitPreVim703(name) abort
-  if histget('cmd') =~# '^\%(q\|qu\|qui\|quit\|quit!\)$'
-    let w:_vital_vim_buffer_anchor_quitpre = 1
-  elseif histget('cmd') =~# '^\%(cq\|cqu\|cqui\|cquit\|cquit!\)$'
-    let w:_vital_vim_buffer_anchor_quitpre = 1
-  elseif histget('cmd') =~# '^\%(wq\|wq!\)$'
-    let w:_vital_vim_buffer_anchor_quitpre = 1
-  elseif histget('cmd') =~# '^\%(x\|xi\|xit\|xit!\)$'
-    let w:_vital_vim_buffer_anchor_quitpre = 1
-  elseif histget('cmd') =~# '^\%(exi\|exit\|exit!\)$'
-    let w:_vital_vim_buffer_anchor_quitpre = 1
-  endif
+function! s:attach() abort
+  augroup vital_vim_buffer_anchor_internal
+    autocmd! *
+    autocmd WinLeave <buffer> call s:_on_WinLeave()
+    autocmd WinEnter * call s:_on_WinEnter()
+  augroup END
 endfunction
 
 function! s:_on_WinLeave() abort
-  if get(w:, '_vital_vim_buffer_anchor_quitpre')
-    unlet! b:_vital_vim_buffer_anchor_quitpre
-    call s:focus()
-  endif
+  let g:_vital_vim_buffer_anchor_winleave = winnr('$')
 endfunction
 
-function! s:attach() abort
-  augroup vital_vim_buffer_anchor_internal
-    autocmd! * <buffer>
-    if exists('##QuitPre')
-      autocmd QuitPre <buffer> call s:_on_QuitPre()
-    else
-      " Note:
-      "
-      " QuitPre was introduced since Vim 7.3.544
-      " https://github.com/vim-jp/vim/commit/4e7db56d
-      "
-      " :wq       : QuitPre > BufWriteCmd > WinLeave > BufWinLeave
-      " :q        : QuitPre > WinLeave > BufWinLeave
-      " :e        : BufWinLeave
-      " :wincmd w : WinLeave
-      "
-      autocmd WinLeave <buffer> call s:_on_QuitPreVim703()
+function! s:_on_WinEnter() abort
+  if exists('g:_vital_vim_buffer_anchor_winleave')
+    let nwin = g:_vital_vim_buffer_anchor_winleave
+    if winnr('$') < nwin
+      call s:focus(1)
     endif
-    autocmd WinLeave <buffer> call s:_on_WinLeave()
+    unlet g:_vital_vim_buffer_anchor_winleave
+  endif
+  " remove autocmd
+  augroup vital_vim_buffer_anchor_internal
+    autocmd! *
   augroup END
 endfunction
 

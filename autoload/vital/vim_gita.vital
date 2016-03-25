@@ -1,5 +1,5 @@
 vim_gita
-fb3732cfb9dbdd8f8497baf5da7855e530a0160f
+90b88c35a154bae8016a25f82dadca192b795918
 
 Prelude
 Vim.Compat
@@ -16,3 +16,6 @@ DateTime
 ArgumentParser
 Vim.Python
 System.Process
+ProgressBar
+Vim.Buffer.Anchor
+Vim.Prompt

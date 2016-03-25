@@ -15,9 +15,7 @@ function! s:new(maxvalue, ...) abort
         \ 'barwidth': 80,
         \ 'nullchar': '.',
         \ 'fillchar': '|',
-        \ 'format': '%(prefix)s|%(fill)s%(null)s| %(percent)s%%(suffix)s',
-        \ 'prefix': '',
-        \ 'suffix': '',
+        \ 'format': '|%(fill)s%(null)s| %(percent)s%',
         \ 'method': 'echo'
         \}, get(a:000, 0, {}))
   " Validate
@@ -39,8 +37,6 @@ function! s:new(maxvalue, ...) abort
         \ 'nullbar': repeat(options.nullchar, barwidth),
         \ 'fillbar': repeat(options.fillchar, barwidth),
         \ 'format': options.format,
-        \ 'prefix': options.prefix,
-        \ 'suffix': options.suffix,
         \ 'method': options.method,
         \ 'current': 0,
         \})
@@ -69,51 +65,49 @@ function! s:new(maxvalue, ...) abort
     set noshowcmd
     set noruler
   endif
-  call instance.redraw()
+  call s:_redraw(instance)
   return instance
 endfunction
 
-let s:instance = {}
-
-function! s:instance.construct(value) abort
-  let percent = float2nr(a:value / str2float(self.maxvalue) * 100)
-  let fillwidth = float2nr(ceil(a:value * self.alpha))
-  let nullwidth = self.barwidth - fillwidth
-  let fillstr = fillwidth == 0 ? '' : self.fillbar[ : fillwidth-1]
-  let nullstr = nullwidth == 0 ? '' : self.nullbar[ : nullwidth-1]
-  let indicator = self.format
-  let indicator = substitute(indicator, '%(prefix)s', self.prefix, '')
-  let indicator = substitute(indicator, '%(suffix)s', self.suffix, '')
+function! s:_construct(progressbar, value) abort
+  let percent = float2nr(a:value / str2float(a:progressbar.maxvalue) * 100)
+  let fillwidth = float2nr(ceil(a:value * a:progressbar.alpha))
+  let nullwidth = a:progressbar.barwidth - fillwidth
+  let fillstr = fillwidth == 0 ? '' : a:progressbar.fillbar[ : fillwidth-1]
+  let nullstr = nullwidth == 0 ? '' : a:progressbar.nullbar[ : nullwidth-1]
+  let indicator = a:progressbar.format
   let indicator = substitute(indicator, '%(fill)s', fillstr, '')
   let indicator = substitute(indicator, '%(null)s', nullstr, '')
   let indicator = substitute(indicator, '%(percent)s', percent, '')
   return indicator
 endfunction
 
-function! s:instance.redraw() abort
-  let indicator = self.construct(self.current)
-  if indicator ==# get(self, '_previous', '')
+function! s:_redraw(progressbar) abort
+  let indicator = s:_construct(a:progressbar, a:progressbar.current)
+  if indicator ==# get(a:progressbar, '_previous', '')
     " skip
     return
   endif
-  if self.method ==# 'statusline'
+  if a:progressbar.method ==# 'statusline'
     let &l:statusline = indicator
     redrawstatus
-  elseif self.method ==# 'echo'
+  elseif a:progressbar.method ==# 'echo'
     redraw | echo indicator
   endif
-  let self._previous = indicator
+  let a:progressbar._previous = indicator
 endfunction
+
+let s:instance = {}
 
 function! s:instance.update(...) abort
   let value = get(a:000, 0, self.current + 1)
   let self.current = value > self.maxvalue ? self.maxvalue : value
-  call self.redraw()
+  call s:_redraw(self)
 endfunction
 
 function! s:instance.exit() abort
   let self.current = self.maxvalue
-  call self.redraw()
+  call s:_redraw(self)
   if has_key(self, '_guard')
     call self._guard.restore()
   endif
