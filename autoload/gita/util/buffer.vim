@@ -3,6 +3,17 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Buffer = s:V.import('Vim.Buffer')
 let s:BufferManager = s:V.import('Vim.BufferManager')
 
+function! s:is_preview(opener) abort
+  if a:opener =~# '\%(^\|\W\)\%(pta\|ptag\)!\?\%(\W\|$\)'
+    return 1
+  elseif a:opener =~# '\%(^\|\W\)\%(ped\|pedi\|pedit\)!\?\%(\W\|$\)'
+    return 1
+  elseif a:opener =~# '\%(^\|\W\)\%(ps\|pse\|psea\|psear\|psearc\|psearch\)!\?\%(\W\|$\)'
+    return 1
+  endif
+  return 0
+endfunction
+
 function! gita#util#buffer#open(name, ...) abort
   let config = extend({
         \ 'opener': '',
@@ -16,6 +27,7 @@ function! gita#util#buffer#open(name, ...) abort
     let result = {
           \ 'loaded': loaded,
           \ 'bufnum': bufnum,
+          \ 'preview': s:is_preview(config.opener),
           \}
   else
     let vname = printf('_buffer_manager_%s', config.window)
@@ -29,10 +41,18 @@ function! gita#util#buffer#open(name, ...) abort
     let result = {
           \ 'loaded': ret.loaded,
           \ 'bufnum': ret.bufnr,
+          \ 'preview': s:is_preview(config.opener),
           \}
   endif
   if !empty(config.selection)
-    call gita#util#buffer#select(config.selection)
+    if !result.preview
+      call gita#util#buffer#select(config.selection)
+    else
+      noautocmd keepjumps wincmd P
+      call gita#util#buffer#select(config.selection)
+      noautocmd keepjumps normal zz
+      noautocmd keepjumps wincmd p
+    endif
   endif
   return result
 endfunction
