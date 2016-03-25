@@ -106,11 +106,12 @@ function! s:get_prologue(git) abort
     let rhs = empty(commit) ? 'INDEX' : commit
   endif
   return printf(
-        \ 'File differences between <%s> and <%s> (%d file%s %s different) %s',
-        \ lhs, rhs, nstats,
+        \ '%d file%s %s different between %s and %s %s',
+        \ nstats,
         \ nstats == 1 ? '' : 's',
         \ nstats == 1 ? 'is' : 'are',
-        \ '| Press ? or <Tab> to show help or do action',
+        \ lhs, rhs,
+        \ '| Press ? to show help or <Tab> to select action',
         \)
 endfunction
 

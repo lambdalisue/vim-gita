@@ -77,9 +77,6 @@ function! s:define_actions() abort
         \ g:gita#content#commit#primary_action_mapping
         \)
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
-  nmap <buffer> <C-c><C-n> <Plug>(gita-commit)
-  nmap <buffer> <C-c><C-a> <Plug>(gita-commit-amend)
-  nmap <buffer> <C-^> <Plug>(gita-status)
 endfunction
 
 function! s:get_candidate(index) abort
@@ -123,11 +120,11 @@ function! s:get_prologue(git) abort
       let connection = printf('%d commit(s) behind of remote', incoming)
     endif
   endif
-  return printf('# Gita commit of %s%s%s %s',
+  return printf('# status of %s%s%s %s',
         \ branchinfo,
         \ empty(connection) ? '' : printf(' (%s)', connection),
         \ empty(mode) ? '' : printf(' [%s]', mode),
-        \ '| Press ? or <Tab> to show help or do action',
+        \ '| Press ? to show help or <Tab> to select action',
         \)
 endfunction
 

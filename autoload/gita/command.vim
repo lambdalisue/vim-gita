@@ -40,9 +40,10 @@ endfunction
 function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
-          \ 'name': 'Gita',
+          \ 'name': 'Gita[!]',
           \ 'description': [
-          \   'A git manipulation command',
+          \   'A git manipulation command. It executes a specified gita''s command or a specified git command if action is not found.',
+          \   'Additionally, if the command called with a bang (!), it execute a git command instead of gita''s command.',
           \ ],
           \})
     call s:parser.add_argument(

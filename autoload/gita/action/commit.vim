@@ -25,4 +25,11 @@ function! gita#action#commit#define(disable_mapping) abort
   if a:disable_mapping
     return
   endif
+  let content_type = gita#meta#get('content_type')
+  if content_type ==# 'commit'
+    nmap <buffer><nowait> <C-c><C-n> <Plug>(gita-commit)
+    nmap <buffer><nowait> <C-c><C-a> <Plug>(gita-commit-amend)
+  elseif content_type ==# 'status'
+    nmap <buffer><nowait> <C-^> <Plug>(gita-commit)
+  endif
 endfunction

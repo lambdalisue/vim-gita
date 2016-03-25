@@ -1,11 +1,11 @@
-*vim-gita.txt*      An awesome Git manipulation plugin
+*vim-gita.txt*				A git manipulation plugin
 
-Version: 0.1.0
+Version: 0.2.0
 Author:  Alisue <lambdalisue@hashnote.net>		*vim-gita-author*
 Support: Vim 7.4 and above
 License: MIT license
 
-    Copyright (c) 2014 Alisue, hashnote.net
+    Copyright (c) 2014-2016 Alisue, hashnote.net
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files
@@ -32,79 +32,76 @@ CONTENTS					*vim-gita-contents*
 Introduction			|vim-gita-introduction|
 Install				|vim-gita-install|
 Usage				|vim-gita-usage|
+  Status			|vim-gita-usage-status|
   Statusline			|vim-gita-usage-statusline|
-Interface			|vim-gita-interface|
-  Commands			|vim-gita-interface-commands|
-  Functions			|vim-gita-interface-functions|
-  Variables			|vim-gita-interface-variables|
-  Mappings			|vim-gita-interface-mappings|
+Commands			|vim-gita-commands|
+Functions			|vim-gita-functions|
+Variables			|vim-gita-variables|
+Actions				|vim-gita-actions|
 
 ==============================================================================
 INTRODUCTION					*vim-gita-introduction*
 
-				WARNING
+*vim-gita* is a git manipulation plugin which allow users to perform daily git
+operation within Vim's live session.
 
-vim-gita is under development status (alpha version), mean that there would be
-critical bugs for daily usage.
-Any features, options, mechanisms, etc. might be replaced/removed without any
-announcements, mean that you should wait to contribute.
+With vim-gita, users can:
 
+- Manipulate the index of the git repository
+  - Stage content changes into the index (git add/git rm)
+  - Unstage content changes from the index (git reset)
+  - Partially stage content changes into the index (git add -p)
+  - Partially unstage content changes from the index (git reset -p)
+  - Solve conflictions by using 1, 2, or 3-way diff
+- Edit a commit messagea and commit the index into HEAD
+- Edit, show, diff files in
+  - A working tree of the git repository
+  - A index of the git repository
+  - A specified commit, branch, etc. of the git repository
+- List
+  - Files in the working tree of the git repository
+  - Files in the index of the git repository
+  - Files in a specified commit, branch, etc. of the git repository
+  - Files contains specified patterns
+  - Files changes between commits
+- Blame a file content
 
-*vim-gita* is a git manipulation plugin which was strongly inspired by
-tpope/vim-fugitive, thnca/vim-vcs, Shougo/vim-vcs, and lambdalisue/vim-gista.
+And lot more.
 
-Core functions and features are powerd by vim-jp/vital.vim and its external
-modules, mean that the fundemental functions are well tested in unittest level
-and vim-gita can focus to provide a user-friendly interface.
+vim-gita uses a git repository which
 
-vim-gita use a git repository which a current buffer belongs or a current
-working directory. You may notice it is quite useful when you temporary open a
-file which belongs to a different git repository or a non-file buffer such as
-'help' or 'quickfix'.
+- A current file-like buffer belongs
+- A current working directory belongs
+- An original file of the pseudo file-like buffer belongs
 
-Additionally, vim-gita aggressively use cache mechanisms, mean that the
-response speed of your Vim might be improved, especially if you are using
-vim-fugitive or a raw git command (|system()|) to show a current status in
-the statusline.
+You may notice that this behavior is quite useful when you temporary open a
+file in a different git repository or in a non file-like buffer such as help
+or quickfix.
 
-References:
-- tpope/vim-fugitive
-  https://github.com/tpope/vim-fugitive
-- thinca/vim-vcs
-  https://github.com/thinca/vim-vcs
-- Shougo/vim-vcs
-  https://github.com/Shougo/vim-vcs
-- lambdalisue/vim-gista
-  https://github.com/lambdalisue/vim-gista
-- vim-jp/vital.vim
-  https://github.com/vim-jp/vital.vim
-- lambdalisue/vital-ArgumentParser
-  https://github.com/lambdalisue/vital-ArgumentParser
-- lambdalisue/vital-VCS-Git
-  https://github.com/lambdalisue/vital-VCS-Git
+Additionally, vim-gita aggressively uses cache mechanisms to improve its'
+performance. You would notice huge performance improvement if you are
+currently using |system()| to show git repository informations in |statusline|
+such as a current branch name or the number of modified files.
 
 
 ==============================================================================
 INSTALL						*vim-gita-install*
 
-The repository (https://github.com/lambdalisue/vim-gita) follow a standard
-directory structure thus you can use Vundle.vim, neobundle.vim, or other vim
-plugin manager to install |vim-gita| like:
+Use your favorite Vim plugin manager such as junegunn/vim-plug,
+Shougo/dein.vim or whatever like:
 >
-	" Vundle.vim
-	Plugin 'lambdalisue/vim-gita'
+	" vim-plug
+	Plug 'lambdalisue/vim-gita'
 
-	" neobundle.vim
-	NeoBundle 'lambdalisue/vim-gita'
+	" dein.vim
+	call dein#add('lambdalisue/vim-gita')
 
-	" neobundle.vim (Lazy)
-	NeoBundleLazy 'lambdalisue/vim-gita', {
-		\ 'autoload': {
-		\   'commands': ['Gita'],
-		\}}
+	" dein.vim (lazy)
+	call dein#add('lambdalisue/vim-gita', {
+		\ 'on_cmd': 'Gita',
+		\})
 <
-If you are not using any vim plugin manager, you can copy the repository to
-your $VIM directory to enable the plugin.
+Or copy contents of the repository into your |runtimepath| manually.
 
 
 ==============================================================================
@@ -112,168 +109,319 @@ USAGE						*vim-gita-usage*
 
 First of all, all commands which vim-gita provides start from :Gita and all
 commands (including :Gita) provide --help/-h option to show a help message of
-the command. Like below
->
-	:Gita -h
-	:Gita[!] [action] [--help]
-
-	An awesome git handling plugin for Vim
-
-	Positional arguments:
-	action      An action of the Gita or git command.
-		If a non Gita command is specified or a command is called...
-		it call a raw git command instead of a Gita command.
-
-	Optional arguments:
-	-h, --help  show this help
-<
-
-To stage/commit changes, follow the steps below:
-
-	1. Hit ':Gita status' to open a |gita:status| window
-	2. Hit '--' to stage/unstage file(s) under the cursor
-	3. Hit 'cc' to swithc to a |gita:commit| window
-	4. Write a commit message and hit ':wq'
-	5. Answer 'y' to commit changes
-
-
-To list files changed from a master (like 'Files changed' in GitHub PR),
-follow the steps below:
-
-	1. Hit ':Gita diff-ls' to open a |gita:diff-ls| window
-	2. Hit up arrow to select 'origin/HEAD...' to list files changed from
-	   a common ancestor of the default branch of the remote
-	3. Hit 'ee', 'oo' or whatever to open the file
-
-
-To solve conflicts in merge mode, follow the steps below:
-
-	1. Hit ':Gita status' to open a |gita:status| window
-	2. Hit 'ss', 'sS', or 'SS' to open |vimdiff|
-	3. Compare difference and write a correct version
-	4. Hit ':Gita add' on a MERGE buffer
-	5. Hit ':Gita commit' to open a |gita:commit| window
-	6. Write a commit message and hit ':wq' to commit the changes
-
-See |vim-gita-interface| for more documents.
+the command.
 
 ------------------------------------------------------------------------------
-STATUSLINE					*vim-gita-usage-statusline*
+STATUS					*vim-gita-usage-status*
 
-vim-gita provides a statusline component (|gita#statusline#format()|) which
-cache a current status aggressively to enhance the performance. It would
-improve the performance a lot if you are using |system()| to call a raw git
-command currently.
-
-Use |gita#statusline#preset()| to get a preset or |gita#statusline#format()| to
-create your own component.
+To check or modify current statuses of a git repository, use |:Gita-status|
+command like:
 >
-	" Example usage of gita#statusline#preset()
+	:Gita status
+<
+It opens a |gita-status| window which users can confirm or manipulate the
+current statuses.
+
+
+------------------------------------------------------------------------------
+STATUSLINE				*vim-gita-usage-statusline*
+
+vim-gita provides a statusline component functions which returns a
+corresponding |String| available in |statusline|.
+The component functions aggressively cache statuses to improve the performance
+so you would notice a huge performance improvement if you are currently using
+|system()| to get git informations.
+
+Use |gita#statusline#preset()| to get presets or |gita#statusline#format()| to
+create your own components like:
+>
 	echo gita#statusline#preset('branch')
-	" out: vim-gita/master <> origin/master
+	" => 'vim-gita/master <> origin/master'
 	echo gita#statusline#preset('status')
-	" out: !5 +2 "4 *4
+	" => '!5 +2 "4 *4'
 	echo gita#statusline#preset('traffic')
-	" out: <5 >4
+	" => '<5 >4'
 
-	" Example usage of gita#statusline#format()
 	echo gita#statusline#format('%ln/%lb # %rn/%rb')
-	" out: vim-gita/master # origin/master
+	" => 'vim-gita/master # origin/master'
 <
-vim-gita just provides statusline |String| so you would require to use some
-other statusline plugin such as itchyny/lightline.vim.  The following is my
-tabline setting via itchyny/lightline.vim
+Use components above to customize your |statusline| like:
 >
-	let g:lightline = {
-	      \ 'colorscheme': 'hybrid',
-	      \ 'active': {
-	      \   'left': [
-	      \     [ 'mode', 'paste' ],
-	      \     [ 'filename' ],
-	      \   ],
-	      \   'right': [
-	      \     [ 'lineinfo' ],
-	      \     [ 'fileformat', 'fileencoding', 'filetype' ],
-	      \   ],
-	      \ },
-	      \ 'inactive': {
-	      \   'left': [
-	      \     [ 'filename' ],
-	      \   ],
-	      \   'right': [
-	      \     [ 'fileformat', 'fileencoding', 'filetype' ],
-	      \   ],
-	      \ },
-	      \ 'tabline': {
-	      \   'left': [
-	      \     [ 'tabs' ],
-	      \   ],
-	      \   'right': [
-	      \     [ 'close' ],
-	      \     [ 'git_branch', 'git_traffic', 'git_status', 'cwd' ],
-	      \   ],
-	      \ },
-	      \ 'component_visible_condition': {
-	      \   'lineinfo': '(winwidth(0) >= 70)',
-	      \ },
-	      \ 'component_function': {
-	      \   'git_branch': 'g:lightline.my.git_branch',
-	      \   'git_traffic': 'g:lightline.my.git_traffic',
-	      \   'git_status': 'g:lightline.my.git_status',
-	      \ },
-	      \}
-	let g:lightline.my = {}
-	function! g:lightline.my.git_branch() " {{{
-	  return gita#statusline#preset('branch') : ''
-	endfunction " }}}
-	function! g:lightline.my.git_traffic() " {{{
-	  return gita#statusline#preset('traffic') : ''
-	endfunction " }}}
-	function! g:lightline.my.git_status() " {{{
-	  return gita#statusline#preset('status') : ''
-	endfunction " }}}
+	let &statusline = &statusline . "%{gita#statusline#preset('branch')}"
 <
-Reference:
-- itchyny/lightline.vim 
-  https://github.com/itchyny/lightline.vim
+The code above add a current branch name to the end of your statusline.
 
 
 ==============================================================================
-INTERFACE					*vim-gita-interface*
+COMMANDS				*vim-gita-commands*
 
-------------------------------------------------------------------------------
-COMMANDS					*vim-gita-interface-commands*
+:Gita[!] {args}				*:Gita*
 
-:Gita status {options}			*:Gita-status*
+	Execute a gita command or a git command.
+	If a command specified in {args} is not a gita command, it execute a
+	corresponding git command instead.
+	If a command is executed with a bang (!), it force to execute a git
+	command even a command is found as a gita command.
+	See :Gita -h for the help of available {args}.
 
-	Open a *gita:status* window which you can see and manipulate the
-	status of a git repository which a current buffer belongs.
+:Gita blame {options}			*:Gita-blame*
 
-	See :Gita status -h for the help of {options}.
+	Open |gita-blame-navi| window and |gita-blame-view| window to check
+	blame content of a specified file.
+	See :Gita blame -h for the help of available {options}.
+
+	In *gita-blame-navi* window, the following content is shown in each
+	commit chunks:
+>
+	 ┌ An actual line number
+	 │      ┌ A commit message
+	 │      │
+	111 Simplify diff-ls
+	112 lambdalisue authored 1 day ago       bcb41c6
+	        │                   │             │
+	        │                   │             └ A revision
+	        │                   └ A commit date
+	        └ A commit author
+<
+	In *gita-blame-view* window, the content are separated into commit
+	chunks by pseudo lines and synchronized with |gita-blame-navi| window.
+
+	See |gita-actions| about actions available in the window.
+
+:Gita branch {options}			*:Gita-branch*
+
+	Open a |gita-branch| window which users can see and manipulate the
+	branches.
+	See :Gita branch -h for the help of available {options}.
+
+	In *gita-branch* window, the following content will be shown:
+>
+	                 ┌ A repository name
+	                 │
+	3 branches in vim-gita | Press ? to show help or <Tab> to ...
+	* alpha-3
+	  master
+	│  │
+	│  └ A branch name
+	└ A current branch marker
+<
+	See |gita-actions| about actions available in the window.
+
+:Gita browse {options}			*:Gita-browse*
+
+	Open a systen browser to browse a remote URL of a file or a
+	repository. It build a remote URL by following rules written in
+	|g:gita#command#browse#translation_patterns| and
+	|g:gita#command#browse#extra_translation_patterns|. See these help to
+	find how to add a new rule such for GitHub Enterprise or so on.
+
+:Gita chaperone {options}		*:Gita-chaperone*
+
+	Open two or three buffers to solve a merge confliction.
+	See :Gita chaperone -h for the help of available {options}.
+
+	A right/bottom or center/middle buffer is writable (MERGE buffer) and
+	saved changes in that buffer is saved into a corresponding file in a
+	working tree.
+
+	A split direction could be controlled by |vertical| prefix like:
+>
+	:vertical Gita chaperone ...
+<
+	Or if you want to always split vertically, add vertical to |diffopt|.
+
+	When 3-way chaperone is performed the following special mappings are
+	enabled.
+	In LOCAL or REMOTE buffers (nomodifiable buffers), |dp| mapping is
+	available to put a chunk into MERGE buffer (modifiable buffer).
+	In MERGE buffer, dol or dor mappings; diff obtain from LOCAL or diff
+	obtained from REMOTE; are available to obtain a chunk from LOCAL or
+	REMOTE respectively.
 
 :Gita commit {options}			*:Gita-commit*
 
-	Open a *gita:commit* window which you can edit and post the changes to
-	a git repository which a current buffer belongs.
+	Open a |gita-commit| window which users can edit a commit message and
+	commit changes.
+	See :Gita commit -h for the help of available {options}.
 
-	See :Gita commit -h for the help of {options}
+	In *gita-commit* window, the following content will be shown:
+>
+	             ┌ A repository name
+	             │      ┌ A local branch name
+	             │      │         ┌ A remote name
+	             │      │         │    ┌ A remote branch name
+	             │      │         │    │
+	# status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
+	#  M autoload/gita/command.vim
+	# M  doc/vim-gita.txt
+	# │            │
+	# │            └ A modified filename
+	# └ A current status of a file (Short form)
+<
+	Additional information about incoming/outgoing changes compared to a
+	connected remote branch or current commit status such as AMEND, MERGE
+	might be shown as well.
+	See |gita-actions| about actions available in the window.
 
-NOTE: WIP
+:Gita diff {options}			*:Gita-diff*
 
-------------------------------------------------------------------------------
-FUNCTIONS					*vim-gita-interface-functions*
+	Open one or two buffer(s) to compare differences between two blobs.
+	See :Gita diff -h for the help of available {options}.
+
+	A split direction could be controlled by |vertical| prefix like:
+>
+	:vertical Gita diff ...
+<
+	Or if you want to always split vertically, add vertical to |diffopt|.
+
+:Gita diff-ls {options}			*:Gita-diff-ls*
+
+	Open a |gita-diff-ls| window which users can find changed files
+	between specified commits.
+	See :Gita diff-ls -h for the help of available {options}.
+
+	In *gita-commit* window, the following content will be shown:
+>
+	206 files are different between origin/HEAD... and HEAD | Press ? ...
+	.travis.yml           +21    -25   +--
+	appveyor.yml          +22    -45   ++----
+	    │                 │     │     │
+	    │                 │     │     └ A visual indicator
+	    │                 │     └ Deleted lines
+	    │                 └ Added lines
+	    └ A modified filename
+<
+	See |gita-actions| about actions available in the window.
+
+:Gita grep {options}			*:Gita-grep*
+
+	Open a |gita-grep| window which users can find files containing a
+	specified pattern(s).
+	See :Gita grep -h for the help of available {options}.
+
+	In *gita-grep* window, the following content will be shown:
+>
+	                 ┌ A blob name (commit or branch)
+	                 │        ┌ A repository name
+	                 │        │
+	372 matches in INDEX of vim-gita | Press ? to show help or <Tab> ...
+	.travis.yml:35  |   - sh /tmp/vim-vimlint/bin/vimlint.sh -l ...
+	README.md:77    |         \ 'autoload': {
+	   │     │                  │
+	   │     │                  └ A line content
+	   │     └ A line number
+	   └ A filename
+<
+	See |gita-actions| about actions available in the window.
+
+:Gita ls-files {options}		*:Gita-ls-files*
+
+	Open a |gita-ls-files| window which users can see files in a working
+	tree and/or an index of the repository.
+	See :Gita ls-files -h for the help of available {options}.
+
+	In *gita-ls-files* window, the following content will be shown:
+>
+	                ┌ A repository name
+	                │
+	148 files in vim-gita | Press ? to show help or <Tab> to select ...
+	LICENSE.md
+	README.md
+	   │
+	   └ A filename
+<
+	See |gita-actions| about actions available in the window.
+
+:Gita ls-tree {options}			*:Gita-ls-tree*
+
+	Open a |gita-ls-tree| window which users can see files in a particular
+	commit/branch of the repository.
+	See :Gita ls-tree -h for the help of available {options}.
+
+	In *gita-ls-tree* window, the following content will be shown:
+>
+	              ┌ A blob name (commit or branch)
+	              │        ┌ A repository name
+	              │        │
+	148 files in HEAD of vim-gita | Press ? to show help or <Tab> ...
+	LICENSE.md
+	README.md
+	   │
+	   └ A filename
+<
+	See |gita-actions| about actions available in the window.
+
+:Gita patch {options}			*:Gita-patch*
+
+	Open one, two, or three buffers to perform patch (a partical add/reset
+	changes into/from an index like git add -p or git reset -p).
+	See :Gita patch -h for the help of available {options}.
+
+	A right/bottom or center/middle buffer is writable (patchable buffer)
+	and saved changes in that buffer is saved into an index.
+
+	A split direction could be controlled by |vertical| prefix like:
+>
+	:vertical Gita patch ...
+<
+	Or if you want to always split vertically, add vertical to |diffopt|.
+
+	When 3-way patch is performed the following special mappings are
+	enabled.
+	In a working tree or a HEAD buffers, |dp| mapping is available to put a
+	chunk into an index buffer (modifiable buffer).
+	In an index buffer, dol or dor mappings; diff obtain from left or diff
+	obtained from right; are available to obtain a chunk from top/left or
+	bottom/right respectively.
+
+:Gita show {options}			*:Gita-show*
+
+	Open a buffer to edit or show a file content in a working tree or a
+	specified commit.
+	See :Gita show -h for the help of available {options}.
+
+:Gita status {options}			*:Gita-status*
+
+	Open a |gita-status| window which users can see and manipulate the
+	statuses.
+	See :Gita status -h for the help of available {options}.
+
+	In *gita-status* window, the following content will be shown:
+>
+	             ┌ A repository name
+	             │      ┌ A local branch name
+	             │      │         ┌ A remote name
+	             │      │         │    ┌ A remote branch name
+	             │      │         │    │
+	status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
+	 M autoload/gita/command.vim
+	M  doc/vim-gita.txt
+	│            │
+	│            └ A modified filename
+	└ A current status of a file (Short form)
+<
+	Additional information about incoming/outgoing changes compared to a
+	connected remote branch might be shown as well.
+	See |gita-actions| about actions available in the window.
+
+
+==============================================================================
+FUNCTIONS					*vim-gita-functions*
 
 gita#statusline#format({format})		*gita#statusline#format()*
 
 	Return a current git status in a specified {format}. The following
 	format strings are available to use in the {format}.
 
+	'md' A mode name
 	'ln' A working tree name
 	'lb' A current branch name
-	'rn' A connected remote name (usually 'origin')
-	'rb' A connected remote branch name (usually 'master')
-	'ic' The number of incoming commits (commits behind remote)
+	'lh' A current branch hashref
+	'rn' A connected remote name
+	'rb' A connected remote branch name
+	'rh' A connected remote branch hashref
 	'og' The number of outgoing commits (commits ahead of remote)
+	'ic' The number of incoming commits (commits behind remote)
 	'nc' The number of conflicted files
 	'nu' The number of unstaged files
 	'ns' The number of staged files
@@ -364,27 +512,54 @@ gita#statusline#preset({name})		*gita#statusline#preset()*
 	Show the number of incoming/outgoing commits with fancy font
 	E.g: ￩3 ￫5
 
-NOTE: WIP
 
-------------------------------------------------------------------------------
-VARIABLES					*vim-gita-interface-variables*
+==============================================================================
+VARIABLES					*vim-gita-variables*
 
-g:gita#debug					*g:gita#debug*
+			*g:gita#command#browse#translation_patterns*
+g:gita#command#browse#translation_patterns
 
-	If it is 1, debug messages will be shown.
-	The default is 0.
+	A translation pattern |Dictionary| used in a |:Gita-browse| command.
+	The following values are specified in a default.
+>
+	let g:gita#command#browse#translation_patterns = {
+	      \  'github.com': [
+	      \    [
+	      \      '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \      '\vgit://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \      '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
+	      \      '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \    ], {
+	      \      '^':     'https://\1/\2/\3/tree/%c1/',
+	      \      '_':     'https://\1/\2/\3/blob/%c1/%pt%{#L|}ls%{-L|}le',
+	      \      'exact': 'https://\1/\2/\3/blob/%r1/%pt%{#L|}ls%{-L|}le',
+	      \      'blame': 'https://\1/\2/\3/blame/%c1/%pt%{#L|}ls%{-L|}le',
+	      \    },
+	      \  ],
+	      \  'bitbucket.org': [
+	      \    [
+	      \      '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \      '\vgit://(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \      '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
+	      \      '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
+	      \    ], {
+	      \      '^':     'https://\1/\2/\3/branch/%c1/',
+	      \      '_':     'https://\1/\2/\3/src/%c1/%pt%{#cl-|}ls',
+	      \      'exact': 'https://\1/\2/\3/src/%r1/%pt%{#cl-|}ls',
+	      \      'blame': 'https://\1/\2/\3/annotate/%c1/%pt',
+	      \      'diff':  'https://\1/\2/\3/diff/%pt?diff1=%c1&diff2=%c2',
+	      \    },
+	      \  ],
+	      \}
+<
+	If you would like to extend the pattern, do not overwrite this pattern
+	and use |g:gita#command#browse#extra_translation_patterns| instead.
 
-			*g:gita#features#browse#translation_patterns*
-g:gita#features#browse#translation_patterns
-
-	A |Dictionary| used for translating a remote url to browserble url.
-	See |g:gita#features#browse#extra_translation_patterns| for the detail.
-
-			*g:gita#features#browse#extra_translation_patterns*
-g:gita#features#browse#extra_translation_patterns
+			*g:gita#command#browse#extra_translation_patterns*
+g:gita#command#browse#extra_translation_patterns
 
 	An extra translation pattern |Dictionary| which will be extended to
-	|g:gita#features#browse#translation_patterns|.
+	|g:gita#command#browse#translation_patterns|.
 	An item of the dictionary is a |List|, which have an acceptable url
 	pattern |List| and a url translation scheme |Dictionary|.
 
@@ -416,7 +591,9 @@ g:gita#features#browse#extra_translation_patterns
 	" 'gitlab.hashnote.net'
 	" '_' of a url translation scheme dictionary is used as a default
 	" scheme
-	let g:gita#features#browse#extra_translation_patterns = {
+	" '^' of a url translation scheme dictionary is used as a repository
+	" scheme
+	let g:gita#command#browse#extra_translation_patterns = {
 	    \ 'gitlab.hashnote.net': [
 	    \   [
 	    \     '\vhttps?://(%domain)/(.{-})/(.{-})%(\.git)?$',
@@ -424,18 +601,306 @@ g:gita#features#browse#extra_translation_patterns
 	    \     '\vgit\@(%domain):(.{-})/(.{-})%(\.git)?$',
 	    \     '\vssh://git\@(%domain)/(.{-})/(.{-})%(\.git)?$',
 	    \   ], {
+	    \     '^':     'https://\1/\2/\3/tree/%c1/',
 	    \     '_':     'https://\1/\2/\3/blob/%c1/%pt%{#L|}ls%{-}le',
 	    \     'exact': 'https://\1/\2/\3/blob/%r1/%pt%{#L|}ls%{-}le',
 	    \   },
 	    \ ],
 	    \}
 <
-NOTE: WIP
 
-------------------------------------------------------------------------------
-MAPPINGS					*vim-gita-interface-mappings*
+==============================================================================
+ACTIONS						*vim-gita-actions*
 
-NOTE: WIP
+A non file-like buffers used in vim-gita provides action mechanisms.
+All actions provide a <Plug> mapping and several provide a default mapping.
 
+Hitting <Tab> in such window leads users to action select mode. In action
+select mode, users can select action by typing an action name (<Tab>
+completion is available) and hitting <Return> perform a selected action.
 
+The followings are existing actions. Note that not all actions are available
+in a window. Hit ? to see what actions are available in a window.
+
+	add
+		Add file content to the index
+		<Plug>(gita-add)
+	add:force
+		Add file content to the index (force)
+		<Plug>(gita-add-force)
+	
+	blame
+		Open blame window
+		<Plug>(gita-blame) Default: BB
+	blame:enter
+		Enter a blame chunk
+		<Plug>(gita-blame-enter) Default: <Return>
+	blame:back
+		Back to a previous blame
+		<Plug>(gita-blame-back) Default: <Backspace>
+	blame:chunk:next
+		Move cursor onto the next blame chunk
+		<Plug>(gita-blame-chunk-next) Default: ]c
+	blame:chunk:previous
+		Move cursor onto the previous blame chunk
+		<Plug>(gita-blame-chunk-previous) Default: [c
+	
+	branch:checkout
+		Checkout a branch
+		<Plug>(gita-branch-checkout)
+	branch:checkout:track
+		Checkout a branch (track)
+		<Plug>(gita-branch-checkout-track)
+	branch:rename
+		Rename a branch
+		<Plug>(gita-branch-rename) Default: rr
+	branch:rename:force
+		Rename a branch (force)
+		<Plug>(gita-branch-rename-force) Default: RR
+	branch:delete
+		Delete a branch
+		<Plug>(gita-branch-delete) Default: dd
+	branch:delete:force
+		Delete a branch (force)
+		<Plug>(gita-branch-delete-force) Default: DD
+	
+	browse
+		Browse a content URL
+		<Plug>(gita-browse) Default: bb
+	browse:exact
+		Browse a content URL with exact scheme
+		<Plug>(gita-browse-exact)
+	browse:diff
+		Browse a content URL with diff scheme
+		<Plug>(gita-browse-diff)
+	browse:blame
+		Browse a content URL with blame scheme
+		<Plug>(gita-browse-blame)
+	browse:repository
+		Browse a content URL with repository scheme (^)
+		<Plug>(gita-browse-repository)
+	browse:yank
+		Yank a content URL
+		<Plug>(gita-browse-yank) Default: yy
+	browse:exact:yank
+		Yank a content URL with exact scheme
+		<Plug>(gita-browse-exact-yank)
+	browse:diff:yank
+		Yank a content URL with diff scheme
+		<Plug>(gita-browse-diff-yank)
+	browse:blame:yank
+		Yank a content URL with blame scheme
+		<Plug>(gita-browse-blame-yank)
+	browse:repository:yank
+		Yank a content URL with repository scheme (^)
+		<Plug>(gita-browse-repository-yank)
+	
+	chaperone
+		Help to solve a confliction
+		<Plug>(gita-chaperone) Default: !!
+	chaperone:two
+		Help to solve a confliction (two way)
+		<Plug>(gita-chaperone-two) Default: !2
+	chaperone:three
+		Help to solve a confliction three way)
+		<Plug>(gita-chaperone-three) Default: !3
+	
+	checkout
+		Checkout a content
+		<Plug>(gita-checkout)
+	checkout:force
+		Checkout a content (force)
+		<Plug>(gita-checkout-force)
+	checkout:ours
+		Checkout a content of ours in merge mode
+		<Plug>(gita-checkout-ours)
+	checkout:ours:force
+		Checkout a content of ours in merge mode (force)
+		<Plug>(gita-checkout-ours-force)
+	checkout:theirs
+		Checkout a content of theirs in merge mode
+		<Plug>(gita-checkout-theirs)
+	checkout:theirs:force
+		Checkout a content of theirs in merge mode (force)
+		<Plug>(gita-checkout-ours-theirs)
+	checkout:HEAD
+		Checkout a content from HEAD
+		<Plug>(gita-checkout-HEAD)
+	checkout:HEAD:force
+		Checkout a content from HEAD (force)
+		<Plug>(gita-checkout-HEAD-force)
+	checkout:origin/HEAD
+		Checkout a content from origin/HEAD
+		<Plug>(gita-checkout-origin/HEAD)
+	checkout:origin/HEAD:force
+		Checkout a content from origin/HEAD (force)
+		<Plug>(gita-checkout-origin/HEAD-force)
+	
+	commit
+		Open a |gita-commit| window
+		<Plug>(gita-commit) Default: <C-^> or <C-c><C-n>
+	commit:amend
+		Open a |gita-commit| window with amend option
+		<Plug>(gita-commit-amend) Default: <C-c><C-a>
+	
+	common:help (alias: help)
+		Show an action help
+		<Plug>(gita-help) Defaut: ?
+	common:redraw (alias: redraw)
+		Redraw a window 
+		<Plug>(gita-redraw) Default: <C-l>
+	common:choice (alias: choice)
+		Start action select mode
+		<Plug>(gita-choice) Default: <Tab>
+	
+	diff
+		Show a diff content
+		<Plug>(gita-diff) Default: dd
+	diff:edit
+		Show a diff content (edit)
+		<Plug>(gita-diff-edit)
+	diff:above
+		Show a diff content (above)
+		<Plug>(gita-diff-above)
+	diff:below
+		Show a diff content (below)
+		<Plug>(gita-diff-below)
+	diff:left
+		Show a diff content (left)
+		<Plug>(gita-diff-left)
+	diff:right
+		Show a diff content (right)
+		<Plug>(gita-diff-right) Default: DD
+	diff:tab
+		Show a diff content (tab)
+		<Plug>(gita-diff-tab) Default: dt
+	diff:preview
+		Show a diff content (preview)
+		<Plug>(gita-diff-preview) Default: dp
+	diff:split
+		Show a diff content in two buffers
+		<Plug>(gita-diff-split) Default: ds
+	diff:split:tab
+		Show a diff content in two buffers (tab)
+		<Plug>(gita-diff-split-tab) Default: DS
+	
+	discard
+		Discard changes on the working tree
+		<Plug>(gita-discard) Default: ==
+	discard:force
+		Discard changes on the working tree (force)
+		<Plug>(gita-discard-force)
+	
+	edit
+		Open a content
+		<Plug>(gita-edit) Default: ee
+	edit:edit
+		Open a content (edit)
+		<Plug>(gita-edit-edit)
+	edit:above
+		Open a content (above)
+		<Plug>(gita-edit-above)
+	edit:below
+		Open a content (below)
+		<Plug>(gita-edit-below)
+	edit:left
+		Open a content (left)
+		<Plug>(gita-edit-left)
+	edit:right
+		Open a content (right)
+		<Plug>(gita-edit-right) Default: EE
+	edit:tab
+		Open a content (tab)
+		<Plug>(gita-edit-tab) Default: et
+	edit:preview
+		Open a content (preview)
+		<Plug>(gita-edit-preview) Default: ep
+	
+	index:stage (alias: stage)
+		Stage changes to the index
+		<Plug>(gita-stage) Default: <<
+	index:unstage (alias: unstage)
+		Unstage changes from the index
+		<Plug>(gita-unstage) Default: >>
+	index:toggle (alias: toggle)
+		Toggle stage/unstage of changes in the index
+		<Plug>(gita-toggle) Default: --
+	
+	merge
+		Merge the commit into HEAD (fast-forward)
+		<Plug>(gita-merge)
+	merge:ff-only
+		Merge the commit into HEAD (fast-forward only)
+		<Plug>(gita-merge-ff-only)
+	merge:no-ff
+		Merge the commit into HEAD (no fast-forward)
+		<Plug>(gita-merge-no-ff)
+	merge:squash
+		Merge the commit into HEAD (squash)
+		<Plug>(gita-merge-squash)
+	
+	patch
+		Patch file contents to the index
+		<Plug>(gita-patch) Default: pp
+	patch:one
+		Patch file contents to the index (one way)
+		<Plug>(gita-patch-one) Default: p1
+	patch:two
+		Patch file contents to the index (two way)
+		<Plug>(gita-patch-two) Default: p2
+	patch:three
+		Patch file contents to the index (three way)
+		<Plug>(gita-patch-three) Default: p3
+	
+	rebase
+		Rebase HEAD from the commit (fast-forward)
+		<Plug>(gita-rebase)
+	rebase:merge
+		Rebase HEAD by merging the commit
+		<Plug>(gita-rebase-merge)
+	
+	reset
+		Reset changes on the index
+		<Plug>(gita-reset)
+	
+	rm
+		Remove files from the working tree and the index
+		<Plug>(gita-rm)
+	rm:cached
+		Remove files from the index but the working tree
+		<Plug>(gita-rm-cached)
+	rm:force
+		Remove files from the working tree and the index (force)
+		<Plug>(gita-rm-force)
+	
+	show
+		Show a content
+		<Plug>(gita-show) Default: ss
+	show:edit
+		Show a content (edit)
+		<Plug>(gita-show-edit)
+	show:above
+		Show a content (above)
+		<Plug>(gita-show-above)
+	show:below
+		Show a content (below)
+		<Plug>(gita-show-below)
+	show:left
+		Show a content (left)
+		<Plug>(gita-show-left)
+	show:right
+		Show a content (right)
+		<Plug>(gita-show-right) Default: SS
+	show:tab
+		Show a content (tab)
+		<Plug>(gita-show-tab) Default: st
+	show:preview
+		Show a content (preview)
+		<Plug>(gita-show-preview) Default: sp
+	
+	status
+		Open a |gita-status| window
+		<Plug>(gita-status) Default: <C-^>
+
+==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl

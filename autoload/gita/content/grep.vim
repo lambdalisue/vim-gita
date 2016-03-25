@@ -103,11 +103,12 @@ function! s:get_prologue(git) abort
   let candidates = gita#meta#get_for('^grep$', 'candidates', [])
   let ncandidates = len(candidates)
   return printf(
-        \ 'Gita grep : Matches in <%s> (%d match%s) %s',
-        \ empty(commit) ? 'INDEX' : commit,
+        \ '%d match%s in %s of %s %s',
         \ ncandidates,
         \ ncandidates == 1 ? '' : 'es',
-        \ '| Press ? or <Tab> to show help or do action',
+        \ empty(commit) ? 'INDEX' : commit,
+        \ a:git.repository_name,
+        \ '| Press ? to show help or <Tab> to select action',
         \)
 endfunction
 
