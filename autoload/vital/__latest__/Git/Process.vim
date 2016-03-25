@@ -4,7 +4,6 @@ set cpoptions&vim
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
   let s:Dict = a:V.import('Data.Dict')
-  let s:StringExt = a:V.import('Data.StringExt')
   let s:Process = a:V.import('System.Process')
   let s:config = {
         \ 'executable': 'git',
@@ -16,7 +15,6 @@ function! s:_vital_depends() abort
   return [
         \ 'Prelude',
         \ 'Data.Dict',
-        \ 'Data.StringExt',
         \ 'System.Process',
         \]
 endfunction

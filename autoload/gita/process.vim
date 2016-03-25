@@ -58,7 +58,7 @@ function! gita#process#execute(git, args, ...) abort
   elseif !options.quiet
     call s:Prompt.debug(printf('%s: %s',
           \ is_success ? 'OK' : 'Fail',
-          \ join(options.args),
+          \ join(result.args),
           \))
     echo join(result.content, "\n")
   endif
