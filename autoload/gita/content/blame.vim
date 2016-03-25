@@ -12,6 +12,7 @@ let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:execute_command(options) abort
+  let git = gita#core#get_or_fail()
   let commit = a:options.commit
   if commit =~# '^.\{-}\.\.\..\{-}$'
     " support A...B style
@@ -36,7 +37,6 @@ function! s:execute_command(options) abort
           \ '--',
           \ a:options.filename,
           \]
-    let git = gita#core#get_or_fail()
     let content = gita#process#execute(git, args, { 'quiet': 1 })
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
