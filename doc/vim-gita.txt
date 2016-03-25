@@ -280,7 +280,7 @@ COMMANDS				*vim-gita-commands*
 	between specified commits.
 	See :Gita diff-ls -h for the help of available {options}.
 
-	In *gita-commit* window, the following content will be shown:
+	In *gita-diff-ls* window, the following content will be shown:
 >
 	206 files are different between origin/HEAD... and HEAD | Press ? ...
 	.travis.yml           +21    -25   +--
