@@ -88,11 +88,11 @@ function! gita#content#autocmd(name) abort
           \ substitute(bufinfo.content_type, '-', '_', 'g'),
           \)
     call call(funcname, [a:name, bufinfo])
-  "catch /^Vim\%((\a\+)\)\=:E117/
-  "  call gita#throw(printf(
-  "        \ '"%s" in "%s" is not supported',
-  "        \ a:name, expand('<afile>'),
-  "        \))
+  catch /^Vim\%((\a\+)\)\=:E117/
+    call gita#throw(printf(
+          \ '"%s" in "%s" is not supported',
+          \ a:name, expand('<afile>'),
+          \))
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry

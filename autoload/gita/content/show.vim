@@ -4,6 +4,7 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
+let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 
 function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) abort
@@ -52,10 +53,14 @@ function! s:get_diff_content(git, content, filename) abort
     call writefile(content, tempfile1)
     call writefile(a:content, tempfile2)
     " create a diff content between index_content and content
+    " NOTE:
+    " --no-index force --exit-code option.
+    " --exit-code mean that the program exits with 1 if there were differences
+    " and 0 means no differences
     let content = gita#process#execute(
           \ git,
           \ ['diff', '--no-index', '--', tempfile1, tempfile2],
-          \ { 'quiet': 1 }
+          \ { 'quiet': 1, 'fail_silently': 1 }
           \)
     if empty(content) || len(content) < 4
       " fail or no differences. Assume that there are no differences
@@ -130,6 +135,34 @@ function! s:parse_bufname(bufinfo) abort
   return a:bufinfo
 endfunction
 
+function! s:execute_command(options) abort
+  let git = gita#core#get_or_fail()
+  " NOTE:
+  " 'commit' does not contains ':1' type assignment but if 'commit' is non
+  " empty string, that mean no ':1' type assignment was performed
+  if !empty(a:options.commit)
+    let commit = a:options.commit
+    if commit =~# '^.\{-}\.\.\..\{-}$'
+      " support A...B style
+      let [lhs, rhs] = s:GitTerm.split_range(commit)
+      let lhs = empty(lhs) ? 'HEAD' : lhs
+      let rhs = empty(rhs) ? 'HEAD' : rhs
+      let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
+    elseif commit =~# '^.\{-}\.\..\{-}$'
+      " support A..B style
+      let commit  = s:GitTerm.split_range(commit)[0]
+    endif
+    let treeish = commit . ':' . s:Path.unixpath(
+          \ s:Git.get_relative_path(git, a:options.filename),
+          \)
+  else
+    " NOTE:
+    " 'treeish' may contains ':1' type assignment so use it directly
+    let treeish = a:options.treeish
+  endif
+  return gita#process#execute(git, ['show', treeish], { 'quiet': 1 })
+endfunction
+
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
   let options = gita#option#cascade('^show$', a:options, {
@@ -138,12 +171,7 @@ function! s:on_BufReadCmd(options) abort
         \ 'filename': '',
         \ 'patch': 0,
         \})
-  let git = gita#core#get_or_fail()
-  let content = gita#process#execute(
-        \ git,
-        \ ['show', options.treeish],
-        \ { 'quiet': 1 }
-        \)
+  let content = s:execute_command(options)
   call gita#meta#set('content_type', 'show')
   call gita#meta#set('options', options)
   call gita#meta#set('commit', options.commit)
@@ -172,12 +200,7 @@ function! s:on_FileReadCmd(options) abort
         \ 'commit': '',
         \ 'filename': '',
         \}, a:options)
-  let git = gita#core#get_or_fail()
-  let content = gita#process#execute(
-        \ git,
-        \ ['show', options.treeish],
-        \ { 'quiet': 1 }
-        \)
+  let content = s:execute_command(options)
   call gita#util#buffer#read_content(
         \ content,
         \ gita#util#buffer#parse_cmdarg(),

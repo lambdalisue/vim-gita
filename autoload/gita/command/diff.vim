@@ -246,18 +246,6 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#diff#execute(args, options) abort
-  " NOTE:
-  " --no-index force --exit-code option.
-  " --exit-code mean that the program exits with 1 if there were differences
-  " and 0 means no differences
-  let a:options.success_status =
-        \ index(a:args, '--no-index') >= 0 ||
-        \ index(a:args, '--exit-code') >= 0
-  let git = gita#core#get()
-  return gita#process#execute(git, ['diff'] + a:args, a:options)
-endfunction
-
 function! gita#command#diff#command(bang, range, args) abort
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)

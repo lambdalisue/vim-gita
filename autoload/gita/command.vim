@@ -75,7 +75,6 @@ function! s:get_parser() abort
           \   'terminal': 1,
           \   'complete': function('s:complete_action'),
           \})
-    " TODO: Write available actions
   endif
   return s:parser
 endfunction
