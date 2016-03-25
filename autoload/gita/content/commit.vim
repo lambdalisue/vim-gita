@@ -21,6 +21,7 @@ endfunction
 function! s:execute_command(options) abort
   let args = gita#process#args_from_options(a:options, {
         \ 'untracked-files': 1,
+        \ 'amend': 1,
         \})
   let args = [
         \ 'commit',
@@ -77,7 +78,7 @@ function! s:define_actions() abort
         \ g:gita#content#commit#primary_action_mapping
         \)
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
-  nmap <buffer> <C-c><C-n> <Plug>(gita-commit-new)
+  nmap <buffer> <C-c><C-n> <Plug>(gita-commit)
   nmap <buffer> <C-c><C-a> <Plug>(gita-commit-amend)
   nmap <buffer> <C-^> <Plug>(gita-status)
 endfunction
@@ -250,6 +251,14 @@ function! gita#content#commit#open(options) abort
         \ : options.opener
   call gita#util#cascade#set('commit', s:Dict.pick(options, [
         \ 'untracked-files',
+        \ 'reset-author',
+        \ 'author',
+        \ 'date',
+        \ 'gpg-sign',
+        \ 'no-gpg-sign',
+        \ 'amend',
+        \ 'allow-empty',
+        \ 'allow-empty-message',
         \ 'filenames',
         \]))
   call gita#util#buffer#open(bufname, {

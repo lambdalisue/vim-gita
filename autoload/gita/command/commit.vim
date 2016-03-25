@@ -11,6 +11,10 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
+          \ '--reset-author',
+          \ 'reset author for commit',
+          \)
+    call s:parser.add_argument(
           \ '--author',
           \ 'override author for commit', {
           \   'type': s:ArgumentParser.types.value,
@@ -19,12 +23,6 @@ function! s:get_parser() abort
           \ '--date',
           \ 'override date for commit', {
           \   'type': s:ArgumentParser.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--message', '-m',
-          \ 'commit message. imply --no-ui', {
-          \   'type': s:ArgumentParser.types.value,
-          \   'conflicts': ['ui'],
           \})
     call s:parser.add_argument(
           \ '--gpg-sign', '-S',
@@ -42,20 +40,12 @@ function! s:get_parser() abort
           \ 'amend previous commit',
           \)
     call s:parser.add_argument(
-          \ '--all', '-a',
-          \ 'commit all changed files',
-          \)
-    call s:parser.add_argument(
           \ '--allow-empty',
           \ 'allow an empty commit',
           \)
     call s:parser.add_argument(
           \ '--allow-empty-message',
           \ 'allow an empty commit message',
-          \)
-    call s:parser.add_argument(
-          \ '--reset-author',
-          \ 'reset author for commit',
           \)
     call s:parser.add_argument(
           \ '--untracked-files', '-u',
