@@ -53,7 +53,7 @@ def _vim_vital_Git_Parser_main():
                 has_content = True
                 current_chunk['contents'].append(line[1:])  # remove leading \t
             elif line == 'boundary':
-                current_revision.boundary = 1
+                current_revision['boundary'] = 1
             else:
                 bits = line.split(' ')
                 key = bits[0].replace('-', '_')
