@@ -259,7 +259,6 @@ endfunction
 function! gita#content#blame#open(options) abort
   let options = extend({
         \ 'opener': '',
-        \ 'window': 'blame_navi',
         \ 'selection': [],
         \ 'navigator_width': g:gita#content#blame#navigator_width,
         \}, a:options)
@@ -270,7 +269,7 @@ function! gita#content#blame#open(options) abort
   call gita#util#cascade#set('blame-navi', options)
   call gita#util#buffer#open(bufname, {
         \ 'opener': opener,
-        \ 'window': options.window,
+        \ 'window': 'blame_navi',
         \ 'selection': options.selection,
         \})
   setlocal scrollbind
