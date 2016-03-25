@@ -1,6 +1,4 @@
 let s:V = gita#vital()
-let s:Dict = s:V.import('Data.Dict')
-let s:StringExt = s:V.import('Data.StringExt')
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
@@ -101,7 +99,7 @@ function! s:find_url(git, commit, filename, options) abort
           \ remote_url,
           \))
   endif
-  return s:StringExt.format(url, format_map, data)
+  return gita#util#formatter#format(url, format_map, data)
 endfunction
 
 function! s:get_parser() abort
@@ -118,19 +116,16 @@ function! s:get_parser() abort
           \ 'Use a URL of the repository instead',
           \)
     call s:parser.add_argument(
-          \ '--open', '-o',
+          \ '--open',
           \ 'Open a URL of a selected region of the remote in a system default browser (Default)', {
-          \   'conflicts': ['yank', 'echo'],
+          \   'deniable': 1,
+          \   'default': 1,
           \})
     call s:parser.add_argument(
-          \ '--yank', '-y',
-          \ 'Yank a URL of a selected region of the remote.', {
-          \   'conflicts': ['open', 'echo'],
-          \})
-    call s:parser.add_argument(
-          \ '--echo', '-e',
-          \ 'Echo a URL of a selected region of the remote.', {
-          \   'conflicts': ['open', 'yank'],
+          \ '--yank',
+          \ 'Yank a URL of a selected region of the remote. (Default)', {
+          \   'deniable': 1,
+          \   'default': 1,
           \})
     call s:parser.add_argument(
           \ '--scheme', '-s',
@@ -153,11 +148,6 @@ function! s:get_parser() abort
           \], {
           \   'complete': function('gita#complete#commit'),
           \})
-    function! s:parser.hooks.pre_validate(options) abort
-      if empty(s:parser.get_conflicted_arguments('open', a:options))
-        let a:options.open = 1
-      endif
-    endfunction
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'repository')
         let a:options.filename = ''
@@ -169,77 +159,44 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#browse#call(...) abort
+function! gita#command#browse#call(git, options) abort
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let local_branch = s:GitInfo.get_local_branch(git)
+        \ 'selection': [],
+        \}, a:options)
+  let local_branch = s:GitInfo.get_local_branch(a:git)
   let commit = empty(options.commit) ? local_branch.name : options.commit
-  let commit = gita#variable#get_valid_range(git, commit)
-  if empty(options.filename)
-    let filename = ''
-  else
-    let filename = gita#variable#get_valid_filename(git, options.filename)
-  endif
-  let url = s:find_url(git, commit, filename, options)
-  return {
-        \ 'commit': commit,
-        \ 'filename': filename,
-        \ 'url': url,
-        \ 'options': options,
-        \}
+  let filename = options.filename
+  return s:find_url(a:git, commit, filename, options)
 endfunction
 
-function! gita#command#browse#open(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  call s:File.open(result.url)
-endfunction
-
-function! gita#command#browse#echo(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  echo result.url
-endfunction
-
-function! gita#command#browse#yank(...) abort
-  let options = get(a:000, 0, {})
-  let result = gita#command#browse#call(options)
-  call gita#util#clip(result.url)
-endfunction
-
-function! gita#command#browse#command(...) abort
+function! gita#command#browse#command(bang, range, args) abort
   let parser  = s:get_parser()
-  let options = call(parser.parse, a:000, parser)
+  let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  " extend default options
-  let options = extend(
-        \ deepcopy(g:gita#command#browse#default_options),
-        \ options,
-        \)
   call gita#option#assign_commit(options)
   call gita#option#assign_filename(options)
   call gita#option#assign_selection(options)
+  let git = gita#core#get_or_fail()
+  let url = gita#command#browse#call(git, options)
   if get(options, 'yank')
-    call gita#command#browse#yank(options)
-  elseif get(options, 'echo')
-    call gita#command#browse#echo(options)
-  else
-    call gita#command#browse#open(options)
+    call gita#util#clip(url)
   endif
+  if get(options, 'open')
+    call s:File.open(url)
+  endif
+  echo url
 endfunction
 
-function! gita#command#browse#complete(...) abort
+function! gita#command#browse#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
-  return call(parser.complete, a:000, parser)
+  return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
 
 call gita#util#define_variables('command#browse', {
-      \ 'default_options': {},
       \ 'translation_patterns': {
       \   'github.com': [
       \     [
