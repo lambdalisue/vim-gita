@@ -37,6 +37,8 @@ function! s:on_BufReadCmd(options) abort
   let blamemeta = gita#content#blame#retrieve(options)
   call gita#meta#set('content_type', 'blame-navi')
   call gita#meta#set('options', options)
+  call gita#meta#set('commit', options.commit)
+  call gita#meta#set('filename', options.filename)
   call gita#meta#set('blamemeta', blamemeta)
   call gita#meta#set('previous', get(options, 'previous', []))
   augroup vim_gita_internal_blame_navi

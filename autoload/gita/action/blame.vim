@@ -54,7 +54,7 @@ function! s:action_enter(candidate, options) abort
         \ 'selection': [linenum_next],
         \ 'previous': [
         \   commit,
-        \   gita#meta#get_for('^blame-', 'filename'),
+        \   gita#meta#expand('%'),
         \   [linenum],
         \ ],
         \})
