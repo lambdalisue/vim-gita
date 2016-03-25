@@ -185,6 +185,18 @@ function! s:on_BufWritePost() abort
   endif
   silent! unlet! b:_gita_statusline_modified
 endfunction
+function! s:on_GitaStatusModified() abort
+  let git = gita#core#get()
+  if !git.is_enabled
+    return
+  endif
+  call s:get_format_cache(git).clear()
+  call s:get_uptime_cache(git).clear()
+  let pattern = '^gita#statusline'
+  for key in filter(git.repository_cache.keys(), 'v:val =~# pattern')
+    call git.repository_cache.remove(key)
+  endfor
+endfunction
 
 function! gita#statusline#format(format) abort
   try
@@ -307,5 +319,5 @@ augroup vim_gita_internal_statusline_clear_cache
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * call s:on_BufWritePost()
-  autocmd User GitaStatusModified call gita#core#remove_repository_cache('^gita#statusline')
+  autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END

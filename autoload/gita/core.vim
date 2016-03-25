@@ -130,14 +130,3 @@ function! gita#core#get_refinfo(...) abort
   let refinfo = s:Compat.getbufvar(expr, s:NAME, {})
   return refinfo
 endfunction
-
-function! gita#core#remove_repository_cache(pattern) abort
-  for git in values(s:references)
-    if !git.is_enabled
-      continue
-    endif
-    for key in filter(git.repository_cache.keys(), 'v:val =~# a:pattern')
-      call git.repository_cache.remove(key)
-    endfor
-  endfor
-endfunction

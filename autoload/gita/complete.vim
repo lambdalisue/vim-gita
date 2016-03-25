@@ -235,7 +235,18 @@ function! gita#complete#directory(arglead, cmdline, cursorpos, ...) abort
   return candidates
 endfunction
 
+function! s:on_GitaStatusModified() abort
+  let git = gita#core#get()
+  if !git.is_enabled
+    return
+  endif
+  let pattern = '^gita#complete'
+  for key in filter(git.repository_cache.keys(), 'v:val =~# pattern')
+    call git.repository_cache.remove(key)
+  endfor
+endfunction
+
 augroup vim_gita_internal_complete
   autocmd! *
-  autocmd User GitaStatusModified call gita#core#remove_repository_cache('^gita#complete')
+  autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END
