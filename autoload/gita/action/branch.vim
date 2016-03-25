@@ -48,7 +48,7 @@ function! s:action_delete(candidate, options) abort
         \}, a:options)
   let args = [
         \ 'branch',
-        \ options.force ? '-D' : '--delete'
+        \ options.force ? '-D' : '--delete',
         \ a:candidate.name,
         \]
   let git = gita#core#get_or_fail()
