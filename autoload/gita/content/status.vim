@@ -47,10 +47,6 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <Return> %s',
         \ g:gita#content#status#primary_action_mapping
         \)
-  execute printf(
-        \ 'nmap <buffer> <S-Return> %s',
-        \ g:gita#content#status#secondary_action_mapping
-        \)
   nmap <buffer><nowait> <C-^> <Plug>(gita-commit)
 endfunction
 
@@ -171,6 +167,5 @@ endfunction
 call gita#util#define_variables('content#status', {
       \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-edit)',
-      \ 'secondary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})

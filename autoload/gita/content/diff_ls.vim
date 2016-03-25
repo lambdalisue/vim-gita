@@ -39,10 +39,6 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <Return> %s',
         \ g:gita#content#diff_ls#primary_action_mapping
         \)
-  execute printf(
-        \ 'nmap <buffer> <S-Return> %s',
-        \ g:gita#content#diff_ls#secondary_action_mapping
-        \)
 endfunction
 
 function! s:get_candidate(index) abort
@@ -180,8 +176,7 @@ endfunction
 
 call gita#util#define_variables('content#diff_ls', {
       \ 'default_opener': 'botright 10 split',
-      \ 'primary_action_mapping': '<Plug>(gita-edit)',
-      \ 'secondary_action_mapping': '<Plug>(gita-show)',
+      \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})
 

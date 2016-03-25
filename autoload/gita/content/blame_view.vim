@@ -26,14 +26,6 @@ function! s:define_actions() abort
   if g:gita#content#blame_view#disable_default_mappings
     return
   endif
-  execute printf(
-        \ 'nmap <buffer> <Return> %s',
-        \ g:gita#content#blame_view#primary_action_mapping
-        \)
-  execute printf(
-        \ 'nmap <buffer> <S-Return> %s',
-        \ g:gita#content#blame_view#secondary_action_mapping
-        \)
 endfunction
 
 function! s:on_BufReadCmd(options) abort
@@ -131,7 +123,5 @@ function! gita#content#blame_view#autocmd(name, bufinfo) abort
 endfunction
 
 call gita#util#define_variables('content#blame_view', {
-      \ 'primary_action_mapping': '<Plug>(gita-blame-enter)',
-      \ 'secondary_action_mapping': '<Plug>(gita-blame-back)',
       \ 'disable_default_mappings': 0,
       \})

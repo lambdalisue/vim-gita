@@ -123,6 +123,8 @@ endfunction
 function! gita#action#blame#define(disable_mappings) abort
   let is_blame_buffer = gita#meta#get('content_type') =~# '^blame-'
   if is_blame_buffer
+    nnoremap <silent><buffer> : :<C-u>call <SID>call_pseudo_command()<CR>
+    vnoremap <silent><buffer> : :call <SID>call_pseudo_command()<CR>
     call gita#action#define('blame:enter', function('s:action_enter'), {
           \ 'description': 'Enter in a commit of the chunk',
           \ 'mapping_mode': 'n',
@@ -147,8 +149,6 @@ function! gita#action#blame#define(disable_mappings) abort
           \ 'requirements': ['index'],
           \ 'options': {},
           \})
-    nmap <silent><buffer> : :<C-u>call <SID>call_pseudo_command()<CR>
-    vmap <silent><buffer> : :call <SID>call_pseudo_command()<CR>
   else
     call gita#action#define('blame', function('s:action'), {
           \ 'description': 'Blame a content',
@@ -163,6 +163,8 @@ function! gita#action#blame#define(disable_mappings) abort
   if is_blame_buffer
     nmap <buffer><nowait> [c <Plug>(gita-blame-chunk-previous)
     nmap <buffer><nowait> ]c <Plug>(gita-blame-chunk-next)
+    nmap <buffer><nowait> <Return> <Plug>(gita-blame-enter)
+    nmap <buffer><nowait> <Backspace> <Plug>(gita-blame-back)
   else
     nmap <buffer><nowait><expr> BB gita#action#smart_map('BB', '<Plug>(gita-blame)')
   endif
