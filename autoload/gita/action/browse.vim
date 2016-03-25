@@ -12,7 +12,8 @@ function! s:action(candidate, options) abort
 
   let commit = get(a:candidate, 'commit', get(options, 'commit', ''))
   let selection = get(a:candidate, 'selection', options.selection)
-  let url = gita#command#browse#call({
+  let git = gita#core#get_or_fail()
+  let url = gita#command#browse#call(git, {
         \ 'commit': commit,
         \ 'filename': a:candidate.path,
         \ 'repository': options.repository,
