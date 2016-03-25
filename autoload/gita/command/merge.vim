@@ -108,24 +108,6 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
-function! gita#command#merge#call(...) abort
-  let options = extend({
-        \ 'commits': [],
-        \}, get(a:000, 0, {}))
-  let git = gita#core#get_or_fail()
-  let commits = map(
-        \ copy(options.commits),
-        \ 'gita#variable#get_valid_commit(git, v:val)',
-        \)
-  let content = s:execute_command(git, commits, options)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
-  return {
-        \ 'commits': commits,
-        \ 'content': content,
-        \ 'options': options,
-        \}
-endfunction
-
 function! gita#command#merge#command(bang, range, args) abort
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
