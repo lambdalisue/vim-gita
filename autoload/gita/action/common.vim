@@ -129,17 +129,19 @@ function! gita#action#common#define(disable_mapping) abort
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  call gita#action#define('common:echo', function('s:action_echo'), {
-        \ 'alias': 'echo',
-        \ 'description': 'Echo instances of selected candidates (Debug)',
-        \ 'options': {},
-        \})
+  if g:gita#develop
+    call gita#action#define('common:echo', function('s:action_echo'), {
+          \ 'alias': 'echo',
+          \ 'description': 'Echo instances of selected candidates (Develop)',
+          \ 'options': {},
+          \})
+  endif
   if a:disable_mapping
     return
   endif
   nmap <buffer><nowait> ?     <Plug>(gita-help)
-  nmap <buffer><nowait> <Tab> <Plug>(gita-choice)
   nmap <buffer><nowait> <C-l> <Plug>(gita-redraw)
+  nmap <buffer><nowait> <Tab> <Plug>(gita-choice)
   vmap <buffer><nowait> <Tab> <Plug>(gita-choice)
 endfunction
 

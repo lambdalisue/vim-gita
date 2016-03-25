@@ -8,8 +8,8 @@ function! s:action(candidates, options) abort
         \ '--ignore-unmatch',
         \ options.cached ? '--cached' : '',
         \ options.force ? '--force' : '',
-        \]
-  let args += ['--'] + map(
+        \ '--',
+        \] + map(
         \ copy(a:candidates),
         \ 'get(v:val, ''path2'', v:val.path)',
         \)

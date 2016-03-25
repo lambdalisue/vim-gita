@@ -11,8 +11,8 @@ function! s:action(candidates, options) abort
         \ options['no-ff'] ? '--no-ff' : '',
         \ options['ff-only'] ? '--ff-only' : '',
         \ options.squash ? '--squash' : '',
-        \]
-  let args += ['--'] + map(
+        \ '--',
+        \] + map(
         \ copy(a:candidates),
         \ 'v:val.name',
         \)

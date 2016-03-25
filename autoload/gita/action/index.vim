@@ -22,7 +22,7 @@ function! s:action_toggle(candidates, options) abort
   let unstage_candidates = []
   for candidate in a:candidates
     if candidate.is_staged && candidate.is_unstaged
-      if g:gita#action#toggle#prefer_unstage
+      if g:gita#action#index#prefer_unstage
         call add(unstage_candidates, candidate)
       else
         call add(stage_candidates, candidate)

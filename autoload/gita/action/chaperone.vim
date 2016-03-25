@@ -1,27 +1,30 @@
+let s:V = gita#vital()
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
+
 function! s:action(candidate, options) abort
   if !a:candidate.is_conflicted
     call gita#throw(printf(
-          \ 'A file %s is not conflicted. Chaperone is for solving conflict.',
+          \ 'Cancel: A file %s is not conflicted. Chaperone is for solving conflict.',
           \ a:candidate.path,
           \))
   endif
   let options = extend({
-        \ 'anchor': 1,
         \ 'opener': '',
-        \ 'method': g:gita#action#chaperone#default_method,
+        \ 'method': '',
         \}, a:options)
   call gita#option#assign_opener(options)
   call gita#option#assign_selection(options)
-  let args = [
-        \ empty(options.anchor) ? '' : '--anchor',
-        \ empty(options.opener) ? '' : '--opener=' . shellescape(options.opener),
-        \ empty(options.selection) ? '' : '--selection=' . printf('%d-%d',
-        \   options.selection[0], get(options.selection, 1, options.selection[0])
-        \ ),
-        \]
-  let args += empty(options.method) ? [] : ['--' . options.method]
-  let args += [fnameescape(a:candidate.path)]
-  execute 'Gita chaperone ' . join(filter(args, '!empty(v:val)'))
+
+  let selection = get(a:candidate, 'selection', options.selection)
+  let opener = empty(options.opener) ? 'tabedit' : options.opener
+  if s:BufferAnchor.is_available(opener)
+    call s:BufferAnchor.focus()
+  endif
+  call gita#content#chaperone#open({
+        \ 'filename': a:candidate.path,
+        \ 'opener': opener,
+        \ 'selection': selection,
+        \})
 endfunction
 
 function! gita#action#chaperone#define(disable_mapping) abort
@@ -57,7 +60,3 @@ function! gita#action#chaperone#define(disable_mapping) abort
   nmap <buffer><nowait><expr> !2 gita#action#smart_map('!2', '<Plug>(gita-chaperone-two)')
   nmap <buffer><nowait><expr> !3 gita#action#smart_map('!3', '<Plug>(gita-chaperone-three)')
 endfunction
-
-call gita#define_variables('action#chaperone', {
-      \ 'default_method': '',
-      \})

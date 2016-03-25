@@ -1,21 +1,23 @@
+let s:V = gita#vital()
+let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
+
 function! s:action(candidate, options) abort
   let options = extend({
-        \ 'anchor': 1,
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
   call gita#option#assign_opener(options)
   call gita#option#assign_selection(options)
-  let options.selection = get(a:candidate, 'selection', options.selection)
-  let options.opener = empty(options.opener) ? 'edit' : options.opener
-  if options.anchor && gita#util#anchor#is_available(options.opener)
-    call gita#util#anchor#focus()
+  let selection = get(a:candidate, 'selection', options.selection)
+  let opener = empty(options.opener) ? 'edit' : options.opener
+  if s:BufferAnchor.is_available(opener)
+    call s:BufferAnchor.focus()
   endif
   call gita#content#show#open({
         \ 'worktree': 1,
         \ 'filename': a:candidate.path,
-        \ 'opener': options.opener,
-        \ 'selection': options.selection,
+        \ 'opener': opener,
+        \ 'selection': selection,
         \})
 endfunction
 

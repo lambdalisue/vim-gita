@@ -6,8 +6,8 @@ function! s:action(candidates, options) abort
         \ 'add',
         \ '--ignore-errors',
         \ options.force ? '--force' : '',
-        \]
-  let args += ['--'] + map(
+        \ '--',
+        \] + map(
         \ copy(a:candidates),
         \ 'get(v:val, ''path2'', v:val.path)',
         \)

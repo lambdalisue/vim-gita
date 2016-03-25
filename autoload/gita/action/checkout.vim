@@ -8,19 +8,19 @@ function! s:action(candidates, options) abort
         \ 'force': 0,
         \ 'ours': 0,
         \ 'theirs': 0,
-        \ 'treeish': '',
+        \ 'commitish': '',
         \}, a:options)
-  if !options.ours && !options.theirs && empty(options.treeish)
-    let treeish = gita#meta#get('commit', '')
+  if !options.ours && !options.theirs && empty(options.commitish)
+    let commitish = gita#meta#get('commit', '')
   else
-    let treeish = options.treeish
+    let commitish = options.commitish
   endif
   let args = [
         \ 'checkout',
         \ options.force ? '--force' : '',
         \ options.ours ? '--ours' : '',
         \ options.theirs ? '--theirs' : '',
-        \ treeish,
+        \ commitish,
         \]
   let args += ['--'] + map(
         \ copy(a:candidates),
@@ -64,22 +64,22 @@ function! gita#action#checkout#define(disable_mappings) abort
   call gita#action#define('checkout:HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD',
         \ 'requirements': ['path', 'is_conflicted'],
-        \ 'options': { 'treeish': 'HEAD' },
+        \ 'options': { 'commitish': 'HEAD' },
         \})
   call gita#action#define('checkout:HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD (force)',
         \ 'requirements': ['path'],
-        \ 'options': { 'treeish': 'HEAD', 'force': 1 },
+        \ 'options': { 'commitish': 'HEAD', 'force': 1 },
         \})
   call gita#action#define('checkout:origin/HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from origin/HEAD',
         \ 'requirements': ['path'],
-        \ 'options': { 'treeish': 'origin/HEAD' },
+        \ 'options': { 'commitish': 'origin/HEAD' },
         \})
   call gita#action#define('checkout:origin/HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from origin/HEAD (force)',
         \ 'requirements': ['path'],
-        \ 'options': { 'treeish': 'origin/HEAD', 'force': 1 },
+        \ 'options': { 'commitish': 'origin/HEAD', 'force': 1 },
         \})
   if a:disable_mappings
     return
