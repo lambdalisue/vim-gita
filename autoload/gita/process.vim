@@ -38,7 +38,6 @@ endfunction
 function! gita#process#splitargs(args) abort
   let args = s:ArgumentParser.splitargs(a:args)
   let args = map(args, 's:ArgumentParser.strip_quotes(v:val)')
-  let args = map(args, 'v:val ==# ''%'' ? gita#meta#expand(v:val) : v:val')
   return args
 endfunction
 
