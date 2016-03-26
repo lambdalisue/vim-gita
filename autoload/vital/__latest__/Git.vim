@@ -186,7 +186,7 @@ function! s:_find(path) abort
   return meta
 endfunction
 
-function! s:_new(meta) abort
+function! s:new(meta) abort
   let git = {}
   if empty(a:meta.worktree)
     let git.is_enabled = 0
@@ -217,12 +217,12 @@ function! s:get(path, ...) abort
   if options.force || empty(cached) || uptime == -1 || uptime > cached.uptime
     let meta = s:_find(path)
     if empty(meta.worktree)
-      let git = s:_new(meta)
+      let git = s:new(meta)
     else
       let uptime = getftime(meta.worktree)
       let cached = instance_cache.get(meta.worktree, {})
       if options.force || empty(cached) || uptime == -1 || uptime > cached.uptime
-        let git = s:_new(meta)
+        let git = s:new(meta)
         call instance_cache.set(meta.worktree, {
               \ 'uptime': getftime(meta.worktree),
               \ 'git': git,
