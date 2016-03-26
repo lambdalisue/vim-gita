@@ -70,7 +70,8 @@ function! s:find_suitable(winnum, ...) abort
   if winnr('$') == 1
     return 1
   endif
-  let rangeset = get(a:000, 0, 0)
+  let is_reverse = get(a:000, 0, 0)
+  let rangeset = is_reverse
         \ ? [reverse(range(1, a:winnum)), reverse(range(a:winnum + 1, winnr('$')))]
         \ : [range(a:winnum, winnr('$')), range(1, a:winnum - 1)]
   " find a suitable window in rightbelow from a previous window
@@ -79,14 +80,12 @@ function! s:find_suitable(winnum, ...) abort
       return winnum
     endif
   endfor
-  if a:winnum > 1
-    " find a suitable window in leftabove to before a previous window
-    for winnum in rangeset[1]
-      if s:is_suitable(winnum)
-        return winnum
-      endif
-    endfor
-  endif
+  " find a suitable window in leftabove to before a previous window
+  for winnum in rangeset[1]
+    if s:is_suitable(winnum)
+      return winnum
+    endif
+  endfor
   " no suitable window is found.
   return 0
 endfunction
@@ -121,10 +120,6 @@ function! s:_on_WinEnter() abort
     endif
     unlet g:_vital_vim_buffer_anchor_winleave
   endif
-  " remove autocmd
-  augroup vital_vim_buffer_anchor_internal
-    autocmd! *
-  augroup END
 endfunction
 
 let &cpo = s:save_cpo

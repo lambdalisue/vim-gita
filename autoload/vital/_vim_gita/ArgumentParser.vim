@@ -41,12 +41,9 @@ endfunction
 function! s:splitargs(str) abort
   let single_quote = '''\zs[^'']\+\ze'''
   let double_quote = '"\zs[^"]\+\ze"'
-  let bare_strings = '[^ \t''"]\+'
-  let pattern = printf('\%%(%s\|%s\|%s\)',
-        \ single_quote,
-        \ double_quote,
-        \ bare_strings,
-        \)
+  let bare_strings = '\%(\\\s\|[^ \t''"]\)\+'
+  let atoms = [single_quote, double_quote, bare_strings]
+  let pattern = '\%(' . join(atoms, '\|') . '\)'
   return split(a:str, pattern . '*\zs\%(\s\+\|$\)\ze')
 endfunction
 

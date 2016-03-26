@@ -150,10 +150,8 @@ function! s:warn(...) abort
 endfunction
 
 function! s:error(...) abort
-  call s:echomsg(
-        \ 'Error',
-        \ join(map(copy(a:000), 's:_ensure_string(v:val)'))
-        \)
+  let v:errmsg = join(map(copy(a:000), 's:_ensure_string(v:val)'))
+  call s:echomsg('Error', v:errmsg)
 endfunction
 
 function! s:ask(msg, ...) abort
@@ -192,7 +190,7 @@ function! s:confirm(msg, ...) abort
         \ 'Question',
         \ printf('%s (y[es]/n[o]): ', a:msg),
         \ get(a:000, 0, ''),
-        \ 'customlist,s:_confirm_complete',
+        \ 'customlist,VitalVimPromptConfirmComplete',
         \)
   while result !~? '^\%(y\%[es]\|n\%[o]\)$'
     redraw
@@ -212,8 +210,8 @@ function! s:confirm(msg, ...) abort
   return result =~? 'y\%[es]'
 endfunction
 
-function! s:_confirm_complete(arglead, cmdline, cursorpos) abort
-  return filter(['yes', 'no'], 'v:val =~# "^" . a:arglead')
+function! VitalVimPromptConfirmComplete(arglead, cmdline, cursorpos) abort
+  return filter(['yes', 'no'], 'v:val =~# ''^'' . a:arglead')
 endfunction
 
 let &cpo = s:save_cpo
