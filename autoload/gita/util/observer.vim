@@ -1,15 +1,19 @@
 let s:registry = get(s:, 'registry', {})
 let s:update_required_registry = {}
 
+function! s:on_BufWinEnter() abort
+  let bufnum = string(bufnr('%'))
+  if get(s:update_required_registry, bufnum)
+    unlet s:update_required_registry[bufnum]
+    silent! call gita#util#observer#update()
+  endif
+endfunction
+
 function! gita#util#observer#attach(...) abort
   let s:registry[bufnr('%')] = get(a:000, 0, 'edit')
   augroup vim_gita_internal_util_observer_attach
     autocmd! * <buffer>
-    autocmd BufWinEnter <buffer> nested
-          \ if get(s:update_required_registry, bufnr('%')) |
-          \   unlet s:update_required_registry[bufnr('%')] |
-          \   silent! call gita#util#observer#update() |
-          \ endif
+    autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()
   augroup END
   " NOTE:
   " When buffer is wipeouted and a new buffer is created, the buffer number
@@ -41,17 +45,16 @@ endfunction
 function! gita#util#observer#update_all() abort
   let winnum_saved = winnr()
   for bufnum in keys(s:registry)
-    let bufnr = str2nr(bufnum)
-    let winnum = bufwinnr(bufnr)
+    let winnum = bufwinnr(str2nr(bufnum))
     if winnum > 0
       execute printf('noautocmd keepjumps %dwincmd w', winnum)
       silent! call gita#util#observer#update()
-    elseif bufexists(bufnr)
+    elseif bufexists(str2nr(bufnum))
       " reserve to 'update'
-      let s:update_required_registry[bufnr] = 1
+      let s:update_required_registry[bufnum] = 1
     else
       " the buffer is gone
-      unlet s:registry[bufnr]
+      unlet s:registry[bufnum]
     endif
   endfor
   execute printf('noautocmd keepjumps %dwincmd w', winnum_saved)
