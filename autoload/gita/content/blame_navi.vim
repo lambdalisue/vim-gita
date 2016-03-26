@@ -104,6 +104,7 @@ function! s:on_BufWinEnter() abort
           \   winwidth(0) - g:gita#content#blame#navigator_width - 1,
           \ ),
           \ 'window': 'blame_view',
+          \ 'selection': [line('.')],
           \})
     set scrollbind
   endif
