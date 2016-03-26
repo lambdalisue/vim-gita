@@ -2,7 +2,7 @@ let s:registry = get(s:, 'registry', {})
 let s:update_required_registry = {}
 
 function! gita#util#observer#attach(...) abort
-  let s:registry[bufnr('%')] = get(a:000, 0, 'silent doautocmd BufReadCmd')
+  let s:registry[bufnr('%')] = get(a:000, 0, 'edit')
   augroup vim_gita_internal_util_observer_attach
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer> nested
