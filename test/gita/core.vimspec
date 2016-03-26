@@ -226,7 +226,7 @@ Describe gita#core
       let git = { 'is_enabled': 0 }
       let sv.references['foo'] = git
       file gita:foo
-      Throws /Git is not available/ gita#core#get_or_fail('%')
+      Throws /No git repository of/ gita#core#get_or_fail('%')
     End
 
     It returns a git instance if it is enabled
