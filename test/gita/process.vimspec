@@ -1,4 +1,37 @@
 Describe gita#process
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let sf = ScriptLocal.sfuncs(Path.realpath('autoload/gita/process.vim'))
+  End
+
+  Describe s:strip_quotes({value})
+    It strips leading and trailing single quotes
+      Assert Equals(sf.strip_quotes("'foo'"), 'foo')
+      Assert Equals(sf.strip_quotes("'foo bar'"), 'foo bar')
+    End
+
+    It strips leading and trailing double quotes
+      Assert Equals(sf.strip_quotes('"foo"'), 'foo')
+      Assert Equals(sf.strip_quotes('"foo bar"'), 'foo bar')
+    End
+
+    It strips leading and trailing single quotes of -k='value' or --key='value'
+      Assert Equals(sf.strip_quotes("-k='foo'"), '-k=foo')
+      Assert Equals(sf.strip_quotes("-k='foo bar'"), '-k=foo bar')
+      Assert Equals(sf.strip_quotes("--key='foo'"), '--key=foo')
+      Assert Equals(sf.strip_quotes("--key='foo bar'"), '--key=foo bar')
+    End
+
+    It strips leading and trailing double quotes of -k="value" or --key="value"
+      Assert Equals(sf.strip_quotes('-k="foo"'), '-k=foo')
+      Assert Equals(sf.strip_quotes('-k="foo bar"'), '-k=foo bar')
+      Assert Equals(sf.strip_quotes('--key="foo"'), '--key=foo')
+      Assert Equals(sf.strip_quotes('--key="foo bar"'), '--key=foo bar')
+    End
+  End
+
   Describe #execute({git}, {args}[, {options}])
     It executes a {args}
       let git = gita#core#get_or_fail()

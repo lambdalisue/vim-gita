@@ -35,9 +35,17 @@ function! gita#process#args_from_options(options, schemes) abort
   return args
 endfunction
 
+function! s:strip_quotes(value) abort
+  let value = s:ArgumentParser.strip_quotes(a:value)
+  if value =~# '^--\?\w\+=["''].*["'']$'
+    let value = substitute(value, '^\(--\?\w\+=\)["'']\(.*\)["'']$', '\1\2', '')
+  endif
+  return value
+endfunction
+
 function! gita#process#splitargs(args) abort
   let args = s:ArgumentParser.splitargs(a:args)
-  let args = map(args, 's:ArgumentParser.strip_quotes(v:val)')
+  let args = map(args, 's:strip_quotes(v:val)')
   return args
 endfunction
 
