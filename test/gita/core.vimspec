@@ -24,21 +24,31 @@ Describe gita#core
 
   Describe s:get_available_refname({refname})
     It returns {refname} if there is no confliction
+      let git = { 'worktree': getcwd() }
       let refname = 'foo'
-      Assert Equals(sf.get_available_refname(refname), refname)
-      Assert Same(sf.get_available_refname(refname), refname)
+      Assert Equals(sf.get_available_refname(refname, git), refname)
+      Assert Same(sf.get_available_refname(refname, git), refname)
     End
 
-    It returns {refname}~<N> if there are conflictions
-      let sv.references['foo'] = {}
+    It returns {refname} if a conflicted git instance has same worktree
+      let git = { 'worktree': getcwd() }
       let refname = 'foo'
-      Assert Equals(sf.get_available_refname(refname), refname . '~1')
+      let sv.references['foo'] = copy(git)
+      Assert Equals(sf.get_available_refname(refname, git), refname)
+      Assert Same(sf.get_available_refname(refname, git), refname)
+    End
 
-      let sv.references['foo~1'] = {}
-      Assert Equals(sf.get_available_refname(refname), refname . '~2')
+    It returns {refname}~<N> if a conflicted git instance has differenct worktree
+      let git = { 'worktree': getcwd() }
+      let refname = 'foo'
+      let sv.references['foo'] = { 'worktree': 'foo' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~1')
 
-      let sv.references['foo~2'] = {}
-      Assert Equals(sf.get_available_refname(refname), refname . '~3')
+      let sv.references['foo~1'] = { 'worktree': 'bar' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~2')
+
+      let sv.references['foo~2'] = { 'worktree': 'hoge' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~3')
     End
   End
 

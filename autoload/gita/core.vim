@@ -5,16 +5,14 @@ let s:Git = s:V.import('Git')
 let s:NAME = '_gita_refinfo'
 let s:references = {}
 
-function! s:get_available_refname(refname) abort
-  if !has_key(s:references, a:refname)
-    return a:refname
-  endif
-  " find alternative refname
-  let l:count = 1
-  while has_key(s:references, a:refname . '~' . l:count)
-    let l:count += 1
+function! s:get_available_refname(refname, git) abort
+  let refname = a:refname
+  let index = 1
+  while get(s:references, refname, { 'worktree': a:git.worktree }).worktree !=# a:git.worktree
+    let refname = a:refname . '~' . index
+    let index += 1
   endwhile
-  return a:refname . '~' . l:count
+  return refname
 endfunction
 
 function! s:is_expired(expr, refinfo) abort
@@ -50,7 +48,7 @@ function! s:get_for_external(expr, options) abort
         \}, a:options)
   let refinfo = gita#core#get_refinfo(a:expr)
   if !empty(refinfo) && !options.force && !s:is_expired(a:expr, refinfo)
-    return refinfo.git
+    return s:references[refinfo.refname]
   endif
   return s:new_for_external(a:expr, a:options)
 endfunction
@@ -79,7 +77,7 @@ function! s:new_for_external(expr, options) abort
         \ : git
   " save git instance to the reference
   if git.is_enabled
-    let refname = s:get_available_refname(git.repository_name)
+    let refname = s:get_available_refname(git.repository_name, git)
     let s:references[refname] = git
   else
     let refname = ''
@@ -88,7 +86,6 @@ function! s:new_for_external(expr, options) abort
   " NOTE: bufexists() does not support '%'
   if bufexists(bufnr(a:expr))
     call setbufvar(a:expr, s:NAME, {
-          \ 'git': git,
           \ 'refname': refname,
           \ 'bufname': bufname(a:expr),
           \ 'cwd': getcwd(),
