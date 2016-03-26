@@ -85,7 +85,8 @@ function! s:new_for_external(expr, options) abort
     let refname = ''
   endif
   " save reference info to the buffer if the buffer exists
-  if bufexists(a:expr)
+  " NOTE: bufexists() does not support '%'
+  if bufexists(bufnr(a:expr))
     call setbufvar(a:expr, s:NAME, {
           \ 'git': git,
           \ 'refname': refname,
@@ -99,8 +100,7 @@ endfunction
 function! gita#core#get(...) abort
   let expr = get(a:000, 0, '%')
   let options = get(a:000, 1, {})
-  let bufname = bufname(expr)
-  if bufname =~# '^gita:'
+  if bufname(expr) =~# '^gita:'
     return s:get_for_internal(expr, options)
   else
     return s:get_for_external(expr, options)
