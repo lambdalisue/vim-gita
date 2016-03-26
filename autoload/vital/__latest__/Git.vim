@@ -115,20 +115,23 @@ function! s:get_absolute_path(git, path) abort
   return s:Path.join(a:git.worktree, path)
 endfunction
 
-
 function! s:get_cache_content(git, path, slug, ...) abort
-  let path   = s:Path.relpath(s:Path.realpath(a:path))
-  let uptime = s:getftime(a:git, path)
-  let cached = a:git.repository_cache.get(a:slug . ':' . path, {})
-  return empty(cached) || uptime == -1 || uptime > cached.uptime
+  let path = s:Prelude.is_string(a:path) ? [a:path] : a:path
+  let path = map(path, 's:Path.realpath(v:val)')
+  let path = sort(filter(path, 's:filereadable(a:git, v:val)'))
+  let uptime = map(copy(path), 's:getftime(a:git, v:val)')
+  let cached = a:git.repository_cache.get(a:slug . ':' . string(path), {})
+  return empty(cached) || !empty(filter(range(len(uptime)), 'uptime[v:val] == -1 || uptime[v:val] > cached.uptime[v:val]'))
         \ ? get(a:000, 0)
         \ : cached.content
 endfunction
 
 function! s:set_cache_content(git, path, slug, content) abort
-  let path   = s:Path.relpath(s:Path.realpath(a:path))
-  let uptime = s:getftime(a:git, path)
-  call a:git.repository_cache.set(a:slug . ':' . path, {
+  let path = s:Prelude.is_string(a:path) ? [a:path] : a:path
+  let path = map(path, 's:Path.realpath(v:val)')
+  let path = sort(filter(path, 's:filereadable(a:git, v:val)'))
+  let uptime = map(copy(path), 's:getftime(a:git, v:val)')
+  call a:git.repository_cache.set(a:slug . ':' . string(path), {
         \ 'uptime': uptime,
         \ 'content': a:content,
         \})
