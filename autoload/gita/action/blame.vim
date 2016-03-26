@@ -1,6 +1,9 @@
 let s:V = gita#vital()
+let s:List = s:V.import('Data.List')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
+
+let s:history = []
 
 function! s:action(candidate, options) abort
   let options = extend({
@@ -57,26 +60,21 @@ function! s:action_enter(candidate, options) abort
   redraw
   echo printf('Opening a blame content of "%s" in "%s"', filename, revision)
   let previous_bufnr = bufnr('%')
+  call add(s:history, [commit, gita#meta#expand('%'), [linenum]])
   call gita#content#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,
         \ 'selection': [linenum_next],
-        \ 'previous': [
-        \   commit,
-        \   gita#meta#expand('%'),
-        \   [linenum],
-        \ ],
         \})
   silent execute printf('keepjumps %dwincmd w', bufwinnr(previous_bufnr))
   call gita#util#buffer#select([linenum])
 endfunction
 
 function! s:action_back(candidate, options) abort
-  let previous = gita#meta#get_for('^blame-', 'previous')
-  if empty(previous)
-    call gita#throw('Cancel: No previous blame found')
+  if empty(s:history)
+    call gita#throw('Cancel: No blame history found')
   endif
-  let [revision, filename, selection] = previous
+  let [revision, filename, selection] = s:List.pop(s:history)
   redraw
   echo printf('Opening a blame content of "%s" in %s', filename, revision)
   let previous_bufnr = bufnr('%')
