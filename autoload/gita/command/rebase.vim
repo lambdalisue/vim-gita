@@ -157,7 +157,10 @@ function! gita#command#rebase#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['rebase'] + options.__args__)
+  call gita#process#execute(git, ['rebase'] + map(
+        \ options.__args__,
+        \ 'gita#meta#expand(v:val)',
+        \))
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

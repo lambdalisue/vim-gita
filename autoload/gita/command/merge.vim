@@ -115,7 +115,10 @@ function! gita#command#merge#command(bang, range, args) abort
     return
   endif
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, ['merge', '--no-edit', '--verbose'] + options.__args__)
+  call gita#process#execute(git, ['merge', '--no-edit', '--verbose'] + map(
+        \ options.__args__,
+        \ 'gita#meta#expand(v:val)',
+        \))
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

@@ -40,7 +40,10 @@ function! gita#command#init#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['init'] + options.__args__)
+  call gita#process#execute(git, ['init'] + map(
+        \ options.__args__,
+        \ 'gita#meta#expand(v:val)',
+        \))
   call gita#core#expire()
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

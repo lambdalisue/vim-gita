@@ -99,7 +99,10 @@ function! gita#command#command(bang, range, args) abort
         endtry
       endif
       let git = gita#core#get()
-      call gita#process#execute(git, gita#process#splitargs(a:args))
+      call gita#process#execute(git, map(
+            \ gita#process#splitargs(a:args),
+            \ 'gita#meta#expand(v:val)',
+            \))
       call gita#util#doautocmd('User', 'GitaStatusModified')
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       call gita#util#handle_exception()
