@@ -8,7 +8,7 @@ function! s:action_checkout(candidate, options) abort
   if a:candidate.is_remote
     let name = substitute(a:candidate.name, '^origin/', '', '')
     let args = [
-          \ '-b ' . name,
+          \ '-b' . name,
           \ empty(options.track) ? '' : '--track',
           \ a:candidate.name,
           \]
