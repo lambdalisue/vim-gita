@@ -185,6 +185,11 @@ function! s:on_GitaStatusModified() abort
   " from Vital.Git cache mechanisms so remove a cache for status count while
   " status count may change when working tree files are changed.
   call git.repository_cache.remove('gita#statusline#get_status_count:index')
+  " NOTE:
+  " If 'index' is pushed to the remote, it is not possible to detec changes
+  " from Vital.Git cache mechanisms so remove a cache for traffic count while
+  " traffic count may change when push is performed
+  call git.repository_cache.remove('gita#statusline#get_traffic_count:index')
 endfunction
 
 function! gita#statusline#format(format) abort
