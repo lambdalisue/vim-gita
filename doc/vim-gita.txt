@@ -33,11 +33,21 @@ Introduction			|vim-gita-introduction|
 Install				|vim-gita-install|
 Usage				|vim-gita-usage|
   Status			|vim-gita-usage-status|
+  Patch				|vim-gita-usage-patch|
+  Conflict			|vim-gita-usage-conflict|
+  Commit			|vim-gita-usage-commit|
+  Changes			|vim-gita-usage-changes|
+  Search			|vim-gita-usage-search|
+  List				|vim-gita-usage-list|
+  Branch			|vim-gita-usage-branch|
+  Browse			|vim-gita-usage-browse|
+  Blame				|vim-gita-usage-blame|
   Statusline			|vim-gita-usage-statusline|
-Commands			|vim-gita-commands|
-Functions			|vim-gita-functions|
-Variables			|vim-gita-variables|
-Actions				|vim-gita-actions|
+Interface			|vim-gita-interface|
+  Commands			|vim-gita-interface-commands|
+  Functions			|vim-gita-interface-functions|
+  Variables			|vim-gita-interface-variables|
+  Actions			|vim-gita-interface-actions|
 
 ==============================================================================
 INTRODUCTION					*vim-gita-introduction*
@@ -111,6 +121,9 @@ First of all, all commands which vim-gita provides start from :Gita and all
 commands (including :Gita itself) provide -h/-help option to show a help
 message of the command.
 
+Additionally, hitting ? in manipulation windows (e.g. |gita-status|) shows
+action and mapping helps.
+
 ------------------------------------------------------------------------------
 STATUS					*vim-gita-usage-status*
 
@@ -119,17 +132,543 @@ command like:
 >
 	:Gita status
 <
-It opens a |gita-status| window which users can confirm or manipulate the
-current statuses.
+It opens a *gita-status* window which looks like:
+>
+	             ┌ A repository name
+	             │      ┌ A local branch name
+	             │      │         ┌ A remote name
+	             │      │         │    ┌ A remote branch name
+	             │      │         │    │
+	status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
+	 M autoload/gita/command.vim
+	M  doc/vim-gita.txt
+	│            │
+	│            └ A modified filename
+	└ A current status of a file (Short form)
+<
+In that window, users can manipulate or check statuses by the following
+mappings:
+					*vim-gita-usage-status-mapping*
+	Key		Description ~
 
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	<<		Stage changes of a file
+	>>		Unstage changes of a file
+	--		Toggle stage/unstage of a file
+
+	bb		Start a system browser to show the remote URL
+	pp		Start a patch (partially stage/unstage changes)
+	!!		Start a chaperone (help to solve conflicts)
+	BB		Start a blame (a gita style blame)
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Same as ee
+
+	<C-^>		Switch to |gita-commit| window
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+A general workflow is:
+
+	1. Open a |gita-status| window by :Gita status
+	2. Hit dp to check if the changes are correct
+	3. Hit ee/EE to edit codes
+	4. Hit pp to patch changes to the index or << to stage entire content
+	5. Hit <C-^> to switch to a |gita-commit| window
+
+See |vim-gita-usage-commit| for the further workflow.
+
+------------------------------------------------------------------------------
+PATCH					*vim-gita-usage-patch*
+
+To partially stage or unstage changes (like git add -p or git reset -p), use
+|:Gita-patch| command on a corresponding file buffer like:
+>
+	:Gita patch
+<
+It opens three |vimdiff| windows which indicates a contents of
+
+	1. HEAD (gita://<refname>:show/HEAD:<filename>)
+	2. Index (gita://<refname>:show:patch/:<filename>)
+	3. Working tree (<filename>)
+
+In INDEX window, all changes saved is patched to the index of the repository.
+Users can obtain changes from HEAD or Working tree by the following mappings:
+				*vim-gita-usage-patch-INDEX-mapping*
+	Key		Description ~
+
+	dol		Obtain a diff chunk from HEAD (left)
+	dor		Obtain a diff chunk from Working tree (right)
+
+	<C-l>		Perform |diffupdate| and |redraw()|
+
+In HEAD or Working tree window, the following mappings are available:
+				*vim-gita-usage-patch-HEAD-mapping*
+				*vim-gita-usage-patch-WORKTREE-mapping*
+	Key		Description ~
+
+	dp		Put a diff chunk to Index
+
+	<C-l>		Perform |diffupdate| and |redraw()|
+
+Once you patch changes, see |vim-gita-usage-commit| to commit changes.
+
+Note that if you prefer to use 1-way (edit a single diff file) or 2-way (open
+two buffer HEAD vs Index or Index vs Working tree) patch, see |:Gita-patch|
+for a corresponding option.
+
+------------------------------------------------------------------------------
+CONFLICT				*vim-gita-usage-conflict*
+					*vim-gita-usage-chaperone*
+
+If you have several conflicted files, use |:Gita-chaperone| command on a
+conflicted file buffer like:
+>
+	:Gita chaperone
+<
+It opens three |vimdiff| windows which indicates a contents of
+
+	1. LOCAL (gita://<refname>:show/:2:<filename>)
+	2. MERGE (<filename>)
+	3. REMOTE (gita://<refname>:show/:3:<filename>)
+
+In MERGE window, all conflict markers (e.g. <<<<<<< HEAD) are removed and a
+content of an ancestor commit between LOCAL and REMOTE are written
+automatically. Users can then obtain changes from LOCAL or REMOTE by the
+following mappings:
+				*vim-gita-usage-chaperone-MERGE-mapping*
+	Key		Description ~
+
+	dol		Obtain a diff chunk from LOCAL (ours)
+	dor		Obtain a diff chunk from REMOTE (theirs)
+
+	<C-l>		Perform |diffupdate| and |redraw()|
+
+In LOCAL or REMOTE window, the following mappings are available:
+				*vim-gita-usage-chaperone-LOCAL-mapping*
+				*vim-gita-usage-chaperone-REMOTE-mapping*
+	Key		Description ~
+
+	dp		Put a diff chunk to MERGE
+
+	<C-l>		Perform |diffupdate| and |redraw()|
+
+Once you solve conflicts, see |vim-gita-usage-status| to stage changes.
+
+Note that if you prefer to use 1-way (edit a single diff file) or 2-way (open
+two buffer LOCAL vs MERGE or MERGE vs REMOTE) chaperone, see |:Gita-chaperone|
+for a corresponding option.
+
+------------------------------------------------------------------------------
+COMMIT					*vim-gita-usage-commit*
+
+To commit changes in the index, use |:Gita-commit| command like:
+>
+	:Gita commit
+<
+It opens a *gita-commit* window which looks like:
+>
+	             ┌ A repository name
+	             │      ┌ A local branch name
+	             │      │         ┌ A remote name
+	             │      │         │    ┌ A remote branch name
+	             │      │         │    │
+	# status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
+	#  M autoload/gita/command.vim
+	# M  doc/vim-gita.txt
+	# │            │
+	# │            └ A modified filename
+	# └ A current status of a file (Short form)
+<
+In that window, users can edit a commit message and commit the changes by the
+following mappings:
+					*vim-gita-usage-commit-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	bb		Start a system browser to show the remote URL
+	BB		Start a blame (a gita style blame)
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Same as dd
+
+	<C-^>		Switch to |gita-status| window
+	<C-c><C-n>	Re-open |gita-commit| window without --amend option
+	<C-c><C-a>	Re-open |gita-commit| window with --amend option
+	<C-c><C-c>	Commit changes
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+A general workflow is:
+
+	1. Hit dp to check if the changes are correct
+	2. Write a commit message
+	3. Close the window by :wq and answer 'y' to commit
+
+Note that when the window is going to close, vim-gita ask users to wheter user
+want to commit the changes or not. The default value of that prompt is 'y' so
+users can commit by hitting <Return> or cancel by <Esc> at that point. Or
+explicitly commit by hitting <C-c><C-c>.
+
+------------------------------------------------------------------------------
+CHANGES					*vim-gita-usage-changes*
+					*vim-gita-usage-diff-ls*
+
+To see which files are changed from a particular commit such as an ancestor
+commit of a current branch (a fork-point of a branch from remote HEAD), use
+|:Gita-diff-ls| command like:
+>
+	:Gita diff-ls origin/HEAD...
+<
+It opens a *gita-diff-ls* window for origin/HEAD... which looks like:
+>
+	206 files are different between origin/HEAD... and HEAD | Press ? ...
+	.travis.yml           +21    -25   +--
+	appveyor.yml          +22    -45   ++----
+	    │                 │     │     │
+	    │                 │     │     └ A visual indicator
+	    │                 │     └ Deleted lines
+	    │                 └ Added lines
+	    └ A modified filename
+<
+In that window, users can find which files are changed and open these files by
+following mappings:
+					*vim-gita-usage-diff-ls-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	bb		Start a system browser to show the remote URL
+	BB		Start a blame (a gita style blame)
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Same as dd
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+------------------------------------------------------------------------------
+SEARCH					*vim-gita-usage-search*
+					*vim-gita-usage-grep*
+
+To search content in a repository, use |:Gita-grep| command like:
+>
+	:Gita grep autoload
+<
+It opens *gita-grep* window with 'foobar', which looks like:
+>
+	                 ┌ A blob name (commit or branch)
+	                 │        ┌ A repository name
+	                 │        │
+	372 matches in INDEX of vim-gita | Press ? to show help or <Tab> ...
+	.travis.yml:35  |   - sh /tmp/vim-vimlint/bin/vimlint.sh -l ...
+	README.md:77    |         \ 'autoload': {
+	   │     │                  │
+	   │     │                  └ A line content
+	   │     └ A line number
+	   └ A filename
+<
+In that window, users can find which files contains the specified pattern(s)
+and open files by following mappings:
+					*vim-gita-usage-grep-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	bb		Start a system browser to show the remote URL
+	BB		Start a blame (a gita style blame)
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Same as ss
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+------------------------------------------------------------------------------
+LIST					*vim-gita-usage-list*
+					*vim-gita-usage-ls-files*
+					*vim-gita-usage-ls-tree*
+
+To list files in a working tree, use |:Gita-ls-files| command like:
+>
+	:Gita ls-files
+<
+It opens a *gita-ls-files* window which looks like:
+>
+	                ┌ A repository name
+	                │
+	148 files in vim-gita | Press ? to show help or <Tab> to select ...
+	LICENSE.md
+	README.md
+	   │
+	   └ A filename
+<
+To list files in a particular blog (commit, branch, etc.), use |:Gita-ls-tree|
+command like:
+>
+	:Gita ls-tree develop
+<
+It opens a *gita-ls-tree* window for 'develop' branch which looks like:
+>
+	                ┌ A blob name (commit or branch)
+	                │        ┌ A repository name
+	                │        │
+	148 files in develop of vim-gita | Press ? to show help or <Tab> ...
+	LICENSE.md
+	README.md
+	   │
+	   └ A filename
+<
+In both windows, users can open files by following mappings:
+					*vim-gita-usage-ls-files-mapping*
+					*vim-gita-usage-ls-tree-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	bb		Start a system browser to show the remote URL
+	BB		Start a blame (a gita style blame)
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Same as ee (ls-files) or ss (ls-tree)
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+------------------------------------------------------------------------------
+BRANCH					*vim-gita-usage-branch*
+
+To manipulate or switch brahcn, use |:Gita-branch| command like:
+>
+	:Gita branch
+<
+It opens a *gita-branch* window which looks like:
+>
+	                 ┌ A repository name
+	                 │
+	3 branches in vim-gita | Press ? to show help or <Tab> to ...
+	* alpha-3
+	  master
+	│  │
+	│  └ A branch name
+	└ A current branch marker
+<
+In that window, users can manipulate or check statuses by the following
+mappings:
+					*vim-gita-usage-branch-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	rr		Rename branch
+	RR		Rename branch (force)
+	dd		Delete branch
+	DD		Delete branch (force)
+
+	<CR>		Switch to the branch (track)
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
+
+A general workflow is:
+
+	1. Open a |gita-branch| window by :Gita branch
+	2. Hit <CR> to switch the branch
+	3. Hit <Tab> to select action (e.g. merge)
+
+------------------------------------------------------------------------------
+BROWSE					*vim-gita-usage-browse*
+
+To browse a remote content of a file (e.g. GitHub), use |:Gita-browse| command
+like:
+>
+	:Gita browse
+<
+It start a system browser with a corresponding remote URL. If you would like
+to open a repository root URL instead of a file content URL, use --repository
+option like:
+>
+	:Gita browse --repository
+<
+Additionally, |:Gita-browse| supports several schemes to slightly change a
+remote URL. The followings are available schemes in default.
+
+	Scheme		Description ~
+
+	exact		Use a hashref instead of branch name
+	blame		Open blame page instead of content page
+	diff		Open diff page instead of content page (BitBucket.org)
+
+A remote URL is constructed by translating patterns written in
+|g:gita#command#browse#translation_patterns|. See that help to add your
+original translation patterns (e.g. patterns for GitHub Enterprise).
+
+------------------------------------------------------------------------------
+BLAME					*vim-gita-usage-blame*
+
+To blame, use |:Gita-blame| command on a file buffer like:
+>
+	:Gita blame
+<
+It opens a *gita-blame-navi* window and *gita-blame-view* window. Contents of
+the both windows are separated by commit chunks and a commit chunk in a
+|gita-blame-navi| window looks like:
+>
+	 ┌ An actual line number
+	 │      ┌ A commit message
+	 │      │
+	111 Simplify diff-ls
+	112 lambdalisue authored 1 day ago       bcb41c6
+	        │                   │             │
+	        │                   │             └ A revision
+	        │                   └ A commit date
+	        └ A commit author
+<
+In a |gita-blame-navi| window, the following mappings are available:
+					*vim-gita-usage-blame-navi-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	bb		Start a system browser to show the remote URL
+
+	ee		Edit a working tree file
+	EE		Edit a working tree file (split to right)
+	et		Edit a working tree file (in a new tabpage)
+	ep		Edit a working tree file (in a preview window)
+
+	ss		Show a content of the file in the index
+	SS		Show a content of the file in the index (right)
+	st		Show a content of the file in the index (tabpage)
+	sp		Show a content of the file in the index (window)
+
+	dd		Show a diff to the index
+	DD		Show a diff to the index (right)
+	dt		Show a diff to the index (tabpage)
+	dp		Show a diff to the index (preview)
+	ds		Open vimdiff (two buffers) to the index
+	DS		Open vimdiff (two buffers) to the index (tabpage)
+
+	<CR>		Enter a (previous) commit of the chunk
+	<BS>		Back to a previous blame content
+
+	]c		Jump to a next commit chunk
+	[c		Jump to a previous commit chunk
+
+In a |gita-blame-view| window, the following mappings are available:
+					*vim-gita-usage-blame-view-mapping*
+	Key		Description ~
+
+	?		Show an action and mapping help
+	<Tab>		Select an action to perform
+
+	<CR>		Enter a (previous) commit of the chunk
+	<BS>		Back to a previous blame content
+
+	]c		Jump to a next commit chunk
+	[c		Jump to a previous commit chunk
+
+Note that the mapping table above is partial. Hit ? on the window to see a
+full mapping table.
 
 ------------------------------------------------------------------------------
 STATUSLINE				*vim-gita-usage-statusline*
 
-vim-gita provides a statusline component functions which returns a
-corresponding |String| available in |statusline|.
-The component functions aggressively cache statuses to improve the performance
-so you would notice a huge performance improvement if you are currently using
+vim-gita provides a statusline components which returns a |String| available in
+|statusline|.
+The components aggressively cache statuses to improve the performance so you
+would notice a huge performance improvement if you are currently using
 |system()| to get git informations.
 
 Use |gita#statusline#preset()| to get presets or |gita#statusline#format()| to
@@ -153,7 +692,13 @@ The code above add a current branch name to the end of your statusline.
 
 
 ==============================================================================
-COMMANDS				*vim-gita-commands*
+INTERFACE				*vim-gita-interface*
+
+Note:
+Most of interface documentations are work in progress.
+
+------------------------------------------------------------------------------
+COMMANDS				*vim-gita-interface-commands*
 
 :Gita[!] {args}				*:Gita*
 
@@ -170,42 +715,11 @@ COMMANDS				*vim-gita-commands*
 	blame content of a specified file.
 	See :Gita blame -h for the help of available {options}.
 
-	In *gita-blame-navi* window, the following content is shown in each
-	commit chunks:
->
-	 ┌ An actual line number
-	 │      ┌ A commit message
-	 │      │
-	111 Simplify diff-ls
-	112 lambdalisue authored 1 day ago       bcb41c6
-	        │                   │             │
-	        │                   │             └ A revision
-	        │                   └ A commit date
-	        └ A commit author
-<
-	In *gita-blame-view* window, the content are separated into commit
-	chunks by pseudo lines and synchronized with |gita-blame-navi| window.
-
-	See |gita-actions| about actions available in the window.
-
 :Gita branch {options}			*:Gita-branch*
 
 	Open a |gita-branch| window which users can see and manipulate the
 	branches.
 	See :Gita branch -h for the help of available {options}.
-
-	In *gita-branch* window, the following content will be shown:
->
-	                 ┌ A repository name
-	                 │
-	3 branches in vim-gita | Press ? to show help or <Tab> to ...
-	* alpha-3
-	  master
-	│  │
-	│  └ A branch name
-	└ A current branch marker
-<
-	See |gita-actions| about actions available in the window.
 
 :Gita browse {options}			*:Gita-browse*
 
@@ -244,25 +758,6 @@ COMMANDS				*vim-gita-commands*
 	commit changes.
 	See :Gita commit -h for the help of available {options}.
 
-	In *gita-commit* window, the following content will be shown:
->
-	             ┌ A repository name
-	             │      ┌ A local branch name
-	             │      │         ┌ A remote name
-	             │      │         │    ┌ A remote branch name
-	             │      │         │    │
-	# status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
-	#  M autoload/gita/command.vim
-	# M  doc/vim-gita.txt
-	# │            │
-	# │            └ A modified filename
-	# └ A current status of a file (Short form)
-<
-	Additional information about incoming/outgoing changes compared to a
-	connected remote branch or current commit status such as AMEND, MERGE
-	might be shown as well.
-	See |gita-actions| about actions available in the window.
-
 :Gita diff {options}			*:Gita-diff*
 
 	Open one or two buffer(s) to compare differences between two blobs.
@@ -280,39 +775,11 @@ COMMANDS				*vim-gita-commands*
 	between specified commits.
 	See :Gita diff-ls -h for the help of available {options}.
 
-	In *gita-diff-ls* window, the following content will be shown:
->
-	206 files are different between origin/HEAD... and HEAD | Press ? ...
-	.travis.yml           +21    -25   +--
-	appveyor.yml          +22    -45   ++----
-	    │                 │     │     │
-	    │                 │     │     └ A visual indicator
-	    │                 │     └ Deleted lines
-	    │                 └ Added lines
-	    └ A modified filename
-<
-	See |gita-actions| about actions available in the window.
-
 :Gita grep {options}			*:Gita-grep*
 
 	Open a |gita-grep| window which users can find files containing a
 	specified pattern(s).
 	See :Gita grep -h for the help of available {options}.
-
-	In *gita-grep* window, the following content will be shown:
->
-	                 ┌ A blob name (commit or branch)
-	                 │        ┌ A repository name
-	                 │        │
-	372 matches in INDEX of vim-gita | Press ? to show help or <Tab> ...
-	.travis.yml:35  |   - sh /tmp/vim-vimlint/bin/vimlint.sh -l ...
-	README.md:77    |         \ 'autoload': {
-	   │     │                  │
-	   │     │                  └ A line content
-	   │     └ A line number
-	   └ A filename
-<
-	See |gita-actions| about actions available in the window.
 
 :Gita ls-files {options}		*:Gita-ls-files*
 
@@ -320,36 +787,11 @@ COMMANDS				*vim-gita-commands*
 	tree and/or an index of the repository.
 	See :Gita ls-files -h for the help of available {options}.
 
-	In *gita-ls-files* window, the following content will be shown:
->
-	                ┌ A repository name
-	                │
-	148 files in vim-gita | Press ? to show help or <Tab> to select ...
-	LICENSE.md
-	README.md
-	   │
-	   └ A filename
-<
-	See |gita-actions| about actions available in the window.
-
 :Gita ls-tree {options}			*:Gita-ls-tree*
 
 	Open a |gita-ls-tree| window which users can see files in a particular
 	commit/branch of the repository.
 	See :Gita ls-tree -h for the help of available {options}.
-
-	In *gita-ls-tree* window, the following content will be shown:
->
-	              ┌ A blob name (commit or branch)
-	              │        ┌ A repository name
-	              │        │
-	148 files in HEAD of vim-gita | Press ? to show help or <Tab> ...
-	LICENSE.md
-	README.md
-	   │
-	   └ A filename
-<
-	See |gita-actions| about actions available in the window.
 
 :Gita patch {options}			*:Gita-patch*
 
@@ -386,27 +828,9 @@ COMMANDS				*vim-gita-commands*
 	statuses.
 	See :Gita status -h for the help of available {options}.
 
-	In *gita-status* window, the following content will be shown:
->
-	             ┌ A repository name
-	             │      ┌ A local branch name
-	             │      │         ┌ A remote name
-	             │      │         │    ┌ A remote branch name
-	             │      │         │    │
-	status of vim-gita/alpha-3 <> origin/alpha-3 | Press ? ...
-	 M autoload/gita/command.vim
-	M  doc/vim-gita.txt
-	│            │
-	│            └ A modified filename
-	└ A current status of a file (Short form)
-<
-	Additional information about incoming/outgoing changes compared to a
-	connected remote branch might be shown as well.
-	See |gita-actions| about actions available in the window.
 
-
-==============================================================================
-FUNCTIONS					*vim-gita-functions*
+------------------------------------------------------------------------------
+FUNCTIONS					*vim-gita-interface-functions*
 
 gita#statusline#format({format})		*gita#statusline#format()*
 
@@ -442,14 +866,14 @@ gita#statusline#format({format})		*gita#statusline#format()*
 	   E.g: '%{#}rb' -> '#master' or ''
 	3. If a format string is leaded by %{|right}, the '%{|right}' and the
 	   format string will be translated into a corresponding informations
-	   and 'right' will be inserted at right side of the translation if the
-	   translation is not an empty string.
+	   and 'right' will be inserted at right side of the translation if
+	   the translation is not an empty string.
 	   E.g: '%{|$}rb' -> 'master$' or ''
 	4. If a format string is leaded by %{left|right}, the '%{left|right}'
 	   and the format string will be translated into a corresponding
 	   informations and 'left' and 'right' will be inserted at left and
-	   right side of the translation respectively if the translation is not
-	   an empty string.
+	   right side of the translation respectively if the translation is
+	   not an empty string.
 	   E.g: '%{#|$}rb' -> '#master$' or ''
 
 	See the following examples to get a image.
@@ -500,8 +924,8 @@ gita#statusline#preset({name})		*gita#statusline#preset()*
 	E.g: ⭠ vim-gita/develop ⇄ origin/master
 
 	'status'
-	Show the number of conflicted (!), added (+), deleted (-), renamed ("),
-	modified (*), and unstaged (@) files
+	Show the number of conflicted (!), added (+), deleted (-),
+	renamed ("), modified (*), and unstaged (@) files
 	E.g: !3 +4 -5 "3 *2 @4
 
 	'traffic'
@@ -514,7 +938,7 @@ gita#statusline#preset({name})		*gita#statusline#preset()*
 
 
 ==============================================================================
-VARIABLES					*vim-gita-variables*
+VARIABLES					*vim-gita-interface-variables*
 
 			*g:gita#command#browse#translation_patterns*
 g:gita#command#browse#translation_patterns
@@ -610,7 +1034,7 @@ g:gita#command#browse#extra_translation_patterns
 <
 
 ==============================================================================
-ACTIONS						*vim-gita-actions*
+ACTIONS						*vim-gita-interface-actions*
 
 A non file-like buffers used in vim-gita provides action mechanisms.
 All actions provide a <Plug> mapping and several provide a default mapping.

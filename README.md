@@ -66,90 +66,12 @@ Or copy contents of the repository into your runtimepath manually.
 Usage
 -------------------------------------------------------------------------------
 
-First of all, all commands which vim-gita provides start from `:Gita` and all commands (including `:Gita`) provide `-h/--help` option to show a help message of the command.
+First of all, all commands which vim-gita provides start from `:Gita` and all commands (including `:Gita` itself) provide `-h/-help` option to show a help message of the command.
 
-### Status
+Additionally, hitting `?` in manipulation windows (e.g. `gita-status`) shows action and mapping helps.
 
-To check or modify current statuses of a git repository, use `:Gita status` command.
+See `:help vim-gita-usage` for more detail.
 
-It opens a `gita-status` window which users can confirm or manipulate the current status.
-
-**WIP**
-
-### Statusline
-
-vim-gita provides a statusline component (`gita#statusline#format()`) which cache a current status aggressively to enhance the performance. It would improve the performance a lot if you are using `system()` to call a raw git command currently.
-
-Use `gita#statusline#preset()` to get a preset or `gita#statusline#format()` to create your own component.
-
-```vim
-" Example usage of gita#statusline#preset()
-echo gita#statusline#preset('branch')
-" vim-gita/master <> origin/master
-echo gita#statusline#preset('status')
-" !5 +2 "4 *4
-echo gita#statusline#preset('traffic')
-" <5 >4
-
-" Example usage of gita#statusline#format()
-echo gita#statusline#format('%ln/%lb # %rn/%rb')
-" vim-gita/master # origin/master
-```
-
-The following is my tabline setting via [itchyny/lightline.vim](https://github.com/itchyny/lightline.vim)
-
-```vim
-let g:lightline = {
-      \ 'colorscheme': 'hybrid',
-      \ 'active': {
-      \   'left': [
-      \     [ 'mode', 'paste' ],
-      \     [ 'filename' ],
-      \   ],
-      \   'right': [
-      \     [ 'lineinfo' ],
-      \     [ 'fileformat', 'fileencoding', 'filetype' ],
-      \   ],
-      \ },
-      \ 'inactive': {
-      \   'left': [
-      \     [ 'filename' ],
-      \   ],
-      \   'right': [
-      \     [ 'fileformat', 'fileencoding', 'filetype' ],
-      \   ],
-      \ },
-      \ 'tabline': {
-      \   'left': [
-      \     [ 'tabs' ],
-      \   ],
-      \   'right': [
-      \     [ 'close' ],
-      \     [ 'git_branch', 'git_traffic', 'git_status', 'cwd' ],
-      \   ],
-      \ },
-      \ 'component_visible_condition': {
-      \   'lineinfo': '(winwidth(0) >= 70)',
-      \ },
-      \ 'component_function': {
-      \   'git_branch': 'g:lightline.my.git_branch',
-      \   'git_traffic': 'g:lightline.my.git_traffic',
-      \   'git_status': 'g:lightline.my.git_status',
-      \ },
-      \}
-let g:lightline.my = {}
-function! g:lightline.my.git_branch() " {{{
-  return winwidth(0) > 70 ? gita#statusline#preset('branch') : ''
-endfunction " }}}
-function! g:lightline.my.git_traffic() " {{{
-  return winwidth(0) > 70 ? gita#statusline#preset('traffic') : ''
-endfunction " }}}
-function! g:lightline.my.git_status() " {{{
-  return winwidth(0) > 70 ? gita#statusline#preset('status') : ''
-endfunction " }}}
-```
-
-**WIP**
 
 
 Bundle libraries and build statuses
