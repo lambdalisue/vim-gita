@@ -163,10 +163,11 @@ function! s:is_repository_updated(git) abort
         \ 'BISECT_LOG',
         \]
   for name in watched
-    let cached = uptime_cache.get(name, -1)
+    let cached = uptime_cache.get(name, [])
+    let exists = s:Git.filereadable(a:git, name)
     let uptime = s:Git.getftime(a:git, name)
-    if uptime > cached
-      call uptime_cache.set(name, uptime)
+    if empty(cached) || cached[0] != exists || cached[1] < uptime
+      call uptime_cache.set(name, [exists, uptime])
       return 1
     endif
   endfor
