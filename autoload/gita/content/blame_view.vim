@@ -79,16 +79,19 @@ function! s:on_BufWinEnter() abort
   let bufname = gita#content#blame_navi#build_bufname(options)
   let bufnum  = bufnr(bufname)
   if bufnum == -1 || bufwinnr(bufnum) == -1
+    let opener = bufnum == -1
+          \ ? printf(
+          \   'leftabove %d vsplit',
+          \   g:gita#content#blame#navigator_width
+          \ )
+          \ : 'edit'
     call gita#util#cascade#set('blame-navi', options)
     call gita#util#buffer#open(bufname, {
-          \ 'opener': printf(
-          \   'leftabove %d vsplit',
-          \   g:gita#content#blame#navigator_width,
-          \ ),
+          \ 'opener': opener,
           \ 'window': 'blame_navi',
           \ 'selection': [line('.')],
           \})
-    set scrollbind
+    setlocal scrollbind
   endif
 endfunction
 

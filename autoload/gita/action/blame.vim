@@ -56,6 +56,7 @@ function! s:action_enter(candidate, options) abort
   let linenum_next = a:candidate.linenum.original + (linenum - a:candidate.linenum.final)
   redraw
   echo printf('Opening a blame content of "%s" in "%s"', filename, revision)
+  let previous_bufnr = bufnr('%')
   call gita#content#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,
@@ -66,6 +67,8 @@ function! s:action_enter(candidate, options) abort
         \   [linenum],
         \ ],
         \})
+  silent execute printf('keepjumps %dwincmd w', bufwinnr(previous_bufnr))
+  call gita#util#buffer#select([linenum])
 endfunction
 
 function! s:action_back(candidate, options) abort
@@ -76,11 +79,14 @@ function! s:action_back(candidate, options) abort
   let [revision, filename, selection] = previous
   redraw
   echo printf('Opening a blame content of "%s" in %s', filename, revision)
+  let previous_bufnr = bufnr('%')
   call gita#content#blame#open({
         \ 'commit': revision,
         \ 'filename': filename,
         \ 'selection': selection,
         \})
+  silent execute printf('keepjumps %dwincmd w', bufwinnr(previous_bufnr))
+  call gita#util#buffer#select(selection)
 endfunction
 
 function! s:action_previous_chunk(candidate, options) abort

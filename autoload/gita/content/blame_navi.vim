@@ -97,16 +97,19 @@ function! s:on_BufWinEnter() abort
   let bufname = gita#content#blame_view#build_bufname(options)
   let bufnum  = bufnr(bufname)
   if bufnum == -1 || bufwinnr(bufnum) == -1
+    let opener = bufnum == -1
+          \ ? printf(
+          \   'rightbelow %d vsplit',
+          \   winwidth(0) - g:gita#content#blame#navigator_width - 1
+          \ )
+          \ : 'edit'
     call gita#util#cascade#set('blame-view', options)
     call gita#util#buffer#open(bufname, {
-          \ 'opener': printf(
-          \   'rightbelow %d vsplit',
-          \   winwidth(0) - g:gita#content#blame#navigator_width - 1,
-          \ ),
+          \ 'opener': opener,
           \ 'window': 'blame_view',
           \ 'selection': [line('.')],
           \})
-    set scrollbind
+    setlocal scrollbind
   endif
 endfunction
 
