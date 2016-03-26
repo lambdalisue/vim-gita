@@ -190,12 +190,13 @@ function! s:on_GitaStatusModified() abort
   if !git.is_enabled
     return
   endif
+  " NOTE:
+  " If working tree files are changed, it is not possible to detect changes
+  " from Vital.Git cache mechanisms so remove a cache for status count while
+  " status count may change when working tree files are changed.
+  call git.repository_cache.remove('gita#statusline#get_status_count:index')
+  " Some format may use the components above so remove entire cache.
   call s:get_format_cache(git).clear()
-  call s:get_uptime_cache(git).clear()
-  let pattern = '^gita#statusline'
-  for key in filter(git.repository_cache.keys(), 'v:val =~# pattern')
-    call git.repository_cache.remove(key)
-  endfor
 endfunction
 
 function! gita#statusline#format(format) abort
