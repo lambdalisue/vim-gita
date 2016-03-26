@@ -8,7 +8,7 @@ function! gita#util#observer#attach(...) abort
     autocmd BufWinEnter <buffer> nested
           \ if get(s:update_required_registry, bufnr('%')) |
           \   unlet s:update_required_registry[bufnr('%')] |
-          \   call gita#util#observer#update() |
+          \   silent! call gita#util#observer#update() |
           \ endif
   augroup END
   " NOTE:
@@ -45,7 +45,7 @@ function! gita#util#observer#update_all() abort
     let winnum = bufwinnr(bufnr)
     if winnum > 0
       execute printf('noautocmd keepjumps %dwincmd w', winnum)
-      call gita#util#observer#update()
+      silent! call gita#util#observer#update()
     elseif bufexists(bufnr)
       " reserve to 'update'
       let s:update_required_registry[bufnr] = 1
