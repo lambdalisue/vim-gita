@@ -56,7 +56,7 @@ function! gita#process#execute(git, args, ...) abort
   if !options.fail_silently && !is_success
     call s:GitProcess.throw(result)
   elseif !options.quiet
-    call s:Prompt.debug(printf('%s: %s',
+    call s:Prompt.title(printf('%s: %s',
           \ is_success ? 'OK' : 'Fail',
           \ join(result.args),
           \))
