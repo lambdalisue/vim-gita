@@ -1,4 +1,5 @@
-let s:registry = {}
+let s:registry = get(s:, 'registry', {})
+let s:update_required_registry = {}
 
 function! s:on_BufWritePre() abort
   if empty(&buftype) && gita#core#get().is_enabled
@@ -16,15 +17,18 @@ function! s:on_BufWritePost() abort
 endfunction
 
 function! gita#util#observer#attach(...) abort
-  let s:registry[bufnr('%')] = get(a:000, 0, 'edit')
+  let s:registry[bufnr('%')] = get(a:000, 0, 'silent doautocmd BufReadCmd')
   augroup vim_gita_internal_observer_individual
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer> nested
-          \ if exists('b:_gita_internal_observer_update_required') |
-          \   silent unlet b:_gita_internal_observer_update_required |
-          \   silent call gita#util#observer#update() |
+          \ if get(s:update_required_registry, bufnr('%')) |
+          \   unlet s:update_required_registry[bufnr('%')] |
+          \   call gita#util#observer#update() |
           \ endif
   augroup END
+  " NOTE:
+  " When buffer is wipeouted and a new buffer is created, the buffer number
+  " may equal so add a buffer variable to make sure the buffer is attached.
   let b:_gita_internal_observer_attached = 1
 endfunction
 
@@ -51,21 +55,21 @@ endfunction
 
 function! gita#util#observer#update_all() abort
   let winnum_saved = winnr()
-  let missing_bufnums = []
   for bufnum in keys(s:registry)
-    if !bufexists(str2nr(bufnum))
-      unlet s:registry[bufnum]
-      continue
-    endif
-    let winnum = bufwinnr(str2nr(bufnum))
-    if winnum >= 0
-      noautocmd execute printf('keepjumps %dwincmd w', winnum)
+    let bufnr = str2nr(bufnum)
+    let winnum = bufwinnr(bufnr)
+    if winnum > 0
+      execute printf('noautocmd keepjumps %dwincmd w', winnum)
       call gita#util#observer#update()
+    elseif bufexists(bufnr)
+      " reserve to 'update'
+      let s:update_required_registry[bufnr] = 1
     else
-      call setbufvar(str2nr(bufnum), '_gita_internal_observer_update_required', 1)
+      " the buffer is gone
+      unlet s:registry[bufnr]
     endif
   endfor
-  noautocmd execute printf('keepjumps %dwincmd w', winnum_saved)
+  execute printf('noautocmd keepjumps %dwincmd w', winnum_saved)
 endfunction
 
 " Automatically start observation when it's sourced
@@ -73,5 +77,5 @@ augroup vim_gita_internal_observer
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * nested call s:on_BufWritePost()
-  autocmd User GitaStatusModified nested silent call gita#util#observer#update_all()
+  autocmd User GitaStatusModified nested call gita#util#observer#update_all()
 augroup END
