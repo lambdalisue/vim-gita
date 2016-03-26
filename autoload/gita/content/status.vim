@@ -1,6 +1,5 @@
 let s:V = gita#vital()
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
-let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:build_bufname(options) abort
@@ -65,9 +64,9 @@ function! s:compare_statuses(lhs, rhs) abort
 endfunction
 
 function! s:get_prologue(git) abort
-  let local = s:GitInfo.get_local_branch(a:git)
-  let remote = s:GitInfo.get_remote_branch(a:git)
-  let mode = s:GitInfo.get_current_mode(a:git)
+  let mode = gita#statusline#get_current_mode(a:git)
+  let local = gita#statusline#get_local_branch(a:git)
+  let remote = gita#statusline#get_remote_branch(a:git)
   let is_connected = !empty(remote.remote)
 
   let name = a:git.repository_name
@@ -76,17 +75,16 @@ function! s:get_prologue(git) abort
         \ : printf('%s/%s', name, local.name)
   let connection = ''
   if is_connected
-    let outgoing = s:GitInfo.count_commits_ahead_of_remote(a:git)
-    let incoming = s:GitInfo.count_commits_behind_remote(a:git)
-    if outgoing > 0 && incoming > 0
+    let traffic = gita#statusline#get_traffic_count(a:git)
+    if traffic.outgoing > 0 && traffic.incoming > 0
       let connection = printf(
             \ '%d commit(s) ahead and %d commit(s) behind of remote',
-            \ outgoing, incoming,
+            \ traffic.outgoing, traffic.incoming,
             \)
-    elseif outgoing > 0
-      let connection = printf('%d commit(s) ahead remote', outgoing)
-    elseif incoming > 0
-      let connection = printf('%d commit(s) behind of remote', incoming)
+    elseif traffic.outgoing > 0
+      let connection = printf('%d commit(s) ahead remote', traffic.outgoing)
+    elseif traffic.incoming > 0
+      let connection = printf('%d commit(s) behind of remote', traffic.incoming)
     endif
   endif
   return printf('status of %s%s%s %s',
