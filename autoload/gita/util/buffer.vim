@@ -30,7 +30,7 @@ function! gita#util#buffer#open(name, ...) abort
           \ 'preview': s:is_preview(config.opener),
           \}
   else
-    let vname = printf('_buffer_manager_%s', config.window)
+    let vname = '_buffer_manager_' . config.window
     if !has_key(s:, vname)
       let s:{vname} = s:BufferManager.new()
     endif
@@ -50,7 +50,7 @@ function! gita#util#buffer#open(name, ...) abort
     else
       noautocmd keepjumps wincmd P
       call gita#util#buffer#select(config.selection)
-      noautocmd keepjumps normal zz
+      noautocmd keepjumps normal! zz
       noautocmd keepjumps wincmd p
     endif
   endif
@@ -72,11 +72,11 @@ function! gita#util#buffer#select(selection, ...) abort
   let line_start = get(a:selection, 0, line('.'))
   let line_end = get(a:selection, 1, line_start)
   if line_start == line_end && !prefer_visual
-    keepjump call setpos('.', [0, line_start, 1, 0])
+    call setpos('.', [0, line_start, 1, 0])
   else
-    keepjump call setpos('.', [0, line_end, 1, 0])
+    call setpos('.', [0, line_end, 1, 0])
     keepjump normal! v
-    keepjump call setpos('.', [0, line_start, 1, 0])
+    call setpos('.', [0, line_start, 1, 0])
   endif
 endfunction
 
@@ -103,4 +103,3 @@ function! gita#util#buffer#parse_cmdarg(...) abort
   endif
   return options
 endfunction
-
