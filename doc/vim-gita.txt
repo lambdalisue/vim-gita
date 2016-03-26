@@ -416,8 +416,8 @@ It opens *gita-grep* window with 'foobar', which looks like:
 	                 │        ┌ A repository name
 	                 │        │
 	372 matches in INDEX of vim-gita | Press ? to show help or <Tab> ...
-	.travis.yml:35  |   - sh /tmp/vim-vimlint/bin/vimlint.sh -l ...
-	README.md:77    |         \ 'autoload': {
+	.travis.yml:35      - sh /tmp/vim-vimlint/bin/vimlint.sh -l ...
+	README.md:77              \ 'autoload': {
 	   │     │                  │
 	   │     │                  └ A line content
 	   │     └ A line number
