@@ -1,6 +1,6 @@
 *vim-gita.txt*				A git manipulation plugin
 
-Version: 0.2.0
+Version: 0.1.0-beta
 Author:  Alisue <lambdalisue@hashnote.net>		*vim-gita-author*
 Support: Vim 7.4 and above
 License: MIT license
@@ -52,8 +52,8 @@ With vim-gita, users can:
   - Unstage content changes from the index (git reset)
   - Partially stage content changes into the index (git add -p)
   - Partially unstage content changes from the index (git reset -p)
-  - Solve conflictions by using 1, 2, or 3-way diff
-- Edit a commit messagea and commit the index into HEAD
+  - Solve conflict files by using 1, 2, or 3-way diff
+- Edit a commit message and commit the index into HEAD
 - Edit, show, diff files in
   - A working tree of the git repository
   - A index of the git repository
@@ -108,8 +108,8 @@ Or copy contents of the repository into your |runtimepath| manually.
 USAGE						*vim-gita-usage*
 
 First of all, all commands which vim-gita provides start from :Gita and all
-commands (including :Gita) provide --help/-h option to show a help message of
-the command.
+commands (including :Gita itself) provide -h/-help option to show a help
+message of the command.
 
 ------------------------------------------------------------------------------
 STATUS					*vim-gita-usage-status*

@@ -1,5 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
+let s:String = s:V.import('Data.String')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
@@ -168,7 +168,7 @@ function! gita#content#grep#redraw() abort
   for pattern in patterns
     execute printf(
           \ 'syntax match GitaKeyword /%s/ contained',
-          \ s:Prelude.escape_pattern(pattern),
+          \ s:String.escape_pattern(pattern),
           \)
   endfor
 endfunction

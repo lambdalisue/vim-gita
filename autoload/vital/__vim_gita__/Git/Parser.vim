@@ -2,6 +2,7 @@ let s:root = expand('<sfile>:p:h')
 
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
+  let s:String = a:V.import('Data.String')
   let s:Path = a:V.import('System.Filepath')
   let s:Python = a:V.import('Vim.Python')
   let s:STATUS = {}
@@ -21,9 +22,9 @@ function! s:_vital_loaded(V) abort
   let s:STATUS.patterns.ignored    = '\v^!!$'
   let s:CONFLICT = {}
   let s:CONFLICT.markers = {}
-  let s:CONFLICT.markers.ours = s:Prelude.escape_pattern(repeat('<', 7))
-  let s:CONFLICT.markers.separator = s:Prelude.escape_pattern(repeat('=', 7))
-  let s:CONFLICT.markers.theirs = s:Prelude.escape_pattern(repeat('>', 7))
+  let s:CONFLICT.markers.ours = s:String.escape_pattern(repeat('<', 7))
+  let s:CONFLICT.markers.separator = s:String.escape_pattern(repeat('=', 7))
+  let s:CONFLICT.markers.theirs = s:String.escape_pattern(repeat('>', 7))
   let s:CONFLICT.patterns = {}
   let s:CONFLICT.patterns.ours = printf(
         \ '%s[^\n]\{-}\%%(\n\|$\)',
@@ -42,6 +43,7 @@ endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
+        \ 'Data.String',
         \ 'System.Filepath',
         \ 'Vim.Python',
         \]

@@ -1,5 +1,5 @@
 let s:V = gita#vital()
-let s:Prelude = s:V.import('Prelude')
+let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
@@ -226,7 +226,7 @@ function! gita#complete#directory(arglead, cmdline, cursorpos, ...) abort
   " substitute 'root'
   call map(candidates, printf(
         \ 'substitute(v:val, ''^%s'', '''', '''')',
-        \ s:Prelude.escape_pattern(root),
+        \ s:String.escape_pattern(root),
         \))
   " substitute /home/<user> to ~/ if ~/ is specified
   if a:arglead =~# '^\~'

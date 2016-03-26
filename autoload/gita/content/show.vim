@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
+let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:Git = s:V.import('Git')
@@ -15,8 +16,8 @@ function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) 
   "   --- a/<tempfile1>
   "   +++ b/<tempfile2>
   "
-  let src1 = s:Prelude.escape_pattern(a:filename1)
-  let src2 = s:Prelude.escape_pattern(a:filename2)
+  let src1 = s:String.escape_pattern(a:filename1)
+  let src2 = s:String.escape_pattern(a:filename2)
   if is_windows
     " NOTE:
     " '\' in {content} from 'git diff' are escaped so double escape is required
