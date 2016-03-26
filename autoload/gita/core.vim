@@ -48,7 +48,9 @@ function! s:get_for_external(expr, options) abort
         \}, a:options)
   let refinfo = gita#core#get_refinfo(a:expr)
   if !empty(refinfo) && !options.force && !s:is_expired(a:expr, refinfo)
-    return s:references[refinfo.refname]
+    return empty(refinfo.refname)
+          \ ? s:Git.new({'worktree': ''})
+          \ : s:references[refinfo.refname]
   endif
   return s:new_for_external(a:expr, a:options)
 endfunction
@@ -110,11 +112,10 @@ function! gita#core#get_or_fail(...) abort
     return git
   endif
   let expr = get(a:000, 0, '%')
-  call gita#throw(join([
-        \ 'Attention:',
-        \ printf('Git is not available on "%s" buffer.', expand(expr)),
-        \ 'Call ":GitaClear" to remove cache if you feel it is incorrect.',
-        \]))
+  call gita#throw(printf(
+        \ 'Attention: No git repository of a buffer "%s" is found. Call ":GitaClear" to remove cache if this seems a cache problem.',
+        \ expand(expr),
+        \))
 endfunction
 
 function! gita#core#expire(...) abort
