@@ -177,6 +177,7 @@ function! s:on_FileReadCmd(options) abort
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
+  call gita#util#doautocmd('BufWritePre')
   try
     let options = gita#meta#get_for('^diff$', 'options', {})
     let tempfile = tempname()
@@ -198,6 +199,8 @@ function! s:on_BufWriteCmd(options) abort
       call delete(tempfile)
     endtry
     setlocal nomodified
+    call gita#util#doautocmd('User', 'GitaStatusModified')
+    call gita#util#doautocmd('BufWritePost')
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
     call gita#util#handle_exception()
   endtry

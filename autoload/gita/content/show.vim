@@ -223,6 +223,7 @@ function! s:on_BufWriteCmd(options) abort
           \ { 'quiet': 1 }
           \)
     setlocal nomodified
+    call gita#util#doautocmd('User', 'GitaStatusModified')
     call gita#util#doautocmd('BufWritePost')
     diffupdate
   catch /^\%(vital: Git[:.]\|vim-gita:\)/
