@@ -40,7 +40,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('filename', options.filename)
   call gita#meta#set('blamemeta', blamemeta)
   call gita#meta#set('previous', get(options, 'previous', []))
-  augroup vim_gita_internal_blame_navi
+  augroup vim_gita_internal_content_blame_navi
     autocmd! * <buffer>
     autocmd CursorMoved <buffer> call s:on_CursorMoved()
     autocmd BufEnter    <buffer> call s:on_BufEnter()

@@ -197,7 +197,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('options', options)
   call gita#meta#set('statuses', statuses)
   call s:define_actions()
-  augroup vim_gita_internal_commit
+  augroup vim_gita_internal_content_commit
     autocmd! * <buffer>
     " NOTE:
     " During BufHidden or whatever, the current buffer will be moved onto

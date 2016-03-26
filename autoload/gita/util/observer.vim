@@ -1,24 +1,9 @@
 let s:registry = get(s:, 'registry', {})
 let s:update_required_registry = {}
 
-function! s:on_BufWritePre() abort
-  if empty(&buftype) && gita#core#get().is_enabled
-    let b:_gita_internal_observer_modified = &modified
-  endif
-endfunction
-
-function! s:on_BufWritePost() abort
-  if exists('b:_gita_internal_observer_modified')
-    if b:_gita_internal_observer_modified && !&modified
-      call gita#util#doautocmd('User', 'GitaStatusModified')
-    endif
-    unlet b:_gita_internal_observer_modified
-  endif
-endfunction
-
 function! gita#util#observer#attach(...) abort
   let s:registry[bufnr('%')] = get(a:000, 0, 'silent doautocmd BufReadCmd')
-  augroup vim_gita_internal_observer_individual
+  augroup vim_gita_internal_util_observer_attach
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer> nested
           \ if get(s:update_required_registry, bufnr('%')) |
@@ -73,9 +58,7 @@ function! gita#util#observer#update_all() abort
 endfunction
 
 " Automatically start observation when it's sourced
-augroup vim_gita_internal_observer
+augroup vim_gita_internal_util_observer
   autocmd! *
-  autocmd BufWritePre  * call s:on_BufWritePre()
-  autocmd BufWritePost * nested call s:on_BufWritePost()
   autocmd User GitaStatusModified nested call gita#util#observer#update_all()
 augroup END

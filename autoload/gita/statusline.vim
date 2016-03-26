@@ -173,20 +173,9 @@ function! s:is_repository_updated(git) abort
   return 0
 endfunction
 
-function! s:on_BufWritePre() abort
-  let b:_gita_statusline_modified = &modified
-endfunction
-function! s:on_BufWritePost() abort
-  if get(b:, '_gita_statusline_modified', &modified) != &modified
-    let git = gita#core#get()
-    if git.is_enabled
-      call s:get_format_cache(git).clear()
-    endif
-  endif
-  silent! unlet! b:_gita_statusline_modified
-endfunction
 function! s:on_GitaStatusModified() abort
   let git = gita#core#get()
+  call s:get_format_cache(git).clear()
   if !git.is_enabled
     return
   endif
@@ -195,8 +184,6 @@ function! s:on_GitaStatusModified() abort
   " from Vital.Git cache mechanisms so remove a cache for status count while
   " status count may change when working tree files are changed.
   call git.repository_cache.remove('gita#statusline#get_status_count:index')
-  " Some format may use the components above so remove entire cache.
-  call s:get_format_cache(git).clear()
 endfunction
 
 function! gita#statusline#format(format) abort
@@ -316,9 +303,7 @@ function! gita#statusline#get_status_count(git) abort
   return content
 endfunction
 
-augroup vim_gita_internal_statusline_clear_cache
+augroup vim_gita_internal_statusline
   autocmd! *
-  autocmd BufWritePre  * call s:on_BufWritePre()
-  autocmd BufWritePost * call s:on_BufWritePost()
   autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END

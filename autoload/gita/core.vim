@@ -130,3 +130,25 @@ function! gita#core#get_refinfo(...) abort
   let refinfo = s:Compat.getbufvar(expr, s:NAME, {})
   return refinfo
 endfunction
+
+function! s:on_BufWritePre() abort
+  if empty(&buftype) && gita#core#get().is_enabled
+    let b:_gita_internal_modified = &modified
+  endif
+endfunction
+
+function! s:on_BufWritePost() abort
+  if exists('b:_gita_internal_modified')
+    if b:_gita_internal_modified && !&modified
+      call gita#util#doautocmd('User', 'GitaStatusModified')
+    endif
+    unlet b:_gita_internal_modified
+  endif
+endfunction
+
+" Automatically check if files in a git repository has modified
+augroup vim_gita_internal_core
+  autocmd! *
+  autocmd BufWritePre  * call s:on_BufWritePre()
+  autocmd BufWritePost * nested call s:on_BufWritePost()
+augroup END
