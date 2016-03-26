@@ -233,10 +233,10 @@ function! gita#statusline#get_local_branch(git) abort
 endfunction
 function! gita#statusline#get_remote_branch(git) abort
   let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
-  let content = s:Git.get_cache_content(a:git, 'HEAD', slug, {})
+  let content = s:Git.get_cache_content(a:git, ['HEAD', 'config', 'packed-refs'], slug, {})
   if empty(content)
     let content = s:GitInfo.get_remote_branch(a:git)
-    call s:Git.set_cache_content(a:git, 'HEAD', slug, content)
+    call s:Git.set_cache_content(a:git, ['HEAD', 'config', 'packed-refs'], slug, content)
   endif
   return content
 endfunction
