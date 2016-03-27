@@ -44,7 +44,7 @@ function! gita#util#doautocmd(name, ...) abort
     " match with the <pattern> so register empty autocmd to prevent
     " 'No matching autocommands' warning
     augroup vim_gita_internal_util_doautocmd
-      autocmd!
+      autocmd! *
       execute 'autocmd ' . a:name . ' * :'
     augroup END
   endif
@@ -56,7 +56,7 @@ function! gita#util#doautocmd(name, ...) abort
   finally
     if is_pseudo_required
       augroup vim_gita_internal_util_doautocmd
-        autocmd!
+        autocmd! *
       augroup END
     endif
   endtry
