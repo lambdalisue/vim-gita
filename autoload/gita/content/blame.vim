@@ -79,7 +79,7 @@ function! s:get_blameobj(content, commit, filename) abort
         let blameobj.file_content = gita#process#execute(
               \ git,
               \ ['show', treeish],
-              \ { 'quiet': 1 },
+              \ { 'quiet': 1, 'encode_output': 0 },
               \)
       endif
     endif
