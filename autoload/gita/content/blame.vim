@@ -177,6 +177,9 @@ function! s:format_blameobj(blameobj, width, progressbar) abort
   let separators = []
   for chunk in chunks
     call extend(chunk, revisions[chunk.revision])
+    " NOTE:
+    " edit/show/diff actions require 'path' attribute
+    let chunk.path = chunk.filename
     let n_contents = get(chunk, 'nlines', 1)
     let chunk_height = max([2, n_contents])
     let formatted_chunk = s:format_chunk(
