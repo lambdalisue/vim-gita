@@ -4,7 +4,7 @@ let s:File = s:V.import('System.File')
 function! s:action(candidate, options) abort
   let options = extend({
         \ 'repository': 0,
-        \ 'scheme': g:gita#action#browse#default_scheme,
+        \ 'scheme': '_',
         \ 'yank': 0,
         \}, a:options)
   call gita#option#assign_commit(options)
@@ -94,7 +94,3 @@ function! gita#action#browse#define(disable_mappings) abort
   nmap <buffer><nowait><expr> bb gita#action#smart_map('bb', '<Plug>(gita-browse)')
   nmap <buffer><nowait><expr> yy gita#action#smart_map('yy', '<Plug>(gita-browse-yank)')
 endfunction
-
-call gita#define_variables('action#browse', {
-      \ 'default_scheme': '_',
-      \})

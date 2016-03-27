@@ -322,4 +322,3 @@ endfunction
 call gita#define_variables('content#diff', {
       \ 'default_opener': 'edit',
       \})
-

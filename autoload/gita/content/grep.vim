@@ -186,4 +186,3 @@ call gita#define_variables('content#grep', {
       \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,
       \})
-

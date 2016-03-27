@@ -26,6 +26,7 @@ License: MIT license
     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 =============================================================================
 CONTENTS					*vim-gita-contents*
 
@@ -48,6 +49,7 @@ Interface			|vim-gita-interface|
   Functions			|vim-gita-interface-functions|
   Variables			|vim-gita-interface-variables|
   Actions			|vim-gita-interface-actions|
+
 
 ==============================================================================
 INTRODUCTION					*vim-gita-introduction*
@@ -554,8 +556,10 @@ mappings:
 	RR		Rename branch (force)
 	dd		Delete branch
 	DD		Delete branch (force)
+	co		Checkout branch
+	ct		Checkout branch (track)
 
-	<CR>		Switch to the branch (track)
+	<CR>		Same as ct
 
 Note that the mapping table above is partial. Hit ? on the window to see a
 full mapping table.
@@ -640,11 +644,13 @@ In a |gita-blame-navi| window, the following mappings are available:
 	ds		Open vimdiff (two buffers) to the index
 	DS		Open vimdiff (two buffers) to the index (tabpage)
 
-	<CR>		Enter a (previous) commit of the chunk
+	BB		Enter a (previous) commit of the chunk
 	<BS>		Back to a previous blame content
 
 	]c		Jump to a next commit chunk
 	[c		Jump to a previous commit chunk
+
+	<CR>		Same as BB
 
 In a |gita-blame-view| window, the following mappings are available:
 					*vim-gita-usage-blame-view-mapping*
@@ -653,11 +659,13 @@ In a |gita-blame-view| window, the following mappings are available:
 	?		Show an action and mapping help
 	<Tab>		Select an action to perform
 
-	<CR>		Enter a (previous) commit of the chunk
+	BB		Enter a (previous) commit of the chunk
 	<BS>		Back to a previous blame content
 
 	]c		Jump to a next commit chunk
 	[c		Jump to a previous commit chunk
+
+	<CR>		Same as BB
 
 Note that the mapping table above is partial. Hit ? on the window to see a
 full mapping table.
@@ -936,9 +944,45 @@ gita#statusline#preset({name})		*gita#statusline#preset()*
 	Show the number of incoming/outgoing commits with fancy font
 	E.g: ￩3 ￫5
 
-
-==============================================================================
+------------------------------------------------------------------------------
 VARIABLES					*vim-gita-interface-variables*
+
+			*g:gita#develop*
+g:gita#develop
+
+	1 to use vim-gita in development mode.
+	In development mode, vim-gita behave a bit differently for
+	development. Use this option only when you asked to do.
+	Default: 0 (1 in development branch)
+
+			*g:gita#complete_threshold*
+g:gita#complete_threshold
+
+	A |Number| to limit the number of candidates in a command completion.
+	Default: 100
+
+			*g:gita#process#executable*
+g:gita#process#executable
+
+	A git executable name.
+	Note that this variable requires to be configured prior to command
+	calls.
+	Default: 'git'
+
+			*g:gita#process#arguments*
+g:gita#process#arguments
+
+	A default extra argument |List| for git command calls.
+	Note that this variable requires to be configured prior to command
+	calls.
+	Default: ['-c', 'color.ui=false', '--no-pager']
+
+			*g:gita#action#index#prefer_unstage*
+g:gita#action#index#prefer_unstage
+
+	1 to use 'index:unstage' action instead of 'index:stage' action in
+	'index:toggle' action on a file which is partially staged.
+	Default: 0
 
 			*g:gita#command#browse#translation_patterns*
 g:gita#command#browse#translation_patterns
@@ -1032,8 +1076,236 @@ g:gita#command#browse#extra_translation_patterns
 	    \ ],
 	    \}
 <
+			*g:gita#content#blame#default_opener*
+g:gita#content#blame#default_opener
 
-==============================================================================
+	A default opener for |:Gita-blame| command.
+	Default: 'tabedit'
+
+			*g:gita#content#blame#use_porcelain_instead*
+g:gita#content#blame#use_porcelain_instead
+
+	1 to use --porcelain instead of --incremental to obtain a blame
+	content. Basically a content obtained from --incremental has fewer
+	lines compared to the one from --porcelain, indicating that the
+	performance for parsing content will be decreased when --porcelain
+	option is used. Use this option only when you asked to do.
+	Default: 0
+
+			*g:gita#content#blame#use_python*
+g:gita#content#blame#use_python
+
+	1 to use |python| or |python3| implementation for parsing a blame
+	content.
+	Default: 1 if |python| or |python3| is available, otherwise 0
+
+			*g:gita#content#blame#navigator_width*
+g:gita#content#blame#navigator_width
+
+	A |gita-blame-navi| default width.
+	Default: 50
+
+			*g:gita#content#blame_navi#primary_action_mapping*
+g:gita#content#blame_navi#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-blame-navi| window.
+	Default: '<Plug>(gita-blame-enter)'
+
+			*g:gita#content#blame_navi#disable_default_mappings*
+g:gita#content#blame_navi#disable_default_mappings
+
+	1 to disable default mappings in |gita-blame-navi| window.
+	Default: 0
+
+			*g:gita#content#blame_view#primary_action_mapping*
+g:gita#content#blame_view#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-blame-view| window.
+	Default: '<Plug>(gita-blame-enter)'
+
+			*g:gita#content#blame_view#disable_default_mappings*
+g:gita#content#blame_view#disable_default_mappings
+
+	1 to disable default mappings in |gita-blame-view| window.
+	Default: 0
+
+			*g:gita#content#branch#default_opener*
+g:gita#content#branch#default_opener
+
+	A default opener for |gita-branch| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#branch#primary_action_mapping*
+g:gita#content#branch#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-branch| window.
+	Default: '<Plug>(gita-branch-checkout-track)'
+
+			*g:gita#content#branch#disable_default_mappings*
+g:gita#content#branch#disable_default_mappings
+
+	1 to disable default mappings in |gita-branch| window.
+	Default: 0
+
+			*g:gita#content#chaperone#default_opener*
+g:gita#content#chaperone#default_opener
+
+	A default opener for |:Gita-chaperone| command.
+	Default: 'tabedit'
+
+			*g:gita#content#chaperone#default_method*
+g:gita#content#chaperone#default_method
+
+	A default method for |:Gita-chaperone| command.
+	Valid value is 'two' or 'three'.
+	Default: 'three'
+
+			*g:gita#content#chaperone#disable_default_mappings*
+g:gita#content#chaperone#disable_default_mappings
+
+	1 to disable default mappings in windows involved in chaperone.
+	Default: 0
+
+			*g:gita#content#commit#default_opener*
+g:gita#content#commit#default_opener
+
+	A default opener for |gita-commit| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#commit#primary_action_mapping*
+g:gita#content#commit#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-commit| window.
+	Default: '<Plug>(gita-diff)'
+
+			*g:gita#content#commit#disable_default_mappings*
+g:gita#content#commit#disable_default_mappings
+
+	1 to disable default mappings in |gita-commit| window.
+	Default: 0
+
+			*g:gita#content#diff#default_opener*
+g:gita#content#diff#default_opener
+
+	A default opener for |:Gita-diff| command.
+	Default: 'edit'
+
+			*g:gita#content#diff_ls#default_opener*
+g:gita#content#diff_ls#default_opener
+
+	A default opener for |gita-diff-ls| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#diff_ls#primary_action_mapping*
+g:gita#content#diff_ls#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-diff-ls| window.
+	Default: '<Plug>(gita-diff)'
+
+			*g:gita#content#diff_ls#disable_default_mappings*
+g:gita#content#diff_ls#disable_default_mappings
+
+	1 to disable default mappings in |gita-diff-ls| window.
+	Default: 0
+
+			*g:gita#content#grep#default_opener*
+g:gita#content#grep#default_opener
+
+	A default opener for |gita-grep| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#grep#primary_action_mapping*
+g:gita#content#grep#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-grep| window.
+	Default: '<Plug>(gita-show)'
+
+			*g:gita#content#grep#disable_default_mappings*
+g:gita#content#grep#disable_default_mappings
+
+	1 to disable default mappings in |gita-grep| window.
+	Default: 0
+
+			*g:gita#content#ls_files#default_opener*
+g:gita#content#ls_files#default_opener
+
+	A default opener for |gita-ls-files| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#ls_files#primary_action_mapping*
+g:gita#content#ls_files#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-ls-files| window.
+	Default: '<Plug>(gita-show)'
+
+			*g:gita#content#ls_files#disable_default_mappings*
+g:gita#content#ls_files#disable_default_mappings
+
+	1 to disable default mappings in |gita-ls-files| window.
+	Default: 0
+
+			*g:gita#content#ls_tree#default_opener*
+g:gita#content#ls_tree#default_opener
+
+	A default opener for |gita-ls-tree| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#ls_tree#primary_action_mapping*
+g:gita#content#ls_tree#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-ls-tree| window.
+	Default: '<Plug>(gita-show)'
+
+			*g:gita#content#ls_tree#disable_default_mappings*
+g:gita#content#ls_tree#disable_default_mappings
+
+	1 to disable default mappings in |gita-ls-tree| window.
+	Default: 0
+
+			*g:gita#content#patch#default_opener*
+g:gita#content#patch#default_opener
+
+	A default opener for |:Gita-patch| command.
+	Default: 'tabedit'
+
+			*g:gita#content#patch#default_method*
+g:gita#content#patch#default_method
+
+	A default method for |:Gita-patch| command.
+	Valid value is 'one', 'two', or 'three'.
+	Default: 'three'
+
+			*g:gita#content#patch#disable_default_mappings*
+g:gita#content#patch#disable_default_mappings
+
+	1 to disable default mappings in windows involved in patch.
+	Default: 0
+
+			*g:gita#content#show#default_opener*
+g:gita#content#show#default_opener
+
+	A default opener for |:Gita-show| command.
+	Default: 'edit'
+
+			*g:gita#content#status#default_opener*
+g:gita#content#status#default_opener
+
+	A default opener for |gita-status| window.
+	Default: 'botright 10 split'
+
+			*g:gita#content#status#primary_action_mapping*
+g:gita#content#status#primary_action_mapping
+
+	A primary action (<CR>) mapping used in |gita-status| window.
+	Default: '<Plug>(gita-edit)'
+
+			*g:gita#content#status#disable_default_mappings*
+g:gita#content#status#disable_default_mappings
+
+	1 to disable default mappings in |gita-status| window.
+	Default: 0
+
+------------------------------------------------------------------------------
 ACTIONS						*vim-gita-interface-actions*
 
 A non file-like buffers used in vim-gita provides action mechanisms.

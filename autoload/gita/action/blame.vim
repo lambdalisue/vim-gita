@@ -168,7 +168,7 @@ function! gita#action#blame#define(disable_mappings) abort
   if is_blame_buffer
     nmap <buffer><nowait> [c <Plug>(gita-blame-chunk-previous)
     nmap <buffer><nowait> ]c <Plug>(gita-blame-chunk-next)
-    nmap <buffer><nowait> <Return> <Plug>(gita-blame-enter)
+    nmap <buffer><nowait> BB <Plug>(gita-blame-enter)
     nmap <buffer><nowait> <Backspace> <Plug>(gita-blame-back)
   else
     nmap <buffer><nowait><expr> BB gita#action#smart_map('BB', '<Plug>(gita-blame)')

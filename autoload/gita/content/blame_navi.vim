@@ -25,6 +25,10 @@ function! s:define_actions() abort
   if g:gita#content#blame_navi#disable_default_mappings
     return
   endif
+  execute printf(
+        \ 'nmap <buffer> <Return> %s',
+        \ g:gita#content#blame_navi#primary_action_mapping
+        \)
 endfunction
 
 function! s:on_BufReadCmd(options) abort
@@ -146,5 +150,5 @@ endfunction
 
 call gita#define_variables('content#blame_navi', {
       \ 'disable_default_mappings': 0,
+      \ 'primary_action_mapping': '<Plug>(gita-blame-enter)',
       \})
-

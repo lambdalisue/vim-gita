@@ -172,7 +172,7 @@ function! gita#content#patch#open(options) abort
 endfunction
 
 call gita#define_variables('content#patch', {
-      \ 'default_opener': '',
+      \ 'default_opener': 'tabedit',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,
       \})

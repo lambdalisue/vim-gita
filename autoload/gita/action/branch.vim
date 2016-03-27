@@ -100,5 +100,7 @@ function! gita#action#branch#define(disable_mapping) abort
   nmap <buffer><silent><expr><nowait> DD gita#action#smart_map('DD', '<Plug>(gita-branch-delete-force)')
   nmap <buffer><silent><expr><nowait> rr gita#action#smart_map('rr', '<Plug>(gita-branch-rename)')
   nmap <buffer><silent><expr><nowait> RR gita#action#smart_map('RR', '<Plug>(gita-branch-rename-force)')
+  nmap <buffer><silent><expr><nowait> co gita#action#smart_map('co', '<Plug>(gita-branch-checkout)')
+  nmap <buffer><silent><expr><nowait> ct gita#action#smart_map('co', '<Plug>(gita-branch-checkout-track)')
 endfunction
 
