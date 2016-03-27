@@ -772,6 +772,10 @@ COMMANDS				*vim-gita-interface-commands*
 	If {filename} is omitted, a corresponding filename of the current
 	buffer is used.
 
+	Note that even when 'autoread' option is 1, it does not automatically
+	reload content when the repositorh status change. Users requires to
+	execute |:edit| command to reload content.
+
 					*:Gita-branch*
 :Gita branch [-h/--help]
 	[--opener={opener}] [--selection={selection}] {options}
@@ -786,7 +790,6 @@ COMMANDS				*vim-gita-interface-commands*
 	A {selection} is used to specify line numbers to move.
 	A format of the {selection} is --selection=N or --selection=N-M where
 	the N is a start line number and the M is a end line number.
-
 
 					*:Gita-browse*
 :Gita browse [-h/--help]
@@ -889,6 +892,10 @@ COMMANDS				*vim-gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repositorh status change. Otherwise users requires to execute
+	|:edit| command to reload content.
+
 					*Gita-diff-ls*
 :Gita diff-ls [-h/--help] [--opener={opener}] [{commit}]
 
@@ -988,6 +995,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	If {path} is omitted, a corresponding filename of the current
 	buffer will be used.
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repositorh status change. Otherwise users requires to execute
+	|:edit| command to reload content.
 
 					*:Gita-status*
 :Gita status [-h/--help] [--opener={opener}] {options} [-- {path}...]

@@ -183,6 +183,7 @@ function! s:on_BufReadCmd(options) abort
         \ content,
         \ gita#util#buffer#parse_cmdarg(),
         \)
+  call gita#util#observer#attach()
   if options.patch
     setlocal buftype=acwrite
     setlocal noreadonly
