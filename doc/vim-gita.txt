@@ -49,6 +49,7 @@ Interface			|vim-gita-interface|
   Functions			|vim-gita-interface-functions|
   Variables			|vim-gita-interface-variables|
   Actions			|vim-gita-interface-actions|
+FAQ				|vim-gita-faq|
 
 
 ==============================================================================
@@ -1473,283 +1474,298 @@ in a window. Hit ? to see what actions are available in a window.
 
 	add
 		Add file content to the index
-		<Plug>(gita-add)
+		*<Plug>(gita-add)*
 	add:force
 		Add file content to the index (force)
-		<Plug>(gita-add-force)
+		*<Plug>(gita-add-force)*
 	
 	blame
 		Open blame window
-		<Plug>(gita-blame) Default: BB
+		*<Plug>(gita-blame)* Default: BB
 	blame:enter
 		Enter a blame chunk
-		<Plug>(gita-blame-enter) Default: <Return>
+		*<Plug>(gita-blame-enter)* Default: BB
 	blame:back
 		Back to a previous blame
-		<Plug>(gita-blame-back) Default: <Backspace>
+		*<Plug>(gita-blame-back)* Default: <Backspace>
 	blame:chunk:next
 		Move cursor onto the next blame chunk
-		<Plug>(gita-blame-chunk-next) Default: ]c
+		*<Plug>(gita-blame-chunk-next)* Default: ]c
 	blame:chunk:previous
 		Move cursor onto the previous blame chunk
-		<Plug>(gita-blame-chunk-previous) Default: [c
+		*<Plug>(gita-blame-chunk-previous)* Default: [c
 	
 	branch:checkout
 		Checkout a branch
-		<Plug>(gita-branch-checkout)
+		*<Plug>(gita-branch-checkout)* Default: co
 	branch:checkout:track
 		Checkout a branch (track)
-		<Plug>(gita-branch-checkout-track)
+		*<Plug>(gita-branch-checkout-track)* Default: ct
 	branch:rename
 		Rename a branch
-		<Plug>(gita-branch-rename) Default: rr
+		*<Plug>(gita-branch-rename)* Default: rr
 	branch:rename:force
 		Rename a branch (force)
-		<Plug>(gita-branch-rename-force) Default: RR
+		*<Plug>(gita-branch-rename-force)* Default: RR
 	branch:delete
 		Delete a branch
-		<Plug>(gita-branch-delete) Default: dd
+		*<Plug>(gita-branch-delete)* Default: dd
 	branch:delete:force
 		Delete a branch (force)
-		<Plug>(gita-branch-delete-force) Default: DD
+		*<Plug>(gita-branch-delete-force)* Default: DD
 	
 	browse
 		Browse a content URL
-		<Plug>(gita-browse) Default: bb
+		*<Plug>(gita-browse)* Default: bb
 	browse:exact
 		Browse a content URL with exact scheme
-		<Plug>(gita-browse-exact)
+		*<Plug>(gita-browse-exact)*
 	browse:diff
 		Browse a content URL with diff scheme
-		<Plug>(gita-browse-diff)
+		*<Plug>(gita-browse-diff)*
 	browse:blame
 		Browse a content URL with blame scheme
-		<Plug>(gita-browse-blame)
+		*<Plug>(gita-browse-blame)*
 	browse:repository
 		Browse a content URL with repository scheme (^)
-		<Plug>(gita-browse-repository)
+		*<Plug>(gita-browse-repository)*
 	browse:yank
 		Yank a content URL
-		<Plug>(gita-browse-yank) Default: yy
+		*<Plug>(gita-browse-yank)* Default: yy
 	browse:exact:yank
 		Yank a content URL with exact scheme
-		<Plug>(gita-browse-exact-yank)
+		*<Plug>(gita-browse-exact-yank)*
 	browse:diff:yank
 		Yank a content URL with diff scheme
-		<Plug>(gita-browse-diff-yank)
+		*<Plug>(gita-browse-diff-yank)*
 	browse:blame:yank
 		Yank a content URL with blame scheme
-		<Plug>(gita-browse-blame-yank)
+		*<Plug>(gita-browse-blame-yank)*
 	browse:repository:yank
 		Yank a content URL with repository scheme (^)
-		<Plug>(gita-browse-repository-yank)
+		*<Plug>(gita-browse-repository-yank)*
 	
 	chaperone
 		Help to solve a confliction
-		<Plug>(gita-chaperone) Default: !!
+		*<Plug>(gita-chaperone)* Default: !!
 	chaperone:two
 		Help to solve a confliction (two way)
-		<Plug>(gita-chaperone-two) Default: !2
+		*<Plug>(gita-chaperone-two)* Default: !2
 	chaperone:three
 		Help to solve a confliction three way)
-		<Plug>(gita-chaperone-three) Default: !3
+		*<Plug>(gita-chaperone-three)* Default: !3
 	
 	checkout
 		Checkout a content
-		<Plug>(gita-checkout)
+		*<Plug>(gita-checkout)*
 	checkout:force
 		Checkout a content (force)
-		<Plug>(gita-checkout-force)
+		*<Plug>(gita-checkout-force)*
 	checkout:ours
 		Checkout a content of ours in merge mode
-		<Plug>(gita-checkout-ours)
+		*<Plug>(gita-checkout-ours)*
 	checkout:ours:force
 		Checkout a content of ours in merge mode (force)
-		<Plug>(gita-checkout-ours-force)
+		*<Plug>(gita-checkout-ours-force)*
 	checkout:theirs
 		Checkout a content of theirs in merge mode
-		<Plug>(gita-checkout-theirs)
+		*<Plug>(gita-checkout-theirs)*
 	checkout:theirs:force
 		Checkout a content of theirs in merge mode (force)
-		<Plug>(gita-checkout-ours-theirs)
+		*<Plug>(gita-checkout-ours-theirs)*
 	checkout:HEAD
 		Checkout a content from HEAD
-		<Plug>(gita-checkout-HEAD)
+		*<Plug>(gita-checkout-HEAD)*
 	checkout:HEAD:force
 		Checkout a content from HEAD (force)
-		<Plug>(gita-checkout-HEAD-force)
-	checkout:origin/HEAD
-		Checkout a content from origin/HEAD
-		<Plug>(gita-checkout-origin/HEAD)
+		*<Plug>(gita-checkout-HEAD-force)*
+	checkout:origin/HEAD	Checkout a content from origin/HEAD
+		*<Plug>(gita-checkout-origin/HEAD)*
 	checkout:origin/HEAD:force
 		Checkout a content from origin/HEAD (force)
-		<Plug>(gita-checkout-origin/HEAD-force)
+		*<Plug>(gita-checkout-origin/HEAD-force)*
 	
 	commit
 		Open a |gita-commit| window
-		<Plug>(gita-commit) Default: <C-^> or <C-c><C-n>
+		*<Plug>(gita-commit)* Default: <C-^> or <C-c><C-n>
 	commit:amend
 		Open a |gita-commit| window with amend option
-		<Plug>(gita-commit-amend) Default: <C-c><C-a>
+		*<Plug>(gita-commit-amend)* Default: <C-c><C-a>
 	
 	common:help (alias: help)
 		Show an action help
-		<Plug>(gita-help) Defaut: ?
+		*<Plug>(gita-help)* Defaut: ?
 	common:redraw (alias: redraw)
 		Redraw a window 
-		<Plug>(gita-redraw) Default: <C-l>
+		*<Plug>(gita-redraw)* Default: <C-l>
 	common:choice (alias: choice)
 		Start action select mode
-		<Plug>(gita-choice) Default: <Tab>
+		*<Plug>(gita-choice)* Default: <Tab>
 	
 	diff
 		Show a diff content
-		<Plug>(gita-diff) Default: dd
+		*<Plug>(gita-diff)* Default: dd
 	diff:edit
 		Show a diff content (edit)
-		<Plug>(gita-diff-edit)
+		*<Plug>(gita-diff-edit)*
 	diff:above
 		Show a diff content (above)
-		<Plug>(gita-diff-above)
+		*<Plug>(gita-diff-above)*
 	diff:below
 		Show a diff content (below)
-		<Plug>(gita-diff-below)
+		*<Plug>(gita-diff-below)*
 	diff:left
 		Show a diff content (left)
-		<Plug>(gita-diff-left)
+		*<Plug>(gita-diff-left)*
 	diff:right
 		Show a diff content (right)
-		<Plug>(gita-diff-right) Default: DD
+		*<Plug>(gita-diff-right)* Default: DD
 	diff:tab
 		Show a diff content (tab)
-		<Plug>(gita-diff-tab) Default: dt
+		*<Plug>(gita-diff-tab)* Default: dt
 	diff:preview
 		Show a diff content (preview)
-		<Plug>(gita-diff-preview) Default: dp
+		*<Plug>(gita-diff-preview)* Default: dp
 	diff:split
 		Show a diff content in two buffers
-		<Plug>(gita-diff-split) Default: ds
+		*<Plug>(gita-diff-split)* Default: ds
 	diff:split:tab
 		Show a diff content in two buffers (tab)
-		<Plug>(gita-diff-split-tab) Default: DS
+		*<Plug>(gita-diff-split-tab)* Default: DS
 	
 	discard
 		Discard changes on the working tree
-		<Plug>(gita-discard) Default: ==
+		*<Plug>(gita-discard)* Default: ==
 	discard:force
 		Discard changes on the working tree (force)
-		<Plug>(gita-discard-force)
+		*<Plug>(gita-discard-force)*
 	
 	edit
 		Open a content
-		<Plug>(gita-edit) Default: ee
+		*<Plug>(gita-edit)* Default: ee
 	edit:edit
 		Open a content (edit)
-		<Plug>(gita-edit-edit)
+		*<Plug>(gita-edit-edit)*
 	edit:above
 		Open a content (above)
-		<Plug>(gita-edit-above)
+		*<Plug>(gita-edit-above)*
 	edit:below
 		Open a content (below)
-		<Plug>(gita-edit-below)
+		*<Plug>(gita-edit-below)*
 	edit:left
 		Open a content (left)
-		<Plug>(gita-edit-left)
+		*<Plug>(gita-edit-left)*
 	edit:right
 		Open a content (right)
-		<Plug>(gita-edit-right) Default: EE
+		*<Plug>(gita-edit-right)* Default: EE
 	edit:tab
 		Open a content (tab)
-		<Plug>(gita-edit-tab) Default: et
+		*<Plug>(gita-edit-tab)* Default: et
 	edit:preview
 		Open a content (preview)
-		<Plug>(gita-edit-preview) Default: ep
+		*<Plug>(gita-edit-preview)* Default: ep
 	
 	index:stage (alias: stage)
 		Stage changes to the index
-		<Plug>(gita-stage) Default: <<
+		*<Plug>(gita-stage)* Default: <<
 	index:unstage (alias: unstage)
 		Unstage changes from the index
-		<Plug>(gita-unstage) Default: >>
+		*<Plug>(gita-unstage)* Default: >>
 	index:toggle (alias: toggle)
 		Toggle stage/unstage of changes in the index
-		<Plug>(gita-toggle) Default: --
+		*<Plug>(gita-toggle)* Default: --
 	
 	merge
 		Merge the commit into HEAD (fast-forward)
-		<Plug>(gita-merge)
+		*<Plug>(gita-merge)*
 	merge:ff-only
 		Merge the commit into HEAD (fast-forward only)
-		<Plug>(gita-merge-ff-only)
+		*<Plug>(gita-merge-ff-only)*
 	merge:no-ff
 		Merge the commit into HEAD (no fast-forward)
-		<Plug>(gita-merge-no-ff)
+		*<Plug>(gita-merge-no-ff)*
 	merge:squash
 		Merge the commit into HEAD (squash)
-		<Plug>(gita-merge-squash)
+		*<Plug>(gita-merge-squash)*
 	
 	patch
 		Patch file contents to the index
-		<Plug>(gita-patch) Default: pp
+		*<Plug>(gita-patch)* Default: pp
 	patch:one
 		Patch file contents to the index (one way)
-		<Plug>(gita-patch-one) Default: p1
+		*<Plug>(gita-patch-one)* Default: p1
 	patch:two
 		Patch file contents to the index (two way)
-		<Plug>(gita-patch-two) Default: p2
+		*<Plug>(gita-patch-two)* Default: p2
 	patch:three
 		Patch file contents to the index (three way)
-		<Plug>(gita-patch-three) Default: p3
+		*<Plug>(gita-patch-three)* Default: p3
 	
 	rebase
 		Rebase HEAD from the commit (fast-forward)
-		<Plug>(gita-rebase)
+		*<Plug>(gita-rebase)*
 	rebase:merge
 		Rebase HEAD by merging the commit
-		<Plug>(gita-rebase-merge)
+		*<Plug>(gita-rebase-merge)*
 	
 	reset
 		Reset changes on the index
-		<Plug>(gita-reset)
+		*<Plug>(gita-reset)*
 	
 	rm
 		Remove files from the working tree and the index
-		<Plug>(gita-rm)
+		*<Plug>(gita-rm)*
 	rm:cached
 		Remove files from the index but the working tree
-		<Plug>(gita-rm-cached)
+		*<Plug>(gita-rm-cached)*
 	rm:force
 		Remove files from the working tree and the index (force)
-		<Plug>(gita-rm-force)
+		*<Plug>(gita-rm-force)*
 	
 	show
 		Show a content
-		<Plug>(gita-show) Default: ss
+		*<Plug>(gita-show)* Default: ss
 	show:edit
 		Show a content (edit)
-		<Plug>(gita-show-edit)
+		*<Plug>(gita-show-edit)*
 	show:above
 		Show a content (above)
-		<Plug>(gita-show-above)
+		*<Plug>(gita-show-above)*
 	show:below
 		Show a content (below)
-		<Plug>(gita-show-below)
+		*<Plug>(gita-show-below)*
 	show:left
 		Show a content (left)
-		<Plug>(gita-show-left)
+		*<Plug>(gita-show-left)*
 	show:right
 		Show a content (right)
-		<Plug>(gita-show-right) Default: SS
+		*<Plug>(gita-show-right)* Default: SS
 	show:tab
 		Show a content (tab)
-		<Plug>(gita-show-tab) Default: st
+		*<Plug>(gita-show-tab)* Default: st
 	show:preview
 		Show a content (preview)
-		<Plug>(gita-show-preview) Default: sp
+		*<Plug>(gita-show-preview)* Default: sp
 	
 	status
 		Open a |gita-status| window
-		<Plug>(gita-status) Default: <C-^>
+		*<Plug>(gita-status)* Default: <C-^>
+
+==============================================================================
+FAQ						*vim-gita-faq*
+
+Q. Encoding of |gita-blame-navi| or whatever is wrongly assigned.
+
+A. Use |++enc| option of |:edit| command like below to reload the content with
+   proper encoding:
+>
+	:edit ++enc=euc-jp
+<
+Q. I found bugs, unexpected behaviors, or whatever
+
+A. Open an issue on https://github.com/lambdalisue/vim-gita/issues
+   Do not forget to provides 1) environmental information, 2) minimal vimrc,
+   3) reproduce procedure.
 
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
