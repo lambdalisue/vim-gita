@@ -37,10 +37,26 @@ function! gita#util#doautocmd(name, ...) abort
     " the specified event is ignored or not exists
     return
   endif
+  let is_pseudo_required = empty(pattern) && !exists('#' . a:name . '#*')
+  if is_pseudo_required
+    " NOTE:
+    " autocmd XXXXX <pattern> exists but not sure if current buffer name
+    " match with the <pattern> so register empty autocmd to prevent
+    " 'No matching autocommands' warning
+    augroup vim_gita_internal_util_doautocmd
+      autocmd!
+      execute 'autocmd ' . a:name . ' * :'
+    augroup END
+  endif
   let nomodeline = has('patch-7.4.438') && a:name ==# 'User'
         \ ? '<nomodeline> '
         \ : ''
   execute 'doautocmd ' . nomodeline . a:name . ' ' . pattern
+  if is_pseudo_required
+    augroup vim_gita_internal_util_doautocmd
+      autocmd!
+    augroup END
+  endif
 endfunction
 
 function! gita#util#diffthis() abort
