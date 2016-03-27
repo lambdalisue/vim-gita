@@ -51,12 +51,15 @@ function! gita#util#doautocmd(name, ...) abort
   let nomodeline = has('patch-7.4.438') && a:name ==# 'User'
         \ ? '<nomodeline> '
         \ : ''
-  execute 'doautocmd ' . nomodeline . a:name . ' ' . pattern
-  if is_pseudo_required
-    augroup vim_gita_internal_util_doautocmd
-      autocmd!
-    augroup END
-  endif
+  try
+    execute 'doautocmd ' . nomodeline . a:name . ' ' . pattern
+  finally
+    if is_pseudo_required
+      augroup vim_gita_internal_util_doautocmd
+        autocmd!
+      augroup END
+    endif
+  endtry
 endfunction
 
 function! gita#util#diffthis() abort
