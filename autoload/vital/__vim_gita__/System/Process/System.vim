@@ -3,14 +3,15 @@ set cpoptions&vim
 
 function! s:_vital_loaded(V) abort
   let s:Prelude = a:V.import('Prelude')
+  let s:String = a:V.import('Data.String')
   let s:Guard = a:V.import('Vim.Guard')
-  let s:Process = a:V.import('System.Process')
 endfunction
+
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
+        \ 'Data.String',
         \ 'Vim.Guard',
-        \ 'System.Process',
         \]
 endfunction
 
@@ -50,7 +51,7 @@ function! s:execute(args, options) abort
         \ '&shellquote',
         \ '&shellredir',
         \ '&shelltemp',
-        \ '&shelltype',
+        \ (exists('+shelltype') ? '&shelltype' : ''),
         \ (exists('+shellxescape') ? '&shellxescape' : ''),
         \ (exists('+shellxquote') ? '&shellxquote' : ''),
         \ (exists('+shellslash') ? '&shellslash' : ''),
@@ -65,7 +66,10 @@ function! s:execute(args, options) abort
     else
       set shell=sh
     endif
-    set shellcmdflag& shellquote& shellredir& shelltemp& shelltype&
+    set shellcmdflag& shellquote& shellredir& shelltemp&
+    if exists('+shelltype')
+      set shelltype&
+    endif
     if exists('+shellxescape')
       set shellxescape&
     endif
@@ -88,7 +92,7 @@ function! s:execute(args, options) abort
     if v:version < 704 || (v:version == 704 && !has('patch122'))
       " {cmdline} of system() before Vim 7.4.122 is not converted so convert
       " it manually from &encoding to 'char'
-      let cmdline = s:Process.iconv(cmdline, &encoding, 'char')
+      let cmdline = s:String.iconv(cmdline, &encoding, 'char')
     endif
     let args = [cmdline] + (s:Prelude.is_string(options.input) ? [options.input] : [])
     let output = call('system', args)
@@ -102,7 +106,7 @@ function! s:execute(args, options) abort
     let status = options.background ? 0 : v:shell_error
     " NOTE:
     " success, output are COMMON information
-    " status is EXTRA information
+    " status, cmdline are EXTRA information
     return {
           \ 'success': status == 0,
           \ 'output': output,
