@@ -117,12 +117,16 @@ Describe gita#meta
   Describe #expand({expr})
     It expand {expr}
       file foobar
-      Assert Equals(gita#meta#expand('%'), 'foobar')
+      Assert Equals(gita#meta#expand('%'), fnamemodify('foobar', ':p'))
     End
     It expand filename in meta if available
       file foobar
       call gita#meta#set('filename', 'hogehoge')
       Assert Equals(gita#meta#expand('%'), 'hogehoge')
+    End
+    It does not expand 'foobar'
+      file foobar
+      Assert Equals(gita#meta#expand('foobar'), 'foobar')
     End
   End
 End
