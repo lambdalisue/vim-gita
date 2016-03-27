@@ -279,7 +279,7 @@ function! gita#content#blame#open(options) abort
         \ 'selection': options.selection,
         \})
   setlocal scrollbind
-  silent syncbind
+  call gita#util#syncbind()
   call gita#content#blame#define_highlights()
 endfunction
 

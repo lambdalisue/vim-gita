@@ -16,6 +16,13 @@ function! s:diffoff() abort
   diffoff
 endfunction
 
+function! s:syncbind() abort
+  augroup gita_internal_util_syncbind
+    autocmd! *
+  augroup END
+  syncbind
+endfunction
+
 function! gita#util#clip(content) abort
   let @" = a:content
   if has('clipboard')
@@ -76,6 +83,20 @@ function! gita#util#diffthis() abort
   augroup END
   diffthis
   keepjump normal! zM
+endfunction
+
+function! gita#util#syncbind() abort
+  " NOTE:
+  " Somehow syncbind does not just after opening a buffer so use
+  " CursorHold and CursorMoved to call a bit later again
+  augroup gita_internal_util_syncbind
+    autocmd!
+    autocmd CursorHold   * call s:syncbind()
+    autocmd CursorHoldI  * call s:syncbind()
+    autocmd CursorMoved  * call s:syncbind()
+    autocmd CursorMovedI * call s:syncbind()
+  augroup END
+  syncbind
 endfunction
 
 function! gita#util#handle_exception() abort
