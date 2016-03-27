@@ -111,8 +111,8 @@ function! gita#command#command(bang, range, args) abort
 endfunction
 
 function! gita#command#complete(arglead, cmdline, cursorpos) abort
-  let bang    = a:cmdline =~# '\v^Gita!' ? '!' : ''
-  let cmdline = substitute(a:cmdline, '\C^Gita!\?\s', '', '')
+  let bang    = a:cmdline =~# '^[^ ]\+!' ? '!' : ''
+  let cmdline = substitute(a:cmdline, '^[^ ]\+!\?\s', '', '')
   let cmdline = substitute(cmdline, '[^ ]\+$', '', '')
 
   let parser  = s:get_parser()
