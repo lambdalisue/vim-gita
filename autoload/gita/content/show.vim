@@ -48,7 +48,7 @@ function! s:get_diff_content(git, content, filename) abort
     let content = gita#process#execute(
           \ git,
           \ ['show', ':' . filename],
-          \ { 'quiet': 1 }
+          \ { 'quiet': 1, 'encode_output': 0 }
           \)
     call writefile(content, tempfile1)
     call writefile(a:content, tempfile2)
@@ -60,7 +60,7 @@ function! s:get_diff_content(git, content, filename) abort
     let content = gita#process#execute(
           \ git,
           \ ['diff', '--no-index', '--', tempfile1, tempfile2],
-          \ { 'quiet': 1, 'fail_silently': 1 }
+          \ { 'quiet': 1, 'encode_output': 0, 'fail_silently': 1 }
           \)
     if empty(content) || len(content) < 4
       " fail or no differences. Assume that there are no differences
@@ -160,7 +160,10 @@ function! s:execute_command(options) abort
     " 'treeish' may contains ':1' type assignment so use it directly
     let treeish = a:options.treeish
   endif
-  return gita#process#execute(git, ['show', treeish], { 'quiet': 1 })
+  return gita#process#execute(git, ['show', treeish], {
+        \ 'quiet': 1,
+        \ 'encode_output': 0,
+        \})
 endfunction
 
 function! s:on_BufReadCmd(options) abort

@@ -31,6 +31,7 @@ function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
   return gita#process#execute(git, args, {
         \ 'quiet': 1,
+        \ 'encode_output': 0,
         \ 'success_status': 1,
         \})
 endfunction

@@ -24,7 +24,10 @@ function! s:execute_command(options) abort
         \ '--',
         \]  + a:options.filenames
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, { 'quiet': 1 })
+  return gita#process#execute(git, args, {
+        \ 'quiet': 1,
+        \ 'encode_output': 0,
+        \})
 endfunction
 
 function! s:define_actions() abort

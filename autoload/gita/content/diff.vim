@@ -124,7 +124,10 @@ function! s:execute_command(options) abort
         \ '--',
         \ a:options.filename,
         \]
-  return gita#process#execute(git, args, { 'quiet': 1 })
+  return gita#process#execute(git, args, {
+        \ 'quiet': 1,
+        \ 'encode_output': 0,
+        \})
 endfunction
 
 function! s:on_BufReadCmd(options) abort
