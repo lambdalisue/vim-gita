@@ -3,6 +3,13 @@ if exists('g:loaded_gita')
 endif
 let g:loaded_gita = 1
 
+" NOTE: A known minimum requirement is 7.3.1170 : Script local funcref is supported
+if v:version < 703 || (v:version == 703 && !has('patch1170'))
+  " NOTE: An announced requirement is Vim 7.4
+  echohl ErrorMsg | echo 'gita: vim-gita requires Vim 7.4 or later' | echohl None
+  finish
+endif
+
 command! GitaClear :call gita#core#expire()
 command! -nargs=* -range -bang
       \ -complete=customlist,gita#command#complete
@@ -18,3 +25,4 @@ augroup vim_gita_internal
   autocmd BufReadCmd    gita:*/* nested call gita#content#autocmd('BufReadCmd')
   autocmd BufWriteCmd   gita:*/* nested call gita#content#autocmd('BufWriteCmd')
 augroup END
+
