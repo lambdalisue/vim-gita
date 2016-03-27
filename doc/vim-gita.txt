@@ -585,7 +585,8 @@ option like:
 	:Gita browse --repository
 <
 Additionally, |:Gita-browse| supports several schemes to slightly change a
-remote URL. The followings are available schemes in default.
+remote URL. Use --scheme={scheme} option to specify it. The followings are
+available schemes in default.
 
 	Scheme		Description ~
 
@@ -708,68 +709,152 @@ Most of interface documentations are work in progress.
 ------------------------------------------------------------------------------
 COMMANDS				*vim-gita-interface-commands*
 
-:Gita[!] {args}				*:Gita*
+					*:Gita*
+:Gita[!] {args}
 
-	Execute a gita command or a git command.
-	If a command specified in {args} is not a gita command, it execute a
-	corresponding git command instead.
-	If a command is executed with a bang (!), it force to execute a git
-	command even a command is found as a gita command.
-	See :Gita -h for the help of available {args}.
+	Execute a git command. A bang (!) is required for a command which
+	conflicts with a gita command (e.g. 'blame', 'branch', etc.)
 
-:Gita blame {options}			*:Gita-blame*
+	A {args} is splited with non escaped and non enclosed spaces. So use
+	one of the following pattern to apply space containing value to an
+	option.
+>
+	:Gita tag -a v1.0.0 -m 'Version 1.0.0'
+	:Gita tag -a v1.0.0 -m "Version 1.0.0"
+	:Gita tag -a v1.0.0 -m Version\ 1.0.0
+<
+	Note that each values splitted from {args} are expanded by
+	|gita#meta#expand()| and all escaped spaces in {args} will be unescaped.
 
-	Open |gita-blame-navi| window and |gita-blame-view| window to check
-	blame content of a specified file.
-	See :Gita blame -h for the help of available {options}.
+					*:Gita-blame*
+:Gita blame [-h/--help]
+	[--opener={opener}] [--selection={selection}]
+	[{commit}] [{filename}]
 
-:Gita branch {options}			*:Gita-branch*
+	Open |gita-blame-navi| window and |gita-blame-view| window.
+	See |vim-gita-usage-blame| for the usage.
 
-	Open a |gita-branch| window which users can see and manipulate the
-	branches.
-	See :Gita branch -h for the help of available {options}.
+	A {opener} is used to open new buffers.
+	See |g:gita#content#blame#default_opener| for the default opener.
 
-:Gita browse {options}			*:Gita-browse*
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
 
-	Open a systen browser to browse a remote URL of a file or a
-	repository. It build a remote URL by following rules written in
-	|g:gita#command#browse#translation_patterns| and
-	|g:gita#command#browse#extra_translation_patterns|. See these help to
-	find how to add a new rule such for GitHub Enterprise or so on.
+	If {commit} is omitted, an index content is used.
+	If {filename} is omitted, a corresponding filename of the current
+	buffer is used.
 
-:Gita chaperone {options}		*:Gita-chaperone*
+					*:Gita-branch*
+:Gita branch [-h/--help]
+	[--opener={opener}] [--selection={selection}] {options}
 
-	Open two or three buffers to solve a merge confliction.
-	See :Gita chaperone -h for the help of available {options}.
+	Open a |gita-branch| window.
+	See |vim-gita-usage-branch| for the usage and see :Gita branch -h for
+	available {options}.
 
-	A right/bottom or center/middle buffer is writable (MERGE buffer) and
-	saved changes in that buffer is saved into a corresponding file in a
-	working tree.
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#branch#default_opener| for the default opener.
 
-	A split direction could be controlled by |vertical| prefix like:
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+
+					*:Gita-browse*
+:Gita browse [-h/--help]
+	[-r/--repository] [-s/--scheme={scheme}]
+	[--[no-]open] [--[no-]yank]
+	[--selection={selection}] [{commit}] [-- {path}]
+
+	Open a remote URL of {path} in {commit} with a system default browser.
+	See |vim-gita-usage-browse| for the usage.
+	
+	If {path} is omitted, a corresponding filename of the current buffer
+	will be used.
+	If {commit} is omitted, a corresponding remote branch of the current
+	local branch will be used.
+
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+	When {scheme} is specified, a URL of a specified {scheme} will be
+	used. The following {scheme} is available in default.
+
+	Scheme		Description ~
+
+	_		A default scheme
+	^		A default scheme for --repository
+	exact		Use a hashref instead of branch name
+	blame		Open blame page instead of content page
+	diff		Open diff page instead of content page (available only
+			for bitbucket.org rule)
+
+	Note that users can add them original {scheme} or original rules
+	to pattern variable.
+	See |g:gita#command#browse#extra_translation_patterns| for detail.
+
+					*:Gita-chaperone*
+:Gita chaperone [-h/--help]
+	[--opener={opener}] [--selection={selection}]
+	[--two] [--three]
+	[{path}]
+
+	Open two or three buffers to solve conflicts.
+	See |vim-gita-usage-chaperone| for the usage.
+
+	A {opener} is used to open new buffers.
+	See |g:gita#content#chaperone#default_opener| for the default opener.
+
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+	If {path} is omitted, a corresponding filename of the current
+	buffer will be used.
+
+	A split direction can be controlled by |vertical| prefix like:
 >
 	:vertical Gita chaperone ...
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	When 3-way chaperone is performed the following special mappings are
-	enabled.
-	In LOCAL or REMOTE buffers (nomodifiable buffers), |dp| mapping is
-	available to put a chunk into MERGE buffer (modifiable buffer).
-	In MERGE buffer, dol or dor mappings; diff obtain from LOCAL or diff
-	obtained from REMOTE; are available to obtain a chunk from LOCAL or
-	REMOTE respectively.
+					*:Gita-commit*
+:Gita commit [-h/--help] [--opener={opener}] {options} [-- {path}...]
 
-:Gita commit {options}			*:Gita-commit*
+	Open a |gita-commit| window.
+	See |vim-gita-usage-commit| for the usage and see :Gita commit -h for
+	available {options}.
 
-	Open a |gita-commit| window which users can edit a commit message and
-	commit changes.
-	See :Gita commit -h for the help of available {options}.
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#commit#default_opener| for the default opener.
 
-:Gita diff {options}			*:Gita-diff*
+	If {path}(s) is/are specified, it filter candidates to the
+	specified {path}(s).
 
-	Open one or two buffer(s) to compare differences between two blobs.
-	See :Gita diff -h for the help of available {options}.
+					*:Gita-diff*
+:Gita diff [-h/--help]
+	[--split] [--opener={opener}] [--selection={selection}]
+	{options}
+	[{commit}] [-- {path}]
+
+	Open a diff buffer to compare differences.
+	See :Gita diff -h for available {options}.
+
+	When --split is specified, it open two buffers to compare difference
+	rather than using unified-diff style (|vimdiff| style).
+
+	A {opener} is used to open (a) new buffer(s).
+	See |g:gita#content#diff#default_opener| for the default opener.
+
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+	When {commit} is omitted, an index is used.
+	When {path} is omitted, a corresponding filename of the current path
+	will be used.
 
 	A split direction could be controlled by |vertical| prefix like:
 >
@@ -777,70 +862,138 @@ COMMANDS				*vim-gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-:Gita diff-ls {options}			*:Gita-diff-ls*
+					*Gita-diff-ls*
+:Gita diff-ls [-h/--help] [--opener={opener}] [{commit}]
 
-	Open a |gita-diff-ls| window which users can find changed files
-	between specified commits.
-	See :Gita diff-ls -h for the help of available {options}.
+	Open a |gita-diff-ls| window.
+	See |vim-gita-usage-diff-ls| for the usage.
 
-:Gita grep {options}			*:Gita-grep*
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#diff_ls#default_opener| for the default opener.
 
-	Open a |gita-grep| window which users can find files containing a
-	specified pattern(s).
-	See :Gita grep -h for the help of available {options}.
+	When {commit} is omitted, an index is used.
 
-:Gita ls-files {options}		*:Gita-ls-files*
+					*:Gita-grep*
+:Gita grep [-h/--help] {options} [--opener={opener}] {patterns}
 
-	Open a |gita-ls-files| window which users can see files in a working
-	tree and/or an index of the repository.
-	See :Gita ls-files -h for the help of available {options}.
+	Open a |gita-grep| window.
+	See |vim-gita-usage-grep| for the usage and :Gita grep -h for
+	available {options}.
 
-:Gita ls-tree {options}			*:Gita-ls-tree*
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#grep#default_opener| for the default opener.
 
-	Open a |gita-ls-tree| window which users can see files in a particular
-	commit/branch of the repository.
-	See :Gita ls-tree -h for the help of available {options}.
+					*Gita-ls-files*
+:Gita ls-files [-h/--help] {options} [--opener={opener}] [-- {path}...]
 
-:Gita patch {options}			*:Gita-patch*
+	Open a |gita-ls-files| window.
+	See |vim-gita-usage-ls-files| for the usage and :Gita ls-files -h for
+	available {options}.
 
-	Open one, two, or three buffers to perform patch (a partical add/reset
-	changes into/from an index like git add -p or git reset -p).
-	See :Gita patch -h for the help of available {options}.
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#ls_files#default_opener| for the default opener.
 
-	A right/bottom or center/middle buffer is writable (patchable buffer)
-	and saved changes in that buffer is saved into an index.
+	When {path}(s) is/are specified, the result will be filetred by
+	{path}(s).
 
-	A split direction could be controlled by |vertical| prefix like:
+					*:Gita-ls-tree*
+:Gita ls-tree [-h/--help] [--opener={opener}] {commit} [-- {path}...]
+
+	Open a |gita-ls-tree| window.
+	See |vim-gita-usage-ls-tree| for the usage.
+
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#ls_tree#default_opener| for the default opener.
+
+	When {path}(s) is/are specified, the result will be filetred by
+	{path}(s).
+
+					*:Gita-patch*
+:Gita patch [-h/--help]
+	[--opener={opener}] [--selection={selection}]
+	[--reverse] [--one] [--two] [--three]
+	[{path}]
+
+	Open one, two, or three buffers to patch changes to the index (like
+	git add -p / git reset -p).
+	See |vim-gita-usage-patch| for the usage.
+
+	A {opener} is used to open new buffers.
+	See |g:gita#content#patch#default_opener| for the default opener.
+
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+	If {path} is omitted, a corresponding filename of the current
+	buffer will be used.
+
+	A split direction can be controlled by |vertical| prefix like:
 >
 	:vertical Gita patch ...
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	When 3-way patch is performed the following special mappings are
-	enabled.
-	In a working tree or a HEAD buffers, |dp| mapping is available to put a
-	chunk into an index buffer (modifiable buffer).
-	In an index buffer, dol or dor mappings; diff obtain from left or diff
-	obtained from right; are available to obtain a chunk from top/left or
-	bottom/right respectively.
+					*:Gita-show*
+:Gita show [-h/--help]
+	[-r/--repository] [-w/--worktree]
+	[-1/--ancestor] [-2/--ours] [-3/--theris]
+	[--opener={opener}] [--selection={selection}]
+	[{commit}] [-- {path}]
 
-:Gita show {options}			*:Gita-show*
+	Open a buffer of a corresponding content.
 
-	Open a buffer to edit or show a file content in a working tree or a
-	specified commit.
-	See :Gita show -h for the help of available {options}.
+	When --repository is specified, it show a current status of the
+	repository with unified diff.
 
-:Gita status {options}			*:Gita-status*
+	When --worktree is specified, it open a corresponding file in the
+	working tree directly.
 
-	Open a |gita-status| window which users can see and manipulate the
-	statuses.
-	See :Gita status -h for the help of available {options}.
+	When --ancestor, --ours, or --theirs is specified during MERGE mode,
+	it open a corresponding content.
+
+	A {opener} is used to open new buffers.
+	See |g:gita#content#patch#default_opener| for the default opener.
+
+	A {selection} is used to specify line numbers to move.
+	A format of the {selection} is --selection=N or --selection=N-M where
+	the N is a start line number and the M is a end line number.
+
+	If {path} is omitted, a corresponding filename of the current
+	buffer will be used.
+
+					*:Gita-status*
+:Gita status [-h/--help] [--opener={opener}] {options} [-- {path}...]
+
+	Open a |gita-status| window.
+	See |vim-gita-usage-status| for the usage and see :Gita status -h for
+	available {options}.
+
+	A {opener} is used to open a new buffer.
+	See |g:gita#content#status#default_opener| for the default opener.
+
+	If {path}(s) is/are specified, it filter candidates to the
+	specified {path}(s).
+
 
 
 ------------------------------------------------------------------------------
 FUNCTIONS					*vim-gita-interface-functions*
 
-gita#statusline#format({format})		*gita#statusline#format()*
+					*gita#meta#expand()*
+gita#meta#expand({expr})
+
+	Expand {expr} by |expand()| and returns
+
+	1. A filename attached to a gita's file-like buffer (e.g. A buffer
+	   opened by |:Gita-show| command)
+	2. A value returns from |expand()| function
+
+	Use this function instead of |expand()| to get a correct filename even
+	from a gita's file-like buffer.
+
+					*gita#statusline#format()*
+gita#statusline#format({format})
 
 	Return a current git status in a specified {format}. The following
 	format strings are available to use in the {format}.

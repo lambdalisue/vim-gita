@@ -7,7 +7,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita commit',
           \ 'description': 'Record changes to the repository',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'unknown_description': 'files to index for commit',
+          \ 'unknown_description': '<filename>...',
           \ 'complete_unknown': function('gita#complete#filename'),
           \})
     call s:parser.add_argument(
@@ -57,11 +57,6 @@ function! s:get_parser() abort
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
-          \})
-    call s:parser.add_argument(
-          \ '--selection',
-          \ 'a line number or range of the selection', {
-          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.hooks.validate()
   endif

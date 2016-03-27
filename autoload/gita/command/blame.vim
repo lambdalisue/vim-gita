@@ -5,7 +5,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita blame',
-          \ 'description': 'Show what revision and author last modified each line of a file (UI only)',
+          \ 'description': 'Show what revision and author last modified each line of a file',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(

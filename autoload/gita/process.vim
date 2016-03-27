@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
+let s:String = s:V.import('Data.String')
 let s:Prompt = s:V.import('Vim.Prompt')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
@@ -46,6 +47,7 @@ endfunction
 function! gita#process#splitargs(args) abort
   let args = s:ArgumentParser.splitargs(a:args)
   let args = map(args, 's:strip_quotes(v:val)')
+  let args = map(args, 's:String.unescape(v:val, '' '')')
   return args
 endfunction
 

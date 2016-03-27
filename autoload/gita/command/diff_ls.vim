@@ -5,7 +5,7 @@ function! s:get_parser() abort
   if !exists('s:parser') || g:gita#develop
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita diff-ls',
-          \ 'description': 'Show a list of changed files between commits (UI only)',
+          \ 'description': 'Show a list of changed files between commits',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
     call s:parser.add_argument(
