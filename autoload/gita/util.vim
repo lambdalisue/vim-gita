@@ -53,7 +53,7 @@ function! gita#util#diffthis() abort
   augroup vim_gita_internal_util_diffthis
     autocmd! * <buffer>
     autocmd BufWinLeave <buffer> call s:diffoff()
-    autocmd BufHidden <buffer>   call s:diffoff()
+    autocmd BufHidden <buffer> call s:diffoff()
   augroup END
   diffthis
   keepjump normal! zM

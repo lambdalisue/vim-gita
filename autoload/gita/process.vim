@@ -57,6 +57,7 @@ function! gita#process#execute(git, args, ...) abort
         \ 'fail_silently': 0,
         \ 'success_status': 0,
         \}, get(a:000, 0, {}))
+  let options = extend(copy(g:gita#process#options), options)
   let args = filter(copy(a:args), '!empty(v:val)')
   let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
         \ 'quiet', 'fail_silently', 'success_status',
@@ -77,6 +78,7 @@ endfunction
 call gita#define_variables('process', {
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
+      \ 'options': {},
       \})
 
 call s:GitProcess.set_config({

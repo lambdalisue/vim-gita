@@ -1106,7 +1106,7 @@ g:gita#develop
 
 	1 to use vim-gita in development mode.
 	In development mode, vim-gita behave a bit differently for
-	development. Use this option only when you asked to do.
+	development. Use this option only when you are asked to do.
 	Default: 0 (1 in development branch)
 
 			*g:gita#complete_threshold*
@@ -1130,6 +1130,15 @@ g:gita#process#arguments
 	Note that this variable requires to be configured prior to command
 	calls.
 	Default: ['-c', 'color.ui=false', '--no-pager']
+
+			*g:gita#process#options*
+g:gita#process#options
+
+	A default options |Dictionary| used for Vital.System.Process.execute()
+	function.
+	Use this option only when you are asked to do or know well about
+	Vital.System.Process module.
+	Default: {}
 
 			*g:gita#action#index#prefer_unstage*
 g:gita#action#index#prefer_unstage
@@ -1243,7 +1252,7 @@ g:gita#content#blame#use_porcelain_instead
 	content. Basically a content obtained from --incremental has fewer
 	lines compared to the one from --porcelain, indicating that the
 	performance for parsing content will be decreased when --porcelain
-	option is used. Use this option only when you asked to do.
+	option is used. Use this option only when you are asked to do.
 	Default: 0
 
 			*g:gita#content#blame#use_python*
