@@ -176,7 +176,7 @@ function! gita#complete#others_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
-          \ '--others', '--', a:arglead,
+          \ '--others', '--', a:arglead . '*',
           \])
     return candidates
   catch
@@ -190,7 +190,7 @@ function! gita#complete#unstaged_filename(arglead, cmdline, cursorpos, ...) abor
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
-          \ '--others', '--modified', '--', a:arglead,
+          \ '--others', '--modified', '--', a:arglead . '*',
           \])
     return candidates
   catch
@@ -204,7 +204,7 @@ function! gita#complete#filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
-          \ '--cached', '--others', '--', a:arglead,
+          \ '--cached', '--others', '--', a:arglead . '*',
           \])
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
