@@ -120,9 +120,10 @@ Or copy contents of the repository into your |runtimepath| manually.
 ==============================================================================
 USAGE						*vim-gita-usage*
 
-First of all, all commands which vim-gita provides start from :Gita and all
-commands (including :Gita itself) provide -h/-help option to show a help
-message of the command.
+First of all, all commands which vim-gita provides start from :Gita or
+:GitaBar and all commands (including :Gita or :GitaBar itself) provide
+-h/-help option to show a help message of the command. The difference between
+:Gita and :GitaBar is |command-bar| support (See |:Gita| for detail.)
 
 Additionally, hitting ? in manipulation windows (e.g. |gita-status|) shows
 action and mapping helps.
@@ -713,7 +714,7 @@ COMMANDS				*vim-gita-interface-commands*
 					*:GitaClear*
 :GitaClear
 
-	Clera a git repository cache of the current buffer.
+	Clear a git repository cache of the current buffer.
 	Execute this command when you feel a git repository detection is wrong
 	because of the cache mechanisms.
 
