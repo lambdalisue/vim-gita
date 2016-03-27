@@ -6,7 +6,9 @@
 
 *vim-gita* is a git manipulation plugin which allow users to perform daily git operation within Vim's live session.
 
+
 With vim-gita, users can:
+
 
 - Manipulate the index of the git repository
   - Stage content changes into the index

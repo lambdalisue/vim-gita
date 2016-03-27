@@ -46,7 +46,7 @@ function! gita#util#observer#update_all() abort
   let winnum_saved = winnr()
   for bufnum in keys(s:registry)
     let winnum = bufwinnr(str2nr(bufnum))
-    if winnum > 0
+    if winnum > 0 && getbufvar(str2nr(bufnum), '&autoread')
       execute printf('noautocmd keepjumps %dwincmd w', winnum)
       silent! call gita#util#observer#update()
     elseif bufexists(str2nr(bufnum))

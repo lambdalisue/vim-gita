@@ -746,8 +746,11 @@ COMMANDS				*vim-gita-interface-commands*
 :GitaClear
 
 	Clear a git repository cache of the current buffer.
-	Execute this command when you feel a git repository detection is wrong
-	because of the cache mechanisms.
+	You should not be required to call this command unless you remove .git
+	directory or execute git init out side of Vim.
+
+	Note that you may miss that |:edit| or |:edit!| reload the content of
+	the buffer so use these command to update content.
 
 					*:Gita*
 					*:GitaBar*
@@ -802,9 +805,9 @@ COMMANDS				*vim-gita-interface-commands*
 	If {filename} is omitted, a corresponding filename of the current
 	buffer is used.
 
-	Note that even when 'autoread' option is 1, it does not automatically
+	Note that even when 'autoread' option is 1, it DOES NOT automatically
 	reload content when the repositorh status change. Users requires to
-	execute |:edit| command to reload content.
+	execute |:edit| or |:edit!| command to reload content everytime.
 
 					*:Gita-branch*
 :Gita branch [-h/--help]
@@ -820,6 +823,10 @@ COMMANDS				*vim-gita-interface-commands*
 	A {selection} is used to specify line numbers to move.
 	A format of the {selection} is --selection=N or --selection=N-M where
 	the N is a start line number and the M is a end line number.
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-browse*
 :Gita browse [-h/--help]
@@ -855,6 +862,10 @@ COMMANDS				*vim-gita-interface-commands*
 	to pattern variable.
 	See |g:gita#command#browse#extra_translation_patterns| for detail.
 
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
+
 					*:Gita-chaperone*
 :Gita chaperone [-h/--help]
 	[--opener={opener}] [--selection={selection}]
@@ -880,6 +891,10 @@ COMMANDS				*vim-gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
+
 					*:Gita-commit*
 :Gita commit [-h/--help] [--opener={opener}] {options} [-- {path}...]
 
@@ -892,6 +907,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	If {path}(s) is/are specified, it filter candidates to the
 	specified {path}(s).
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-diff*
 :Gita diff [-h/--help]
@@ -923,8 +942,8 @@ COMMANDS				*vim-gita-interface-commands*
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
 	Note that when 'autoread' option is 1, it automatically reload content
-	when the repositorh status change. Otherwise users requires to execute
-	|:edit| command to reload content.
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*Gita-diff-ls*
 :Gita diff-ls [-h/--help] [--opener={opener}] [{commit}]
@@ -937,6 +956,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	When {commit} is omitted, an index is used.
 
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
+
 					*:Gita-grep*
 :Gita grep [-h/--help] {options} [--opener={opener}] {patterns}
 
@@ -946,6 +969,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	A {opener} is used to open a new buffer.
 	See |g:gita#content#grep#default_opener| for the default opener.
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*Gita-ls-files*
 :Gita ls-files [-h/--help] {options} [--opener={opener}] [-- {path}...]
@@ -960,6 +987,10 @@ COMMANDS				*vim-gita-interface-commands*
 	When {path}(s) is/are specified, the result will be filetred by
 	{path}(s).
 
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
+
 					*:Gita-ls-tree*
 :Gita ls-tree [-h/--help] [--opener={opener}] {commit} [-- {path}...]
 
@@ -971,6 +1002,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	When {path}(s) is/are specified, the result will be filetred by
 	{path}(s).
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-patch*
 :Gita patch [-h/--help]
@@ -997,6 +1032,10 @@ COMMANDS				*vim-gita-interface-commands*
 	:vertical Gita patch ...
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-show*
 :Gita show [-h/--help]
@@ -1027,8 +1066,8 @@ COMMANDS				*vim-gita-interface-commands*
 	buffer will be used.
 
 	Note that when 'autoread' option is 1, it automatically reload content
-	when the repositorh status change. Otherwise users requires to execute
-	|:edit| command to reload content.
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-status*
 :Gita status [-h/--help] [--opener={opener}] {options} [-- {path}...]
@@ -1042,6 +1081,10 @@ COMMANDS				*vim-gita-interface-commands*
 
 	If {path}(s) is/are specified, it filter candidates to the
 	specified {path}(s).
+
+	Note that when 'autoread' option is 1, it automatically reload content
+	when the repository status has changed. Otherwise users requires to
+	execute |:edit| or |:edit!| command manually to reload content.
 
 ------------------------------------------------------------------------------
 FUNCTIONS					*vim-gita-interface-functions*
