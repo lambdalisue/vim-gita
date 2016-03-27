@@ -148,8 +148,35 @@ It opens a *gita-status* window which looks like:
 	M  doc/vim-gita.txt
 	│            │
 	│            └ A modified filename
-	└ A current status of a file (Short form)
+	└ A current status of a file (Short formt)
 <
+The status of each modified files are shown as short format. If you are not
+familiar with short format, check a |vim-gita-usage-status-cheetsheet| or
+a manpage of git-status.
+
+					*vim-gita-usage-status-cheetsheet*
+	X          Y     Meaning ~
+	          [MD]   not updated
+	M        [ MD]   updated in index
+	A        [ MD]   added to index
+	D         [ M]   deleted from index
+	R        [ MD]   renamed in index
+	C        [ MD]   copied in index
+	[MARC]           index and work tree matches
+	[ MARC]     M    work tree changed since index
+	[ MARC]     D    deleted in work tree
+
+	D           D    unmerged, both deleted
+	A           U    unmerged, added by us
+	U           D    unmerged, deleted by them
+	U           A    unmerged, added by them
+	D           U    unmerged, deleted by us
+	A           A    unmerged, both added
+	U           U    unmerged, both modified
+
+	?           ?    untracked
+	!           !    ignored
+	
 In that window, users can manipulate or check statuses by the following
 mappings:
 					*vim-gita-usage-status-mapping*
@@ -303,6 +330,10 @@ It opens a *gita-commit* window which looks like:
 	# │            └ A modified filename
 	# └ A current status of a file (Short form)
 <
+The status of each modified files are shown as short format. If you are not
+familiar with short format, check a |vim-gita-usage-status-cheetsheet| or
+a manpage of git-status.
+
 In that window, users can edit a commit message and commit the changes by the
 following mappings:
 					*vim-gita-usage-commit-mapping*
