@@ -710,8 +710,17 @@ Most of interface documentations are work in progress.
 ------------------------------------------------------------------------------
 COMMANDS				*vim-gita-interface-commands*
 
+					*:GitaClear*
+:GitaClear
+
+	Clera a git repository cache of the current buffer.
+	Execute this command when you feel a git repository detection is wrong
+	because of the cache mechanisms.
+
 					*:Gita*
+					*:GitaBar*
 :Gita[!] {args}
+:GitaBar[!] {args}
 
 	Execute a git command. A bang (!) is required for a command which
 	conflicts with a gita command (e.g. 'blame', 'branch', etc.)
@@ -726,6 +735,22 @@ COMMANDS				*vim-gita-interface-commands*
 <
 	Note that each values splitted from {args} are expanded by
 	|gita#meta#expand()| and all escaped spaces in {args} will be unescaped.
+
+	The difference between :Gita and :GitaBar is a |command-bar| support.
+	:Gita does not support |command-bar| but :GitaBar does like:
+>
+	:Gita add % | Gita commit
+	" => Does not work properly
+	:GitaBar add % | Gita commit
+	" => Works as expect
+<
+	Note that | or " characters in {args} in :GitaBar is not allowed due
+	to the limitation of |command-bar| support command.
+
+	This :Gita and :GitaBar command differences are applied to all sub
+	commands as well so that both of :Gita commit and :GitaBar commit are
+	correct vim-gita commands.
+
 
 					*:Gita-blame*
 :Gita blame [-h/--help]

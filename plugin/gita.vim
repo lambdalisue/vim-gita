@@ -15,6 +15,10 @@ command! -nargs=* -range -bang
       \ -complete=customlist,gita#command#complete
       \ Gita
       \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
+command! -nargs=* -range -bang -bar
+      \ -complete=customlist,gita#command#complete
+      \ GitaBar
+      \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
 
 augroup vim_gita_internal
   autocmd!
