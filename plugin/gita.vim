@@ -11,7 +11,7 @@ if v:version < 703 || (v:version == 703 && !has('patch1170'))
 endif
 
 command! GitaClear :call gita#core#expire()
-command! -nargs=* -range -bang
+command! -nargs=* -range -bang -bar
       \ -complete=customlist,gita#command#complete
       \ Gita
       \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
