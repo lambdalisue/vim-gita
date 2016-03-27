@@ -25,4 +25,3 @@ augroup vim_gita_internal
   autocmd BufReadCmd    gita:*/* nested call gita#content#autocmd('BufReadCmd')
   autocmd BufWriteCmd   gita:*/* nested call gita#content#autocmd('BufWriteCmd')
 augroup END
-
