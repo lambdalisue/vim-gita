@@ -752,7 +752,6 @@ COMMANDS				*vim-gita-interface-commands*
 	commands as well so that both of :Gita commit and :GitaBar commit are
 	correct vim-gita commands.
 
-
 					*:Gita-blame*
 :Gita blame [-h/--help]
 	[--opener={opener}] [--selection={selection}]
@@ -1012,8 +1011,6 @@ COMMANDS				*vim-gita-interface-commands*
 
 	If {path}(s) is/are specified, it filter candidates to the
 	specified {path}(s).
-
-
 
 ------------------------------------------------------------------------------
 FUNCTIONS					*vim-gita-interface-functions*
@@ -1799,6 +1796,13 @@ in a window. Hit ? to see what actions are available in a window.
 
 ==============================================================================
 FAQ						*vim-gita-faq*
+
+Q. Does vim-gita provides git log interface?
+
+A. No for now. You may want to check cohama/agit.vim which provides a rich
+   repository viewer (which I use for now).
+
+   https://github.com/cohama/agit.vim
 
 Q. Encoding of |gita-blame-navi| or whatever is wrongly assigned.
 
