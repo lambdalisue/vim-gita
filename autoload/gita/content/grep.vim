@@ -31,7 +31,6 @@ function! s:execute_command(options) abort
         \ 'exclude-standard': 1,
         \ 'text': 1,
         \ 'ignore-case': 1,
-        \ 'I': 1,
         \ 'max-depth': 1,
         \ 'word-regexp': 1,
         \ 'invert-match': 1,
@@ -43,6 +42,7 @@ function! s:execute_command(options) abort
         \})
   let args = [
         \ 'grep',
+        \ '-I',
         \ '--no-color',
         \ '--line-number',
         \ '--full-name',
@@ -120,6 +120,7 @@ function! s:on_BufReadCmd(options) abort
   let options = gita#option#cascade('^grep$', a:options, {
         \ 'commit': '',
         \ 'filenames': [],
+        \ 'patterns': [],
         \})
   let content = s:execute_command(options)
   let candidates = s:GitParser.parse_match(content)

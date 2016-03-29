@@ -472,32 +472,45 @@ endfunction
 
 
 " *** GrepParser *************************************************************
-function! s:parse_match_record(match) abort
-  let candidate = {}
-  let candidate.record = a:match
-  if a:match =~# '^[^:]\+:.\{-}:\d\+:.*$'
+function! s:parse_match_record(line, ...) abort
+  let options = extend({
+        \ 'fail_silently': 0,
+        \}, get(a:000, 0, {}))
+  if a:line =~# '^[^:]\+:.\+:\d\+:.*$'
+    " e.g. HEAD:README.md:5:foobar
     let m = matchlist(
-          \ a:match,
-          \ '^\([^:]\+\):\(.\{-}\):\(\d\+\):\(.*\)$',
+          \ a:line,
+          \ '^\([^:]\+\):\(.\+\):\(\d\+\):\(.*\)$',
           \)
-    let candidate.commit = m[1]
-    let candidate.path = m[2]
-    let candidate.selection = [str2nr(m[3])]
-    let candidate.content = m[4]
-  else
+    return {
+          \ 'record': a:line,
+          \ 'commit': m[1],
+          \ 'path': m[2],
+          \ 'selection': [str2nr(m[3])],
+          \ 'content': m[4],
+          \}
+  elseif a:line =~# '^.\+:\d\+:.*$'
+    " e.g. README.md:5:foobar
     let m = matchlist(
-          \ a:match,
-          \ '^\(.\{-}\):\(\d\+\):\(.*\)$',
+          \ a:line,
+          \ '^\(.\+\):\(\d\+\):\(.*\)$',
           \)
-    let candidate.commit = ''
-    let candidate.path = m[1]
-    let candidate.selection = [str2nr(m[2])]
-    let candidate.content = m[3]
+    return {
+          \ 'record': a:line,
+          \ 'commit': '',
+          \ 'path': m[1],
+          \ 'selection': [str2nr(m[2])],
+          \ 'content': m[3],
+          \}
   endif
-  return candidate
+  if options.fail_silently
+    return {}
+  endif
+  call s:_throw(printf('Parsing a match record "%s" has faield.', a:line))
 endfunction
 
-function! s:parse_match(content) abort
+function! s:parse_match(content, ...) abort
+  let options = get(a:000, 0, {})
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)
         \ : a:content
@@ -506,7 +519,10 @@ function! s:parse_match(content) abort
     if empty(line)
       continue
     endif
-    call add(matches, s:parse_match_record(line))
+    let match = s:parse_match_record(line, options)
+    if !empty(match)
+      call add(matches, match)
+    endif
   endfor
   return matches
 endfunction
