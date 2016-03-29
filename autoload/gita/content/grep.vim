@@ -49,7 +49,7 @@ function! s:execute_command(options) abort
         \ a:options.commit,
         \]
   for pattern in a:options.patterns
-    let args += ['-e', pattern]
+    let args += ['-e ' . pattern]
   endfor
   let args += ['--'] + a:options.filenames
   let git = gita#core#get_or_fail()
