@@ -26,6 +26,9 @@ function! s:find_commit_meta(git, commit) abort
   endif
   let remote = empty(remote) ? 'origin' : remote
   let remote_url = s:GitInfo.get_remote_url(config, remote)
+  let remote_url = empty(remote_url)
+        \ ? s:GitInfo.get_remote_url(config, 'origin')
+        \ : remote_url
   return [lhs, rhs, remote, remote_url]
 endfunction
 
@@ -95,8 +98,8 @@ function! s:find_url(git, commit, filename, options) abort
         \)
   if empty(url)
     call gita#throw(printf(
-          \ 'Warning: No url translation pattern for "%s" is found.',
-          \ remote_url,
+          \ 'Warning: No url translation pattern for "%s:%s" is found.',
+          \ remote, commit1,
           \))
   endif
   return gita#util#formatter#format(url, format_map, data)
