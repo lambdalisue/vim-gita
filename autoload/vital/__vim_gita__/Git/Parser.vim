@@ -22,9 +22,9 @@ function! s:_vital_loaded(V) abort
   let s:STATUS.patterns.ignored    = '\v^!!$'
   let s:CONFLICT = {}
   let s:CONFLICT.markers = {}
-  let s:CONFLICT.markers.ours = s:String.escape_pattern(repeat('<', 7))
-  let s:CONFLICT.markers.separator = s:String.escape_pattern(repeat('=', 7))
-  let s:CONFLICT.markers.theirs = s:String.escape_pattern(repeat('>', 7))
+  let s:CONFLICT.markers.ours = repeat('<', 7)
+  let s:CONFLICT.markers.separator = repeat('=', 7)
+  let s:CONFLICT.markers.theirs = repeat('>', 7)
   let s:CONFLICT.patterns = {}
   let s:CONFLICT.patterns.ours = printf(
         \ '%s[^\n]\{-}\%%(\n\|$\)',
