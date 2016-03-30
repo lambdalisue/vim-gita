@@ -16,7 +16,7 @@ endfunction
 function! s:_vital_depends() abort
   return [
         \ 'Prelude',
-        \ 'Guard',
+        \ 'Vim.Guard',
         \]
 endfunction
 
