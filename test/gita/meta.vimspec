@@ -115,16 +115,23 @@ Describe gita#meta
   End
 
   Describe #expand({expr})
-    It expand {expr}
+    It expand {expr} and return an absolute path of {expr} if {expr} is a special
       file foobar
-      Assert Equals(gita#meta#expand('%'), fnamemodify('foobar', ':p'))
+      Assert Equals(gita#meta#expand('%'), expand('%:p'))
+      Assert Equals(gita#meta#expand('#'), expand('#:p'))
+      Assert Equals(gita#meta#expand('#n'), expand('#n:p'))
+      Assert Equals(gita#meta#expand('<cfile>'), expand('<cfile>:p'))
+      Assert Equals(gita#meta#expand('<cword>'), expand('<sword>'))
+      Assert Equals(gita#meta#expand('<cWORD>'), expand('<sWORD>'))
+      " NOTE:
+      " Behavior for <afile>, <abuf>, <amatch>, <sfile>, <slnum> is difficult to test
     End
-    It expand filename in meta if available
+    It expand filename in meta and return "as is" if available
       file foobar
       call gita#meta#set('filename', 'hogehoge')
       Assert Equals(gita#meta#expand('%'), 'hogehoge')
     End
-    It does not expand 'foobar'
+    It does not expand 'foobar' and return 'foobar'
       file foobar
       Assert Equals(gita#meta#expand('foobar'), 'foobar')
     End
