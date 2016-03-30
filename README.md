@@ -41,7 +41,6 @@ You may notice that this behavior is quite useful when you temporary open a file
 
 Additionally, vim-gita aggressively uses cache mechanisms to improve its' performance. You would notice huge performance improvement if you are currently using `system()` to show git repository informations in statusline such as a current branch name or the number of modified files.
 
-
 Install
 -------------------------------------------------------------------------------
 Use your favorite Vim plugin manager such as [junegunn/vim-plug] or [Shougo/dein.vim] like:
@@ -75,6 +74,19 @@ Additionally, hitting `?` in manipulation windows (e.g. `gita-status`) shows act
 See `:help vim-gita-usage` for more detail.
 
 
+TODO
+-------------------------------------------------------------------------------
+
+- Liberate from `gita#util#observer`
+    - [x] Create `Vital.Vim.Buffer.Observer`
+    - [ ] Replace `gita#util#observer` to the new module
+- Partially liberate from `gita#action`
+    - [x] Create a base module `Vital.Component.Action`
+    - [ ] Replace base code of `gita#action` to the new module
+- Stop using E117 in command
+    - [ ] Introduce registration system again
+    - [ ] Replace with that system
+- Fill `README.md` with screenshots/screencasts
 
 Bundle libraries and build statuses
 -------------------------------------------------------------------------------
