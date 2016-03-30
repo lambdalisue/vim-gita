@@ -259,6 +259,8 @@ function! gita#content#commit#update() abort
     set nomodified
     edit
     set modified
+  else
+    edit
   endif
 endfunction
 
