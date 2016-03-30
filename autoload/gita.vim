@@ -23,7 +23,7 @@ endfunction
 
 call gita#define_variables('', {
       \ 'test': 0,
-      \ 'develop': 1,
+      \ 'develop': 0,
       \ 'complete_threshold': 100,
       \})
 
