@@ -10,7 +10,7 @@ function! s:_on_BufWinEnter() abort
   let bufnum = string(bufnr('%'))
   if has_key(s:reserved, bufnum)
     unlet s:reserved[bufnum]
-    silent! call s:update()
+    call s:update()
   endif
 endfunction
 
@@ -47,7 +47,7 @@ function! s:update_all() abort
     let winnum = bufwinnr(str2nr(bufnum))
     if winnum > 0 && getbufvar(str2nr(bufnum), '&autoread')
       execute printf('noautocmd keepjumps %dwincmd w', winnum)
-      silent! call s:update()
+      call s:update()
     elseif bufexists(str2nr(bufnum))
       let s:reserved[bufnum] = 1
     else

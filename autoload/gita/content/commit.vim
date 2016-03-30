@@ -208,7 +208,7 @@ function! s:on_BufReadCmd(options) abort
     autocmd QuitPre  <buffer> call s:on_QuitPre()
   augroup END
   call s:BufferAnchor.attach()
-  call gita#util#observer#attach()
+  call gita#util#observer#attach('call gita#content#commit#update()')
   " the following options are required so overwrite everytime
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
@@ -251,6 +251,15 @@ function! gita#content#commit#open(options) abort
         \ 'opener': opener,
         \ 'window': options.window,
         \})
+endfunction
+
+function! gita#content#commit#update() abort
+  if &modified
+    call s:save_commitmsg()
+    set nomodified
+    edit
+    set modified
+  endif
 endfunction
 
 function! gita#content#commit#redraw() abort
