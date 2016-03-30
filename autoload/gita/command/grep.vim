@@ -78,7 +78,6 @@ function! s:get_parser() abort
           \ 'patterns', [
           \   'match patterns',
           \ ], {
-          \   'required': 1,
           \   'type': s:ArgumentParser.types.multiple,
           \})
     call s:parser.add_argument(

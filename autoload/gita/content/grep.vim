@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:String = s:V.import('Data.String')
+let s:Prompt = s:V.import('Vim.Prompt')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
@@ -145,7 +146,15 @@ function! gita#content#grep#open(options) abort
   let options = extend({
         \ 'opener': '',
         \ 'window': 'manipulation_window',
+        \ 'patterns': [],
         \}, a:options)
+  if empty(options.patterns)
+    let pattern = s:Prompt.ask('Please input a grep pattern: ')
+    if empty(pattern)
+      call gita#throw('Cancel')
+    endif
+    let options.patterns = [pattern]
+  endif
   let bufname = s:build_bufname(options)
   let opener = empty(options.opener)
         \ ? g:gita#content#grep#default_opener
