@@ -104,13 +104,13 @@ Use your favorite Vim plugin manager such as junegunn/vim-plug,
 Shougo/dein.vim or whatever like:
 >
 	" vim-plug
-	Plug 'lambdalisue/gita'
+	Plug 'lambdalisue/vim-gita'
 
 	" dein.vim
-	call dein#add('lambdalisue/gita')
+	call dein#add('lambdalisue/vim-gita')
 
 	" dein.vim (lazy)
-	call dein#add('lambdalisue/gita', {
+	call dein#add('lambdalisue/vim-gita', {
 		\ 'on_cmd': 'Gita',
 		\})
 <
