@@ -101,6 +101,7 @@ endfunction
 
 function! gita#util#handle_exception() abort
   let known_attention_patterns = [
+        \ '^\%(vital: Git[:.]\|vim-gita:\) Cancel$',
         \ '^\%(vital: Git[:.]\|vim-gita:\) Cancel: ',
         \ '^\%(vital: Git[:.]\|vim-gita:\) Attention: ',
         \]
