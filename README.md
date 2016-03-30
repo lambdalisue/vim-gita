@@ -4,6 +4,7 @@
 
 [![Travis CI](https://img.shields.io/travis/lambdalisue/vim-gita/master.svg?style=flat-square&label=Travis%20CI)](https://travis-ci.org/lambdalisue/vim-gita) [![AppVeyor](https://img.shields.io/appveyor/ci/lambdalisue/vim-gita/master.svg?style=flat-square&label=AppVeyor)](https://ci.appveyor.com/project/lambdalisue/vim-gita/branch/master) ![Version 0.1.0 &beta;](https://img.shields.io/badge/version-0.1.0--β-yellow.svg?style=flat-square) ![Support Vim 7.4 or above](https://img.shields.io/badge/support-Vim%207.4%20or%20above-yellowgreen.svg?style=flat-square) [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE) [![Doc](https://img.shields.io/badge/doc-%3Ah%20gita-orange.svg?style=flat-square)](doc/gita.txt) [![Powered by vital.vim](https://img.shields.io/badge/powered%20by-vital.vim-80273f.svg?style=flat-square)](https://github.com/vim-jp/vital.vim)
 
+
 *gita* is a git manipulation plugin which allow users to perform daily git operation within Vim's live session.
 
 
@@ -40,6 +41,12 @@ gita uses a git repository which
 You may notice that this behavior is quite useful when you temporary open a file in a different git repository or in a non file-like buffer such as help or quickfix.
 
 Additionally, gita aggressively uses cache mechanisms to improve its' performance. You would notice huge performance improvement if you are currently using `system()` to show git repository informations in statusline such as a current branch name or the number of modified files.
+
+Do you like it? Buy me a coffee ;-)
+
+<a href="https://flattr.com/submit/auto?fid=6p91jn&url=https%3A%2F%2Fgithub.com%2Flambdalisue%2Fvim-gita" target="_blank">
+    <img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0">
+</a>
 
 Install
 -------------------------------------------------------------------------------
