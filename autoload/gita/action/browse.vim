@@ -7,8 +7,8 @@ function! s:action(candidate, options) abort
         \ 'scheme': '_',
         \ 'yank': 0,
         \}, a:options)
-  call gita#option#assign_commit(options)
-  call gita#option#assign_selection(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_selection(options)
 
   let commit = get(a:candidate, 'commit', get(options, 'commit', ''))
   let selection = get(a:candidate, 'selection', options.selection)

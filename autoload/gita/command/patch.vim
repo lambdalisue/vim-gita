@@ -41,7 +41,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'filename',
           \ 'a filename going to be patched. if omited, the current buffer is used', {
-          \   'complete': function('gita#complete#filename'),
+          \   'complete': function('gita#util#complete#filename'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'one')
@@ -66,9 +66,9 @@ function! gita#command#patch#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_filename(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#patch#open(options)
 endfunction
 

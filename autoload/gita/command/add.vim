@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Add file contents to the index',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<pathspec>...',
-          \ 'complete_unknown': function('gita#complete#unstaged_filename'),
+          \ 'complete_unknown': function('gita#util#complete#unstaged_filename'),
           \})
     call s:parser.add_argument(
           \ '--dry-run', '-n',

@@ -21,7 +21,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
           \   'If <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \})
   endif
   return s:parser
@@ -33,9 +33,9 @@ function! gita#command#diff_ls#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#diff_ls#open(options)
 endfunction
 

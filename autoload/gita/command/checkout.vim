@@ -8,20 +8,20 @@ function! s:get_parser() abort
           \ 'description': 'Switch branches or restore working tree files',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<paths>...',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \ 'enable_positional_assign': 1,
           \})
     call s:parser.add_argument(
           \ '-b',
           \ 'create and checkout a new branch', {
           \   'conflicts': ['B', 'orphan'],
-          \   'complete': function('gita#complete#branch'),
+          \   'complete': function('gita#util#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '-B',
           \ 'create/reset and checkout a branch', {
           \   'conflicts': ['b', 'orphan'],
-          \   'complete': function('gita#complete#branch'),
+          \   'complete': function('gita#util#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '-l',
@@ -43,7 +43,7 @@ function! s:get_parser() abort
           \ '--orphan',
           \ 'new unparented branch', {
           \   'conflicts': ['b', 'B'],
-          \   'complete': function('gita#complete#branch'),
+          \   'complete': function('gita#util#complete#branch'),
           \})
     call s:parser.add_argument(
           \ '--ours', '-2',
@@ -79,7 +79,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ 'commit',
           \ '<branch> to checkout or <start_point> of a new branch or <tree-ish> to checkout from.', {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \ })
   endif
   return s:parser

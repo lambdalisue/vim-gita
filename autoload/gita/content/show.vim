@@ -168,7 +168,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^show$', a:options, {
+  let options = gita#util#option#cascade('^show$', a:options, {
         \ 'treeish': '',
         \ 'commit': '',
         \ 'filename': '',

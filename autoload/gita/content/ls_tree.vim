@@ -71,7 +71,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^ls-tree$', a:options, {
+  let options = gita#util#option#cascade('^ls-tree$', a:options, {
         \ 'commit': 'HEAD',
         \ 'filenames': [],
         \})

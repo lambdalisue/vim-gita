@@ -100,7 +100,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^status$', a:options, {
+  let options = gita#util#option#cascade('^status$', a:options, {
         \ 'untracked-files': 0,
         \ 'ignore-submodules': 0,
         \ 'ignored': 0,

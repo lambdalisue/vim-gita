@@ -6,9 +6,9 @@ function! s:action(candidate, options) abort
         \ 'opener': '',
         \ 'split': 0,
         \}, a:options)
-  call gita#option#assign_commit(options)
-  call gita#option#assign_opener(options)
-  call gita#option#assign_selection(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_opener(options)
+  call gita#util#option#assign_selection(options)
 
   let selection = get(a:candidate, 'selection', options.selection)
   let opener = empty(options.opener) ? 'edit' : options.opener

@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Join two or more development histories together',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<commits>...',
-          \ 'complete_unknown': function('gita#complete#commit'),
+          \ 'complete_unknown': function('gita#util#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--stat',

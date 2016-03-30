@@ -35,7 +35,7 @@ function! s:get_available_filenames(git, args) abort
   return content
 endfunction
 
-function! gita#complete#branch(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#branch(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -52,7 +52,7 @@ function! gita#complete#branch(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#local_branch(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#local_branch(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -69,7 +69,7 @@ function! gita#complete#local_branch(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#remote_branch(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#remote_branch(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -86,7 +86,7 @@ function! gita#complete#remote_branch(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#commit(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#commit(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -103,7 +103,7 @@ function! gita#complete#commit(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#commitish(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#commitish(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -121,7 +121,7 @@ function! gita#complete#commitish(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#cached_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#cached_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -138,7 +138,7 @@ function! gita#complete#cached_filename(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#deleted_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#deleted_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -155,7 +155,7 @@ function! gita#complete#deleted_filename(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#modified_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#modified_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let slug = matchstr(expand('<sfile>'), '\.\.\zs[^.]*$')
@@ -172,7 +172,7 @@ function! gita#complete#modified_filename(arglead, cmdline, cursorpos, ...) abor
   endtry
 endfunction
 
-function! gita#complete#others_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#others_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
@@ -186,7 +186,7 @@ function! gita#complete#others_filename(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#unstaged_filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#unstaged_filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
@@ -200,7 +200,7 @@ function! gita#complete#unstaged_filename(arglead, cmdline, cursorpos, ...) abor
   endtry
 endfunction
 
-function! gita#complete#filename(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#filename(arglead, cmdline, cursorpos, ...) abort
   try
     let git = gita#core#get_or_fail()
     let candidates = s:get_available_filenames(git, [
@@ -214,7 +214,7 @@ function! gita#complete#filename(arglead, cmdline, cursorpos, ...) abort
   endtry
 endfunction
 
-function! gita#complete#directory(arglead, cmdline, cursorpos, ...) abort
+function! gita#util#complete#directory(arglead, cmdline, cursorpos, ...) abort
   let git = gita#core#get()
   let root = git.is_enabled ? git.worktree : getcwd()
   let root = s:Path.realpath(s:Path.remove_last_separator(root) . s:Path.separator())

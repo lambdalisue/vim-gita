@@ -120,7 +120,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^diff-ls$', a:options, {
+  let options = gita#util#option#cascade('^diff-ls$', a:options, {
         \ 'commit': '',
         \})
   let content = s:execute_command(options)

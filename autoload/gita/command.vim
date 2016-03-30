@@ -132,7 +132,7 @@ function! gita#command#complete(arglead, cmdline, cursorpos) abort
         endtry
       endif
       " complete filename
-      return gita#complete#filename(a:arglead, cmdline, a:cursorpos)
+      return gita#util#complete#filename(a:arglead, cmdline, a:cursorpos)
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
       " fail silently
       call s:Prompt.debug(v:exception)

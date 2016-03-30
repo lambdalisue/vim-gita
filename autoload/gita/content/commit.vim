@@ -189,7 +189,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^status$', a:options, {
+  let options = gita#util#option#cascade('^status$', a:options, {
         \ 'untracked-files': 0,
         \})
   let content = filter(s:execute_command(options), '!empty(v:val)')

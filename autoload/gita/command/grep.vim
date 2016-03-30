@@ -72,7 +72,7 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--commit',
           \ 'search blobs in the given commit', {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     call s:parser.add_argument(
           \ 'patterns', [
@@ -97,9 +97,9 @@ function! gita#command#grep#command(bang, range, args) abort
     return
   endif
   let options.filenames = options.__unknown__
-  call gita#option#assign_commit(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#grep#open(options)
 endfunction
 

@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'List the contents of a tree object',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<path>...',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -24,7 +24,7 @@ function! s:get_parser() abort
           \   'If <commit1>...<commit2> is specified, it ls a content of a common ancestor of commits and <commit2>',
           \ ], {
           \   'required': 1,
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
   endif
   return s:parser
@@ -36,9 +36,9 @@ function! gita#command#ls_tree#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filenames(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filenames(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#ls_tree#open(options)
 endfunction
 

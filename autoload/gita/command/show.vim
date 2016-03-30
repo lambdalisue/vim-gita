@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Show a content of a commit or a file',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<path>',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--repository', '-r',
@@ -59,7 +59,7 @@ function! s:get_parser() abort
           \   'if <commit1>..<commit2> is specified, it show a content of the named <commit1>',
           \   'if <commit1>...<commit2> is specified, it show a content of a common ancestor of commits',
           \], {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if get(a:options, 'repository')
@@ -87,10 +87,10 @@ function! gita#command#show#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filename(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#show#open(options)
 endfunction
 

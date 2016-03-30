@@ -117,7 +117,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^grep$', a:options, {
+  let options = gita#util#option#cascade('^grep$', a:options, {
         \ 'commit': '',
         \ 'filenames': [],
         \ 'patterns': [],

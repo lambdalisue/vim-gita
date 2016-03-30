@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Reset current HEAD to the specified state',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<paths>...',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--mixed',
@@ -36,7 +36,7 @@ function! s:get_parser() abort
           \   'if nothing is specified, it reset a content of the index to HEAD.',
           \   'if <commit> is specified, it reset a content of the index to the named <commit>.',
           \], {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \   'superordinates': [
           \     'mixed', 'soft', 'hard', 'merge', 'keep',
           \   ],

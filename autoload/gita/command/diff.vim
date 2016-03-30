@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Show changes between commits, commit and working tree, etc',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<path>',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--unified', '-U',
@@ -233,7 +233,7 @@ function! s:get_parser() abort
           \   'if <commit1>..<commit2> is specified, it diff a content between the named <commit1> and <commit2>',
           \   'if <commit1>...<commit2> is specified, it diff a content of a common ancestor of commits and <commit2>',
           \ ], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'repository')
@@ -252,10 +252,10 @@ function! gita#command#diff#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filename(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#diff#open(options)
 endfunction
 

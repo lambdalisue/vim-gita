@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Remove files from the working tree and from the index',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<file>...',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--dry-run', '-n',

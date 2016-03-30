@@ -7,7 +7,7 @@ function! s:get_parser() abort
           \ 'name': 'Gita ls-files',
           \ 'description': 'Show information about files in the index and the working tree',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \ 'unknown_description': '<file>...',
           \})
     call s:parser.add_argument(
@@ -58,12 +58,12 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--exclude-from', '-X',
           \ 'read exclude patterns from file; 1 per line', {
-          \   'complete': function('gita#complete#filename'),
+          \   'complete': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--exclude-per-directory',
           \ 'read additional exclude patterns that apply only to the directory and its subdirectories', {
-          \   'complete': function('gita#complete#filename'),
+          \   'complete': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--exclude-standard',
@@ -85,9 +85,9 @@ function! gita#command#ls_files#command(bang, range, args) abort
     return
   endif
   let options.filenames = options.__unknown__
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filenames(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filenames(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#ls_files#open(options)
 endfunction
 

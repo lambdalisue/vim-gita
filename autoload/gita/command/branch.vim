@@ -53,7 +53,7 @@ function! s:get_parser() abort
           \ '--contains',
           \ 'print only branches that contains the commit', {
           \   'on_default': 'HEAD',
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--all', '-a',
@@ -118,30 +118,30 @@ function! s:get_parser() abort
           \ '--no-merged',
           \ 'print only not merged branches', {
           \   'on_default': 'HEAD',
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     call s:parser.add_argument(
           \ '--merged',
           \ 'print only merged branches', {
           \   'on_default': 'HEAD',
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     call s:parser.add_argument(
           \ 'branch',
           \ 'the name of the branch to create', {
-          \   'complete': function('gita#complete#branch'),
+          \   'complete': function('gita#util#complete#branch'),
           \   'conflicts': ['list'],
           \})
     call s:parser.add_argument(
           \ 'newbranch',
           \ 'the new name for an existing branch', {
-          \   'complete': function('gita#complete#local_branch'),
+          \   'complete': function('gita#util#complete#local_branch'),
           \   'superordinates': ['move', 'M'],
           \})
     call s:parser.add_argument(
           \ 'start-point',
           \ 'the new branch head will point to this commit', {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \   'superordinates': [
           \     'set-upstream', 'track', 'no-track',
           \   ],
@@ -176,7 +176,7 @@ function! gita#command#branch#command(bang, range, args) abort
           \))
     call gita#util#doautocmd('User', 'GitaStatusModified')
   else
-    call gita#option#assign_opener(options)
+    call gita#util#option#assign_opener(options)
     call gita#content#branch#open(options)
   endif
 endfunction

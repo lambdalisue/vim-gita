@@ -77,7 +77,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^branch$', a:options, {
+  let options = gita#util#option#cascade('^branch$', a:options, {
         \ 'all': 0,
         \ 'remotes': 0,
         \ 'list': 0,

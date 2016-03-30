@@ -15,14 +15,14 @@ function! s:get_parser() abort
     call s:parser.add_argument(
           \ '--template',
           \ 'specify the directory from which templates will be used', {
-          \   'complete': function('gita#complete#directory'),
+          \   'complete': function('gita#util#complete#directory'),
           \})
     call s:parser.add_argument(
           \ '--separate-git-dir', [
           \   'instead of initializing the repository as a directory,',
           \   'create a text file there containgthe path to the actual repository',
           \ ], {
-          \   'complete': function('gita#complete#directory'),
+          \   'complete': function('gita#util#complete#directory'),
           \})
     call s:parser.add_argument(
           \ '--shared',

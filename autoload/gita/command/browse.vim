@@ -110,7 +110,7 @@ function! s:get_parser() abort
     let s:parser = s:ArgumentParser.new({
           \ 'name': 'Gita browse',
           \ 'description': 'Browse a URL of the remote content',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \ 'unknown_description': '<path>',
           \ 'complete_threshold': g:gita#complete_threshold,
           \})
@@ -149,7 +149,7 @@ function! s:get_parser() abort
           \   'If <commit1>..<commit2> is specified, it try to open a diff page of the remote content',
           \   'If <commit1>...<commit2> is specified, it try to open a diff open of the remote content',
           \], {
-          \   'complete': function('gita#complete#commit'),
+          \   'complete': function('gita#util#complete#commit'),
           \})
     function! s:parser.hooks.post_validate(options) abort
       if has_key(a:options, 'repository')
@@ -180,9 +180,9 @@ function! gita#command#browse#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filename(options)
+  call gita#util#option#assign_selection(options)
   let git = gita#core#get_or_fail()
   let url = gita#command#browse#call(git, options)
   if get(options, 'yank')

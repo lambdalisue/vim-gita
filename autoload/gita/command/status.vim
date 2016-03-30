@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Show and manipulate a status of the repository',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': 'filenames',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--ignored',
@@ -41,8 +41,8 @@ function! gita#command#status#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#status#open(options)
 endfunction
 

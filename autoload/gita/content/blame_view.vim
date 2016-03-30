@@ -33,7 +33,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^blame-view$', a:options, {
+  let options = gita#util#option#cascade('^blame-view$', a:options, {
         \ 'commit': '',
         \ 'filename': '',
         \})

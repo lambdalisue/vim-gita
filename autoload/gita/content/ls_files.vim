@@ -98,7 +98,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#option#cascade('^ls-files$', a:options, {
+  let options = gita#util#option#cascade('^ls-files$', a:options, {
         \ 'filenames': [],
         \})
   let content = s:execute_command(options)

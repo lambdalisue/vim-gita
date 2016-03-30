@@ -24,14 +24,14 @@ function! s:get_parser() abort
           \   'If nothing is specified, it show a blame of HEAD.',
           \   'If <commit> is specified, it show a blame of the named <commit>.',
           \ ], {
-          \   'complete': function('gita#complete#commitish'),
+          \   'complete': function('gita#util#complete#commitish'),
           \ })
     call s:parser.add_argument(
           \ 'filename', [
           \   'A filename which you want to blame.',
           \   'If nothing is specified, the current buffer will be used.',
           \ ], {
-          \   'complete': function('gita#complete#filename'),
+          \   'complete': function('gita#util#complete#filename'),
           \ })
   endif
   return s:parser
@@ -43,9 +43,9 @@ function! gita#command#blame#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_commit(options)
-  call gita#option#assign_filename(options)
-  call gita#option#assign_selection(options)
+  call gita#util#option#assign_commit(options)
+  call gita#util#option#assign_filename(options)
+  call gita#util#option#assign_selection(options)
   call gita#content#blame#open(options)
 endfunction
 

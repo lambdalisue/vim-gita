@@ -2,14 +2,14 @@ let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Prompt = s:V.import('Vim.Prompt')
 
-function! gita#option#cascade(content_type, options, ...) abort
+function! gita#util#option#cascade(content_type, options, ...) abort
   let options = get(a:000, 0, {})
   let options = extend(options, gita#meta#get_for(a:content_type, 'options', {}))
   let options = extend(options, a:options)
   return options
 endfunction
 
-function! gita#option#assign_commit(options) abort
+function! gita#util#option#assign_commit(options) abort
   if has_key(a:options, 'commit')
     return
   elseif gita#action#is_attached()
@@ -30,7 +30,7 @@ function! gita#option#assign_commit(options) abort
   endif
 endfunction
 
-function! gita#option#assign_filename(options) abort
+function! gita#util#option#assign_filename(options) abort
   if has_key(a:options, 'filename')
     return
   elseif !empty(get(a:options, '__unknown__'))
@@ -55,7 +55,7 @@ function! gita#option#assign_filename(options) abort
   endif
 endfunction
 
-function! gita#option#assign_filenames(options) abort
+function! gita#util#option#assign_filenames(options) abort
   if has_key(a:options, 'filenames')
     return
   elseif !empty(get(a:options, '__unknown__'))
@@ -70,7 +70,7 @@ function! gita#option#assign_filenames(options) abort
   endif
 endfunction
 
-function! gita#option#assign_selection(options) abort
+function! gita#util#option#assign_selection(options) abort
   if !empty(get(a:options, 'selection'))
     if s:Prelude.is_string(a:options.selection)
       let a:options.selection = map(
@@ -105,7 +105,7 @@ function! gita#option#assign_selection(options) abort
   endif
 endfunction
 
-function! gita#option#assign_opener(options, ...) abort
+function! gita#util#option#assign_opener(options, ...) abort
   if !empty(get(a:options, 'opener'))
     return
   endif

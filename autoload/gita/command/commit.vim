@@ -8,7 +8,7 @@ function! s:get_parser() abort
           \ 'description': 'Record changes to the repository',
           \ 'complete_threshold': g:gita#complete_threshold,
           \ 'unknown_description': '<filename>...',
-          \ 'complete_unknown': function('gita#complete#filename'),
+          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--reset-author',
@@ -69,8 +69,8 @@ function! gita#command#commit#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#option#assign_selection(options)
-  call gita#option#assign_opener(options)
+  call gita#util#option#assign_selection(options)
+  call gita#util#option#assign_opener(options)
   call gita#content#commit#open(options)
 endfunction
 
