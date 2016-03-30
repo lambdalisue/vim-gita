@@ -1,4 +1,4 @@
-let s:V = vital#of('vim_gita')
+let s:V = vital#of('gita')
 let s:Prelude = s:V.import('Prelude')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Path = s:V.import('System.Filepath')

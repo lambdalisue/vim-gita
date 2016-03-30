@@ -20,7 +20,7 @@ command! -nargs=* -range -bang -bar
       \ GitaBar
       \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
 
-augroup vim_gita_internal
+augroup gita_internal
   autocmd!
   autocmd FileReadCmd   gita://* nested call gita#content#autocmd('FileReadCmd')
   autocmd FileWriteCmd  gita://* nested call gita#content#autocmd('FileWriteCmd')

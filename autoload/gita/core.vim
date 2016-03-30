@@ -1,4 +1,4 @@
-let s:V = vital#of('vim_gita')
+let s:V = vital#of('gita')
 let s:Path = s:V.import('System.Filepath')
 let s:Compat = s:V.import('Vim.Compat')
 let s:Git = s:V.import('Git')
@@ -154,7 +154,7 @@ function! s:on_BufWritePost() abort
 endfunction
 
 " Automatically check if files in a git repository has modified
-augroup vim_gita_internal_core
+augroup gita_internal_core
   autocmd! *
   autocmd BufWritePre  * call s:on_BufWritePre()
   autocmd BufWritePost * nested call s:on_BufWritePost()

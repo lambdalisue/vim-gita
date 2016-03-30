@@ -3,7 +3,7 @@ let s:Path = s:V.import('System.Filepath')
 
 Describe Git.Parser
   Before
-    let GitParser = vital#of('vim_gita').import('Git.Parser')
+    let GitParser = vital#of('gita').import('Git.Parser')
     let blame_porcelain = readfile(
           \ s:Path.realpath('test/vital/_testdata/Git/Parser/blame_porcelain.txt')
           \)

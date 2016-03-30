@@ -1,5 +1,5 @@
 let s:V = vital#of('vital')
-let s:GitInfo = vital#of('vim_gita').import('Git.Info')
+let s:GitInfo = vital#of('gita').import('Git.Info')
 let s:git_version = s:GitInfo.get_git_version()
 let s:major_version = str2nr(matchstr(s:git_version, '^\d\+'))
 let s:minor_version = str2float(matchstr(s:git_version, '^\d\+\.\zs\d\+\.\d\+'))
@@ -9,7 +9,7 @@ let s:support_atmark_alias =
 
 Describe Git.Term
   Before
-    let Term = vital#of('vim_gita').import('Git.Term')
+    let Term = vital#of('gita').import('Git.Term')
   End
 
   Describe Term.split_commitish({commitish}[, {options}])

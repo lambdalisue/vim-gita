@@ -309,7 +309,7 @@ function! gita#statusline#get_status_count(git) abort
   return content
 endfunction
 
-augroup vim_gita_internal_statusline
+augroup gita_internal_statusline
   autocmd! *
   autocmd User GitaStatusModified call s:on_GitaStatusModified()
 augroup END

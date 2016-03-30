@@ -6,7 +6,7 @@ function! s:diffoff() abort
   if !&diff
     return
   endif
-  augroup vim_gita_internal_util_diffthis
+  augroup gita_internal_util_diffthis
     autocmd! * <buffer>
   augroup END
   if maparg('<C-l>', 'n') ==# '<Plug>(gita-C-l)'
@@ -50,7 +50,7 @@ function! gita#util#doautocmd(name, ...) abort
     " autocmd XXXXX <pattern> exists but not sure if current buffer name
     " match with the <pattern> so register empty autocmd to prevent
     " 'No matching autocommands' warning
-    augroup vim_gita_internal_util_doautocmd
+    augroup gita_internal_util_doautocmd
       autocmd! *
       execute 'autocmd ' . a:name . ' * :'
     augroup END
@@ -62,7 +62,7 @@ function! gita#util#doautocmd(name, ...) abort
     execute 'doautocmd ' . nomodeline . a:name . ' ' . pattern
   finally
     if is_pseudo_required
-      augroup vim_gita_internal_util_doautocmd
+      augroup gita_internal_util_doautocmd
         autocmd! *
       augroup END
     endif
@@ -76,7 +76,7 @@ function! gita#util#diffthis() abort
   nnoremap <buffer><silent> <Plug>(gita-C-l)
         \ :<C-u>diffupdate<BAR>redraw<CR>
 
-  augroup vim_gita_internal_util_diffthis
+  augroup gita_internal_util_diffthis
     autocmd! * <buffer>
     autocmd BufWinLeave <buffer> call s:diffoff()
     autocmd BufHidden <buffer> call s:diffoff()

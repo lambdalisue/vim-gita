@@ -43,7 +43,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('commit', options.commit)
   call gita#meta#set('filename', options.filename)
   call gita#meta#set('blamemeta', blamemeta)
-  augroup vim_gita_internal_content_blame_view
+  augroup gita_internal_content_blame_view
     autocmd! * <buffer>
     autocmd BufEnter    <buffer> call s:on_BufEnter()
     autocmd BufWinEnter <buffer> nested call s:on_BufWinEnter()

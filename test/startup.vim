@@ -1,5 +1,5 @@
 function! s:startup() abort
-  let V = vital#of('vim_gita')
+  let V = vital#of('gita')
   let P = V.import('System.Filepath')
   let R = V.import('Process')
 

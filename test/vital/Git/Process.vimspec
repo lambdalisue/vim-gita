@@ -2,7 +2,7 @@ let s:V = vital#of('vital')
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
 let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-let s:file = s:Path.realpath('autoload/vital/__vim_gita__/Git/Process.vim')
+let s:file = s:Path.realpath('autoload/vital/__gita__/Git/Process.vim')
 
 Describe Git.Process
   Before all
@@ -21,7 +21,7 @@ Describe Git.Process
     call s:File.rmdir(root, 'r')
   End
   Before
-    let GitProcess = vital#of('vim_gita').import('Git.Process')
+    let GitProcess = vital#of('gita').import('Git.Process')
     let sf = s:ScriptLocal.sfuncs(s:file)
   End
 

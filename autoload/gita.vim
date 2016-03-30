@@ -1,4 +1,4 @@
-let s:V = vital#of('vim_gita')
+let s:V = vital#of('gita')
 let s:Prompt = s:V.import('Vim.Prompt')
 
 function! gita#vital() abort

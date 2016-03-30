@@ -4,7 +4,7 @@ let s:reserved = {}
 function! s:is_attached() abort
   let bufnum = string(bufnr('%'))
   return has_key(s:registry, bufnum)
-        \ && exists('#vim_gita_internal_util_observer_attach')
+        \ && exists('#gita_internal_util_observer_attach')
 endfunction
 
 function! s:_on_BufWinEnter() abort
@@ -17,7 +17,7 @@ endfunction
 
 function! gita#util#observer#attach(...) abort
   let s:registry[bufnr('%')] = get(a:000, 0, 'edit')
-  augroup vim_gita_internal_util_observer_attach
+  augroup gita_internal_util_observer_attach
     autocmd! * <buffer>
     autocmd BufWinEnter <buffer> nested call s:_on_BufWinEnter()
   augroup END
@@ -53,7 +53,7 @@ function! gita#util#observer#update_all() abort
 endfunction
 
 " Automatically start observation when it's sourced
-augroup vim_gita_internal_util_observer
+augroup gita_internal_util_observer
   autocmd! *
   autocmd User GitaStatusModified nested call gita#util#observer#update_all()
 augroup END

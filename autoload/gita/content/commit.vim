@@ -199,7 +199,7 @@ function! s:on_BufReadCmd(options) abort
   call gita#meta#set('options', options)
   call gita#meta#set('statuses', statuses)
   call s:define_actions()
-  augroup vim_gita_internal_content_commit
+  augroup gita_internal_content_commit
     autocmd! * <buffer>
     " NOTE:
     " During BufHidden or whatever, the current buffer will be moved onto
@@ -223,8 +223,8 @@ function! s:on_BufWriteCmd(options) abort
 endfunction
 
 function! s:on_WinLeave() abort
-  if exists('w:_vim_gita_commit_QuitPre')
-    unlet w:_vim_gita_commit_QuitPre
+  if exists('w:_gita_commit_QuitPre')
+    unlet w:_gita_commit_QuitPre
     try
       call s:commit_commitmsg_confirm()
     catch /^\%(vital: Git[:.]\|vim-gita:\)/
@@ -234,7 +234,7 @@ function! s:on_WinLeave() abort
 endfunction
 
 function! s:on_QuitPre() abort
-  let w:_vim_gita_commit_QuitPre = 1
+  let w:_gita_commit_QuitPre = 1
 endfunction
 
 function! gita#content#commit#open(options) abort
