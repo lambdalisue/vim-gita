@@ -16,7 +16,6 @@ endfunction
 
 function! s:execute_command(options) abort
   let args = gita#process#args_from_options(a:options, {
-        \ 'untracked-files': 1,
         \ 'ignore-submodules': 1,
         \ 'ignored-submodules': 1,
         \})
@@ -24,6 +23,7 @@ function! s:execute_command(options) abort
         \ 'status',
         \ '--porcelain',
         \ '--no-column',
+        \ '--untracked-files',
         \] + args + ['--'] + get(a:options, 'filenames', [])
   let git = gita#core#get_or_fail()
   return gita#process#execute(git, args, {

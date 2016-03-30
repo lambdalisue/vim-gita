@@ -24,6 +24,7 @@ function! s:execute_command(options) abort
         \})
   let args = [
         \ 'commit',
+        \ '--untracked-files',
         \ '--porcelain',
         \ '--dry-run',
         \] + args
