@@ -67,12 +67,12 @@ function! s:build_help(action_holder) abort
 endfunction
 
 function! s:action_help(candidate, options) abort
-  let action_holder = gita#action#get_holder()
+  let action_holder = gita#action#get_book()
   echo join(s:build_help(action_holder), "\n")
 endfunction
 
 function! s:action_choice(candidates, options) abort
-  let action_holder = gita#action#get_holder()
+  let action_holder = gita#action#get_book()
   let g:gita#action#common#_aliases = join(keys(action_holder.aliases), "\n")
   call inputsave()
   try
@@ -92,7 +92,7 @@ function! s:action_choice(candidates, options) abort
     return
   endif
   let action_name = action_holder.aliases[alias]
-  call gita#action#do(action_name, a:candidates)
+  call gita#action#call(action_name, a:candidates)
 endfunction
 
 function! s:action_redraw(candidate, options) abort

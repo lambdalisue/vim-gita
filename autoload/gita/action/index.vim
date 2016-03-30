@@ -8,13 +8,13 @@ function! s:action_stage(candidates, options) abort
       call add(add_candidates, candidate)
     endif
   endfor
-  noautocmd call gita#action#do('add', add_candidates)
-  noautocmd call gita#action#do('rm', rm_candidates)
+  noautocmd call gita#action#call('add', add_candidates)
+  noautocmd call gita#action#call('rm', rm_candidates)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
 function! s:action_unstage(candidates, options) abort
-  call gita#action#do('reset', a:candidates)
+  call gita#action#call('reset', a:candidates)
 endfunction
 
 function! s:action_toggle(candidates, options) abort
@@ -33,8 +33,8 @@ function! s:action_toggle(candidates, options) abort
       call add(stage_candidates, candidate)
     endif
   endfor
-  noautocmd call gita#action#do('index:stage', stage_candidates)
-  noautocmd call gita#action#do('index:unstage', unstage_candidates)
+  noautocmd call gita#action#call('index:stage', stage_candidates)
+  noautocmd call gita#action#call('index:unstage', unstage_candidates)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 

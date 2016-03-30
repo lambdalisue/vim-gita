@@ -45,7 +45,7 @@ function! s:action(candidates, options) abort
     endif
   endfor
   " checkout tracked files from HEAD
-  noautocmd call gita#action#do('checkout:HEAD:force', checkout_candidates)
+  noautocmd call gita#action#call('checkout:HEAD:force', checkout_candidates)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
