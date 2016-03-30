@@ -127,7 +127,7 @@ function! gita#action#smart_map(lhs, rhs) abort range
   try
     let candidates = gita#action#get_candidates(a:firstline, a:lastline)
     return empty(candidates) ? a:lhs : a:rhs
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+  catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
     return a:lhs
   endtry

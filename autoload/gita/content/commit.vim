@@ -227,7 +227,7 @@ function! s:on_WinLeave() abort
     unlet w:_gita_commit_QuitPre
     try
       call s:commit_commitmsg_confirm()
-    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    catch /^\%(vital: Git[:.]\|gita:\)/
       call gita#util#handle_exception()
     endtry
   endif

@@ -1,13 +1,13 @@
 <div align="center" style="text-align: center">
-    <p><img align="center" src="res/vim-gita.256x256.png" alt="vim-gita"></p>
+    <p><img align="center" src="res/gita.256x256.png" alt="gita"></p>
 </div>
 
-[![Travis CI](https://img.shields.io/travis/lambdalisue/vim-gita/master.svg?style=flat-square&label=Travis%20CI)](https://travis-ci.org/lambdalisue/vim-gita) [![AppVeyor](https://img.shields.io/appveyor/ci/lambdalisue/vim-gita/master.svg?style=flat-square&label=AppVeyor)](https://ci.appveyor.com/project/lambdalisue/vim-gita/branch/master) ![Version 0.1.0 &beta;](https://img.shields.io/badge/version-0.1.0--β-yellow.svg?style=flat-square) ![Support Vim 7.4 or above](https://img.shields.io/badge/support-Vim%207.4%20or%20above-yellowgreen.svg?style=flat-square) [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE) [![Doc](https://img.shields.io/badge/doc-%3Ah%20vim--gita-orange.svg?style=flat-square)](doc/vim-gita.txt) [![Powered by vital.vim](https://img.shields.io/badge/powered%20by-vital.vim-80273f.svg?style=flat-square)](https://github.com/vim-jp/vital.vim)
+[![Travis CI](https://img.shields.io/travis/lambdalisue/vim-gita/master.svg?style=flat-square&label=Travis%20CI)](https://travis-ci.org/lambdalisue/vim-gita) [![AppVeyor](https://img.shields.io/appveyor/ci/lambdalisue/vim-gita/master.svg?style=flat-square&label=AppVeyor)](https://ci.appveyor.com/project/lambdalisue/vim-gita/branch/master) ![Version 0.1.0 &beta;](https://img.shields.io/badge/version-0.1.0--β-yellow.svg?style=flat-square) ![Support Vim 7.4 or above](https://img.shields.io/badge/support-Vim%207.4%20or%20above-yellowgreen.svg?style=flat-square) [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE) [![Doc](https://img.shields.io/badge/doc-%3Ah%20gita-orange.svg?style=flat-square)](doc/gita.txt) [![Powered by vital.vim](https://img.shields.io/badge/powered%20by-vital.vim-80273f.svg?style=flat-square)](https://github.com/vim-jp/vital.vim)
 
-*vim-gita* is a git manipulation plugin which allow users to perform daily git operation within Vim's live session.
+*gita* is a git manipulation plugin which allow users to perform daily git operation within Vim's live session.
 
 
-With vim-gita, users can:
+With gita, users can:
 
 
 - Manipulate the index of the git repository
@@ -31,7 +31,7 @@ With vim-gita, users can:
 
 And lot more.
 
-vim-gita uses a git repository which
+gita uses a git repository which
 
 - A current file-like buffer belongs
 - A current working directory belongs
@@ -39,14 +39,14 @@ vim-gita uses a git repository which
 
 You may notice that this behavior is quite useful when you temporary open a file in a different git repository or in a non file-like buffer such as help or quickfix.
 
-Additionally, vim-gita aggressively uses cache mechanisms to improve its' performance. You would notice huge performance improvement if you are currently using `system()` to show git repository informations in statusline such as a current branch name or the number of modified files.
+Additionally, gita aggressively uses cache mechanisms to improve its' performance. You would notice huge performance improvement if you are currently using `system()` to show git repository informations in statusline such as a current branch name or the number of modified files.
 
 Install
 -------------------------------------------------------------------------------
 Use your favorite Vim plugin manager such as [junegunn/vim-plug] or [Shougo/dein.vim] like:
 
 ```vim
-" Vundle.vim
+" Plug.vim
 Plug 'lambdalisue/vim-gita'
 
 " dein.vim
@@ -60,24 +60,24 @@ call dein#add('lambdalisue/vim-gita', {
 
 Or copy contents of the repository into your runtimepath manually.
 
-[junegunn/vim-plug.vim]: https://github.com/junegunn/vim-plug
+[junegunn/vim-plug]: https://github.com/junegunn/vim-plug
 [Shougo/dein.vim]: https://github.com/Shougo/dein.vim
 
 
 Usage
 -------------------------------------------------------------------------------
 
-First of all, all commands which vim-gita provides start from `:Gita` and all commands (including `:Gita` itself) provide `-h/-help` option to show a help message of the command.
+First of all, all commands which gita provides start from `:Gita` and all commands (including `:Gita` itself) provide `-h/-help` option to show a help message of the command.
 
 Additionally, hitting `?` in manipulation windows (e.g. `gita-status`) shows action and mapping helps.
 
-See `:help vim-gita-usage` for more detail.
+See `:help gita-usage` for more detail.
 
 
 Bundle libraries and build statuses
 -------------------------------------------------------------------------------
 
-vim-gita rely on the following bundled libraries. (Note: users don't need to install them while these are bundled.)
+gita rely on the following bundled libraries. (Note: users don't need to install them while these are bundled.)
 
 Status   | Name    | Description
 ---------|---------|--------------

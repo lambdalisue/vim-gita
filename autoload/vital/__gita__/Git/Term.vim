@@ -75,7 +75,7 @@ function! s:_split_commitish(commitish, options) abort
     let [commit, misc] = matchlist(a:commitish, '\(.\{-}\)\(\^{.*}\)$')[1 : 2]
   elseif a:commitish =~# ':/.*$'
     " NOTE:
-    " Due to the bufname rule of vim-gita, it had not better to allow this type
+    " Due to the bufname rule of gita, it had not better to allow this type
     " of commitish assignment.
     let [commit, misc] = matchlist(a:commitish, '\(.\{-}\)\(:/.*\)$')[1 : 2]
   else

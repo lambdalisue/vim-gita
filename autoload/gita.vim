@@ -6,7 +6,7 @@ function! gita#vital() abort
 endfunction
 
 function! gita#throw(msg) abort
-  throw 'vim-gita: ' . a:msg
+  throw 'gita: ' . a:msg
 endfunction
 
 function! gita#define_variables(prefix, defaults) abort

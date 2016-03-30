@@ -48,7 +48,7 @@ Describe gita#content#show
       if s:Prelude.is_windows()
         " NOTE:
         " All '\' characters in content generated from 'git diff' are escaped in Windows
-        " https://github.com/lambdalisue/vim-gita/pull/85#issuecomment-183611682
+        " https://github.com/lambdalisue/gita/pull/85#issuecomment-183611682
         call map(content, 'escape(v:val, "\\")')
       endif
       let repl = 'autoload/gita.vim'
@@ -61,7 +61,7 @@ Describe gita#content#show
             \ ' brabrabra',
             \])
     End
-    It solves https://ci.appveyor.com/project/lambdalisue/vim-gita/build/306
+    It solves https://ci.appveyor.com/project/lambdalisue/gita/build/306
       let content = [
             \ 'diff --git a/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.index b/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.buffer',
             \ 'index ZZZZZZZZZZ..ZZZZZZZZZZ ZZZZZZZZZZ',

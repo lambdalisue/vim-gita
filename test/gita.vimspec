@@ -11,7 +11,7 @@ Describe gita
 
   Describe #throw({msg})
     It throw an exception with a prefix
-      Throws /^vim-gita: foo$/ gita#throw('foo')
+      Throws /^gita: foo$/ gita#throw('foo')
     End
   End
 

@@ -6,11 +6,11 @@ Describe gita#content
     End
 
     It prases gita://<refname>:<content_type>:<extra_options>/<treeish> type names
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached:reverse/HEAD:README.md')
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached:reverse/HEAD:README.md')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff:cached:reverse/HEAD:README.md',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff:cached:reverse/HEAD:README.md',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [
             \   'cached', 'reverse',
@@ -18,11 +18,11 @@ Describe gita#content
             \ 'treeish': 'HEAD:README.md',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/HEAD:README.md')
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/HEAD:README.md')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff:cached/HEAD:README.md',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff:cached/HEAD:README.md',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [
             \   'cached',
@@ -30,11 +30,11 @@ Describe gita#content
             \ 'treeish': 'HEAD:README.md',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/:README.md')
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/:README.md')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff:cached/:README.md',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff:cached/:README.md',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [
             \   'cached',
@@ -42,11 +42,11 @@ Describe gita#content
             \ 'treeish': ':README.md',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/HEAD')
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/HEAD')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff:cached/HEAD',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff:cached/HEAD',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [
             \   'cached',
@@ -54,11 +54,11 @@ Describe gita#content
             \ 'treeish': 'HEAD',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff:cached/')
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff:cached/',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff:cached/',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [
             \   'cached',
@@ -68,41 +68,41 @@ Describe gita#content
     End
 
     It prases gita://<refname>:<content_type>/<treeish> type names
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff/HEAD:README.md')
+      let ret = gita#content#parse_bufname('gita://gita:diff/HEAD:README.md')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff/HEAD:README.md',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff/HEAD:README.md',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [],
             \ 'treeish': 'HEAD:README.md',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff/:README.md')
+      let ret = gita#content#parse_bufname('gita://gita:diff/:README.md')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff/:README.md',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff/:README.md',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [],
             \ 'treeish': ':README.md',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff/HEAD')
+      let ret = gita#content#parse_bufname('gita://gita:diff/HEAD')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff/HEAD',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff/HEAD',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [],
             \ 'treeish': 'HEAD',
             \})
 
-      let ret = gita#content#parse_bufname('gita://vim-gita:diff/')
+      let ret = gita#content#parse_bufname('gita://gita:diff/')
       Assert Equals(ret, {
             \ 'nofile': 0,
-            \ 'bufname': 'gita://vim-gita:diff/',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita://gita:diff/',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff',
             \ 'extra_options': [],
             \ 'treeish': '',
@@ -110,31 +110,31 @@ Describe gita#content
     End
 
     It prases gita:<refname>:<content_type>:<extra_options> type names
-      let ret = gita#content#parse_bufname('gita:vim-gita:commit:amend')
+      let ret = gita#content#parse_bufname('gita:gita:commit:amend')
       Assert Equals(ret, {
             \ 'nofile': 1,
-            \ 'bufname': 'gita:vim-gita:commit:amend',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita:gita:commit:amend',
+            \ 'refname': 'gita',
             \ 'content_type': 'commit',
             \ 'extra_options': ['amend'],
             \})
 
-      let ret = gita#content#parse_bufname('gita:vim-gita:diff-ls:origin/HEAD')
+      let ret = gita#content#parse_bufname('gita:gita:diff-ls:origin/HEAD')
       Assert Equals(ret, {
             \ 'nofile': 1,
-            \ 'bufname': 'gita:vim-gita:diff-ls:origin/HEAD',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita:gita:diff-ls:origin/HEAD',
+            \ 'refname': 'gita',
             \ 'content_type': 'diff-ls',
             \ 'extra_options': ['origin/HEAD'],
             \})
     End
 
     It prases gita:<refname>:<content_type> type names
-      let ret = gita#content#parse_bufname('gita:vim-gita:status')
+      let ret = gita#content#parse_bufname('gita:gita:status')
       Assert Equals(ret, {
             \ 'nofile': 1,
-            \ 'bufname': 'gita:vim-gita:status',
-            \ 'refname': 'vim-gita',
+            \ 'bufname': 'gita:gita:status',
+            \ 'refname': 'gita',
             \ 'content_type': 'status',
             \ 'extra_options': [],
             \})

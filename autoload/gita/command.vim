@@ -104,7 +104,7 @@ function! gita#command#command(bang, range, args) abort
             \ 'gita#meta#expand(v:val)',
             \))
       call gita#util#doautocmd('User', 'GitaStatusModified')
-    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    catch /^\%(vital: Git[:.]\|gita:\)/
       call gita#util#handle_exception()
     endtry
   endif
@@ -133,7 +133,7 @@ function! gita#command#complete(arglead, cmdline, cursorpos) abort
       endif
       " complete filename
       return gita#util#complete#filename(a:arglead, cmdline, a:cursorpos)
-    catch /^\%(vital: Git[:.]\|vim-gita:\)/
+    catch /^\%(vital: Git[:.]\|gita:\)/
       " fail silently
       call s:Prompt.debug(v:exception)
       call s:Prompt.debug(v:throwpoint)

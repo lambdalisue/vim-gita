@@ -101,9 +101,8 @@ endfunction
 
 function! gita#util#handle_exception() abort
   let known_attention_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-gita:\) Cancel$',
-        \ '^\%(vital: Git[:.]\|vim-gita:\) Cancel: ',
-        \ '^\%(vital: Git[:.]\|vim-gita:\) Attention: ',
+        \ '^\%(vital: Git[:.]\|gita:\) Cancel: ',
+        \ '^\%(vital: Git[:.]\|gita:\) Attention: ',
         \]
   for pattern in known_attention_patterns
     if v:exception =~# pattern
@@ -115,8 +114,8 @@ function! gita#util#handle_exception() abort
     endif
   endfor
   let known_warning_patterns = [
-        \ '^\%(vital: Git[:.]\|vim-gita:\) \zeWarning: ',
-        \ '^\%(vital: Git[:.]\|vim-gita:\) \zeValidationError: ',
+        \ '^\%(vital: Git[:.]\|gita:\) \zeWarning: ',
+        \ '^\%(vital: Git[:.]\|gita:\) \zeValidationError: ',
         \]
   for pattern in known_warning_patterns
     if v:exception =~# pattern

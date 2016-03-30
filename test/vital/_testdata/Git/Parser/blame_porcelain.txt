@@ -11,7 +11,7 @@ summary Building status interface
 filename autoload/gita/interface/status.vim
 	"******************************************************************************
 656465cef4559417a88e92f5235c4c43476fe963 2 2
-	" vim-gita status interface
+	" gita status interface
 656465cef4559417a88e92f5235c4c43476fe963 3 3
 	"
 656465cef4559417a88e92f5235c4c43476fe963 4 4
@@ -341,7 +341,7 @@ filename autoload/gita/interface/status.vim
 656465cef4559417a88e92f5235c4c43476fe963 166 166
 	      if get(g:, 'gita#interface#status#enable_default_keymaps', 1)
 656465cef4559417a88e92f5235c4c43476fe963 167 167
-	        nmap <buffer> <F1>   :<C-u>help vim-gita-status-default-mappings<CR>
+	        nmap <buffer> <F1>   :<C-u>help gita-status-default-mappings<CR>
 656465cef4559417a88e92f5235c4c43476fe963 168 168
 	        nmap <buffer> <C-l>  <Plug>(gita-status-action-update)
 656465cef4559417a88e92f5235c4c43476fe963 169 169

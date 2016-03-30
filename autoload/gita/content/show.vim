@@ -230,7 +230,7 @@ function! s:on_BufWriteCmd(options) abort
     call gita#util#doautocmd('User', 'GitaStatusModified')
     call gita#util#doautocmd('BufWritePost')
     diffupdate
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+  catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
   finally
     call delete(tempfile)

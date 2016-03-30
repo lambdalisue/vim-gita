@@ -204,14 +204,14 @@ function! gita#statusline#format(format) abort
     let text = gita#util#formatter#format(a:format, s:format_map, info)
     call format_cache.set(a:format, text)
     return text
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+  catch /^\%(vital: Git[:.]\|gita:\)/
     return ''
   endtry
 endfunction
 function! gita#statusline#preset(name) abort
   if !has_key(s:preset, a:name)
     call s:Prompt.error(printf(
-          \ 'vim-gita: statusline: A preset "%s" is not found.',
+          \ 'gita: statusline: A preset "%s" is not found.',
           \ a:name,
           \))
     return ''

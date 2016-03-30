@@ -205,7 +205,7 @@ function! s:on_BufWriteCmd(options) abort
     setlocal nomodified
     call gita#util#doautocmd('User', 'GitaStatusModified')
     call gita#util#doautocmd('BufWritePost')
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+  catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
   endtry
 endfunction

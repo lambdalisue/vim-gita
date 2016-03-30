@@ -93,7 +93,7 @@ function! gita#content#autocmd(name) abort
           \ '"%s" in "%s" is not supported',
           \ a:name, expand('<afile>'),
           \))
-  catch /^\%(vital: Git[:.]\|vim-gita:\)/
+  catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
   endtry
 endfunction

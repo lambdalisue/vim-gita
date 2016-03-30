@@ -6,7 +6,7 @@ let g:loaded_gita = 1
 " NOTE: A known minimum requirement is 7.3.1170 : Script local funcref is supported
 if v:version < 703 || (v:version == 703 && !has('patch1170'))
   " NOTE: An announced requirement is Vim 7.4
-  echohl ErrorMsg | echo 'gita: vim-gita requires Vim 7.4 or later' | echohl None
+  echohl ErrorMsg | echo 'gita: gita requires Vim 7.4 or later' | echohl None
   finish
 endif
 
