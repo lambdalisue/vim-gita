@@ -4,8 +4,8 @@ let s:Path = s:V.import('System.Filepath')
 
 Describe Git.Info
   Before
-    let Git = s:V.import('Git')
-    let GitInfo = s:V.import('Git.Info')
+    let Git = vital#of('vim_gita').import('Git')
+    let GitInfo = vital#of('vim_gita').import('Git.Info')
     let git = Git.get('.')
   End
 

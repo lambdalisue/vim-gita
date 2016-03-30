@@ -28,7 +28,7 @@ Describe Git
   End
 
   Before
-    let Git = s:V.import('Git')
+    let Git = vital#of('vim_gita').import('Git')
     let sf = s:ScriptLocal.sfuncs(s:file)
   End
 

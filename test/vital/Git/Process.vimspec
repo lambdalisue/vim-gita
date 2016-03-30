@@ -21,7 +21,7 @@ Describe Git.Process
     call s:File.rmdir(root, 'r')
   End
   Before
-    let GitProcess = s:V.import('Git.Process')
+    let GitProcess = vital#of('vim_gita').import('Git.Process')
     let sf = s:ScriptLocal.sfuncs(s:file)
   End
 
