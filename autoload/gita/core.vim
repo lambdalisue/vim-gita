@@ -7,9 +7,12 @@ let s:references = {}
 
 function! s:get_available_refname(refname, git) abort
   let refname = a:refname
+  let pseudo = { 'worktree': a:git.worktree }
+  let ref = get(s:references, refname, pseudo)
   let index = 1
-  while get(s:references, refname, { 'worktree': a:git.worktree }).worktree !=# a:git.worktree
+  while !empty(ref.worktree) && ref.worktree !=# a:git.worktree
     let refname = a:refname . '~' . index
+    let ref = get(s:references, refname, pseudo)
     let index += 1
   endwhile
   return refname
@@ -126,7 +129,13 @@ endfunction
 function! gita#core#get_refinfo(...) abort
   let expr = get(a:000, 0, '%')
   let refinfo = s:Compat.getbufvar(expr, s:NAME, {})
-  return refinfo
+  if empty(refinfo)
+    return {}
+  endif
+  let git = empty(refinfo.refname)
+        \ ? s:Git.new({ 'worktree': '' })
+        \ : get(s:references, refinfo.refname, s:Git.new({ 'worktree': '' }))
+  return extend({ 'git': copy(git) }, refinfo)
 endfunction
 
 function! s:on_BufWritePre() abort

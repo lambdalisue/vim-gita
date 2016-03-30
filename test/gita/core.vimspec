@@ -53,10 +53,13 @@ Describe gita#core
   End
 
   Describe s:is_expired({expr}, {refinfo})
-    It returns 1 if git instance in {refinfo} is reserved to be expired
+    It returns 1 if a git instance cached as {refinfo.refname} is reserved to be expired
+      let sv.references = {
+            \ 'foo': { 'is_expired': 1 },
+            \}
       let refinfo = {
-            \ 'git': { 'is_expired': 1 },
-            \ 'bufname': 'foo',
+            \ 'refname': 'foo',
+            \ 'bufname': 'foobar',
             \ 'cwd': getcwd()
             \}
       Assert Equals(sf.is_expired('%', refinfo), 1)
@@ -249,5 +252,56 @@ Describe gita#core
       Assert Equals(sf.is_expired('%', refinfo), 1)
     End
   End
-End
 
+  Describe #get_refinfo([{expr}])
+    It returns an empty dictionary if the buffer does not have refinfo
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo, {})
+    End
+
+    It returns a deep copy dictionary of a refinfo dictionary of the buffer
+      let sv.references = {
+            \ 'foo': {
+            \   'is_enabled': 1,
+            \   'worktree': 'foo',
+            \   'repository': 'bar',
+            \   'repository_name': 'foobar',
+            \   'repository_cache': {},
+            \ },
+            \}
+      let b:_gita_refinfo = {
+            \ 'refname': 'foo',
+            \ 'bufname': 'bar',
+            \ 'cwd': 'hoge',
+            \}
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo.refname, 'foo')
+      Assert Equals(refinfo.bufname, 'bar')
+      Assert Equals(refinfo.cwd, 'hoge')
+      Assert KeyExists(refinfo, 'git')
+
+      Assert KeyExists(refinfo.git, 'is_enabled')
+      Assert KeyExists(refinfo.git, 'worktree')
+      Assert KeyExists(refinfo.git, 'repository')
+      Assert KeyExists(refinfo.git, 'repository_name')
+      Assert KeyExists(refinfo.git, 'repository_cache')
+      Assert Equals(refinfo.git.is_enabled, 1)
+      Assert Equals(refinfo.git.worktree, 'foo')
+      Assert Equals(refinfo.git.repository, 'bar')
+      Assert Equals(refinfo.git.repository_name, 'foobar')
+
+      " refinfo is a deep copy
+      let refinfo.refname = 'piyo'
+      let refinfo.bufname = 'puyo'
+      let refinfo.cwd = 'poyo'
+      let refinfo.git.worktree = 'hoge'
+
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo.refname, 'foo')
+      Assert Equals(refinfo.bufname, 'bar')
+      Assert Equals(refinfo.cwd, 'hoge')
+
+      Assert Equals(refinfo.git.worktree, 'foo')
+    End
+  End
+End
