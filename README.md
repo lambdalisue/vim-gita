@@ -77,6 +77,11 @@ See `:help vim-gita-usage` for more detail.
 TODO
 -------------------------------------------------------------------------------
 
+- Fix a bug in `gita#core` and `gita#meta`
+    - [ ] Add tests for `gita#core`
+    - [ ] Add tests for `gita#meta`
+    - [ ] Fix `gita#core`
+    - [ ] Fix `gita#meta`
 - Liberate from `gita#util#observer`
     - [x] Create `Vital.Vim.Buffer.Observer`
     - [ ] Replace `gita#util#observer` to the new module
@@ -86,6 +91,7 @@ TODO
 - Stop using E117 in command
     - [ ] Introduce registration system again
     - [ ] Replace with that system
+- Allow `Gita grep<CR>` and open a prompt to ask a pattern
 - Fill `README.md` with screenshots/screencasts
 
 Bundle libraries and build statuses
