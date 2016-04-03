@@ -10,6 +10,8 @@ if v:version < 703 || (v:version == 703 && !has('patch1170'))
   finish
 endif
 
+let s:is_windows = has('win16') || has('win32') || has('win64')
+
 command! GitaClear :call gita#core#expire()
 command! -nargs=* -range -bang
       \ -complete=customlist,gita#command#complete
@@ -26,6 +28,11 @@ augroup gita_internal
   autocmd FileWriteCmd  gita://* nested call gita#content#autocmd('FileWriteCmd')
   autocmd BufReadCmd    gita:*   nested call gita#content#autocmd('BufReadCmd')
   autocmd BufWriteCmd   gita:*   nested call gita#content#autocmd('BufWriteCmd')
-  autocmd BufReadCmd    gita:*/* nested call gita#content#autocmd('BufReadCmd')
-  autocmd BufWriteCmd   gita:*/* nested call gita#content#autocmd('BufWriteCmd')
+  if !s:is_windows
+    " NOTE:
+    " autocmd for 'gita:*' is triggerred in Windows so the followings are not
+    " required in Windows
+    autocmd BufReadCmd    gita:*/* nested call gita#content#autocmd('BufReadCmd')
+    autocmd BufWriteCmd   gita:*/* nested call gita#content#autocmd('BufWriteCmd')
+  endif
 augroup END
