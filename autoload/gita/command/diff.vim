@@ -42,17 +42,17 @@ function! s:get_parser() abort
           \   'conflicts': ['minimal', 'patience', 'histogram'],
           \ }
           \)
-    call s:parser.add_argument(
-          \ '--submodule', [
-          \   'specify how differences in submodules are shown.',
-          \   '- log       lists the commits in the range like git-submodule summary does',
-          \   '- short     shows the name of the commits at the beginning and end of the range',
-          \ ], {
-          \   'on_default': 'log',
-          \   'choices': ['log', 'short'],
-          \   'conflicts': ['ignore-submodules'],
-          \ }
-          \)
+    "call s:parser.add_argument(
+    "      \ '--submodule', [
+    "      \   'specify how differences in submodules are shown.',
+    "      \   '- log       lists the commits in the range like git-submodule summary does',
+    "      \   '- short     shows the name of the commits at the beginning and end of the range',
+    "      \ ], {
+    "      \   'on_default': 'log',
+    "      \   'choices': ['log', 'short'],
+    "      \   'conflicts': ['ignore-submodules'],
+    "      \ }
+    "      \)
     call s:parser.add_argument(
           \ '--ignore-submodules', [
           \   'ignore changes to submodules in the diff generation',
@@ -95,10 +95,10 @@ function! s:get_parser() abort
           \ '--full-index',
           \ 'instead of the first handful of characters, show the full pre- and post-image blob object names on the "index" line',
           \)
-    call s:parser.add_argument(
-          \ '--binary',
-          \ 'in addition to --full-index, output a binary diff that can be applied with git-apply',
-          \)
+    "call s:parser.add_argument(
+    "      \ '--binary',
+    "      \ 'in addition to --full-index, output a binary diff that can be applied with git-apply',
+    "      \)
     call s:parser.add_argument(
           \ '-B',
           \ 'break complete rewrite changes into pairs of delete and create.', {
@@ -201,11 +201,6 @@ function! s:get_parser() abort
           \ 'show a diff of the repository instead of a file content',
           \)
     call s:parser.add_argument(
-          \ '--selection',
-          \ 'a line number or range of the selection', {
-          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
-          \})
-    call s:parser.add_argument(
           \ '--cached',
           \ 'compare with a content in the index',
           \)
@@ -213,6 +208,11 @@ function! s:get_parser() abort
           \ '--opener', '-o',
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
+          \})
+    call s:parser.add_argument(
+          \ '--selection',
+          \ 'a line number or range of the selection', {
+          \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
           \ '--split', '-s', [
