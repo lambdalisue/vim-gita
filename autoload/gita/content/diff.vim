@@ -204,6 +204,7 @@ function! s:on_BufWriteCmd(options) abort
       call writefile(getline(1, '$'), tempfile)
       let args = [
             \ 'apply',
+            \ '--verbose',
             \ '--cached',
             \ '--whitespace=fix',
             \ '--allow-overlap',
@@ -213,7 +214,7 @@ function! s:on_BufWriteCmd(options) abort
             \ tempfile,
             \]
       let git = gita#core#get_or_fail()
-      call gita#process#execute(git, args, { 'quiet': 1 })
+      call gita#process#execute(git, args)
     finally
       call delete(tempfile)
     endtry
