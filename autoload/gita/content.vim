@@ -94,6 +94,7 @@ function! gita#content#autocmd(name) abort
           \ 'gita: "%s" in "%s" is not supported',
           \ a:name, expand('<afile>'),
           \))
+    call s:Prompt.debug(v:exception)
   catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
   endtry
