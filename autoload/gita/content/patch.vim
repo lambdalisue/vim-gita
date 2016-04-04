@@ -13,6 +13,7 @@ function! s:open1(options) abort
   endif
   let options.commit = ''
   let options.split = 0
+  let options.patch = 1
   call gita#content#diff#open(options)
 endfunction
 
