@@ -1,3 +1,12 @@
+function! s:call_from_mapping(name) abort range
+  try
+    let candidates = gita#action#get_candidates(a:firstline, a:lastline)
+    call gita#action#call(a:name, candidates)
+  catch /^\%(vital: Git[:.]\|gita:\)/
+    call gita#util#handle_exception()
+  endtry
+endfunction
+
 function! gita#action#is_attached() abort
   return exists('b:_gita_action_book')
 endfunction
@@ -62,13 +71,10 @@ function! gita#action#find_candidate(candidates, record, attrname) abort
   return {}
 endfunction
 
-function! gita#action#call(name, ...) abort range
+function! gita#action#call(name, candidates) abort
   let action = gita#action#get_action(a:name)
-  let candidates = a:0 == 0
-        \ ? gita#action#get_candidates(a:firstline, a:lastline)
-        \ : a:1
   let candidates = filter(
-        \ copy(candidates),
+        \ copy(a:candidates),
         \ 'gita#action#is_satisfied(v:val, action.requirements)',
         \)
   if !empty(action.requirements) && empty(candidates)
@@ -109,7 +115,7 @@ function! gita#action#define(name, fn, ...) abort
         \}
   for mode in split(options.mapping_mode, '\zs')
     execute printf(
-          \ '%snoremap <buffer><silent> %s :%scall gita#action#call("%s")<CR>',
+          \ '%snoremap <buffer><silent> %s :%scall <SID>call_from_mapping("%s")<CR>',
           \ mode, mapping, mode ==# '[ni]' ? '<C-u>' : '', a:name,
           \)
   endfor
