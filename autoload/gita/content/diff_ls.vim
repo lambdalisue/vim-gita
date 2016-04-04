@@ -1,33 +1,54 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
-let s:Git = s:V.import('Git')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:build_bufname(options) abort
   let options = extend({
+        \ 'cached': 0,
         \ 'commit': '',
         \}, a:options)
   return gita#content#build_bufname('diff-ls', {
         \ 'nofile': 1,
         \ 'extra_options': [
+        \   options.cached ? 'cached': 'worktree',
         \   options.commit,
         \ ],
         \})
 endfunction
 
-function! s:execute_command(options) abort
-  let args = [
-        \ 'diff',
-        \ '--numstat',
-        \ a:options.commit,
+function! s:args_from_options(git, options) abort
+  let options = extend({
+        \ 'commit': '',
+        \}, a:options)
+  let args = gita#process#args_from_options(options, {
+        \ 'ignore-submodules': 1,
+        \ 'no-renames': 1,
+        \ 'B': 1,
+        \ 'find-renames': 1,
+        \ 'find-copies': 1,
+        \ 'find-copies-harder': 1,
+        \ 'text': 1,
+        \ 'ignore-space-change': 1,
+        \ 'ignore-all-space': 1,
+        \ 'ignore-blank-lines': 1,
+        \ 'cached': 1,
+        \})
+  let args = ['diff', '--numstat'] + args + [
+        \ gita#normalize#commit_for_diff(a:git, options.commit),
         \]
+  return args
+endfunction
+
+function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
+  let args = s:args_from_options(git, a:options)
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -92,6 +113,7 @@ function! s:format_stat(stat, alpha, format) abort
 endfunction
 
 function! s:get_prologue(git) abort
+  let cached = gita#meta#get_for('^diff-ls$', 'cached', 0)
   let commit = gita#meta#get_for('^diff-ls$', 'commit', '')
   let stats = gita#meta#get_for('^diff-ls$', 'stats', [])
   let nstats = len(stats)
@@ -105,8 +127,8 @@ function! s:get_prologue(git) abort
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
   else
-    let lhs = 'WORKTREE'
-    let rhs = empty(commit) ? 'INDEX' : commit
+    let lhs = cached ? 'INDEX' : 'WORKTREE'
+    let rhs = empty(commit) ? (cached ? 'HEAD' : 'INDEX') : commit
   endif
   return printf(
         \ '%d file%s %s different between %s and %s %s',
@@ -120,14 +142,13 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^diff-ls$', a:options, {
-        \ 'commit': '',
-        \})
+  let options = gita#util#option#cascade('^diff-ls$', a:options)
   let content = s:execute_command(options)
   let stats = s:GitParser.parse_numstat(content)
   let stats = s:extend_stats(stats, winwidth(0))
   call gita#meta#set('content_type', 'diff-ls')
   call gita#meta#set('options', options)
+  call gita#meta#set('cached', options.cached)
   call gita#meta#set('commit', options.commit)
   call gita#meta#set('stats', stats)
   call s:define_actions()
@@ -143,16 +164,13 @@ endfunction
 
 function! gita#content#diff_ls#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#diff_ls#default_opener
-        \ : options.opener
   call gita#util#cascade#set('diff-ls', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -172,14 +190,12 @@ endfunction
 
 function! gita#content#diff_ls#autocmd(name, bufinfo) abort
   let options = gita#util#cascade#get('diff-ls')
-  for attribute in a:bufinfo.extra_options
-    let options[attribute] = 1
-  endfor
+  let options.cached = get(a:bufinfo.extra_options, 0, '') ==# 'cached'
+  let options.commit = get(a:bufinfo.extra_options, 1, '')
   call call('s:on_' . a:name, [options])
 endfunction
 
 call gita#define_variables('content#diff_ls', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})
