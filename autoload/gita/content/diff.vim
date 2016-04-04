@@ -5,9 +5,10 @@ let s:Dict = s:V.import('Data.Dict')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
+let s:WORKTREE = '@@'
 
 function! s:configure_options(options) abort
-  if a:options.patch
+  if get(a:options, 'patch')
     " 'patch' mode requires:
     " - Existence of INDEX, namely no commit or --cached
     let commit = get(a:options, 'commit', '')
@@ -27,6 +28,7 @@ function! s:configure_options(options) abort
       let a:options.reverse = 1
     endif
   endif
+  return a:options
 endfunction
 
 function! s:build_bufname(options) abort
@@ -40,7 +42,7 @@ function! s:build_bufname(options) abort
   let git = gita#core#get_or_fail()
   let treeish = printf('%s:%s',
         \ options.commit,
-        \ s:Path.unixpath(s:Git.get_relative_path(git, options.filename)),
+        \ gita#normalize#relpath_for_git(git, options.filename),
         \)
   return gita#content#build_bufname('diff', {
         \ 'extra_options': [
@@ -60,22 +62,16 @@ function! s:parse_bufname(bufinfo) abort
           \ a:bufinfo.bufname, '<rev>:<filename>',
           \))
   endif
-  let git = gita#core#get_or_fail()
   let a:bufinfo.commit = m[1]
-  let a:bufinfo.filename = s:Path.realpath(s:Git.get_absolute_path(git, m[2]))
+  let a:bufinfo.filename = m[2]
   return a:bufinfo
 endfunction
 
-function! s:execute_command(options) abort
-  let git = gita#core#get_or_fail()
-  if a:options.commit =~# '^.\{-}\.\.\..\{-}$'
-    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(a:options.commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let lhs = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-    let a:options.commit = lhs . '..' . rhs
-  endif
+function! s:args_from_options(git, options) abort
+  let options = extend({
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, a:options)
   let args = gita#process#args_from_options(a:options, {
         \ 'unified': 1,
         \ 'minimal': 1,
@@ -116,32 +112,53 @@ function! s:execute_command(options) abort
         \ 'no-index': 1,
         \ 'cached': 1,
         \})
-  let args = [
-        \ 'diff',
-        \ '--no-color',
-        \] + args + [
-        \ a:options.commit,
+  let args = ['diff', '--no-color'] + args + [
+        \ gita#normalize#commit_for_diff(a:git, options.commit),
         \ '--',
-        \ a:options.filename,
+        \ gita#normalize#relpath_for_git(a:git, options.filename),
         \]
-  return gita#process#execute(git, args, {
+  return args
+endfunction
+
+function! s:execute_command(options) abort
+  let git = gita#core#get_or_fail()
+  let args = s:args_from_options(git, a:options)
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return content
+endfunction
+
+function! s:split_commit(commit, options) abort
+  if empty(a:commit)
+    " git diff          : INDEX vs TREE
+    " git diff --cached :  HEAD vs INDEX
+    let lhs = a:options.cached ? 'HEAD' : ''
+    let rhs = a:options.cached ? '' : s:WORKTREE
+  elseif a:commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(a:commit)
+    let lhs = a:commit
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  elseif a:commit =~# '^.\{-}\.\.\..*$'
+    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
+    let [lhs, rhs] = s:GitTerm.split_range(a:commit)
+    let lhs = empty(lhs) ? 'HEAD' : lhs
+    let rhs = empty(rhs) ? 'HEAD' : rhs
+  else
+    " git diff <ref>          : <ref> vs TREE
+    " git diff --cached <ref> : <ref> vs INDEX
+    let lhs = a:commit
+    let rhs = a:options.cached ? '' : s:WORKTREE
+  endif
+  return [lhs, rhs]
 endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^diff$', a:options, {
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'patch': 0,
-        \ 'ignore-space-change': &diffopt =~# 'iwhite',
-        \ 'unified': &diffopt =~# 'context:\d\+'
-        \   ? matchstr(&diffopt, 'context:\zs\d\+')
-        \   : 0,
-        \})
-  call s:configure_options(options)
+  let options = gita#util#option#cascade('^diff$', a:options)
+  let options = s:configure_options(options)
   let content = s:execute_command(options)
   call gita#meta#set('content_type', 'diff')
   call gita#meta#set('options', options)
@@ -152,7 +169,7 @@ function! s:on_BufReadCmd(options) abort
         \ gita#util#buffer#parse_cmdarg(),
         \)
   call gita#util#observer#attach()
-  if options.patch
+  if get(options, 'patch')
     setlocal buftype=acwrite
     setlocal noreadonly
   else
@@ -164,20 +181,18 @@ function! s:on_BufReadCmd(options) abort
 endfunction
 
 function! s:on_FileReadCmd(options) abort
+  call gita#util#doautocmd('FileReadPre')
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
-        \ 'ignore-space-change': &diffopt =~# 'iwhite',
-        \ 'unified': &diffopt =~# 'context:\d\+'
-        \   ? matchstr(&diffopt, 'context:\zs\d\+')
-        \   : 0,
         \}, a:options)
-  call s:configure_options(options)
+  let options = s:configure_options(options)
   let content = s:execute_command(options)
   call gita#util#buffer#read_content(
         \ content,
         \ gita#util#buffer#parse_cmdarg(),
         \)
+  call gita#util#doautocmd('FileReadPost')
 endfunction
 
 function! s:on_BufWriteCmd(options) abort
@@ -221,19 +236,15 @@ function! s:open1(options) abort
         \ 'selection': [],
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#diff#default_opener
-        \ : options.opener
   call gita#util#cascade#set('diff', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \ 'selection': options.selection,
         \})
 endfunction
 
 function! s:open2(options) abort
-  let WORKTREE = '@@'
   let options = extend({
         \ 'patch': 0,
         \ 'cached': 0,
@@ -243,48 +254,26 @@ function! s:open2(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
-  call s:configure_options(options)
-  let commit = options.commit
-  let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
-  if empty(commit)
-    " git diff          : INDEX vs TREE
-    " git diff --cached :  HEAD vs INDEX
-    let lhs = options.cached ? 'HEAD' : ''
-    let rhs = options.cached ? '' : WORKTREE
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = commit
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  elseif commit =~# '^.\{-}\.\.\..*$'
-    " git diff <lhs>..<rhs> : <lhs> vs <rhs>
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-  else
-    " git diff <ref>          : <ref> vs TREE
-    " git diff --cached <ref> : <ref> vs INDEX
-    let lhs = commit
-    let rhs = options.cached ? '' : WORKTREE
-  endif
+  let options = s:configure_options(options)
+  let filename = empty(options.filename)
+        \ ? gita#meta#expand('%')
+        \ : options.filename
+  let [lhs, rhs] = s:split_commit(options.commit)
   let loptions = {
         \ 'patch': !options.reverse && options.patch,
         \ 'commit': lhs,
         \ 'filename': filename,
-        \ 'worktree': lhs ==# WORKTREE,
+        \ 'worktree': lhs ==# s:WORKTREE,
         \}
   let roptions = {
         \ 'patch': options.reverse && options.patch,
         \ 'commit': rhs,
         \ 'filename': filename,
-        \ 'worktree': rhs ==# WORKTREE,
+        \ 'worktree': rhs ==# s:WORKTREE,
         \}
   let vertical = matchstr(&diffopt, 'vertical')
-  let opener = empty(options.opener)
-        \ ? g:gita#content#diff#default_opener
-        \ : options.opener
   call gita#content#show#open(extend(options.reverse ? loptions : roptions, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': 'diff2_rhs',
         \ 'selection': options.selection,
         \}))
@@ -313,16 +302,17 @@ endfunction
 
 function! gita#content#diff#autocmd(name, bufinfo) abort
   let bufinfo = s:parse_bufname(a:bufinfo)
-  let options = extend(gita#util#cascade#get('diff'), {
-        \ 'commit': bufinfo.commit,
-        \ 'filename': bufinfo.filename,
-        \})
+  let options = extend({
+        \ 'ignore-space-change': &diffopt =~# 'iwhite',
+        \ 'unified': &diffopt =~# 'context:\d\+'
+        \   ? matchstr(&diffopt, 'context:\zs\d\+')
+        \   : 0,
+        \}, gita#util#cascade#get('diff')
+        \)
+  let options.commit = bufinfo.commit
+  let options.filename = bufinfo.filename
   for attribute in bufinfo.extra_options
     let options[attribute] = 1
   endfor
   call call('s:on_' . a:name, [options])
 endfunction
-
-call gita#define_variables('content#diff', {
-      \ 'default_opener': 'edit',
-      \})
