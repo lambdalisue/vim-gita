@@ -38,18 +38,15 @@ endfunction
 " NOTE:
 " git diff command does not understand A...B type assignment so translate
 " it to an exact revision
-function! gita#normalize#commit_for_diff(git, commit, ...) abort
-  let split = get(a:000, 0, 0)
+function! gita#normalize#commit_for_diff(git, commit) abort
   if a:commit =~# '^.\{-}\.\.\..\{-}$'
     " git diff <lhs>...<rhs> : <lhs>...<rhs> vs <rhs>
     let [lhs, rhs] = s:GitTerm.split_range(a:commit)
     let lhs = empty(lhs) ? 'HEAD' : lhs
     let rhs = empty(rhs) ? 'HEAD' : rhs
     let lhs = s:GitInfo.find_common_ancestor(a:git, lhs, rhs)
-    return split ? [lhs, rhs] : lhs . '..' . rhs
-  elseif a:commit =~# '^.\{-}\.\..\{-}$'
-    return split ? s:GitTerm.split_range(a:commit) : a:commit
+    return lhs . '..' . rhs
   else
-    return split ? [a:commit, a:commit] : a:commit
+    return a:commit
   endif
 endfunction
