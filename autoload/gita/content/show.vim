@@ -38,7 +38,7 @@ function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) 
 endfunction
 
 function! s:get_diff_content(git, content, filename) abort
-  let filename = s:Path.unixpath(s:Git.get_relative_path(a:git, a:filename))
+  let filename = gita#normalize#relpath_for_git(a:git, a:filename)
   let tempfile = tempname()
   let tempfile1 = tempfile . '.index'
   let tempfile2 = tempfile . '.buffer'
@@ -91,7 +91,7 @@ function! s:build_bufname(options) abort
         \}, a:options)
   if options.worktree
     let git = gita#core#get()
-    let filename = s:Path.realpath(s:Git.get_absolute_path(git, options.filename))
+    let filename = gita#normalize#abspath_for_sys(git, options.filename)
     if !filereadable(filename)
       call gita#throw(printf(
             \ 'A filename "%s" could not be found in the working tree',
@@ -104,12 +104,12 @@ function! s:build_bufname(options) abort
     if options.ancestors || options.ours || options.theirs
       let treeish = printf(':%d:%s',
             \ options.ancestors ? 0 : options.ours ? 1 : 2,
-            \ s:Path.unixpath(s:Git.get_relative_path(git, options.filename)),
+            \ gita#normalize#relpath_for_git(git, options.filename),
             \)
     else
       let treeish = printf('%s:%s',
             \ options.commit,
-            \ s:Path.unixpath(s:Git.get_relative_path(git, options.filename)),
+            \ gita#normalize#relpath_for_git(git, options.filename),
             \)
     endif
     return gita#content#build_bufname('show', {
@@ -122,45 +122,47 @@ function! s:build_bufname(options) abort
 endfunction
 
 function! s:parse_bufname(bufinfo) abort
-  let m = matchlist(a:bufinfo.treeish, '^\%(:[0-3]\)\?\([^:]*\)\%(:\(.*\)\)\?$')
+  let m = matchlist(a:bufinfo.treeish, '^\(\%(:[0-3]\)\?[^:]*\)\%(:\(.*\)\)\?$')
   if empty(m)
     call gita#throw(printf(
           \ 'A treeish part of a buffer name "%s" does not follow "%s" pattern',
           \ a:bufinfo.bufname, '<rev>:<filename> or :<n>:<filename>',
           \))
   endif
-  let git = gita#core#get_or_fail()
-  let a:bufinfo.commit = m[1]
-  let a:bufinfo.filename = s:Path.realpath(s:Git.get_absolute_path(git, m[2]))
+  let a:bufinfo.ancestors = m[1] =~# '^:0'
+  let a:bufinfo.ours = m[1] =~# '^:1'
+  let a:bufinfo.theirs = m[1] =~# '^:2'
+  let a:bufinfo.commit = substitute(m[1], '^:\d\+', '', '')
+  let a:bufinfo.filename = m[2]
   return a:bufinfo
+endfunction
+
+function! s:args_from_options(git, options) abort
+  let options = extend({
+        \ 'ancestors': 0,
+        \ 'ours': 0,
+        \ 'theirs': 0,
+        \ 'commit': '',
+        \ 'filename': '',
+        \}, a:options)
+  if options.ancestors || options.ours || options.theirs
+    let treeish = printf(':%d:%s',
+          \ options.ancestors ? 0 : options.ours ? 1 : 2,
+          \ gita#normalize#relpath_for_git(a:git, options.filename),
+          \)
+  else
+    let treeish = printf('%s:%s',
+          \ gita#normalize#commit(a:git, options.commit),
+          \ gita#normalize#relpath_for_git(a:git, options.filename),
+          \)
+  endif
+  return ['show', treeish]
 endfunction
 
 function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  " NOTE:
-  " 'commit' does not contains ':1' type assignment but if 'commit' is non
-  " empty string, that mean no ':1' type assignment was performed
-  if !empty(a:options.commit)
-    let commit = a:options.commit
-    if commit =~# '^.\{-}\.\.\..\{-}$'
-      " support A...B style
-      let [lhs, rhs] = s:GitTerm.split_range(commit)
-      let lhs = empty(lhs) ? 'HEAD' : lhs
-      let rhs = empty(rhs) ? 'HEAD' : rhs
-      let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-    elseif commit =~# '^.\{-}\.\..\{-}$'
-      " support A..B style
-      let commit  = s:GitTerm.split_range(commit)[0]
-    endif
-    let treeish = commit . ':' . s:Path.unixpath(
-          \ s:Git.get_relative_path(git, a:options.filename),
-          \)
-  else
-    " NOTE:
-    " 'treeish' may contains ':1' type assignment so use it directly
-    let treeish = a:options.treeish
-  endif
-  return gita#process#execute(git, ['show', treeish], {
+  let args = s:args_from_options(git, a:options)
+  return gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
@@ -168,12 +170,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^show$', a:options, {
-        \ 'treeish': '',
-        \ 'commit': '',
-        \ 'filename': '',
-        \ 'patch': 0,
-        \})
+  let options = gita#util#option#cascade('^show$', a:options)
   let content = s:execute_command(options)
   call gita#meta#set('content_type', 'show')
   call gita#meta#set('options', options)
@@ -184,7 +181,7 @@ function! s:on_BufReadCmd(options) abort
         \ gita#util#buffer#parse_cmdarg(),
         \)
   call gita#util#observer#attach()
-  if options.patch
+  if get(options, 'patch')
     setlocal buftype=acwrite
     setlocal noreadonly
   else
@@ -199,12 +196,7 @@ endfunction
 
 function! s:on_FileReadCmd(options) abort
   call gita#util#doautocmd('FileReadPre')
-  let options = extend({
-        \ 'treeish': '',
-        \ 'commit': '',
-        \ 'filename': '',
-        \}, a:options)
-  let content = s:execute_command(options)
+  let content = s:execute_command(a:options)
   call gita#util#buffer#read_content(
         \ content,
         \ gita#util#buffer#parse_cmdarg(),
@@ -223,8 +215,7 @@ function! s:on_BufWriteCmd(options) abort
     call writefile(content, tempfile)
     call gita#process#execute(
           \ git,
-          \ ['apply', '--cached', '--', tempfile],
-          \ { 'quiet': 1 }
+          \ ['apply', '--verbose', '--cached', '--', tempfile],
           \)
     setlocal nomodified
     call gita#util#doautocmd('User', 'GitaStatusModified')
@@ -248,19 +239,16 @@ function! gita#content#show#open(options) abort
         \ 'selection': [],
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#show#default_opener
-        \ : options.opener
   if bufname =~# '^gita:'
     call gita#util#cascade#set('show', options)
     call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
+          \ 'opener': options.opener,
           \ 'window': options.window,
           \ 'selection': options.selection,
           \})
   else
     call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
+          \ 'opener': options.opener,
           \ 'window': options.window,
           \ 'selection': options.selection,
           \})
@@ -269,11 +257,13 @@ endfunction
 
 function! gita#content#show#autocmd(name, bufinfo) abort
   let bufinfo = s:parse_bufname(a:bufinfo)
-  let options = extend(gita#util#cascade#get('show'), {
-        \ 'treeish': bufinfo.treeish,
-        \ 'commit': bufinfo.commit,
-        \ 'filename': bufinfo.filename,
-        \})
+  let options = gita#util#cascade#get('show')
+  let options.ancestors = bufinfo.ancestors
+  let options.ours = bufinfo.ours
+  let options.theirs = bufinfo.theirs
+  let options.commit = bufinfo.commit
+  let options.filename = bufinfo.filename
+  let options.treeish = bufinfo.treeish
   for attribute in bufinfo.extra_options
     let options[attribute] = 1
   endfor

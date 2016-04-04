@@ -65,15 +65,6 @@ function! s:get_parser() abort
       if get(a:options, 'repository')
         let a:options.filename = ''
         unlet a:options.repository
-      elseif get(a:options, 'ancestor')
-        let a:options.commit = ':1'
-        unlet a:options.ancestor
-      elseif get(a:options, 'ours')
-        let a:options.commit = ':2'
-        unlet a:options.ours
-      elseif get(a:options, 'theirs')
-        let a:options.commit = ':3'
-        unlet a:options.theirs
       endif
     endfunction
     call s:parser.hooks.validate()
@@ -87,6 +78,10 @@ function! gita#command#show#command(bang, range, args) abort
   if empty(options)
     return
   endif
+  let options = extend(
+        \ copy(g:gita#command#show#default_options),
+        \ options
+        \)
   call gita#util#option#assign_commit(options)
   call gita#util#option#assign_filename(options)
   call gita#util#option#assign_selection(options)
@@ -98,3 +93,7 @@ function! gita#command#show#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#show', {
+      \ 'default_options': {},
+      \})
