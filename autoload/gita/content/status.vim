@@ -3,33 +3,35 @@ let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:build_bufname(options) abort
-  let options = extend({
-        \ 'ignored': 0,
-        \}, a:options)
   return gita#content#build_bufname('status', {
         \ 'nofile': 1,
-        \ 'extra_options': [
-        \   options.ignored ? 'ignored' : '',
-        \ ],
+        \ 'extra_options': [],
         \})
 endfunction
 
-function! s:execute_command(options) abort
+function! s:args_from_options(git, options) abort
   let args = gita#process#args_from_options(a:options, {
+        \ 'ignored': 1,
         \ 'ignore-submodules': 1,
         \ 'ignored-submodules': 1,
         \})
-  let args = [
-        \ 'status',
+  let args = ['status', '--verbose'] + args
+  return args
+endfunction
+
+function! s:execute_command(options) abort
+  let git = gita#core#get_or_fail()
+  let args = s:args_from_options(git, a:options)
+  let args += [
         \ '--porcelain',
         \ '--no-column',
         \ '--untracked-files',
-        \] + args + ['--'] + get(a:options, 'filenames', [])
-  let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
+        \]
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -100,12 +102,8 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^status$', a:options, {
-        \ 'untracked-files': 0,
-        \ 'ignore-submodules': 0,
-        \ 'ignored': 0,
-        \})
-  let content = filter(s:execute_command(options), '!empty(v:val)')
+  let options = gita#util#option#cascade('^status$', a:options)
+  let content = s:execute_command(options)
   let statuses = s:GitParser.parse_status(content, { 'flatten': 1 })
   let statuses = sort(statuses, function('s:compare_statuses'))
   call gita#meta#set('content_type', 'status')
@@ -124,16 +122,13 @@ endfunction
 
 function! gita#content#status#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#status#default_opener
-        \ : options.opener
   call gita#util#cascade#set('status', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -153,14 +148,10 @@ endfunction
 
 function! gita#content#status#autocmd(name, bufinfo) abort
   let options = gita#util#cascade#get('status')
-  for attribute in a:bufinfo.extra_options
-    let options[attribute] = 1
-  endfor
   call call('s:on_' . a:name, [options])
 endfunction
 
 call gita#define_variables('content#status', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-edit)',
       \ 'disable_default_mappings': 0,
       \})

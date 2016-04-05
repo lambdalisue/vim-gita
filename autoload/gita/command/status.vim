@@ -7,8 +7,6 @@ function! s:get_parser() abort
           \ 'name': 'Gita status',
           \ 'description': 'Show and manipulate a status of the repository',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'unknown_description': 'filenames',
-          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--ignored',
@@ -41,7 +39,10 @@ function! gita#command#status#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#util#option#assign_selection(options)
+  let options = extend(
+        \ copy(g:gita#command#status#default_options),
+        \ options
+        \)
   call gita#util#option#assign_opener(options)
   call gita#content#status#open(options)
 endfunction
@@ -50,3 +51,7 @@ function! gita#command#status#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#status', {
+      \ 'default_options': {},
+      \})
