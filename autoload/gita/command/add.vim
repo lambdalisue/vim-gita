@@ -52,6 +52,25 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'dry-run': 1,
+        \ 'force': 1,
+        \ 'update': 1,
+        \ 'intent-to-add': 1,
+        \ 'all': 1,
+        \ 'ignore-removal': 1,
+        \ 'refresh': 1,
+        \ 'ignore-errors': 1,
+        \ 'ignore-missing': 1,
+        \})
+  let args = ['add', '--verbose'] + args + map(
+        \ get(a:options, '__unknown__', []),
+        \ 'gita#normalize#abspath_fog_sys(a:git, v:val)'
+        \)
+  return args
+endfunction
+
 function! gita#command#add#command(bang, range, args) abort
   let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
@@ -59,10 +78,13 @@ function! gita#command#add#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['add'] + map(
-        \ options.__args__,
-        \ 'gita#meta#expand(v:val)',
-        \))
+  let options = extend(
+        \ copy(g:gita#command#add#default_options),
+        \ options
+        \)
+  let git = gita#core#get_or_fail()
+  let args = s:args_from_options(git, options)
+  call gita#process#execute(git, args)
   if !get(options, 'dry-run')
     call gita#util#doautocmd('User', 'GitaStatusModified')
   endif
@@ -72,3 +94,7 @@ function! gita#command#add#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#add', {
+      \ 'default_options': {},
+      \})
