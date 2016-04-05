@@ -15,7 +15,7 @@ function! s:action(candidates, options) abort
         \ options.force ? '--force' : '',
         \ options.ours ? '--ours' : '',
         \ options.theirs ? '--theirs' : '',
-        \ gita#normalize#commit(options.commit),
+        \ gita#normalize#commit(git, options.commit),
         \ '--',
         \] + map(
         \ copy(a:candidates),
