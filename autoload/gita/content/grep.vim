@@ -5,25 +5,32 @@ let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 
+function! s:assign_pattern(options) abort
+  if empty(get(a:options, 'patterns'))
+    let pattern = s:Prompt.ask('Please input a grep pattern: ')
+    if empty(pattern)
+      call gita#throw('Cancel')
+    endif
+    let a:options.patterns = [pattern]
+  endif
+  return a:options
+endfunction
+
 function! s:build_bufname(options) abort
   let options = extend({
         \ 'cached': 0,
-        \ 'no-index': 0,
-        \ 'untracked': 0,
-        \ 'ignore-case': 0,
+        \ 'commit': '',
         \}, a:options)
   return gita#content#build_bufname('grep', {
         \ 'nofile': 1,
         \ 'extra_options': [
-        \   options.cached ? 'cached' : '',
-        \   options['no-index'] ? 'no-index' : '',
-        \   options.untracked ? 'untracked' : '',
-        \   options['ignore-case'] ? 'ignore-case' : '',
+        \   options.cached ? 'cached' : 'worktree',
+        \   options.commit,
         \ ],
         \})
 endfunction
 
-function! s:execute_command(options) abort
+function! s:args_from_options(git, options) abort
   let args = gita#process#args_from_options(a:options, {
         \ 'cached': 1,
         \ 'no-index': 1,
@@ -47,17 +54,26 @@ function! s:execute_command(options) abort
         \ '--no-color',
         \ '--line-number',
         \ '--full-name',
-        \ a:options.commit,
+        \ gita#normalize#commit(a:git, a:options.commit),
         \]
   for pattern in a:options.patterns
     let args += ['-e' . pattern]
   endfor
-  let args += ['--'] + a:options.filenames
+  let args += ['--'] + map(
+        \ copy(a:options.filenames),
+        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \)
+  return filter(args, '!empty(v:val)')
+endfunction
+
+function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
+  let args = s:args_from_options(git, a:options)
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -118,11 +134,8 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^grep$', a:options, {
-        \ 'commit': '',
-        \ 'filenames': [],
-        \ 'patterns': [],
-        \})
+  let options = gita#util#option#cascade('^grep$', a:options)
+  let options = s:assign_pattern(options)
   let content = s:execute_command(options)
   let candidates = s:GitParser.parse_match(content)
   let candidates = s:extend_matches(candidates, winwidth(0))
@@ -144,24 +157,15 @@ endfunction
 
 function! gita#content#grep#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \ 'patterns': [],
         \}, a:options)
-  if empty(options.patterns)
-    let pattern = s:Prompt.ask('Please input a grep pattern: ')
-    if empty(pattern)
-      call gita#throw('Cancel')
-    endif
-    let options.patterns = [pattern]
-  endif
+  let options = s:assign_pattern(options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#grep#default_opener
-        \ : options.opener
   call gita#util#cascade#set('grep', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -188,14 +192,12 @@ endfunction
 
 function! gita#content#grep#autocmd(name, bufinfo) abort
   let options = gita#util#cascade#get('grep')
-  for attribute in a:bufinfo.extra_options
-    let options[attribute] = 1
-  endfor
+  let options.cached = get(a:bufinfo.extra_options, 0, '') ==# 'cached'
+  let options.commit = get(a:bufinfo.extra_options, 1, '')
   call call('s:on_' . a:name, [options])
 endfunction
 
 call gita#define_variables('content#grep', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-show)',
       \ 'disable_default_mappings': 0,
       \})
