@@ -11,39 +11,37 @@ let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
+function! s:args_from_options(git, options) abort
+  let args = [
+        \ 'blame',
+        \ g:gita#content#blame#use_porcelain_instead
+        \   ? '--porcelain'
+        \   : '--incremental',
+        \ gita#normalize#commit(a:git, get(a:options, 'commit', '')),
+        \ '--',
+        \ gita#normalize#relpath_for_git(a:git, a:options.filename),
+        \]
+  return args
+endfunction
+
 function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  let commit = a:options.commit
-  if commit =~# '^.\{-}\.\.\..\{-}$'
-    " support A...B style
-    let [lhs, rhs] = s:GitTerm.split_range(commit)
-    let lhs = empty(lhs) ? 'HEAD' : lhs
-    let rhs = empty(rhs) ? 'HEAD' : rhs
-    let commit = s:GitInfo.find_common_ancestor(git, lhs, rhs)
-  elseif commit =~# '^.\{-}\.\..\{-}$'
-    " support A..B style
-    let commit  = s:GitTerm.split_range(commit)[0]
-  endif
   let guard = s:Guard.store('&l:statusline')
   try
     setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
     redrawstatus
-    let args = [
-          \ 'blame',
-          \ g:gita#content#blame#use_porcelain_instead
-          \   ? '--porcelain'
-          \   : '--incremental',
-          \ commit,
-          \ '--',
-          \ a:options.filename,
-          \]
+    let args = s:args_from_options(git, a:options)
     let content = gita#process#execute(git, args, {
           \ 'quiet': 1,
           \ 'encode_output': 0,
           \})
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
-    let blameobj = s:get_blameobj(content, commit, a:options.filename)
+    let blameobj = s:get_blameobj(
+          \ content,
+          \ a:options.commit,
+          \ a:options.filename
+          \)
     setlocal statusline=Formatting\ blame\ content\ [3/3]\ ...
     redrawstatus
     let blamemeta = s:get_blamemeta(
@@ -72,15 +70,14 @@ function! s:get_blameobj(content, commit, filename) abort
         let blameobj.file_content = readfile(a:filename)
       else
         let git = gita#core#get_or_fail()
-        let treeish = printf('%s:%s',
-              \ a:commit,
-              \ s:Path.unixpath(s:Git.get_relative_path(git, a:filename)),
-              \)
-        let blameobj.file_content = gita#process#execute(
-              \ git,
-              \ ['show', treeish],
-              \ { 'quiet': 1, 'encode_output': 0 },
-              \)
+        let args = ['show', printf('%s:%s',
+              \ gita#normalize#commit(git, a:commit),
+              \ gita#normalize#relpath_for_git(git, a:filename),
+              \)]
+        let blameobj.file_content = gita#process#execute(git, args, {
+              \ 'quiet': 1,
+              \ 'encode_output': 0,
+              \})
       endif
     endif
     return blameobj
@@ -264,18 +261,16 @@ endfunction
 
 function! gita#content#blame#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'tabedit',
+        \ 'window': 'blame_navi',
         \ 'selection': [],
         \ 'navigator_width': g:gita#content#blame#navigator_width,
         \}, a:options)
   let bufname = gita#content#blame_navi#build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#blame#default_opener
-        \ : options.opener
   call gita#util#cascade#set('blame-navi', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
-        \ 'window': 'blame_navi',
+        \ 'opener': options.opener,
+        \ 'window': options.window,
         \ 'selection': options.selection,
         \})
   setlocal scrollbind
@@ -352,7 +347,6 @@ function! gita#content#blame#set_pseudo_separators(blamemeta) abort
 endfunction
 
 call gita#define_variables('content#blame', {
-      \ 'default_opener': 'tabedit',
       \ 'use_porcelain_instead': 0,
       \ 'use_python': s:Python.is_enabled(),
       \ 'navigator_width': 50,

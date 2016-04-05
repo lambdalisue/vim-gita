@@ -43,6 +43,10 @@ function! gita#command#blame#command(bang, range, args) abort
   if empty(options)
     return
   endif
+  let options = extend(
+        \ copy(g:gita#command#blame#default_options),
+        \ options
+        \)
   call gita#util#option#assign_commit(options)
   call gita#util#option#assign_filename(options)
   call gita#util#option#assign_selection(options)
@@ -53,3 +57,7 @@ function! gita#command#blame#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#blame', {
+      \ 'default_options': {},
+      \})
