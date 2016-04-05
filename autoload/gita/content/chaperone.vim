@@ -1,6 +1,7 @@
 let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
+let s:GitParser = s:V.import('Git.Parser')
 
 function! s:open1(options) abort
   call gita#throw('Gita chaperon --method=one has not implemented yet')
@@ -30,11 +31,6 @@ function! s:open2(options) abort
         \}))
   call gita#util#diffthis()
 
-  let content = gita#process#execute(
-        \ git,
-        \ ['show', ':2:' . filename],
-        \ { 'quiet': 1 },
-        \)
   call gita#content#show#open({
         \ 'worktree': 1,
         \ 'filename': filename,
@@ -44,7 +40,10 @@ function! s:open2(options) abort
         \ 'window': 'chaperone2_lhs',
         \ 'selection': options.selection,
         \})
-  call gita#util#buffer#edit_content(content)
+  " Remove conflict markers and contents of theirs if exists
+  call gita#util#buffer#edit_content(
+        \ s:GitParser.strip_theirs(getline(1, '$'))
+        \)
   setlocal modified
   call gita#util#diffthis()
   diffupdate
@@ -79,11 +78,6 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let rhs_bufnum = bufnr('%')
 
-  let content = gita#process#execute(
-        \ git,
-        \ ['show', ':1:' . filename],
-        \ { 'quiet': 1 },
-        \)
   call gita#content#show#open({
         \ 'worktree': 1,
         \ 'filename': filename,
@@ -93,7 +87,10 @@ function! s:open3(options) abort
         \ 'window': 'chaperone3_chs',
         \ 'selection': options.selection,
         \})
-  call gita#util#buffer#edit_content(content)
+  " Remove conflict markers and contents if exists
+  call gita#util#buffer#edit_content(
+        \ s:GitParser.strip_conflict(getline(1, '$'))
+        \)
   setlocal modified
   call gita#util#diffthis()
   let chs_bufnum = bufnr('%')
