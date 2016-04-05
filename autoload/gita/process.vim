@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
+let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:String = s:V.import('Data.String')
 let s:Prompt = s:V.import('Vim.Prompt')
@@ -9,7 +10,10 @@ let s:ArgumentParser = s:V.import('ArgumentParser')
 function! s:translate(key, options, scheme) abort
   let value = a:options[a:key]
   if s:Prelude.is_list(value)
-    return map(value, 's:translate(a:key, { a:key : v:val }, a:scheme)')
+    return s:List.flatten(map(
+          \ copy(value),
+          \ 's:translate(a:key, { a:key : v:val }, a:scheme)'
+          \))
   elseif s:Prelude.is_number(value)
     return value ? [(len(a:key) == 1 ? '-' : '--') . a:key] : []
   else

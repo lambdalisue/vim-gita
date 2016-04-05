@@ -6,6 +6,53 @@ Describe gita#process
     let sf = ScriptLocal.sfuncs(Path.realpath('autoload/gita/process.vim'))
   End
 
+  Describe s:translate({key}, {options}, {scheme})
+    It returns ['-X'] for ('X', { 'X': 1 }, '')
+      let ret = sf.translate('X', { 'X': 1 }, '')
+      Assert Equals(ret, ['-X'])
+    End
+
+    It returns ['--KEY'] for ('KEY', { 'KEY': 1 }, '')
+      let ret = sf.translate('KEY', { 'KEY': 1 }, '')
+      Assert Equals(ret, ['--KEY'])
+    End
+
+    It returns ['KEY'] for ('KEY', { 'KEY': 'VALUE' }, '%k')
+      let ret = sf.translate('KEY', { 'KEY': 'VALUE' }, '%k')
+      Assert Equals(ret, ['KEY'])
+    End
+
+    It returns ['VALUE'] for ('KEY', { 'KEY': 'VALUE' }, '%v')
+      let ret = sf.translate('KEY', { 'KEY': 'VALUE' }, '%v')
+      Assert Equals(ret, ['VALUE'])
+    End
+
+    It returns ['--KEY=VALUE'] for ('KEY', { 'KEY': 'VALUE' }, '--%k=%v')
+      let ret = sf.translate('KEY', { 'KEY': 'VALUE' }, '--%k=%v')
+      Assert Equals(ret, ['--KEY=VALUE'])
+    End
+
+    It returns ['--KEY=V A L U E'] for ('KEY', { 'KEY': 'V A L U E' }, '--%k=%v')
+      let ret = sf.translate('KEY', { 'KEY': 'V A L U E' }, '--%k=%v')
+      Assert Equals(ret, ['--KEY=V A L U E'])
+    End
+
+    It returns ['--KEY', 'VALUE'] for ('KEY', { 'KEY': 'VALUE' }, '--%k %v')
+      let ret = sf.translate('KEY', { 'KEY': 'VALUE' }, '--%k %v')
+      Assert Equals(ret, ['--KEY', 'VALUE'])
+    End
+
+    It returns ['--KEY', 'V A L U E'] for ('KEY', { 'KEY': 'V A L U E' }, '--%k %v')
+      let ret = sf.translate('KEY', { 'KEY': 'V A L U E' }, '--%k %v')
+      Assert Equals(ret, ['--KEY', 'V A L U E'])
+    End
+
+    It returns ['-Xv1', '-Xv2', '-Xv3'] for ('X', { 'X': ['v1', 'v2', 'v3'] }, '-%k%v')
+      let ret = sf.translate('X', { 'X': ['v1', 'v2', 'v3'] }, '-%k%v')
+      Assert Equals(ret, ['-Xv1', '-Xv2', '-Xv3'])
+    End
+  End
+
   Describe s:strip_quotes({value})
     It strips leading and trailing single quotes
       Assert Equals(sf.strip_quotes("'foo'"), 'foo')
