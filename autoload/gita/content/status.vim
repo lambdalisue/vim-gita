@@ -49,7 +49,6 @@ function! s:define_actions() abort
         \ 'nmap <buffer> <Return> %s',
         \ g:gita#content#status#primary_action_mapping
         \)
-  nmap <buffer><nowait> <C-^> <Plug>(gita-commit)
 endfunction
 
 function! s:get_candidates(startline, endline) abort

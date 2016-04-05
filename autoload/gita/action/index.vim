@@ -73,12 +73,12 @@ function! gita#action#index#define(disable_mapping) abort
   if a:disable_mapping
     return
   endif
-  nmap <buffer><nowait><expr> << gita#action#smart_map('<<', '<Plug>(gita-stage)')
-  nmap <buffer><nowait><expr> >> gita#action#smart_map('>>', '<Plug>(gita-unstage)')
-  nmap <buffer><nowait><expr> -- gita#action#smart_map('--', '<Plug>(gita-toggle)')
-  vmap <buffer><nowait><expr> << gita#action#smart_map('<<', '<Plug>(gita-stage)')
-  vmap <buffer><nowait><expr> >> gita#action#smart_map('>>', '<Plug>(gita-unstage)')
-  vmap <buffer><nowait><expr> -- gita#action#smart_map('--', '<Plug>(gita-toggle)')
+  nmap <buffer><nowait><expr> << gita#action#smart_map('<<', '<Plug>(gita-index-stage)')
+  nmap <buffer><nowait><expr> >> gita#action#smart_map('>>', '<Plug>(gita-index-unstage)')
+  nmap <buffer><nowait><expr> -- gita#action#smart_map('--', '<Plug>(gita-index-toggle)')
+  vmap <buffer><nowait><expr> << gita#action#smart_map('<<', '<Plug>(gita-index-stage)')
+  vmap <buffer><nowait><expr> >> gita#action#smart_map('>>', '<Plug>(gita-index-unstage)')
+  vmap <buffer><nowait><expr> -- gita#action#smart_map('--', '<Plug>(gita-index-toggle)')
 endfunction
 
 call gita#define_variables('action#index', {

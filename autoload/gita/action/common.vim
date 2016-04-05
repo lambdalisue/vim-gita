@@ -138,10 +138,10 @@ function! gita#action#common#define(disable_mapping) abort
   if a:disable_mapping
     return
   endif
-  nmap <buffer><nowait> ?     <Plug>(gita-help)
-  nmap <buffer><nowait> <C-l> <Plug>(gita-redraw)
-  nmap <buffer><nowait> <Tab> <Plug>(gita-choice)
-  vmap <buffer><nowait> <Tab> <Plug>(gita-choice)
+  nmap <buffer><nowait> ?     <Plug>(gita-common-help)
+  nmap <buffer><nowait> <C-l> <Plug>(gita-common-redraw)
+  nmap <buffer><nowait> <Tab> <Plug>(gita-common-choice)
+  vmap <buffer><nowait> <Tab> <Plug>(gita-common-choice)
 endfunction
 
 function! gita#action#common#_complete_alias(arglead, cmdline, cursorpos) abort

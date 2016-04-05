@@ -86,7 +86,7 @@ function! gita#action#define(name, fn, ...) abort
         \ ? printf('Perform %s action', options.alias)
         \ : options.description
   let mapping = empty(options.mapping)
-        \ ? printf('<Plug>(gita-%s)', substitute(options.alias, ':', '-', 'g'))
+        \ ? printf('<Plug>(gita-%s)', substitute(a:name, ':', '-', 'g'))
         \ : options.mapping
   let action_book = gita#action#get_book()
   let action_book.aliases[options.alias] = a:name

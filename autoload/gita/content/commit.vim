@@ -179,7 +179,7 @@ endfunction
 
 function! s:action_commit_do(candidate, options) abort
   call s:commit_commitmsg()
-  call gita#action#call('status', a:candidate)
+  call gita#action#call('status:open', a:candidate)
 endfunction
 
 function! s:on_BufReadCmd(options) abort

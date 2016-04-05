@@ -3,7 +3,7 @@ function! s:action(candidate, options) abort
 endfunction
 
 function! gita#action#status#define(disable_mapping) abort
-  call gita#action#define('status', function('s:action'), {
+  call gita#action#define('status:open', function('s:action'), {
         \ 'description': 'Open gita-status window',
         \ 'mapping_mode': 'n',
         \ 'options': {},
@@ -13,6 +13,6 @@ function! gita#action#status#define(disable_mapping) abort
   endif
   let content_type = gita#meta#get('content_type')
   if content_type ==# 'commit'
-    nmap <buffer><nowait> <C-^> <Plug>(gita-status)
+    nmap <buffer><nowait> <C-^> <Plug>(gita-status-open)
   endif
 endfunction
