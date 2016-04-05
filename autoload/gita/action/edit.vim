@@ -35,36 +35,42 @@ function! gita#action#edit#define(disable_mapping) abort
         \ 'options': { 'opener': 'edit' },
         \})
   call gita#action#define('edit:above', function('s:action'), {
+        \ 'alias': 'above',
         \ 'description': 'Open a content (above)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
         \ 'options': { 'opener': 'leftabove new' },
         \})
   call gita#action#define('edit:below', function('s:action'), {
+        \ 'alias': 'below',
         \ 'description': 'Open a content (below)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
         \ 'options': { 'opener': 'rightbelow new' },
         \})
   call gita#action#define('edit:left', function('s:action'), {
+        \ 'alias': 'left',
         \ 'description': 'Open a content (left)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
         \ 'options': { 'opener': 'leftabove vnew' },
         \})
   call gita#action#define('edit:right', function('s:action'), {
+        \ 'alias': 'right',
         \ 'description': 'Open a content (right)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
         \ 'options': { 'opener': 'rightbelow vnew' },
         \})
   call gita#action#define('edit:tab', function('s:action'), {
+        \ 'alias': 'tab',
         \ 'description': 'Open a content (tab)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
         \ 'options': { 'opener': 'tabnew' },
         \})
   call gita#action#define('edit:preview', function('s:action'), {
+        \ 'alias': 'preview',
         \ 'description': 'Open a content (preview)',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['path'],
