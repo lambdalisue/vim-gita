@@ -297,13 +297,19 @@ function! gita#content#blame#select(blamemeta, selection) abort
   call gita#util#buffer#select(actual_selection)
 endfunction
 
-function! gita#content#blame#get_candidate(index) abort
-  let blamemeta = gita#meta#get_for('^blame-', 'blamemeta', { 'lineinfos': {}})
-  let lineinfo = get(blamemeta.lineinfos, a:index, {})
-  if empty(lineinfo)
-    return {}
-  endif
-  return blamemeta.chunks[lineinfo.chunkref]
+function! gita#content#blame#get_candidates(startline, endline) abort
+  let blamemeta = gita#meta#get_for('^blame-', 'blamemeta', {
+        \ 'lineinfos': {}
+        \})
+  let candidates = []
+  for linenum in range(a:startline, a:endline)
+    let lineinfo = get(blamemeta.lineinfos, linenum - 1, {})
+    call add(candidates, empty(lineinfo)
+          \ ? {}
+          \ : blamemeta.chunks[lineinfo.chunkref]
+          \)
+  endfor
+  return candidates
 endfunction
 
 function! gita#content#blame#get_pseudo_linenum(blamemeta, linenum) abort

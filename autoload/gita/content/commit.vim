@@ -52,7 +52,7 @@ function! s:execute_command(options) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#action#attach(function('s:get_candidate'))
+  call gita#action#attach(function('s:get_candidates'))
   call gita#action#include([
         \ 'common', 'blame', 'browse',
         \ 'status', 'diff', 'edit', 'show', 'commit',
@@ -73,10 +73,13 @@ function! s:define_actions() abort
   nmap <buffer> <C-c><C-c> <Plug>(gita-commit-do)
 endfunction
 
-function! s:get_candidate(index) abort
-  let record = matchstr(getline(a:index + 1), '^# \zs.*$')
+function! s:get_candidates(startline, endline) abort
   let statuses = gita#meta#get_for('^commit$', 'statuses', [])
-  return gita#action#find_candidate(statuses, record, 'record')
+  let records = map(
+        \ getline(a:startline, a:endline),
+        \ 'matchstr(v:val, ''^# \zs.*$'')'
+        \)
+  return gita#action#filter(statuses, records, 'record')
 endfunction
 
 function! s:compare_statuses(lhs, rhs) abort

@@ -40,7 +40,7 @@ function! s:execute_command(options) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#action#attach(function('s:get_candidate'))
+  call gita#action#attach(function('s:get_candidates'))
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
         \], g:gita#content#ls_tree#disable_default_mappings)
@@ -54,10 +54,10 @@ function! s:define_actions() abort
         \)
 endfunction
 
-function! s:get_candidate(index) abort
-  let record = getline(a:index + 1)
+function! s:get_candidates(startline, endline) abort
   let candidates = gita#meta#get_for('^ls-tree$', 'candidates', [])
-  return gita#action#find_candidate(candidates, record, 'path')
+  let records = getline(a:startline, a:endline)
+  return gita#action#filter(candidates, records, 'path')
 endfunction
 
 function! s:extend_filename(filename) abort

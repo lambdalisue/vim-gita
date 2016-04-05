@@ -52,7 +52,7 @@ function! s:execute_command(options) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#action#attach(function('s:get_candidate'))
+  call gita#action#attach(function('s:get_candidates'))
   call gita#action#include([
         \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
         \], g:gita#content#diff_ls#disable_default_mappings)
@@ -66,10 +66,10 @@ function! s:define_actions() abort
         \)
 endfunction
 
-function! s:get_candidate(index) abort
-  let record = getline(a:index + 1)
+function! s:get_candidates(startline, endline) abort
   let stats = gita#meta#get_for('^diff-ls$', 'stats', [])
-  return gita#action#find_candidate(stats, record, 'record')
+  let records = getline(a:startline, a:endline)
+  return gita#action#filter(stats, records, 'record')
 endfunction
 
 function! s:extend_stats(stats, width) abort

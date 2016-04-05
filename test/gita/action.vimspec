@@ -1,0 +1,245 @@
+Describe gita#action
+  After
+    bwipe!
+  End
+
+  Describe #is_attached()
+    It returns 1 if an action book is attached to the current buffer
+      call gita#action#attach(function('getline'))
+      Assert True(gita#action#is_attached())
+    End
+
+    It returns 0 if no action book is attached to the current buffer
+      Assert False(gita#action#is_attached())
+    End
+  End
+  
+  Describe #is_satisfied({candidate}, {requirements})
+    It return 1 if {candidate} has all {requirements}
+      let candidate = {
+            \ 'A': 1,
+            \ 'B': 1,
+            \ 'C': 1,
+            \}
+      let requirements = ['A', 'B', 'C']
+      Assert True(gita#action#is_satisfied(candidate, requirements))
+    End
+
+    It return 0 if at least one of {requirements} is missing in {candidate}
+      let candidate = {
+            \ 'A': 1,
+            \ 'C': 1,
+            \}
+      let requirements = ['A', 'B', 'C']
+      Assert False(gita#action#is_satisfied(candidate, requirements))
+    End
+  End
+
+  Describe #attach({funcref})
+    It attaches an action book to the current buffer
+      let Func = function('getline')
+      let book = gita#action#attach(Func)
+      Assert Equals(b:_gita_action_book.actions, {})
+      Assert Equals(b:_gita_action_book.aliases, {})
+      Assert Equals(b:_gita_action_book.funcref, Func)
+    End
+  End
+
+  Describe #get_book()
+    It returns an instance of action book attached to the current buffer
+      let book1 = gita#action#attach(function('getline'))
+      let book2 = gita#action#get_book()
+      Assert Equals(book1, book2)
+      Assert Same(book1, book2)
+    End
+
+    It throws an exception if no action book has attached to the current buffer
+      Throws /No action has attached on a buffer/ gita#action#get_book()
+    End
+  End
+
+  Describe #get_action({name})
+    It returns an instance of action in an action book of the current buffer
+      let book = gita#action#attach(function('getline'))
+      let book.actions['foo'] = 'bar'
+      let ret = gita#action#get_action('foo')
+      Assert Equals(ret, 'bar')
+    End
+
+    It throws an exception if {name} action is missing
+      call gita#action#attach(function('getline'))
+      Throws /An action .* is not defined on a buffer/ gita#action#get_action('foo')
+    End
+  End
+
+  Describe #get_candidates([{startline}, {endline}])
+    It returns a candidate list on the current line
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates()
+      Assert Equals(ret, ['B'])
+    End
+
+    It returns a candidate list on the current selection
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      normal! v
+      call setpos('.', [0, 4, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates()
+      Assert Equals(ret, ['B', 'C', 'D'])
+      execute "normal! \<Esc>"
+    End
+
+    It returns a candidate list on the specified line
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates(3)
+      Assert Equals(ret, ['C'])
+    End
+
+    It returns a candidate list on the specified line even there is a selection
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      normal! v
+      call setpos('.', [0, 4, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates(3)
+      Assert Equals(ret, ['C'])
+      execute "normal! \<Esc>"
+    End
+
+    It returns a candidate list on the specified selection
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates(4, 5)
+      Assert Equals(ret, ['D', 'E'])
+    End
+
+    It returns a candidate list on the specified selection even there is a selection
+      call setline(1, ['A', 'B', 'C', 'D', 'E'])
+      call setpos('.', [0, 2, 0, 0])
+      normal! v
+      call setpos('.', [0, 4, 0, 0])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates(4, 5)
+      Assert Equals(ret, ['D', 'E'])
+      execute "normal! \<Esc>"
+    End
+
+    It filter empty candidates from the return List
+      call setline(1, ['A', '', 'B', '', 'C', '', 'D', '', 'E'])
+      call gita#action#attach(function('getline'))
+      let ret = gita#action#get_candidates(1, 10)
+      Assert Equals(ret, ['A', 'B', 'C', 'D', 'E'])
+    End
+  End
+
+  Describe #filter({candidates}, {records}, {attrname})
+    It filters {candidates} which {attrname} is found in {records}
+      let candidates = [
+            \ {'record': 'A'},
+            \ {'record': 'B'},
+            \ {'record': 'C'},
+            \ {'record': 'D'},
+            \ {'record': 'E'},
+            \]
+      let records = ['A', 'C', 'E']
+      let ret = gita#action#filter(candidates, records, 'record')
+      Assert Equals(ret, [
+            \ {'record': 'A'},
+            \ {'record': 'C'},
+            \ {'record': 'E'},
+            \])
+    End
+  End
+
+  Describe #define({name}, {fn}[, {options}])
+    It defines an action with {name} and {fn}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action', function('tr'))
+      let action = gita#action#get_action('test:action')
+      Assert Equals(action.fn, function('tr'))
+      Assert Equals(action.alias, 'test:action')
+      Assert Equals(action.description, 'Perform test:action action')
+      Assert Equals(action.mapping, '<Plug>(gita-test-action)')
+      Assert Equals(action.mapping_mode, 'nv')
+      Assert Equals(action.requirements, [])
+      Assert Equals(action.options, {})
+    End
+
+    It defines an action with {options.alias}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action', function('tr'), {
+            \ 'alias': 'test',
+            \})
+      let action1 = gita#action#get_action('test:action')
+      let action2 = gita#action#get_action('test')
+      Assert Equals(action1, action2)
+      Assert Same(action1, action2)
+    End
+
+    It defines an action with {options.description}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action', function('tr'), {
+            \ 'description': 'test',
+            \})
+      let action = gita#action#get_action('test:action')
+      Assert Equals(action.description, 'test')
+    End
+
+    It defines an action with {options.requirements}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action', function('tr'), {
+            \ 'requirements': ['A', 'B'],
+            \})
+      let action = gita#action#get_action('test:action')
+      Assert Equals(action.requirements, ['A', 'B'])
+    End
+
+    It defines an action with {options.options}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action', function('tr'), {
+            \ 'options': {'foo': 'bar'}
+            \})
+      let action = gita#action#get_action('test:action')
+      Assert Equals(action.options, {'foo': 'bar'})
+    End
+
+    It defines mappings of the action with {options.mapping} and {options.mapping_mode}
+      call gita#action#attach(function('getline'))
+      call gita#action#define('test:action1', function('tr'))
+      Assert NotEmpty(maparg('<Plug>(gita-test-action1)', 'n'))
+      Assert NotEmpty(maparg('<Plug>(gita-test-action1)', 'v'))
+
+      call gita#action#define('test:action2', function('tr'), {
+            \ 'mapping': '<Plug>(test-action2)',
+            \ 'mapping_mode': 'n',
+            \})
+      Assert NotEmpty(maparg('<Plug>(test-action2)', 'n'))
+      Assert Empty(maparg('<Plug>(test-action2)', 'v'))
+
+      call gita#action#define('test:action3', function('tr'), {
+            \ 'mapping': '<Plug>(action3)',
+            \ 'mapping_mode': 'v',
+            \})
+      Assert Empty(maparg('<Plug>(action3)', 'n'))
+      Assert NotEmpty(maparg('<Plug>(action3)', 'v'))
+    End
+  End
+
+  Describe #call({name}, {candidates})
+    " TODO: Write test
+  End
+
+  Describe #include({names}[, {disable_default_mappings})
+    " TODO: Write test
+  End
+
+  Describe #smart_map({lhs}, {rhs})
+    " TODO: Write test
+  End
+End

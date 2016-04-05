@@ -18,7 +18,7 @@ function! s:parse_bufname(bufinfo) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#action#attach(function('gita#content#blame#get_candidate'))
+  call gita#action#attach(function('gita#content#blame#get_candidates'))
   call gita#action#include([
         \ 'common', 'blame', 'edit', 'show', 'diff',
         \], g:gita#content#blame_navi#disable_default_mappings)

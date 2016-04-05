@@ -22,7 +22,7 @@ endfunction
 
 function! gita#action#attach(funcref) abort
   let b:_gita_action_book = {
-        \ 'get_candidate': a:funcref,
+        \ 'funcref': a:funcref,
         \ 'actions': {},
         \ 'aliases': {},
         \}
@@ -41,50 +41,36 @@ endfunction
 
 function! gita#action#get_action(name) abort
   let action_book = gita#action#get_book()
-  if !has_key(action_book.actions, a:name)
+  let name = has_key(action_book.aliases, a:name)
+        \ ? action_book.aliases[a:name]
+        \ : a:name
+  if !has_key(action_book.actions, name)
     call gita#throw(printf(
           \ 'An action "%s" is not defined on a buffer "%s"',
           \ a:name, bufname('%'),
           \))
   endif
-  return action_book.actions[a:name]
+  return action_book.actions[name]
 endfunction
 
 function! gita#action#get_candidates(...) abort
   let action_book = gita#action#get_book()
-  let start_line = get(a:000, 0, line('.'))
-  let end_line = get(a:000, 1, start_line)
-  let candidates = map(
-        \ range(start_line, end_line),
-        \ 'action_book.get_candidate(v:val - 1)'
+  let sl = get(a:000, 0, line('.'))
+  let el = get(a:000, 1, a:0 == 0 ? line('v') : sl)
+  let [sline, eline] = sl < el ? [sl, el] : [el, sl]
+  let candidates = filter(
+        \ copy(action_book.funcref(sline, eline)),
+        \ '!empty(v:val)'
         \)
-  call filter(candidates, '!empty(v:val)')
   return candidates
 endfunction
 
-function! gita#action#find_candidate(candidates, record, attrname) abort
-  for candidate in a:candidates
-    if candidate[a:attrname] ==# a:record
-      return candidate
-    endif
-  endfor
-  return {}
-endfunction
-
-function! gita#action#call(name, candidates) abort
-  let action = gita#action#get_action(a:name)
+function! gita#action#filter(candidates, records, attrname) abort
   let candidates = filter(
         \ copy(a:candidates),
-        \ 'gita#action#is_satisfied(v:val, action.requirements)',
+        \ 'index(a:records, v:val[a:attrname]) >= 0'
         \)
-  if !empty(action.requirements) && empty(candidates)
-    return
-  endif
-  if action.mapping_mode =~# '[vx]'
-    call call(action.fn, [candidates, action.options])
-  else
-    call call(action.fn, [get(candidates, 0, {}), action.options])
-  endif
+  return candidates
 endfunction
 
 function! gita#action#define(name, fn, ...) abort
@@ -119,6 +105,22 @@ function! gita#action#define(name, fn, ...) abort
           \ mode, mapping, mode ==# '[ni]' ? '<C-u>' : '', a:name,
           \)
   endfor
+endfunction
+
+function! gita#action#call(name, candidates) abort
+  let action = gita#action#get_action(a:name)
+  let candidates = filter(
+        \ copy(a:candidates),
+        \ 'gita#action#is_satisfied(v:val, action.requirements)',
+        \)
+  if !empty(action.requirements) && empty(candidates)
+    return
+  endif
+  if action.mapping_mode =~# '[vx]'
+    call call(action.fn, [candidates, action.options])
+  else
+    call call(action.fn, [get(candidates, 0, {}), action.options])
+  endif
 endfunction
 
 function! gita#action#include(names, ...) abort

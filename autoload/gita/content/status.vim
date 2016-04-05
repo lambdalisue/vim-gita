@@ -52,10 +52,10 @@ function! s:define_actions() abort
   nmap <buffer><nowait> <C-^> <Plug>(gita-commit)
 endfunction
 
-function! s:get_candidate(index) abort
-  let record = getline(a:index + 1)
+function! s:get_candidates(startline, endline) abort
   let statuses = gita#meta#get_for('^status$', 'statuses', [])
-  return gita#action#find_candidate(statuses, record, 'record')
+  let records = getline(a:startline, a:endline)
+  return gita#action#filter(statuses, records, 'record')
 endfunction
 
 function! s:compare_statuses(lhs, rhs) abort
