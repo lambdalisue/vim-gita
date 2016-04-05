@@ -64,7 +64,7 @@ function! gita#command#rm#command(bang, range, args) abort
   let args = s:args_from_options(git, options)
   call gita#process#execute(git, args)
   if !get(options, 'dry-run')
-    call gita#util#doautocmd('User', 'GitaStatusModified')
+    call gita#trigger_modified()
   endif
 endfunction
 

@@ -55,5 +55,5 @@ endfunction
 " Automatically start observation when it's sourced
 augroup gita_internal_util_observer
   autocmd! *
-  autocmd User GitaStatusModified nested call gita#util#observer#update_all()
+  autocmd User GitaStatusModifiedPost nested call gita#util#observer#update_all()
 augroup END

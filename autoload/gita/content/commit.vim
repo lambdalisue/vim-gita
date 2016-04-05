@@ -165,7 +165,7 @@ function! s:commit_commitmsg() abort
     call gita#meta#set('options', {})
     silent keepjumps %delete _
     setlocal nomodified
-    call gita#util#doautocmd('User', 'GitaStatusModified')
+    call gita#trigger_modified()
   finally
     call delete(tempfile)
   endtry

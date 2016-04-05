@@ -103,7 +103,7 @@ function! gita#command#command(bang, range, args) abort
             \ gita#process#splitargs(a:args),
             \ 'gita#meta#expand(v:val)',
             \))
-      call gita#util#doautocmd('User', 'GitaStatusModified')
+      call gita#trigger_modified()
     catch /^\%(vital: Git[:.]\|gita:\)/
       call gita#util#handle_exception()
     endtry

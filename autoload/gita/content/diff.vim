@@ -218,7 +218,7 @@ function! s:on_BufWriteCmd(options) abort
       call delete(tempfile)
     endtry
     setlocal nomodified
-    call gita#util#doautocmd('User', 'GitaStatusModified')
+    call gita#trigger_modified()
     call gita#util#doautocmd('BufWritePost')
   catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()

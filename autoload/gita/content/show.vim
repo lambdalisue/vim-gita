@@ -217,7 +217,7 @@ function! s:on_BufWriteCmd(options) abort
           \ ['apply', '--verbose', '--cached', '--', tempfile],
           \)
     setlocal nomodified
-    call gita#util#doautocmd('User', 'GitaStatusModified')
+    call gita#trigger_modified()
     call gita#util#doautocmd('BufWritePost')
     diffupdate
   catch /^\%(vital: Git[:.]\|gita:\)/

@@ -174,7 +174,7 @@ function! s:is_repository_updated(git) abort
   return 0
 endfunction
 
-function! s:on_GitaStatusModified() abort
+function! s:on_GitaStatusModifiedPre() abort
   let git = gita#core#get()
   call s:get_format_cache(git).clear()
   if !git.is_enabled
@@ -311,5 +311,5 @@ endfunction
 
 augroup gita_internal_statusline
   autocmd! *
-  autocmd User GitaStatusModified call s:on_GitaStatusModified()
+  autocmd User GitaStatusModifiedPre call s:on_GitaStatusModifiedPre()
 augroup END

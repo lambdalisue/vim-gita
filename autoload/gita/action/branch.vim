@@ -17,7 +17,7 @@ function! s:action_checkout(candidate, options) abort
   endif
   let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['checkout'] + args, { 'quiet': 1 })
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! s:action_rename(candidate, options) abort
@@ -39,7 +39,7 @@ function! s:action_rename(candidate, options) abort
         \]
   let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! s:action_delete(candidate, options) abort
@@ -53,7 +53,7 @@ function! s:action_delete(candidate, options) abort
         \]
   let git = gita#core#get_or_fail()
   call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#action#branch#define(disable_mapping) abort

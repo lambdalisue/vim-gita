@@ -46,7 +46,7 @@ function! s:action(candidates, options) abort
   endfor
   " checkout tracked files from HEAD
   noautocmd call gita#action#call('checkout:HEAD:force', checkout_candidates)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#action#discard#define(disable_mapping) abort

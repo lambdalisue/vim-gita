@@ -64,7 +64,7 @@ function! gita#command#init#command(bang, range, args) abort
   let args = s:args_from_options(git, options)
   call gita#process#execute(git, args)
   call gita#core#expire()
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#command#init#complete(arglead, cmdline, cursorpos) abort

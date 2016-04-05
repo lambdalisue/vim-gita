@@ -147,7 +147,7 @@ endfunction
 function! s:on_BufWritePost() abort
   if exists('b:_gita_internal_modified')
     if b:_gita_internal_modified && !&modified
-      call gita#util#doautocmd('User', 'GitaStatusModified')
+      call gita#trigger_modified()
     endif
     unlet b:_gita_internal_modified
   endif

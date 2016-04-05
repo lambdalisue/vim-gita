@@ -10,7 +10,7 @@ function! s:action_stage(candidates, options) abort
   endfor
   noautocmd call gita#action#call('add', add_candidates)
   noautocmd call gita#action#call('rm', rm_candidates)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! s:action_unstage(candidates, options) abort
@@ -35,7 +35,7 @@ function! s:action_toggle(candidates, options) abort
   endfor
   noautocmd call gita#action#call('index:stage', stage_candidates)
   noautocmd call gita#action#call('index:unstage', unstage_candidates)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#action#index#define(disable_mapping) abort

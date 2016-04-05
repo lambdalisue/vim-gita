@@ -9,6 +9,11 @@ function! gita#throw(msg) abort
   throw 'gita: ' . a:msg
 endfunction
 
+function! gita#trigger_modified() abort
+  call gita#util#doautocmd('User', 'GitaStatusModifiedPre')
+  call gita#util#doautocmd('User', 'GitaStatusModifiedPost')
+endfunction
+
 function! gita#define_variables(prefix, defaults) abort
   " NOTE: Funcref is not supported
   let prefix = empty(a:prefix) ? 'g:gita' : 'g:gita#' . a:prefix

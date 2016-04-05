@@ -196,7 +196,7 @@ function! gita#command#rebase#command(bang, range, args) abort
   let git = gita#core#get_or_fail()
   let args = s:args_from_options(git, options)
   call gita#process#execute(git, args)
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#command#rebase#complete(arglead, cmdline, cursorpos) abort

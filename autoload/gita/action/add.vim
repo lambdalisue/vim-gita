@@ -14,7 +14,7 @@ function! s:action(candidates, options) abort
         \)
   let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args, { 'quiet': 1 })
-  call gita#util#doautocmd('User', 'GitaStatusModified')
+  call gita#trigger_modified()
 endfunction
 
 function! gita#action#add#define(disable_mappings) abort
