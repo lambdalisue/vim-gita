@@ -84,9 +84,12 @@ function! gita#command#ls_files#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  let options.filenames = options.__unknown__
-  call gita#util#option#assign_commit(options)
+  let options = extend(
+        \ copy(g:gita#command#ls_files#default_options),
+        \ options
+        \)
   call gita#util#option#assign_filenames(options)
+  call gita#util#option#assign_commit(options)
   call gita#util#option#assign_opener(options)
   call gita#content#ls_files#open(options)
 endfunction
@@ -95,3 +98,7 @@ function! gita#command#ls_files#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#ls_files', {
+      \ 'default_options': {},
+      \})
