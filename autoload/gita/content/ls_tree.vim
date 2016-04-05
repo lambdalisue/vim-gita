@@ -13,21 +13,30 @@ function! s:build_bufname(options) abort
         \})
 endfunction
 
-function! s:execute_command(options) abort
+function! s:args_from_options(git, options) abort
   let args = [
         \ 'ls-tree',
         \ '--full-name',
         \ '--full-tree',
         \ '--name-only',
         \ '-r',
-        \ a:options.commit,
+        \ gita#normalize#commit(a:git, a:options.commit),
         \ '--',
-        \]  + a:options.filenames
+        \] + map(
+        \ copy(get(a:options, 'filenames', [])),
+        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \)
+  return filter(args, '!empty(v:val)')
+endfunction
+
+function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
+  let args = s:args_from_options(git, a:options)
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -71,10 +80,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^ls-tree$', a:options, {
-        \ 'commit': 'HEAD',
-        \ 'filenames': [],
-        \})
+  let options = gita#util#option#cascade('^ls-tree$', a:options)
   let content = s:execute_command(options)
   let candidates = map(content, 's:extend_filename(v:val)')
   call gita#meta#set('content_type', 'ls-tree')
@@ -94,16 +100,13 @@ endfunction
 
 function! gita#content#ls_tree#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#ls_tree#default_opener
-        \ : options.opener
   call gita#util#cascade#set('ls-tree', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -123,14 +126,11 @@ endfunction
 
 function! gita#content#ls_tree#autocmd(name, bufinfo) abort
   let options = gita#util#cascade#get('ls-tree')
-  for attribute in a:bufinfo.extra_options
-    let options[attribute] = 1
-  endfor
+  let options.commit = get(a:bufinfo.extra_options, 0, '')
   call call('s:on_' . a:name, [options])
 endfunction
 
 call gita#define_variables('content#ls_tree', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-edit)',
       \ 'disable_default_mappings': 0,
       \})
