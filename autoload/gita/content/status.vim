@@ -35,7 +35,7 @@ function! s:execute_command(options) abort
 endfunction
 
 function! s:define_actions() abort
-  call gita#action#attach(function('s:get_candidate'))
+  call gita#action#attach(function('s:get_candidates'))
   call gita#action#include([
         \ 'common', 'index', 'blame', 'browse', 'checkout',
         \ 'commit', 'diff', 'discard', 'edit', 'patch', 'chaperone',
