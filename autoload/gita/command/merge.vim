@@ -62,7 +62,7 @@ function! s:get_parser() abort
           \   'conflicts': ['ff', 'ff-only'],
           \})
     call s:parser.add_argument(
-          \ '--only-ff',
+          \ '--ff-only',
           \ 'abort if fast-forward is not possible', {
           \   'conflicts': ['ff', 'no-ff'],
           \})
@@ -108,17 +108,48 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'stat': 1,
+        \ 'no-stat': 1,
+        \ 'log': 1,
+        \ 'no-log': 1,
+        \ 'squash': 1,
+        \ 'no-squash': 1,
+        \ 'commit': 1,
+        \ 'no-commit': 1,
+        \ 'ff': 1,
+        \ 'no-ff': 1,
+        \ 'ff-only': 1,
+        \ 'rerere-autoupdate': 1,
+        \ 'no-rerere-autoupdate': 1,
+        \ 'verify-signatures': 1,
+        \ 'no-verify-signatures': 1,
+        \ 'strategy': 1,
+        \ 'strategy-option': 1,
+        \ 'abort': 1,
+        \ 'gpg-sign': 1,
+        \})
+  let args = ['merge', '--no-edit', '--verbose'] + args + map(
+        \ get(a:options, '__unknown__', []),
+        \ 'gita#normalize#commit(a:git, v:val)'
+        \)
+  return args
+endfunction
+
 function! gita#command#merge#command(bang, range, args) abort
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
+  let options = extend(
+        \ copy(g:gita#command#merge#default_options),
+        \ options
+        \)
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, ['merge', '--no-edit', '--verbose'] + map(
-        \ options.__args__,
-        \ 'gita#meta#expand(v:val)',
-        \))
+  let args = s:args_from_options(git, options)
+  call gita#process#execute(git, args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
@@ -127,3 +158,6 @@ function! gita#command#merge#complete(arglead, cmdline, cursorpos) abort
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
 
+call gita#define_variables('command#add', {
+      \ 'default_options': {},
+      \})
