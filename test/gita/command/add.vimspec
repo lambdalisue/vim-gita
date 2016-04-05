@@ -11,6 +11,7 @@ Describe gita#command#add
 
   Describe s:args_from_options({git}, {options})
     It returns a {args} List of {options}
+      new
       let options = {
             \ 'dry-run': 1,
             \ 'force': 1,
