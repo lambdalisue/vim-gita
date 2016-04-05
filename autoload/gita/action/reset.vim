@@ -1,15 +1,10 @@
-let s:V = gita#vital()
-let s:Path = s:V.import('System.Filepath')
-let s:Git = s:V.import('Git')
-
 function! s:action(candidates, options) abort
   let git = gita#core#get_or_fail()
-  let args = ['reset']
-  let args += ['--'] + map(
+  let args = ['reset', '--'] + map(
         \ copy(a:candidates),
-        \ 's:Path.unixpath(s:Git.get_relative_path(git, v:val.path))',
+        \ 'gita#normalize#relpath(git, v:val.path)',
         \)
-  let git = gita#core#get_or_fail()
+  let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

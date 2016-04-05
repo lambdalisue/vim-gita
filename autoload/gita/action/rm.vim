@@ -3,6 +3,7 @@ function! s:action(candidates, options) abort
         \ 'force': 0,
         \ 'cached': 0,
         \}, a:options)
+  let git = gita#core#get_or_fail()
   let args = [
         \ 'rm',
         \ '--ignore-unmatch',
@@ -11,9 +12,9 @@ function! s:action(candidates, options) abort
         \ '--',
         \] + map(
         \ copy(a:candidates),
-        \ 'get(v:val, ''path2'', v:val.path)',
+        \ 'gita#normalize#abspath(get(v:val, ''path2'', v:val.path))',
         \)
-  let git = gita#core#get_or_fail()
+  let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

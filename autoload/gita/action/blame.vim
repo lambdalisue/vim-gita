@@ -7,25 +7,24 @@ let s:history = []
 
 function! s:action(candidate, options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'tabedit',
         \ 'selection': [],
         \}, a:options)
   call gita#util#option#assign_commit(options)
   call gita#util#option#assign_opener(options)
   call gita#util#option#assign_selection(options)
 
-  let commit = get(a:candidate, 'commit', get(options, 'commit', ''))
-  let opener = empty(options.opener) ? 'tabedit' : options.opener
-  let selection = get(a:candidate, 'selection', options.selection)
+  let options.commit = get(a:candidate, 'commit', get(options, 'commit', ''))
+  let options.selection = get(a:candidate, 'selection', options.selection)
 
   if s:BufferAnchor.is_available(opener)
     call s:BufferAnchor.focus()
   endif
   call gita#content#blame#open({
-        \ 'commit': commit,
         \ 'filename': a:candidate.path,
-        \ 'opener': opener,
-        \ 'selection': selection,
+        \ 'commit': options.commit,
+        \ 'opener': options.opener,
+        \ 'selection': options.selection,
         \})
 endfunction
 

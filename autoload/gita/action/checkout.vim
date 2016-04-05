@@ -3,29 +3,25 @@ let s:Path = s:V.import('System.Filepath')
 let s:Git = s:V.import('Git')
 
 function! s:action(candidates, options) abort
-  let git = gita#core#get_or_fail()
   let options = extend({
         \ 'force': 0,
         \ 'ours': 0,
         \ 'theirs': 0,
-        \ 'commitish': '',
+        \ 'commit': '',
         \}, a:options)
-  if !options.ours && !options.theirs && empty(options.commitish)
-    let commitish = gita#meta#get('commit', '')
-  else
-    let commitish = options.commitish
-  endif
+  let git = gita#core#get_or_fail()
   let args = [
         \ 'checkout',
         \ options.force ? '--force' : '',
         \ options.ours ? '--ours' : '',
         \ options.theirs ? '--theirs' : '',
-        \ commitish,
-        \]
-  let args += ['--'] + map(
+        \ gita#normalize#commit(options.commit),
+        \ '--',
+        \] + map(
         \ copy(a:candidates),
-        \ 's:Path.unixpath(s:Git.get_relative_path(git, v:val.path))',
+        \ 'gita#normalize#relpath(git, v:val.path)',
         \)
+  let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
@@ -64,22 +60,22 @@ function! gita#action#checkout#define(disable_mappings) abort
   call gita#action#define('checkout:HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD',
         \ 'requirements': ['path', 'is_conflicted'],
-        \ 'options': { 'commitish': 'HEAD' },
+        \ 'options': { 'commit': 'HEAD' },
         \})
   call gita#action#define('checkout:HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from HEAD (force)',
         \ 'requirements': ['path'],
-        \ 'options': { 'commitish': 'HEAD', 'force': 1 },
+        \ 'options': { 'commit': 'HEAD', 'force': 1 },
         \})
   call gita#action#define('checkout:origin/HEAD', function('s:action'), {
         \ 'description': 'Checkout a contents from origin/HEAD',
         \ 'requirements': ['path'],
-        \ 'options': { 'commitish': 'origin/HEAD' },
+        \ 'options': { 'commit': 'origin/HEAD' },
         \})
   call gita#action#define('checkout:origin/HEAD:force', function('s:action'), {
         \ 'description': 'Checkout a contents from origin/HEAD (force)',
         \ 'requirements': ['path'],
-        \ 'options': { 'commitish': 'origin/HEAD', 'force': 1 },
+        \ 'options': { 'commit': 'origin/HEAD', 'force': 1 },
         \})
   if a:disable_mappings
     return

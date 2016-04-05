@@ -2,12 +2,13 @@ function! s:action(candidate, options) abort
   let options = extend({
         \ 'merge': 0,
         \}, a:options)
+  let git = gita#core#get_or_fail()
   let args = [
         \ 'rebase',
         \ options.merge ? '--merge': '',
         \ a:candidate.name,
         \]
-  let git = gita#core#get_or_fail()
+  let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction

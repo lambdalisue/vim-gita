@@ -1,10 +1,5 @@
 function! s:action(candidate, options) abort
-  let filenames = gita#meta#get_for(
-        \ '^gita-\%(status\|commit\)$', 'filenames', []
-        \)
-  call gita#content#status#open({
-        \ 'filenames': filenames,
-        \})
+  call gita#content#status#open({})
 endfunction
 
 function! gita#action#status#define(disable_mapping) abort

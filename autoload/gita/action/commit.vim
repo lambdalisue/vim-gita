@@ -1,13 +1,9 @@
 function! s:action_open(candidate, options) abort
-  let filenames = gita#meta#get_for(
-        \ '^gita-\%(status\|commit\)$', 'filenames', []
-        \)
   let options = extend({
         \ 'amend': 0,
         \}, a:options)
   call gita#content#commit#open({
         \ 'amend': options.amend,
-        \ 'filenames': filenames,
         \})
 endfunction
 
