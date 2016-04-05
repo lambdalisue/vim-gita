@@ -735,9 +735,6 @@ The code above add a current branch name to the end of your statusline.
 ==============================================================================
 INTERFACE				*gita-interface*
 
-Note:
-Most of interface documentations are work in progress.
-
 ------------------------------------------------------------------------------
 COMMANDS				*gita-interface-commands*
 
@@ -774,21 +771,9 @@ COMMANDS				*gita-interface-commands*
 	|gita#meta#expand()| and all escaped spaces in {args} will be
 	un-escaped.
 
-	:Gita command does not support |command-bar|. If you need a command
-	which supports bar (|), define your :GitaBar command like:
->
-	command! -nargs=* -range -bang -bar
-	      \ -complete=customlist,gita#command#complete
-	      \ GitaBar
-	      \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
-<
-	Then the new :GitaBar command supports bars like:
->
-	:Gita add % | Gita commit
-	" => Does not work properly
-	:GitaBar add % | Gita commit
-	" => Works as expect
-<
+	Note that :Gita command does not support |command-bar|. See FAQ if you
+	really need a support of |command-bar|.
+
 					*:Gita-blame*
 :Gita blame [-h/--help]
 	[--opener={opener}] [--selection={selection}]
@@ -1869,6 +1854,23 @@ Q. I found bugs, unexpected behaviors, or whatever
 A. Open an issue on https://github.com/lambdalisue/gita/issues
    Do not forget to provides 1) environmental information, 2) minimal vimrc,
    3) reproduce procedure.
+
+Q. I would like to use bars (|) to connect commands of gita, is it possible?
+
+A. No. |:Gita| command does not support |command-bar| so if you desire, you
+   need to define your custom gita command (say, :GitaBar) like:
+>
+	command! -nargs=* -range -bang -bar
+	      \ -complete=customlist,gita#command#complete
+	      \ GitaBar
+	      \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
+<
+	Then the new :GitaBar command supports bars like:
+>
+	:Gita add % | Gita commit
+	" => Does not work properly
+	:GitaBar add % | Gita commit
+	" => Works as expect
 
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
