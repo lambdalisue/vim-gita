@@ -162,18 +162,53 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'track': 1,
+        \ 'no-track': 1,
+        \ 'set-upstream-to': 1,
+        \ 'unset-upstream': 1,
+        \ 'remotes': 1,
+        \ 'contains': '--%k %v',
+        \ 'all': 1,
+        \ 'delete': 1,
+        \ 'D': 1,
+        \ 'move': 1,
+        \ 'M': 1,
+        \ 'list': '--%k %v',
+        \ 'create-reflog': 1,
+        \ 'force': 1,
+        \ 'no-merged': '--%k %v',
+        \ 'merged': '--%k %v',
+        \})
+  let args = [
+        \ 'branch',
+        \ '--no-column',
+        \ '--no-color',
+        \ '--no-abbrev',
+        \ '--verbose',
+        \] + args + [
+        \ get(a:options, 'branch', ''),
+        \ get(a:options, 'newbranch', ''),
+        \ gita#normalize#commit(a:git, get(a:options, 'start-point', '')),
+        \]
+  return filter(args, '!empty(v:val)')
+endfunction
+
 function! gita#command#branch#command(bang, range, args) abort
-  let git = gita#core#get_or_fail()
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
+  let options = extend(
+        \ copy(g:gita#command#branch#default_options),
+        \ options
+        \)
   if empty(get(options, 'list'))
-    call gita#process#execute(git, ['branch', '--no-color', '--verbose'] + map(
-          \ options.__args__,
-          \ 'gita#meta#expand(v:val)',
-          \))
+    let git = gita#core#get_or_fail()
+    let args = s:args_from_options(git, options)
+    call gita#process#execute(git, args)
     call gita#util#doautocmd('User', 'GitaStatusModified')
   else
     call gita#util#option#assign_opener(options)
@@ -185,3 +220,7 @@ function! gita#command#branch#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#branch', {
+      \ 'default_options': {},
+      \})

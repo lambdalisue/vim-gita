@@ -20,7 +20,7 @@ function! s:build_bufname(options) abort
         \})
 endfunction
 
-function! s:execute_command(options) abort
+function! s:args_from_options(git, options) abort
   let args = gita#process#args_from_options(a:options, {
         \ 'all': 1,
         \ 'remotes': 1,
@@ -35,11 +35,17 @@ function! s:execute_command(options) abort
         \ '--no-color',
         \ '--no-abbrev',
         \] + args
+  return args
+endfunction
+
+function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
+  let args = s:args_from_options(git, a:options)
+  let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -77,14 +83,7 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^branch$', a:options, {
-        \ 'all': 0,
-        \ 'remotes': 0,
-        \ 'list': 0,
-        \ 'contains': 0,
-        \ 'merged': 0,
-        \ 'no-merged': 0,
-        \})
+  let options = gita#util#option#cascade('^branch$', a:options)
   let content = s:execute_command(options)
   let branches = s:GitParser.parse_branch(content)
   call gita#meta#set('content_type', 'branch')
@@ -103,16 +102,13 @@ endfunction
 
 function! gita#content#branch#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#branch#default_opener
-        \ : options.opener
   call gita#util#cascade#set('branch', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -139,7 +135,6 @@ function! gita#content#branch#autocmd(name, bufinfo) abort
 endfunction
 
 call gita#define_variables('content#branch', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-branch-checkout-track)',
       \ 'disable_default_mappings': 0,
       \})
