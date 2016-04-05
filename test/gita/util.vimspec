@@ -59,4 +59,34 @@ Describe gita#util
       Assert False(exists('g:_gita_test_util_doautocmd'))
     End
   End
+
+  Describe #diffthis()
+    After
+      bwipe!
+    End
+
+    It turns &diff of the current buffer 'on'
+      Assert False(&diff)
+      call gita#util#diffthis()
+      Assert True(&diff)
+    End
+
+    It registers <Plug>(gita-C-l) and <C-l> mapping
+      Assert Equals(maparg('<Plug>(gita-C-l)', 'n'), '')
+      Assert Equals(maparg('<C-l>', 'n'), '')
+      call gita#util#diffthis()
+      Assert NotEquals(maparg('<Plug>(gita-C-l)', 'n'), '')
+      Assert Equals(maparg('<C-l>', 'n'), '<Plug>(gita-C-l)')
+    End
+
+    " NOTE: Test autocmd
+  End
+
+  Describe #syncbind()
+    " NOTE: Test behavior (but how...)
+  End
+
+  Describe #handle_exception([{exception}])
+    " NOTE: Test?
+  End
 End
