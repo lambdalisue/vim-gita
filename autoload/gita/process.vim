@@ -56,6 +56,10 @@ function! gita#process#splitargs(args) abort
 endfunction
 
 function! gita#process#execute(git, args, ...) abort
+  call s:GitProcess.set_config({
+        \ 'executable': g:gita#process#executable,
+        \ 'arguments':  g:gita#process#arguments,
+        \})
   let options = extend({
         \ 'quiet': 0,
         \ 'fail_silently': 0,
@@ -76,13 +80,16 @@ function! gita#process#execute(git, args, ...) abort
   return result.content
 endfunction
 
+function! gita#process#shell(git, args) abort
+  call s:GitProcess.set_config({
+        \ 'executable': g:gita#process#executable,
+        \ 'arguments':  g:gita#process#arguments,
+        \})
+  call s:GitProcess.shell(a:git, a:args)
+endfunction
+
 call gita#define_variables('process', {
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'options': {},
-      \})
-
-call s:GitProcess.set_config({
-      \ 'executable': g:gita#process#executable,
-      \ 'arguments':  g:gita#process#arguments,
       \})

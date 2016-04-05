@@ -86,24 +86,29 @@ function! gita#command#command(bang, range, args) abort
   if !empty(options)
     let args  = join(options.__unknown__)
     let name  = get(options, 'action', '')
+    let git = gita#core#get()
     try
-      if a:bang !=# '!'
+      if a:bang ==# '!'
+        call gita#process#shell(git, map(
+              \ gita#process#splitargs(a:args),
+              \ 'gita#meta#expand(v:val)'
+              \))
+      else
         try
           let funcname = printf(
                 \ 'gita#command#%s#command',
                 \ substitute(name, '-', '_', 'g'),
                 \)
-          return call(funcname, [a:bang, a:range, args])
+          call call(funcname, [a:bang, a:range, args])
         catch /^Vim\%((\a\+)\)\=:E117/
-          " fail silently
+          " fail silently and execute git command
+          call gita#process#execute(git, map(
+                \ gita#process#splitargs(a:args),
+                \ 'gita#meta#expand(v:val)',
+                \))
+          call gita#trigger_modified()
         endtry
       endif
-      let git = gita#core#get()
-      call gita#process#execute(git, map(
-            \ gita#process#splitargs(a:args),
-            \ 'gita#meta#expand(v:val)',
-            \))
-      call gita#trigger_modified()
     catch /^\%(vital: Git[:.]\|gita:\)/
       call gita#util#handle_exception()
     endtry
