@@ -85,17 +85,46 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'b': '-%k%v',
+        \ 'B': '-%k%v',
+        \ 'l': 1,
+        \ 'detach': 1,
+        \ 'track': 1,
+        \ 'no-track': 1,
+        \ 'orphan': '--%k %v',
+        \ 'ours': 1,
+        \ 'theirs': 1,
+        \ 'force': 1,
+        \ 'merge': 1,
+        \ 'conflict': '--%k %v',
+        \ 'ignore-skip-worktree-bits': 1,
+        \ 'ignore-other-worktree': 1,
+        \})
+  let args = ['checkout', '--verbose'] + args + [
+        \ gita#normalize#commit(get(a:options, 'commit', '')),
+        \ '--',
+        \] + map(
+        \ get(a:options, '__unknown__', []),
+        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \)
+  return args
+endfunction
+
 function! gita#command#checkout#command(bang, range, args) abort
-  let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['checkout'] + map(
-        \ options.__args__,
-        \ 'gita#meta#expand(v:val)',
-        \))
+  let options = extend(
+        \ copy(g:gita#command#checkout#default_options),
+        \ options
+        \)
+  let git = gita#core#get_or_fail()
+  let args = s:args_from_options(git, options)
+  call gita#process#execute(git, args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
@@ -103,3 +132,7 @@ function! gita#command#checkout#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#checkout', {
+      \ 'default_options': {},
+      \})
