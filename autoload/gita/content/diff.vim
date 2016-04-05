@@ -258,7 +258,7 @@ function! s:open2(options) abort
   let filename = empty(options.filename)
         \ ? gita#meta#expand('%')
         \ : options.filename
-  let [lhs, rhs] = s:split_commit(options.commit)
+  let [lhs, rhs] = s:split_commit(options.commit, options)
   let loptions = {
         \ 'patch': !options.reverse && options.patch,
         \ 'commit': lhs,
