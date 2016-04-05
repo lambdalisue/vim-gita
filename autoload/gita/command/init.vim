@@ -33,6 +33,20 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'bare': 1,
+        \ 'template': 1,
+        \ 'separate-git-dir': 1,
+        \ 'shared': 1,
+        \})
+  let args = ['init'] + args + map(
+        \ get(a:options, '__unknown__', []),
+        \ 'gita#normalize#commit(a:git, v:val)'
+        \)
+  return args
+endfunction
+
 function! gita#command#init#command(bang, range, args) abort
   let git = gita#core#get()
   let parser = s:get_parser()
@@ -40,10 +54,15 @@ function! gita#command#init#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['init'] + map(
-        \ options.__args__,
-        \ 'gita#meta#expand(v:val)',
-        \))
+  let options = extend(
+        \ copy(g:gita#command#merge#default_options),
+        \ options
+        \)
+  " NOTE:
+  " init command might be executed in non git repository
+  let git = gita#core#get()
+  let args = s:args_from_options(git, options)
+  call gita#process#execute(git, args)
   call gita#core#expire()
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
@@ -52,3 +71,7 @@ function! gita#command#init#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#init', {
+      \ 'default_options': {},
+      \})
