@@ -78,7 +78,7 @@ function! s:action_choice(candidates, options) abort
   try
     echohl Question
     redraw | echo
-    let alias = input(
+    let action_name = input(
           \ 'action: ', '',
           \ 'custom,gita#action#common#_complete_alias'
           \)
@@ -88,10 +88,9 @@ function! s:action_choice(candidates, options) abort
     call inputrestore()
     silent! unlet! g:gita#action#common#_aliases
   endtry
-  if empty(alias)
+  if empty(action_name)
     return
   endif
-  let action_name = action_holder.aliases[alias]
   call gita#action#call(action_name, a:candidates)
 endfunction
 
