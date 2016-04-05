@@ -64,13 +64,17 @@ Describe gita#normalize
 
   Describe gita#normalize#commit({git}, {commit})
     It returns a revision of a common ancestor of A...B
-      let alpha2 = '2d2b3bd'
-      let alpha3 = '31e3c64'
-      let ancestor = '2d2b3bd2182391f0de6170880905b361757de067'
-      let commit = alpha2 . '...' . alpha3
-      let git = gita#core#get_or_fail()
-      let ret = gita#normalize#commit(git, commit)
-      Assert Equals(ret, ancestor)
+      if exists('$APPVEYOR')
+        Skip AppVeyor checkout a repository with --depth=1 so skip
+      else
+        let alpha2 = '2d2b3bd'
+        let alpha3 = '31e3c64'
+        let ancestor = '2d2b3bd2182391f0de6170880905b361757de067'
+        let commit = alpha2 . '...' . alpha3
+        let git = gita#core#get_or_fail()
+        let ret = gita#normalize#commit(git, commit)
+        Assert Equals(ret, ancestor)
+      endif
     End
 
     It returns A of A..B
@@ -93,13 +97,17 @@ Describe gita#normalize
 
   Describe gita#normalize#commit_for_diff({git}, {commit})
     It returns <A...B>..B for A...B
-      let alpha2 = '2d2b3bd'
-      let alpha3 = '31e3c64'
-      let ancestor = '2d2b3bd2182391f0de6170880905b361757de067'
-      let commit = alpha2 . '...' . alpha3
-      let git = gita#core#get_or_fail()
-      let ret = gita#normalize#commit_for_diff(git, commit)
-      Assert Equals(ret, ancestor . '..' . alpha3)
+      if exists('$APPVEYOR')
+        Skip AppVeyor checkout a repository with --depth=1 so skip
+      else
+        let alpha2 = '2d2b3bd'
+        let alpha3 = '31e3c64'
+        let ancestor = '2d2b3bd2182391f0de6170880905b361757de067'
+        let commit = alpha2 . '...' . alpha3
+        let git = gita#core#get_or_fail()
+        let ret = gita#normalize#commit_for_diff(git, commit)
+        Assert Equals(ret, ancestor . '..' . alpha3)
+      endif
     End
 
     It returns A..B of A..B
