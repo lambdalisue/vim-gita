@@ -103,7 +103,7 @@ function! s:args_from_options(git, options) abort
         \ 'ignore-other-worktree': 1,
         \})
   let args = ['checkout', '--verbose'] + args + [
-        \ gita#normalize#commit(get(a:options, 'commit', '')),
+        \ gita#normalize#commit(a:git, get(a:options, 'commit', '')),
         \ '--',
         \] + map(
         \ get(a:options, '__unknown__', []),
