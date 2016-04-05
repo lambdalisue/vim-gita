@@ -1,4 +1,66 @@
 Describe gita#content
+  Describe #build_bufname({content_type}, {options})
+    It returns gita://<refname>:show/HEAD:README.md
+      let options = {
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('show', options)
+      Assert Match(ret, '^gita://.*:show/HEAD:README.md$')
+    End
+
+    It returns gita://<refname>:diff:cached/HEAD:README.md
+      let options = {
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('diff', options)
+      Assert Match(ret, '^gita://.*:diff:cached/HEAD:README.md$')
+    End
+
+    It returns gita://<refname>:diff:cached:patch/HEAD:README.md
+      let options = {
+            \ 'extra_options': [
+            \   'cached', 'patch',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('diff', options)
+      Assert Match(ret, '^gita://.*:diff:cached:patch/HEAD:README.md$')
+    End
+
+    It returns gita:<refname>:status
+      let options = {
+            \ 'nofile': 1,
+            \}
+      let ret = gita#content#build_bufname('status', options)
+      Assert Match(ret, '^gita:.*:status$')
+    End
+
+    It returns gita:<refname>:commit:amend
+      let options = {
+            \ 'nofile': 1,
+            \ 'extra_options': [
+            \   'amend',
+            \ ],
+            \}
+      let ret = gita#content#build_bufname('commit', options)
+      Assert Match(ret, '^gita:.*:commit:amend$')
+    End
+
+    It returns gita:<refname>:diff-ls:cached:origin/HEAD
+      let options = {
+            \ 'nofile': 1,
+            \ 'extra_options': [
+            \   'cached', 'origin/HEAD',
+            \ ],
+            \}
+      let ret = gita#content#build_bufname('diff-ls', options)
+      Assert Match(ret, '^gita:.*:diff-ls:cached:origin/HEAD$')
+    End
+  End
+
   Describe #parse_bufname({bufname})
     It throws an exception if {bufname} does not follow schemes defined
       Throws /A buffer name "foo" does not follow a correct gita buffer name pattern/
@@ -138,6 +200,12 @@ Describe gita#content
             \ 'content_type': 'status',
             \ 'extra_options': [],
             \})
+    End
+  End
+
+  Describe #autocmd({name})
+    It executes {name} autocmd of a corresponding content of the current buffer
+      " NOTE: Test (but how...)
     End
   End
 End
