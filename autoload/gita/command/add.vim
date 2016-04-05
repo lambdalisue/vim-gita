@@ -64,7 +64,7 @@ function! s:args_from_options(git, options) abort
         \ 'ignore-errors': 1,
         \ 'ignore-missing': 1,
         \})
-  let args = ['add', '--verbose'] + args + map(
+  let args = ['add', '--verbose'] + args + ['--'] + map(
         \ get(a:options, '__unknown__', []),
         \ 'gita#normalize#abspath(a:git, v:val)'
         \)

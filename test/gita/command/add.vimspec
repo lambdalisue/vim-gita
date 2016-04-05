@@ -1,0 +1,72 @@
+let s:V = vital#of('vital')
+let s:Path = s:V.import('System.Filepath')
+let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
+
+Describe gita#command#add
+  Before all
+    let Path = s:Path
+    let scriptfile = s:Path.realpath('autoload/gita/command/add.vim')
+    let sf = s:ScriptLocal.sfuncs(scriptfile)
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      let options = {
+            \ 'dry-run': 1,
+            \ 'force': 1,
+            \ 'update': 1,
+            \ 'intent-to-add': 1,
+            \ 'all': 1,
+            \ 'ignore-removal': 1,
+            \ 'refresh': 1,
+            \ 'ignore-errors': 1,
+            \ 'ignore-missing': 1,
+            \ '__unknown__': [
+            \   '%',
+            \   'a',
+            \   'b',
+            \ ],
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'add',
+            \ '--verbose',
+            \ '--all',
+            \ '--dry-run',
+            \ '--force',
+            \ '--ignore-errors',
+            \ '--ignore-missing',
+            \ '--ignore-removal',
+            \ '--intent-to-add',
+            \ '--refresh',
+            \ '--update',
+            \ '--',
+            \ fnamemodify('.', ':p'),
+            \ fnamemodify('.', ':p') . 'a',
+            \ fnamemodify('.', ':p') . 'b',
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'add',
+            \ '--verbose',
+            \ '--',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    " NOTE: Add test
+  End
+
+  Describe #complete({arglead}, {cmdline}, {cursorpos})
+    " NOTE: Add test
+  End
+End
