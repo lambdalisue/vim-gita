@@ -35,26 +35,30 @@ Describe gita#normalize
   End
 
   Describe gita#normalize#abspath({git}, {path})
-    It returns a real absolute path (path separator: / in Unix, \ in Windows)
+    It returns a real absolute path in a git repository
       let path = Path.unixpath(Path.relpath(expand('%')))
       let git = gita#core#get()
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, Path.realpath(Path.abspath(path)))
+    End
 
+    It returns a real absolute path in a current working directory
       let path = Path.unixpath(Path.relpath(expand('%')))
       let git = { 'is_enabled': 0, 'worktree': '' }
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, Path.realpath(Path.abspath(path)))
     End
 
-    It returns {path} if the {path} is already an absolute path
-      let path = Path.unixpath(Path.abspath(expand('%')))
+    It returns {path} if the {path} is already an absolute path in a git repository
+      let path = Path.realpath(Path.abspath(expand('%')))
       let git = gita#core#get()
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, path)
       Assert Same(ret, path)
+    End
 
-      let path = Path.unixpath(Path.abspath(expand('%')))
+    It returns {path} if the {path} is already an absolute path in a current working directory
+      let path = Path.realpath(Path.abspath(expand('%')))
       let git = { 'is_enabled': 0, 'worktree': '' }
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, path)
