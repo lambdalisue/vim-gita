@@ -15,6 +15,27 @@ Describe gita
     End
   End
 
+  Describe #trigger_modified()
+    After
+      augroup gita_test_gita
+        autocmd! *
+      augroup END
+      unlet g:_gita_test_gita_called
+    End
+
+    It call #User#GitaStatusModifiedPre and then #User#GitaStatusModifiedPost autocmd
+      augroup gita_test_gita
+        autocmd! *
+        autocmd User GitaStatusModifiedPre  call add(g:_gita_test_gita_called, 'Pre')
+        autocmd User GitaStatusModifiedPost call add(g:_gita_test_gita_called, 'Post')
+      augroup END
+      let g:_gita_test_gita_called = []
+
+      call gita#trigger_modified()
+      Assert Equals(g:_gita_test_gita_called, ['Pre', 'Post'])
+    End
+  End
+
   Describe #define_variables({prefix}, {defaults})
     Before
       let guard = s:Guard.store(
