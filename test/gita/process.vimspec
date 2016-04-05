@@ -79,14 +79,153 @@ Describe gita#process
     End
   End
 
+  Describe #args_from_options({options}, {schemes})
+    It returns an argument list from {options} and {schemes}
+      let options = {
+            \ 'foo': 0,
+            \ 'bar': 1,
+            \ 'hoge': 'hoge',
+            \ 'piyo': ['p', 'i', 'y', 'o'],
+            \}
+      let schemes = {
+            \ 'foo': 1,
+            \ 'bar': 1,
+            \ 'hoge': 1,
+            \ 'piyo': 1,
+            \}
+      let ret = gita#process#args_from_options(options, schemes)
+      Assert Equals(sort(ret), sort([
+            \ '--bar',
+            \ '--hoge=hoge',
+            \ '--piyo=p',
+            \ '--piyo=i',
+            \ '--piyo=y',
+            \ '--piyo=o',
+            \]))
+    End
+
+    It follows translation rule written in {schemes}
+      let options = {
+            \ 'foo': 'foo',
+            \ 'bar': 'bar',
+            \ 'hoge': 'hoge',
+            \}
+      let schemes = {
+            \ 'foo': '%k',
+            \ 'bar': '%v',
+            \ 'hoge': '--%k %v',
+            \}
+      let ret = gita#process#args_from_options(options, schemes)
+      Assert Equals(sort(ret), sort([
+            \ 'foo',
+            \ 'bar',
+            \ '--hoge',
+            \ 'hoge',
+            \]))
+    End
+
+    It ignores attributes in {options} which does not exist in {schemes}
+      let options = {
+            \ 'foo': 0,
+            \ 'bar': 1,
+            \ 'hoge': 'hoge',
+            \ 'piyo': ['p', 'i', 'y', 'o'],
+            \}
+      let schemes = {
+            \ 'foo': 1,
+            \}
+      let ret = gita#process#args_from_options(options, schemes)
+      Assert Equals(ret, [])
+    End
+  End
+
+  Describe #splitargs({args})
+    It splits a String {args} into a List by whitespaces
+      let ret = gita#process#splitargs('A B C')
+      Assert Equals(ret, ['A', 'B', 'C'])
+    End
+
+    It does not split a String {args} into a List if value is enclosed by single quotes
+      let ret = gita#process#splitargs('A ''B C'' D')
+      Assert Equals(ret, ['A', 'B C', 'D'])
+    End
+
+    It does not split a String {args} into a List if value is enclosed by double quotes
+      let ret = gita#process#splitargs('A "B C" D')
+      Assert Equals(ret, ['A', 'B C', 'D'])
+    End
+
+    It does not split a String {args} into a List if whitespace is escaped
+      let ret = gita#process#splitargs('A B\ C D')
+      Assert Equals(ret, ['A', 'B C', 'D'])
+    End
+
+    It remove single quotes from "--key='v a l u e'" and return "--key=v a l u e"
+      let ret = gita#process#splitargs('--key=''v a l u e''')
+      Assert Equals(ret, ['--key=v a l u e'])
+    End
+
+    It remove double quotes from '--key="v a l u e"' and return '--key=v a l u e'
+      let ret = gita#process#splitargs('--key="v a l u e"')
+      Assert Equals(ret, ['--key=v a l u e'])
+    End
+
+    It unescape escaped whitespace from '--key=v\ a\ l\ u\ e' and return '--key=v a l u e'
+      let ret = gita#process#splitargs('--key=v\ a\ l\ u\ e')
+      Assert Equals(ret, ['--key=v a l u e'])
+    End
+  End
+
   Describe #execute({git}, {args}[, {options}])
-    It executes a {args}
+    It executes a {args} and return stdout content
       let git = gita#core#get_or_fail()
       let content = gita#process#execute(
             \ git,
             \ ['rev-parse', '--is-inside-work-tree']
             \)
       Assert Equals(content, ['true'])
+    End
+
+    It throw an exception when the command exit with error
+      let git = gita#core#get_or_fail()
+      Throws /vital: Git\.Process: Fail:/ gita#process#execute(git, ['A'])
+    End
+
+    It does not throw any exception even when the command exit with error if fail_silently is specified
+      let git = gita#core#get_or_fail()
+      call gita#process#execute(git, ['A'], { 'fail_silently': 1 })
+    End
+
+    It echos stdout content
+      let git = { 'worktree': '' }
+      try
+        redir => content
+        call gita#process#execute(
+              \ git,
+              \ ['rev-parse', '--is-inside-work-tree']
+              \)
+      finally
+        redir END
+      endtry
+      Assert Equals(split(content, "\n"), [
+            \ 'OK: git -c color.ui=false --no-pager rev-parse --is-inside-work-tree',
+            \ 'true',
+            \])
+    End
+
+    It does not echo stdout content when quiet is specified
+      let git = { 'worktree': '' }
+      try
+        redir => content
+        call gita#process#execute(
+              \ git,
+              \ ['rev-parse', '--is-inside-work-tree'],
+              \ { 'quiet': 1 }
+              \)
+      finally
+        redir END
+      endtry
+      Assert Equals(split(content, "\n"), [])
     End
   End
 End

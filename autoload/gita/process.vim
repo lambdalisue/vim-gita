@@ -26,6 +26,14 @@ function! s:translate(key, options, scheme) abort
   endif
 endfunction
 
+function! s:strip_quotes(value) abort
+  let value = s:ArgumentParser.strip_quotes(a:value)
+  if value =~# '^--\?\w\+=["''].*["'']$'
+    let value = substitute(value, '^\(--\?\w\+=\)["'']\(.*\)["'']$', '\1\2', '')
+  endif
+  return value
+endfunction
+
 function! gita#process#args_from_options(options, schemes) abort
   let args = []
   for key in sort(keys(a:schemes))
@@ -40,14 +48,6 @@ function! gita#process#args_from_options(options, schemes) abort
   return args
 endfunction
 
-function! s:strip_quotes(value) abort
-  let value = s:ArgumentParser.strip_quotes(a:value)
-  if value =~# '^--\?\w\+=["''].*["'']$'
-    let value = substitute(value, '^\(--\?\w\+=\)["'']\(.*\)["'']$', '\1\2', '')
-  endif
-  return value
-endfunction
-
 function! gita#process#splitargs(args) abort
   let args = s:ArgumentParser.splitargs(a:args)
   let args = map(args, 's:strip_quotes(v:val)')
@@ -59,19 +59,16 @@ function! gita#process#execute(git, args, ...) abort
   let options = extend({
         \ 'quiet': 0,
         \ 'fail_silently': 0,
-        \ 'success_status': 0,
         \}, get(a:000, 0, {}))
   let options = extend(copy(g:gita#process#options), options)
-  let args = filter(copy(a:args), '!empty(v:val)')
-  let result = s:GitProcess.execute(a:git, args, s:Dict.omit(options, [
-        \ 'quiet', 'fail_silently', 'success_status',
+  let result = s:GitProcess.execute(a:git, a:args, s:Dict.omit(options, [
+        \ 'quiet', 'fail_silently',
         \]))
-  let is_success = result.status == options.success_status
-  if !options.fail_silently && !is_success
+  if !options.fail_silently && !result.success
     call s:GitProcess.throw(result)
   elseif !options.quiet
     call s:Prompt.title(printf('%s: %s',
-          \ is_success ? 'OK' : 'Fail',
+          \ result.success ? 'OK' : 'Fail',
           \ join(result.args),
           \))
     echo join(result.content, "\n")
