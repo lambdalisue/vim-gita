@@ -109,4 +109,20 @@ Describe Git.Process
       Assert Equals(result.content, [Path.unixpath(resolve(getcwd()))])
     End
   End
+
+  Describe .shell({git}, {args})
+    It execute git command in {git.worktree} by :! command
+      let Path = s:Path
+      let git = { 'worktree': worktree }
+      let git = {}
+      " NOTE:
+      " The stdout of :! could not be obtain by redir somehow
+      call GitProcess.shell(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(v:shell_error, 0)
+    End
+  End
 End
+
+" :!git ''-c'' ''color.ui=false'' ''--no-pager'' ''-C'' ''/var/folders/f_/dypbhlxd4cqg63lb40ykq0580000gn/T/vkK8Wvy/20/i n s i d e'' ''rev-parse'' ''--show-toplevel''

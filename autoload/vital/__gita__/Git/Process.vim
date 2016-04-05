@@ -51,5 +51,14 @@ function! s:execute(git, args, ...) abort
   return s:Process.execute(args, options)
 endfunction
 
+" shell({git}, {args})
+function! s:shell(git, args) abort
+  let worktree = empty(a:git) ? '' : get(a:git, 'worktree', '')
+  let args = (empty(worktree) ? [] : ['-C', worktree]) + a:args
+  let args = s:config.arguments + args
+  let args = map(args, 'shellescape(v:val)')
+  execute '!' . s:config.executable . ' ' . join(args)
+endfunction
+
 let &cpoptions = s:save_cpoptions
 unlet s:save_cpoptions
