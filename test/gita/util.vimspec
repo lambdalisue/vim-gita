@@ -3,6 +3,21 @@ let s:Path = s:V.import('System.Filepath')
 let s:Guard = s:V.import('Vim.Guard')
 
 Describe gita#util
+  Context #clip({content})
+    It should assign {content} to @" register
+      let @" = ""
+      call gita#util#clip('foo')
+      Assert Equals(@", 'foo')
+    End
+
+    if has('clipboard')
+      It should assign {content} to clipboard register
+        call gita#util#clip('foo')
+        Assert Equals(getreg(v:register), 'foo')
+      End
+    endif
+  End
+
   Describe #doautocmd({name}[, {pattern})
     After
       augroup gita_test_util_doautocmd
