@@ -120,12 +120,11 @@ Or copy contents of the repository into your |runtimepath| manually.
 ==============================================================================
 USAGE						*gita-usage*
 
-First of all, all commands which gita provides start from :Gita or
-:GitaBar and all commands (including :Gita or :GitaBar itself) provide
--h/-help option to show a help message of the command. The difference between
-:Gita and :GitaBar is |command-bar| support (See |:Gita| for detail.)
+First of all, all commands which gita provides start from |:Gita| and all
+commands (including |:Gita| itself) provide -h/-help option to show a help
+message of the command.
 
-Additionally, hitting ? in manipulation windows (e.g. |gita-status|) shows
+Additionally, hitting ? in a manipulation window (e.g. |gita-status|) shows
 action and mapping helps.
 
 ------------------------------------------------------------------------------
@@ -753,39 +752,43 @@ COMMANDS				*gita-interface-commands*
 	the buffer so use these command to update content.
 
 					*:Gita*
-					*:GitaBar*
 :Gita[!] {args}
-:GitaBar[!] {args}
 
-	Execute a git command. A bang (!) is required for a command which
-	conflicts with a gita command (e.g. 'blame', 'branch', etc.)
+	Execute a git command. If a bang (!) is specified, it executes a git
+	command by |:!|. Otherwise it uses Vital.System.Process.execute()
+	which may use |system()| or vimproc#system() internally.
 
-	A {args} is splited with non escaped and non enclosed spaces. So use
-	one of the following pattern to apply space containing value to an
-	option.
+	Note that a bang is required to execute an interactive command (such
+	as "git rebase -i") in a console vim. In a GUI Vim, most of
+	interactive commands would crash a screen in a Unix system.
+
+	A {args} will be split with non escaped and non enclosed spaces.
+	So use one of the following pattern to apply space containing value to
+	options.
 >
 	:Gita tag -a v1.0.0 -m 'Version 1.0.0'
 	:Gita tag -a v1.0.0 -m "Version 1.0.0"
 	:Gita tag -a v1.0.0 -m Version\ 1.0.0
 <
-	Note that each values splitted from {args} are expanded by
-	|gita#meta#expand()| and all escaped spaces in {args} will be unescaped.
+	Note that each values split from {args} are expanded by
+	|gita#meta#expand()| and all escaped spaces in {args} will be
+	un-escaped.
 
-	The difference between :Gita and :GitaBar is a |command-bar| support.
-	:Gita does not support |command-bar| but :GitaBar does like:
+	:Gita command does not support |command-bar|. If you need a command
+	which supports bar (|), define your :GitaBar command like:
+>
+	command! -nargs=* -range -bang -bar
+	      \ -complete=customlist,gita#command#complete
+	      \ GitaBar
+	      \ call gita#command#command(<q-bang>, [<line1>, <line2>], <q-args>)
+<
+	Then the new :GitaBar command supports bars like:
 >
 	:Gita add % | Gita commit
 	" => Does not work properly
 	:GitaBar add % | Gita commit
 	" => Works as expect
 <
-	Note that | or " characters in {args} in :GitaBar is not allowed due
-	to the limitation of |command-bar| support command.
-
-	This :Gita and :GitaBar command differences are applied to all sub
-	commands as well so that both of :Gita commit and :GitaBar commit are
-	correct gita commands.
-
 					*:Gita-blame*
 :Gita blame [-h/--help]
 	[--opener={opener}] [--selection={selection}]
@@ -806,8 +809,8 @@ COMMANDS				*gita-interface-commands*
 	buffer is used.
 
 	Note that even when 'autoread' option is 1, it DOES NOT automatically
-	reload content when the repositorh status change. Users requires to
-	execute |:edit| or |:edit!| command to reload content everytime.
+	reload content when the repository status change. Users requires to
+	execute |:edit| or |:edit!| command to reload content.
 
 					*:Gita-branch*
 :Gita branch [-h/--help]
@@ -941,9 +944,9 @@ COMMANDS				*gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
+	Note that even when 'autoread' option is 1, it DOES NOT automatically
+	reload content when the repository status change. Users requires to
+	execute |:edit| or |:edit!| command to reload content.
 
 					*Gita-diff-ls*
 :Gita diff-ls [-h/--help] [--opener={opener}] [{commit}]
@@ -1065,9 +1068,9 @@ COMMANDS				*gita-interface-commands*
 	If {path} is omitted, a corresponding filename of the current
 	buffer will be used.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
+	Note that even when 'autoread' option is 1, it DOES NOT automatically
+	reload content when the repository status change. Users requires to
+	execute |:edit| or |:edit!| command to reload content.
 
 					*:Gita-status*
 :Gita status [-h/--help] [--opener={opener}] {options} [-- {path}...]
@@ -1255,6 +1258,54 @@ g:gita#action#index#prefer_unstage
 	'index:toggle' action on a file which is partially staged.
 	Default: 0
 
+			*g:gita#command#add#default_options*
+			*g:gita#command#blame#default_options*
+			*g:gita#command#branch#default_options*
+			*g:gita#command#browse#default_options*
+			*g:gita#command#chaperone#default_options*
+			*g:gita#command#checkout#default_options*
+			*g:gita#command#commit#default_options*
+			*g:gita#command#diff#default_options*
+			*g:gita#command#diff_ls#default_options*
+			*g:gita#command#grep#default_options*
+			*g:gita#command#init#default_options*
+			*g:gita#command#ls_files#default_options*
+			*g:gita#command#ls_tree#default_options*
+			*g:gita#command#merge#default_options*
+			*g:gita#command#patch#default_options*
+			*g:gita#command#rebase#default_options*
+			*g:gita#command#reset#default_options*
+			*g:gita#command#rm#default_options*
+			*g:gita#command#show#default_options*
+			*g:gita#command#status#default_options*
+g:gita#command#add#default_options
+g:gita#command#blame#default_options
+g:gita#command#branch#default_options
+g:gita#command#browse#default_options
+g:gita#command#chaperone#default_options
+g:gita#command#checkout#default_options
+g:gita#command#commit#default_options
+g:gita#command#diff#default_options
+g:gita#command#diff_ls#default_options
+g:gita#command#grep#default_options
+g:gita#command#init#default_options
+g:gita#command#ls_files#default_options
+g:gita#command#ls_tree#default_options
+g:gita#command#merge#default_options
+g:gita#command#patch#default_options
+g:gita#command#rebase#default_options
+g:gita#command#reset#default_options
+g:gita#command#rm#default_options
+g:gita#command#show#default_options
+g:gita#command#status#default_options
+
+	A default option |Dictionary| of each command.
+	For example, use this dictionary to set default opener as like:
+>
+	let g:gita#command#status#default_options = {
+	      \ 'opener': 'topleft 20 split',
+	      \}
+<
 			*g:gita#command#browse#translation_patterns*
 g:gita#command#browse#translation_patterns
 
@@ -1347,12 +1398,6 @@ g:gita#command#browse#extra_translation_patterns
 	    \ ],
 	    \}
 <
-			*g:gita#content#blame#default_opener*
-g:gita#content#blame#default_opener
-
-	A default opener for |:Gita-blame| command.
-	Default: 'tabedit'
-
 			*g:gita#content#blame#use_porcelain_instead*
 g:gita#content#blame#use_porcelain_instead
 
@@ -1400,12 +1445,6 @@ g:gita#content#blame_view#disable_default_mappings
 	1 to disable default mappings in |gita-blame-view| window.
 	Default: 0
 
-			*g:gita#content#branch#default_opener*
-g:gita#content#branch#default_opener
-
-	A default opener for |gita-branch| window.
-	Default: 'botright 10 split'
-
 			*g:gita#content#branch#primary_action_mapping*
 g:gita#content#branch#primary_action_mapping
 
@@ -1417,12 +1456,6 @@ g:gita#content#branch#disable_default_mappings
 
 	1 to disable default mappings in |gita-branch| window.
 	Default: 0
-
-			*g:gita#content#chaperone#default_opener*
-g:gita#content#chaperone#default_opener
-
-	A default opener for |:Gita-chaperone| command.
-	Default: 'tabedit'
 
 			*g:gita#content#chaperone#default_method*
 g:gita#content#chaperone#default_method
@@ -1437,12 +1470,6 @@ g:gita#content#chaperone#disable_default_mappings
 	1 to disable default mappings in windows involved in chaperone.
 	Default: 0
 
-			*g:gita#content#commit#default_opener*
-g:gita#content#commit#default_opener
-
-	A default opener for |gita-commit| window.
-	Default: 'botright 10 split'
-
 			*g:gita#content#commit#primary_action_mapping*
 g:gita#content#commit#primary_action_mapping
 
@@ -1454,18 +1481,6 @@ g:gita#content#commit#disable_default_mappings
 
 	1 to disable default mappings in |gita-commit| window.
 	Default: 0
-
-			*g:gita#content#diff#default_opener*
-g:gita#content#diff#default_opener
-
-	A default opener for |:Gita-diff| command.
-	Default: 'edit'
-
-			*g:gita#content#diff_ls#default_opener*
-g:gita#content#diff_ls#default_opener
-
-	A default opener for |gita-diff-ls| window.
-	Default: 'botright 10 split'
 
 			*g:gita#content#diff_ls#primary_action_mapping*
 g:gita#content#diff_ls#primary_action_mapping
@@ -1479,12 +1494,6 @@ g:gita#content#diff_ls#disable_default_mappings
 	1 to disable default mappings in |gita-diff-ls| window.
 	Default: 0
 
-			*g:gita#content#grep#default_opener*
-g:gita#content#grep#default_opener
-
-	A default opener for |gita-grep| window.
-	Default: 'botright 10 split'
-
 			*g:gita#content#grep#primary_action_mapping*
 g:gita#content#grep#primary_action_mapping
 
@@ -1496,12 +1505,6 @@ g:gita#content#grep#disable_default_mappings
 
 	1 to disable default mappings in |gita-grep| window.
 	Default: 0
-
-			*g:gita#content#ls_files#default_opener*
-g:gita#content#ls_files#default_opener
-
-	A default opener for |gita-ls-files| window.
-	Default: 'botright 10 split'
 
 			*g:gita#content#ls_files#primary_action_mapping*
 g:gita#content#ls_files#primary_action_mapping
@@ -1515,12 +1518,6 @@ g:gita#content#ls_files#disable_default_mappings
 	1 to disable default mappings in |gita-ls-files| window.
 	Default: 0
 
-			*g:gita#content#ls_tree#default_opener*
-g:gita#content#ls_tree#default_opener
-
-	A default opener for |gita-ls-tree| window.
-	Default: 'botright 10 split'
-
 			*g:gita#content#ls_tree#primary_action_mapping*
 g:gita#content#ls_tree#primary_action_mapping
 
@@ -1532,12 +1529,6 @@ g:gita#content#ls_tree#disable_default_mappings
 
 	1 to disable default mappings in |gita-ls-tree| window.
 	Default: 0
-
-			*g:gita#content#patch#default_opener*
-g:gita#content#patch#default_opener
-
-	A default opener for |:Gita-patch| command.
-	Default: 'tabedit'
 
 			*g:gita#content#patch#default_method*
 g:gita#content#patch#default_method
@@ -1551,18 +1542,6 @@ g:gita#content#patch#disable_default_mappings
 
 	1 to disable default mappings in windows involved in patch.
 	Default: 0
-
-			*g:gita#content#show#default_opener*
-g:gita#content#show#default_opener
-
-	A default opener for |:Gita-show| command.
-	Default: 'edit'
-
-			*g:gita#content#status#default_opener*
-g:gita#content#status#default_opener
-
-	A default opener for |gita-status| window.
-	Default: 'botright 10 split'
 
 			*g:gita#content#status#primary_action_mapping*
 g:gita#content#status#primary_action_mapping
@@ -1702,22 +1681,22 @@ in a window. Hit ? to see what actions are available in a window.
 		Checkout a content from origin/HEAD (force)
 		*<Plug>(gita-checkout-origin/HEAD-force)*
 	
-	commit
+	commit:open
 		Open a |gita-commit| window
-		*<Plug>(gita-commit)* Default: <C-^> or <C-c><C-n>
-	commit:amend
+		*<Plug>(gita-commit-open)* Default: <C-^> or <C-c><C-n>
+	commit:open:amend
 		Open a |gita-commit| window with amend option
-		*<Plug>(gita-commit-amend)* Default: <C-c><C-a>
+		*<Plug>(gita-commit-open-amend)* Default: <C-c><C-a>
 	
 	common:help (alias: help)
 		Show an action help
-		*<Plug>(gita-help)* Defaut: ?
+		*<Plug>(gita-common-help)* Defaut: ?
 	common:redraw (alias: redraw)
 		Redraw a window 
-		*<Plug>(gita-redraw)* Default: <C-l>
+		*<Plug>(gita-common-redraw)* Default: <C-l>
 	common:choice (alias: choice)
 		Start action select mode
-		*<Plug>(gita-choice)* Default: <Tab>
+		*<Plug>(gita-common-choice)* Default: <Tab>
 	
 	diff
 		Show a diff content
@@ -1763,34 +1742,34 @@ in a window. Hit ? to see what actions are available in a window.
 	edit:edit
 		Open a content (edit)
 		*<Plug>(gita-edit-edit)*
-	edit:above
+	edit:above (alias: above)
 		Open a content (above)
 		*<Plug>(gita-edit-above)*
-	edit:below
+	edit:below (alias: below)
 		Open a content (below)
 		*<Plug>(gita-edit-below)*
-	edit:left
+	edit:left (alias: left)
 		Open a content (left)
 		*<Plug>(gita-edit-left)*
-	edit:right
+	edit:right (alias: right)
 		Open a content (right)
 		*<Plug>(gita-edit-right)* Default: EE
-	edit:tab
+	edit:tab (alias: tab)
 		Open a content (tab)
 		*<Plug>(gita-edit-tab)* Default: et
-	edit:preview
+	edit:preview (alias: preview)
 		Open a content (preview)
 		*<Plug>(gita-edit-preview)* Default: ep
 	
 	index:stage (alias: stage)
 		Stage changes to the index
-		*<Plug>(gita-stage)* Default: <<
+		*<Plug>(gita-index-stage)* Default: <<
 	index:unstage (alias: unstage)
 		Unstage changes from the index
-		*<Plug>(gita-unstage)* Default: >>
+		*<Plug>(gita-index-unstage)* Default: >>
 	index:toggle (alias: toggle)
 		Toggle stage/unstage of changes in the index
-		*<Plug>(gita-toggle)* Default: --
+		*<Plug>(gita-index-toggle)* Default: --
 	
 	merge
 		Merge the commit into HEAD (fast-forward)
@@ -1864,9 +1843,9 @@ in a window. Hit ? to see what actions are available in a window.
 		Show a content (preview)
 		*<Plug>(gita-show-preview)* Default: sp
 	
-	status
+	status:open
 		Open a |gita-status| window
-		*<Plug>(gita-status)* Default: <C-^>
+		*<Plug>(gita-status-open)* Default: <C-^>
 
 ==============================================================================
 FAQ						*gita-faq*
