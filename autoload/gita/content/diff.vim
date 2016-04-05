@@ -42,7 +42,7 @@ function! s:build_bufname(options) abort
   let git = gita#core#get_or_fail()
   let treeish = printf('%s:%s',
         \ options.commit,
-        \ gita#normalize#relpath_for_git(git, options.filename),
+        \ gita#normalize#relpath(git, options.filename),
         \)
   return gita#content#build_bufname('diff', {
         \ 'extra_options': [
@@ -115,7 +115,7 @@ function! s:args_from_options(git, options) abort
   let args = ['diff', '--no-color'] + args + [
         \ gita#normalize#commit_for_diff(a:git, options.commit),
         \ '--',
-        \ gita#normalize#relpath_for_git(a:git, options.filename),
+        \ gita#normalize#relpath(a:git, options.filename),
         \]
   return args
 endfunction

@@ -53,7 +53,7 @@ function! s:args_from_options(git, options) abort
         \ '--full-name',
         \] + args + ['--'] + map(
         \  copy(get(a:options, 'filenames', [])),
-        \  'gita#normalize#relpath_for_git(a:git, v:val)'
+        \  'gita#normalize#relpath(a:git, v:val)'
         \)
   return filter(args, '!empty(v:val)')
 endfunction

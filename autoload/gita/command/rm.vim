@@ -44,7 +44,7 @@ function! s:args_from_options(git, options) abort
         \})
   let args = ['rm'] + args + ['--'] + map(
         \ get(a:options, '__unknown__', []),
-        \ 'gita#normalize#abspath_for_sys(a:git, v:val)'
+        \ 'gita#normalize#abspath(a:git, v:val)'
         \)
   return args
 endfunction

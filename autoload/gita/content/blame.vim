@@ -19,7 +19,7 @@ function! s:args_from_options(git, options) abort
         \   : '--incremental',
         \ gita#normalize#commit(a:git, get(a:options, 'commit', '')),
         \ '--',
-        \ gita#normalize#relpath_for_git(a:git, a:options.filename),
+        \ gita#normalize#relpath(a:git, a:options.filename),
         \]
   return args
 endfunction
@@ -72,7 +72,7 @@ function! s:get_blameobj(content, commit, filename) abort
         let git = gita#core#get_or_fail()
         let args = ['show', printf('%s:%s',
               \ gita#normalize#commit(git, a:commit),
-              \ gita#normalize#relpath_for_git(git, a:filename),
+              \ gita#normalize#relpath(git, a:filename),
               \)]
         let blameobj.file_content = gita#process#execute(git, args, {
               \ 'quiet': 1,

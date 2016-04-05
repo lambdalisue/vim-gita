@@ -6,14 +6,14 @@ let s:GitTerm = s:V.import('Git.Term')
 
 " NOTE:
 " git requires an unix relative path from the repository often
-function! gita#normalize#relpath_for_git(git, path) abort
+function! gita#normalize#relpath(git, path) abort
   let path = s:Git.get_relative_path(a:git, gita#meta#expand(a:path))
   return s:Path.unixpath(path)
 endfunction
 
 " NOTE:
 " sys(tem) requires a real absolute path often
-function! gita#normalize#abspath_for_sys(git, path) abort
+function! gita#normalize#abspath(git, path) abort
   let path = s:Git.get_absolute_path(a:git, gita#meta#expand(a:path))
   return s:Path.realpath(path)
 endfunction

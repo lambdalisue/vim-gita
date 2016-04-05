@@ -61,7 +61,7 @@ function! s:args_from_options(git, options) abort
   endfor
   let args += ['--'] + map(
         \ copy(a:options.filenames),
-        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \ 'gita#normalize#relpath(a:git, v:val)'
         \)
   return filter(args, '!empty(v:val)')
 endfunction

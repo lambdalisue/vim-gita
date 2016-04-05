@@ -107,7 +107,7 @@ function! s:args_from_options(git, options) abort
         \ '--',
         \] + map(
         \ get(a:options, '__unknown__', []),
-        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \ 'gita#normalize#relpath(a:git, v:val)'
         \)
   return args
 endfunction

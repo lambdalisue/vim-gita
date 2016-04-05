@@ -38,7 +38,7 @@ function! s:replace_filenames_in_diff(content, filename1, filename2, repl, ...) 
 endfunction
 
 function! s:get_diff_content(git, content, filename) abort
-  let filename = gita#normalize#relpath_for_git(a:git, a:filename)
+  let filename = gita#normalize#relpath(a:git, a:filename)
   let tempfile = tempname()
   let tempfile1 = tempfile . '.index'
   let tempfile2 = tempfile . '.buffer'
@@ -91,7 +91,7 @@ function! s:build_bufname(options) abort
         \}, a:options)
   if options.worktree
     let git = gita#core#get()
-    let filename = gita#normalize#abspath_for_sys(git, options.filename)
+    let filename = gita#normalize#abspath(git, options.filename)
     if !filereadable(filename)
       call gita#throw(printf(
             \ 'A filename "%s" could not be found in the working tree',
@@ -104,12 +104,12 @@ function! s:build_bufname(options) abort
     if options.ancestors || options.ours || options.theirs
       let treeish = printf(':%d:%s',
             \ options.ancestors ? 0 : options.ours ? 1 : 2,
-            \ gita#normalize#relpath_for_git(git, options.filename),
+            \ gita#normalize#relpath(git, options.filename),
             \)
     else
       let treeish = printf('%s:%s',
             \ options.commit,
-            \ gita#normalize#relpath_for_git(git, options.filename),
+            \ gita#normalize#relpath(git, options.filename),
             \)
     endif
     return gita#content#build_bufname('show', {
@@ -148,12 +148,12 @@ function! s:args_from_options(git, options) abort
   if options.ancestors || options.ours || options.theirs
     let treeish = printf(':%d:%s',
           \ options.ancestors ? 0 : options.ours ? 1 : 2,
-          \ gita#normalize#relpath_for_git(a:git, options.filename),
+          \ gita#normalize#relpath(a:git, options.filename),
           \)
   else
     let treeish = printf('%s:%s',
           \ gita#normalize#commit(a:git, options.commit),
-          \ gita#normalize#relpath_for_git(a:git, options.filename),
+          \ gita#normalize#relpath(a:git, options.filename),
           \)
   endif
   return ['show', treeish]
