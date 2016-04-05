@@ -17,7 +17,7 @@ function! s:action(candidate, options) abort
   let options.commit = get(a:candidate, 'commit', get(options, 'commit', ''))
   let options.selection = get(a:candidate, 'selection', options.selection)
 
-  if s:BufferAnchor.is_available(opener)
+  if s:BufferAnchor.is_available(options.opener)
     call s:BufferAnchor.focus()
   endif
   call gita#content#blame#open({
