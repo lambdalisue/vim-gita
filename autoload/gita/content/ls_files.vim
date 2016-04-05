@@ -55,7 +55,7 @@ function! s:args_from_options(git, options) abort
         \  copy(get(a:options, 'filenames', [])),
         \  'gita#normalize#relpath_for_git(a:git, v:val)'
         \)
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! s:execute_command(options) abort
