@@ -64,8 +64,8 @@ Describe gita#normalize
 
   Describe gita#normalize#commit({git}, {commit})
     It returns a revision of a common ancestor of A...B
-      if exists('$APPVEYOR')
-        Skip AppVeyor checkout a repository with --depth=1 so skip
+      if exists('$APPVEYOR') || exists('$TRAVIS')
+        Skip CIs checkout a repository with --depth=1 so skip
       else
         let alpha2 = '2d2b3bd'
         let alpha3 = '31e3c64'
@@ -97,8 +97,8 @@ Describe gita#normalize
 
   Describe gita#normalize#commit_for_diff({git}, {commit})
     It returns <A...B>..B for A...B
-      if exists('$APPVEYOR')
-        Skip AppVeyor checkout a repository with --depth=1 so skip
+      if exists('$APPVEYOR') || exists('$TRAVIS')
+        Skip CIs checkout a repository with --depth=1 so skip
       else
         let alpha2 = '2d2b3bd'
         let alpha3 = '31e3c64'
