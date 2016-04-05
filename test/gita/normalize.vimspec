@@ -7,21 +7,21 @@ Describe gita#normalize
 
   Describe gita#normalize#relpath({git}, {path})
     It returns an unix relative path from a git repository
-      let path = Path.abspath(expand('.'))
+      let path = Path.abspath(expand('%'))
       let git = gita#core#get()
       let ret = gita#normalize#relpath(git, path)
       Assert Equals(ret, Path.unixpath(Path.relpath(path)))
     End
 
     It returns an unix relative path from a current working directory
-      let path = Path.abspath(expand('.'))
+      let path = Path.abspath(expand('%'))
       let git = { 'is_enabled': 0, 'worktree': '' }
       let ret = gita#normalize#relpath(git, path)
       Assert Equals(ret, Path.unixpath(Path.relpath(path)))
     End
 
     It return {path} if the {path} is already a relative path
-      let path = Path.relpath(expand('.'))
+      let path = Path.relpath(expand('%'))
       let git = gita#core#get()
       let ret = gita#normalize#relpath(git, path)
       Assert Equals(ret, path)
@@ -36,25 +36,25 @@ Describe gita#normalize
 
   Describe gita#normalize#abspath({git}, {path})
     It returns a real absolute path (path separator: / in Unix, \ in Windows)
-      let path = Path.unixpath(Path.relpath(expand('.')))
+      let path = Path.unixpath(Path.relpath(expand('%')))
       let git = gita#core#get()
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, Path.realpath(Path.abspath(path)))
 
-      let path = Path.unixpath(Path.relpath(expand('.')))
+      let path = Path.unixpath(Path.relpath(expand('%')))
       let git = { 'is_enabled': 0, 'worktree': '' }
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, Path.realpath(Path.abspath(path)))
     End
 
     It returns {path} if the {path} is already an absolute path
-      let path = Path.unixpath(Path.abspath(expand('.')))
+      let path = Path.unixpath(Path.abspath(expand('%')))
       let git = gita#core#get()
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, path)
       Assert Same(ret, path)
 
-      let path = Path.unixpath(Path.abspath(expand('.')))
+      let path = Path.unixpath(Path.abspath(expand('%')))
       let git = { 'is_enabled': 0, 'worktree': '' }
       let ret = gita#normalize#abspath(git, path)
       Assert Equals(ret, path)
