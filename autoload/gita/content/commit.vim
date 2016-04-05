@@ -17,46 +17,38 @@ function! s:build_bufname(options) abort
         \})
 endfunction
 
-function! s:execute_command(options) abort
+function! s:args_from_options(git, options) abort
   let args = gita#process#args_from_options(a:options, {
-        \ 'untracked-files': 1,
+        \ 'reset-author': 1,
+        \ 'author': 1,
+        \ 'date': 1,
+        \ 'gpg-sign': 1,
+        \ 'no-gpg-sign': 1,
         \ 'amend': 1,
+        \ 'allow-empty': 1,
+        \ 'allow-empty-message': 1,
         \})
   let args = [
         \ 'commit',
-        \ '--untracked-files',
-        \ '--porcelain',
-        \ '--dry-run',
+        \ '--verbose',
         \] + args
-  let args += ['--'] + get(a:options, 'filenames', [])
-  let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args, {
-        \ 'quiet': 1,
-        \ 'encode_output': 0,
-        \ 'success_status': 1,
-        \})
+  return args
 endfunction
 
-function! s:execute_commit_command(options) abort
-  let args = gita#process#args_from_options(a:options, {
-        \ 'all': 1,
-        \ 'reset-author': 1,
-        \ 'file': 1,
-        \ 'author': 1,
-        \ 'date': 1,
-        \ 'message': 1,
-        \ 'allow-empty': 1,
-        \ 'allow-empty-message': 1,
-        \ 'amend': 1,
-        \ 'untracked-files': 1,
-        \ 'dry-run': 1,
-        \ 'gpg-sign': 1,
-        \ 'no-gpg-sign': 1,
-        \})
-  let args = ['commit', '--verbose'] + args
-  let args += ['--'] + get(a:options, 'filenames', [])
+function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  return gita#process#execute(git, args)
+  let args = s:args_from_options(git, a:options)
+  let args += [
+        \ '--dry-run',
+        \ '--porcelain',
+        \ '--untracked-files',
+        \]
+  let content = gita#process#execute(git, args, {
+        \ 'quiet': 1,
+        \ 'encode_output': 0,
+        \ 'fail_silently': 1,
+        \})
+  return filter(content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort
@@ -130,7 +122,7 @@ function! s:get_prologue(git) abort
 endfunction
 
 function! s:get_current_commitmsg() abort
-  return filter(getline(1, '$'), 'v:val !~# "^#"')
+  return filter(getline(1, '$'), 'v:val !~# ''^#''')
 endfunction
 
 function! s:save_commitmsg() abort
@@ -163,9 +155,9 @@ function! s:commit_commitmsg() abort
   let tempfile = tempname()
   try
     call writefile(commitmsg, tempfile)
-    call s:execute_commit_command(extend(copy(options), {
-          \ 'file': tempfile,
-          \}))
+    let args = s:args_from_options(git, options)
+    let args += ['--file=' . tempfile]
+    call gita#process#execute(git, args)
     call gita#meta#remove('commitmsg_saved', '')
     call gita#meta#set('options', {})
     silent keepjumps %delete _
@@ -189,10 +181,8 @@ endfunction
 
 function! s:on_BufReadCmd(options) abort
   call gita#util#doautocmd('BufReadPre')
-  let options = gita#util#option#cascade('^status$', a:options, {
-        \ 'untracked-files': 0,
-        \})
-  let content = filter(s:execute_command(options), '!empty(v:val)')
+  let options = gita#util#option#cascade('^commit$', a:options)
+  let content = s:execute_command(options)
   let statuses = s:GitParser.parse_status(content, { 'flatten': 1 })
   let statuses = sort(statuses, function('s:compare_statuses'))
   call gita#meta#set('content_type', 'commit')
@@ -239,16 +229,13 @@ endfunction
 
 function! gita#content#commit#open(options) abort
   let options = extend({
-        \ 'opener': '',
+        \ 'opener': 'botright 10 split',
         \ 'window': 'manipulation_window',
         \}, a:options)
   let bufname = s:build_bufname(options)
-  let opener = empty(options.opener)
-        \ ? g:gita#content#commit#default_opener
-        \ : options.opener
   call gita#util#cascade#set('commit', options)
   call gita#util#buffer#open(bufname, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': options.window,
         \})
 endfunction
@@ -301,7 +288,7 @@ function! gita#content#commit#redraw() abort
 endfunction
 
 function! gita#content#commit#autocmd(name, bufinfo) abort
-  let options = gita#util#cascade#get('status')
+  let options = gita#util#cascade#get('commit')
   for attribute in a:bufinfo.extra_options
     let options[attribute] = 1
   endfor
@@ -309,7 +296,6 @@ function! gita#content#commit#autocmd(name, bufinfo) abort
 endfunction
 
 call gita#define_variables('content#commit', {
-      \ 'default_opener': 'botright 10 split',
       \ 'primary_action_mapping': '<Plug>(gita-diff)',
       \ 'disable_default_mappings': 0,
       \})

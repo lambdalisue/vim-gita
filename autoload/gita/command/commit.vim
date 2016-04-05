@@ -7,8 +7,6 @@ function! s:get_parser() abort
           \ 'name': 'Gita commit',
           \ 'description': 'Record changes to the repository',
           \ 'complete_threshold': g:gita#complete_threshold,
-          \ 'unknown_description': '<filename>...',
-          \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
           \ '--reset-author',
@@ -58,7 +56,6 @@ function! s:get_parser() abort
           \ 'a way to open a new buffer such as "edit", "split", etc.', {
           \   'type': s:ArgumentParser.types.value,
           \})
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -69,7 +66,10 @@ function! gita#command#commit#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#util#option#assign_selection(options)
+  let options = extend(
+        \ copy(g:gita#command#commit#default_options),
+        \ options
+        \)
   call gita#util#option#assign_opener(options)
   call gita#content#commit#open(options)
 endfunction
@@ -78,3 +78,7 @@ function! gita#command#commit#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#commit', {
+      \ 'default_options': {},
+      \})
