@@ -45,6 +45,24 @@ function! s:get_parser() abort
   return s:parser
 endfunction
 
+function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'mixed': 1,
+        \ 'soft': 1,
+        \ 'hard': 1,
+        \ 'merge': 1,
+        \ 'keep': 1,
+        \})
+  let args = ['reset'] + args + [
+        \ gita#normalize#commit(get(a:options, 'commit', '')),
+        \ '--',
+        \] + map(
+        \ get(a:options, '__unknown__', []),
+        \ 'gita#normalize#relpath_for_git(a:git, v:val)'
+        \)
+  return args
+endfunction
+
 function! gita#command#reset#command(bang, range, args) abort
   let git = gita#core#get_or_fail()
   let parser  = s:get_parser()
@@ -52,10 +70,13 @@ function! gita#command#reset#command(bang, range, args) abort
   if empty(options)
     return
   endif
-  call gita#process#execute(git, ['reset'] + map(
-        \ options.__args__,
-        \ 'gita#meta#expand(v:val)',
-        \))
+  let options = extend(
+        \ copy(g:gita#command#reset#default_options),
+        \ options
+        \)
+  let git = gita#core#get_or_fail()
+  let args = s:args_from_options(git, options)
+  call gita#process#execute(git, args)
   call gita#util#doautocmd('User', 'GitaStatusModified')
 endfunction
 
@@ -63,3 +84,7 @@ function! gita#command#reset#complete(arglead, cmdline, cursorpos) abort
   let parser = s:get_parser()
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
+
+call gita#define_variables('command#reset', {
+      \ 'default_options': {},
+      \})
