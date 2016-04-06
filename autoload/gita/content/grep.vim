@@ -60,7 +60,7 @@ function! s:args_from_options(git, options) abort
     let args += ['-e' . pattern]
   endfor
   let args += ['--'] + map(
-        \ copy(a:options.filenames),
+        \ copy(get(a:options, 'filenames', [])),
         \ 'gita#normalize#relpath(a:git, v:val)'
         \)
   return filter(args, '!empty(v:val)')
@@ -119,6 +119,7 @@ function! s:extend_matches(matches, width) abort
 endfunction
 
 function! s:get_prologue(git) abort
+  let cached = gita#meta#get_for('^grep$', 'cached', '')
   let commit = gita#meta#get_for('^grep$', 'commit', '')
   let candidates = gita#meta#get_for('^grep$', 'candidates', [])
   let ncandidates = len(candidates)
@@ -126,7 +127,7 @@ function! s:get_prologue(git) abort
         \ '%d match%s in %s of %s %s',
         \ ncandidates,
         \ ncandidates == 1 ? '' : 'es',
-        \ empty(commit) ? 'INDEX' : commit,
+        \ empty(commit) ? (cached ? 'INDEX' : 'WORKTREE') : commit,
         \ a:git.repository_name,
         \ '| Press ? to show help or <Tab> to select action',
         \)
@@ -141,6 +142,7 @@ function! s:on_BufReadCmd(options) abort
   let candidates = s:extend_matches(candidates, winwidth(0))
   call gita#meta#set('content_type', 'grep')
   call gita#meta#set('options', options)
+  call gita#meta#set('cached', options.cached)
   call gita#meta#set('commit', options.commit)
   call gita#meta#set('patterns', options.patterns)
   call gita#meta#set('candidates', candidates)
@@ -175,19 +177,20 @@ function! gita#content#grep#redraw() abort
   let prologue = [s:get_prologue(git)]
   let contents = map(
         \ copy(gita#meta#get_for('^grep$', 'candidates', [])),
-        \ 'v:val.record',
+        \ 'v:val.record'
         \)
   call gita#util#buffer#edit_content(
         \ extend(prologue, contents),
         \ gita#util#buffer#parse_cmdarg(),
         \)
-  let patterns = gita#meta#get_for('^grep$', 'patterns')
-  for pattern in patterns
-    execute printf(
-          \ 'syntax match GitaKeyword /%s/ contained',
-          \ s:String.escape_pattern(pattern),
-          \)
-  endfor
+  let patterns = map(
+        \ copy(gita#meta#get_for('^grep$', 'patterns')),
+        \ 's:String.escape_pattern(v:val)'
+        \)
+  execute printf(
+        \ 'syntax match GitaKeyword /\%%(%s\)/ contained',
+        \ join(patterns, '\|')
+        \)
 endfunction
 
 function! gita#content#grep#autocmd(name, bufinfo) abort
