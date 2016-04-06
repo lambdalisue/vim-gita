@@ -49,6 +49,7 @@ Interface			|gita-interface|
   Functions			|gita-interface-functions|
   Variables			|gita-interface-variables|
   Actions			|gita-interface-actions|
+  Autocmds			|gita-interface-autocmds|
 FAQ				|gita-faq|
 
 
@@ -175,7 +176,7 @@ a manpage of git-status.
 
 	?           ?    untracked
 	!           !    ignored
-	
+
 In that window, users can manipulate or check statuses by the following
 mappings:
 					*gita-usage-status-mapping*
@@ -824,7 +825,7 @@ COMMANDS				*gita-interface-commands*
 
 	Open a remote URL of {path} in {commit} with a system default browser.
 	See |gita-usage-browse| for the usage.
-	
+
 	If {path} is omitted, a corresponding filename of the current buffer
 	will be used.
 	If {commit} is omitted, a corresponding remote branch of the current
@@ -1152,17 +1153,17 @@ gita#statusline#format({format})
 
 	" ln: gita
 	" lb: develop
-	" rn: 
+	" rn:
 	" rb: master
 	" => gita/develop/master
 
 	" ln: gita
-	" lb: 
+	" lb:
 	" rn: origin
 	" rb: master
 	" => gita/ <> origin/master
 
-	" ln: 
+	" ln:
 	" lb: develop
 	" rn: origin
 	" rb: master
@@ -1559,7 +1560,7 @@ in a window. Hit ? to see what actions are available in a window.
 	add:force
 		Add file content to the index (force)
 		*<Plug>(gita-add-force)*
-	
+
 	blame
 		Open blame window
 		*<Plug>(gita-blame)* Default: BB
@@ -1575,7 +1576,7 @@ in a window. Hit ? to see what actions are available in a window.
 	blame:chunk:previous
 		Move cursor onto the previous blame chunk
 		*<Plug>(gita-blame-chunk-previous)* Default: [c
-	
+
 	branch:checkout
 		Checkout a branch
 		*<Plug>(gita-branch-checkout)* Default: co
@@ -1594,7 +1595,7 @@ in a window. Hit ? to see what actions are available in a window.
 	branch:delete:force
 		Delete a branch (force)
 		*<Plug>(gita-branch-delete-force)* Default: DD
-	
+
 	browse
 		Browse a content URL
 		*<Plug>(gita-browse)* Default: bb
@@ -1625,7 +1626,7 @@ in a window. Hit ? to see what actions are available in a window.
 	browse:repository:yank
 		Yank a content URL with repository scheme (^)
 		*<Plug>(gita-browse-repository-yank)*
-	
+
 	chaperone
 		Help to solve a confliction
 		*<Plug>(gita-chaperone)* Default: !!
@@ -1635,7 +1636,7 @@ in a window. Hit ? to see what actions are available in a window.
 	chaperone:three
 		Help to solve a confliction three way)
 		*<Plug>(gita-chaperone-three)* Default: !3
-	
+
 	checkout
 		Checkout a content
 		*<Plug>(gita-checkout)*
@@ -1665,24 +1666,24 @@ in a window. Hit ? to see what actions are available in a window.
 	checkout:origin/HEAD:force
 		Checkout a content from origin/HEAD (force)
 		*<Plug>(gita-checkout-origin/HEAD-force)*
-	
+
 	commit:open
 		Open a |gita-commit| window
 		*<Plug>(gita-commit-open)* Default: <C-^> or <C-c><C-n>
 	commit:open:amend
 		Open a |gita-commit| window with amend option
 		*<Plug>(gita-commit-open-amend)* Default: <C-c><C-a>
-	
+
 	common:help (alias: help)
 		Show an action help
 		*<Plug>(gita-common-help)* Defaut: ?
 	common:redraw (alias: redraw)
-		Redraw a window 
+		Redraw a window
 		*<Plug>(gita-common-redraw)* Default: <C-l>
 	common:choice (alias: choice)
 		Start action select mode
 		*<Plug>(gita-common-choice)* Default: <Tab>
-	
+
 	diff
 		Show a diff content
 		*<Plug>(gita-diff)* Default: dd
@@ -1713,14 +1714,14 @@ in a window. Hit ? to see what actions are available in a window.
 	diff:split:tab
 		Show a diff content in two buffers (tab)
 		*<Plug>(gita-diff-split-tab)* Default: DS
-	
+
 	discard
 		Discard changes on the working tree
 		*<Plug>(gita-discard)* Default: ==
 	discard:force
 		Discard changes on the working tree (force)
 		*<Plug>(gita-discard-force)*
-	
+
 	edit
 		Open a content
 		*<Plug>(gita-edit)* Default: ee
@@ -1745,7 +1746,7 @@ in a window. Hit ? to see what actions are available in a window.
 	edit:preview (alias: preview)
 		Open a content (preview)
 		*<Plug>(gita-edit-preview)* Default: ep
-	
+
 	index:stage (alias: stage)
 		Stage changes to the index
 		*<Plug>(gita-index-stage)* Default: <<
@@ -1755,7 +1756,7 @@ in a window. Hit ? to see what actions are available in a window.
 	index:toggle (alias: toggle)
 		Toggle stage/unstage of changes in the index
 		*<Plug>(gita-index-toggle)* Default: --
-	
+
 	merge
 		Merge the commit into HEAD (fast-forward)
 		*<Plug>(gita-merge)*
@@ -1768,7 +1769,7 @@ in a window. Hit ? to see what actions are available in a window.
 	merge:squash
 		Merge the commit into HEAD (squash)
 		*<Plug>(gita-merge-squash)*
-	
+
 	patch
 		Patch file contents to the index
 		*<Plug>(gita-patch)* Default: pp
@@ -1781,18 +1782,25 @@ in a window. Hit ? to see what actions are available in a window.
 	patch:three
 		Patch file contents to the index (three way)
 		*<Plug>(gita-patch-three)* Default: p3
-	
+
+	quickfix:locationlist (alias: locationlist)
+		Add candidates to |location-list|
+		*<Plug>(gita-quickfix-locationlist)* Default: ql
+	quickfix:quickfix (alias: quickfix)
+		Add candidates to |quickfix|
+		*<Plug>(gita-quickfix-quickfix)* Default: qq
+
 	rebase
 		Rebase HEAD from the commit (fast-forward)
 		*<Plug>(gita-rebase)*
 	rebase:merge
 		Rebase HEAD by merging the commit
 		*<Plug>(gita-rebase-merge)*
-	
+
 	reset
 		Reset changes on the index
 		*<Plug>(gita-reset)*
-	
+
 	rm
 		Remove files from the working tree and the index
 		*<Plug>(gita-rm)*
@@ -1802,7 +1810,7 @@ in a window. Hit ? to see what actions are available in a window.
 	rm:force
 		Remove files from the working tree and the index (force)
 		*<Plug>(gita-rm-force)*
-	
+
 	show
 		Show a content
 		*<Plug>(gita-show)* Default: ss
@@ -1827,10 +1835,40 @@ in a window. Hit ? to see what actions are available in a window.
 	show:preview
 		Show a content (preview)
 		*<Plug>(gita-show-preview)* Default: sp
-	
+
 	status:open
 		Open a |gita-status| window
 		*<Plug>(gita-status-open)* Default: <C-^>
+
+------------------------------------------------------------------------------
+AUTOCMDS				*gita-interface-autocmds*
+
+gita provids the following |User| auto commands (|autocmd|):
+
+					*GitaStatusModifiedPre*
+GitaStatusModifiedPre		Called just after an action or command which
+				may modify the status of the git repository.
+				It is used to clear a repository cache to
+				correctly update statusline or so on.
+
+						*GitaStatusModifiedPost*
+GitaStatusModifiedPost		Called just after |GitaStatusModifiedPre|
+				autocmd has called. It is used to update
+				content of non-file like buffer such as
+				|gita-status|.
+
+					*GitaActionCalledPre:{name}*
+GitaActionCalledPre:{name}	Called just before a {name} action is called.
+				For example, GitaActionCalledPre:common:help
+				is called just before |common:help| action is
+				called.
+
+					*GitaActionCalledPost:{name}*
+GitaActionCalledPost:{name}	Called just after a {name} action is called.
+				For example, GitaActionCalledPost:common:help
+				is called just after |common:help| action is
+				called.
+
 
 ==============================================================================
 FAQ						*gita-faq*
@@ -1872,5 +1910,17 @@ A. No. |:Gita| command does not support |command-bar| so if you desire, you
 	:GitaBar add % | Gita commit
 	" => Works as expect
 
+Q. I would like to use thinca/qfreplace.vim or similar |quickfix| manipulation
+   plugins to edit lines found by :|Gita-grep| command.
+
+A. Use quickfix:quickfix action to apply candidates to |quickfix| window and
+   use |GitaActionCalledPost:{name}| autocmd to call the plugin function like:
+>
+	augroup gita_qfreplace
+	  autocmd! *
+	  autocmd User GitaActionCalledPost:quickfix:quickfix
+	        \ call qfreplace#start('')
+	augroup END
+<
 ==============================================================================
 vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
