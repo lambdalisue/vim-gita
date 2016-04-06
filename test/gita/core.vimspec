@@ -1,19 +1,42 @@
-let s:V = vital#of('vital')
-let s:Path = s:V.import('System.Filepath')
-let s:Guard = s:V.import('Vim.Guard')
-let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-let s:scriptfile = s:Path.realpath('autoload/gita/core.vim')
-
 Describe gita#core
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+
+    let scriptfile = Path.realpath('autoload/gita/core.vim')
+    let sf = ScriptLocal.sfuncs(scriptfile)
+    let sv = ScriptLocal.svars(scriptfile)
+
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
+    let inside = Path.join(worktree, 'f o o', 'b a r')
+    let outside = Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    lockvar inside
+    lockvar outside
+    call mkdir(repository, 'p')
+    call mkdir(inside, 'p')
+    call mkdir(outside, 'p')
+  End
+
+  After all
+    " remote a temp directory
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
+  End
+
   Before
-    Init
-    let Path = s:V.import('System.Filepath')
-    let sf = s:ScriptLocal.sfuncs(s:scriptfile)
-    let sv = s:ScriptLocal.svars(s:scriptfile)
-    let guard = s:Guard.store(
+    let guard = Guard.store(
           \ ['references', sv],
           \)
     let saved_getcwd = getcwd()
+    execute printf('cd %s', fnameescape(root))
   End
 
   After
@@ -105,22 +128,25 @@ Describe gita#core
   Describe #get([{expr}, {options}])
     Context A file buffer in a git repository
       Before
-        WorkonInside
-        let bufname = s:Path.join(g:gita#test#inside, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        execute printf('cd %s', fnameescape(inside))
+        let bufname = 'foo.txt'
+        execute printf('new %s', bufname)
       End
+
       It returns a git instance
         let git = gita#core#get(bufname)
         Assert Equals(git.is_enabled, 1)
       End
+
       It returns a same git instance
         let git1 = gita#core#get(bufname)
         let git2 = gita#core#get(bufname)
         Assert Same(git1, git2)
       End
+
       It returns a same git instance for a same repository
         let git1 = gita#core#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
+        execute printf('file %s', bufname . '.mod')
         let git2 = gita#core#get(bufname . '.mod')
         Assert Same(git1, git2)
       End
@@ -128,27 +154,31 @@ Describe gita#core
 
     Context A file buffer in a non git repository
       Before
-        WorkonInside
-        let bufname = s:Path.join(g:gita#test#outside, 'foo.txt')
-        silent execute printf('new %s', bufname)
+        execute printf('cd %s', fnameescape(inside))
+        let bufname = 'foo.txt'
+        execute printf('new %s', bufname)
       End
+
       It returns a git instance while cwd is in a git repository
         let git = gita#core#get(bufname)
         Assert Equals(git.is_enabled, 1)
       End
+
       It returns a git instance but not enabled if cwd is not in a git repository
-        WorkonOutside
+        execute printf('cd %s', fnameescape(outside))
         let git = gita#core#get(bufname)
         Assert Equals(git.is_enabled, 0)
       End
+
       It returns a same git instance
         let git1 = gita#core#get(bufname)
         let git2 = gita#core#get(bufname)
         Assert Same(git1, git2)
       End
+
       It does not return a same git instance if bufname has changed
         let git1 = gita#core#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
+        execute printf('file %s', bufname . '.mod')
         let git2 = gita#core#get(bufname . '.mod')
         Assert Same(git1, git2)
       End
@@ -156,28 +186,32 @@ Describe gita#core
 
     Context A non file buffer
       Before
-        WorkonInside
+        execute printf('cd %s', fnameescape(inside))
         let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
+        execute printf('new %s', bufname)
         setlocal buftype=nofile
       End
+
       It returns a git instance while cwd is in a git repository
         let git = gita#core#get(bufname)
         Assert Equals(git.is_enabled, 1)
       End
+
       It returns a git instance but not enabled if cwd is not in a git repository
-        WorkonOutside
+        execute printf('cd %s', fnameescape(outside))
         let git = gita#core#get(bufname)
         Assert Equals(git.is_enabled, 0)
       End
+
       It returns a same git instance
         let git1 = gita#core#get(bufname)
         let git2 = gita#core#get(bufname)
         Assert Same(git1, git2)
       End
+
       It does not return a same git instance if a current working directory has changed
         let git1 = gita#core#get(bufname)
-        WorkonOutside
+        execute printf('cd %s', fnameescape(outside))
         let git2 = gita#core#get(bufname)
         Assert NotSame(git1, git2)
       End

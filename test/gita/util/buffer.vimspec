@@ -1,4 +1,3 @@
-
 Describe gita#util#buffer
   Describe #parse_cmdarg([{cmdarg}])
     It returns an empty dictionary for non cmdarg

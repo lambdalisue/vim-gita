@@ -10,6 +10,7 @@ endif
 let s:assert = themis#helper('assert')
 call themis#option('recursive', 1)
 call themis#helper('command').with(s:assert)
+
 call themis#log('***********************************************************')
 call themis#log('$LANG:          ' . $LANG)
 call themis#log('&encoding:      ' . &encoding)
@@ -22,4 +23,3 @@ for s:runtimepath in split(&runtimepath, ',')
   call themis#log('  ' . s:runtimepath)
 endfor
 call themis#log('***********************************************************')
-source test/startup.vim

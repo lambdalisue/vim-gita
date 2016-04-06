@@ -1,12 +1,11 @@
-let s:is_windows = has('win16') || has('win32') || has('win64')
-let s:V = vital#of('vital')
-let s:Path = s:V.import('System.Filepath')
-let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-
 Describe gita#util#formatter
   Before all
-    let scriptfile = s:Path.realpath('autoload/gita/util/formatter.vim')
-    let sf = s:ScriptLocal.sfuncs(scriptfile)
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/util/formatter.vim')
+          \)
   End
 
   Context s:smart_string({value})

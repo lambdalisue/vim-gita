@@ -1,7 +1,9 @@
-let s:V = vital#of('vital')
-let s:Guard = s:V.import('Vim.Guard')
-
 Describe gita
+  Before all
+    let V = vital#of('vital')
+    let Guard = V.import('Vim.Guard')
+  End
+
   Describe #vital()
     It returns a Vital instance
       let instance = gita#vital()
@@ -38,13 +40,14 @@ Describe gita
 
   Describe #define_variables({prefix}, {defaults})
     Before
-      let guard = s:Guard.store(
+      let guard = Guard.store(
             \ 'g:gita#foo',
             \ 'g:gita#bar',
             \ 'g:gita#hello#foo',
             \ 'g:gita#hello#bar',
             \)
     End
+
     After
       call guard.restore()
     End

@@ -1,7 +1,3 @@
-let s:V = vital#of('vital')
-let s:Path = s:V.import('System.Filepath')
-let s:Guard = s:V.import('Vim.Guard')
-
 Describe gita#util
   Context #clip({content})
     It should assign {content} to @" register

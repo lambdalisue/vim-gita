@@ -1,14 +1,13 @@
-let s:V = vital#of('vital')
-let s:Prelude = s:V.import('Prelude')
-let s:Path = s:V.import('System.Filepath')
-let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-
 Describe gita#content#show
-  Before
-    let scriptfile = s:Path.realpath(
-          \ 'autoload/gita/content/show.vim',
+  Before all
+    let V = vital#of('vital')
+    let Prelude = V.import('Prelude')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/content/show.vim')
           \)
-    let sf = s:ScriptLocal.sfuncs(scriptfile)
   End
 
   Describe s:replace_filenames_in_diff({content}, {filename1}, {filename2}, {repl})
@@ -27,6 +26,7 @@ Describe gita#content#show
               \)
       End
     End
+
     It replace {filename1} and {filename2} in the header of {content} into {repl}
       let tempfile = tempname()
       let filename1 = tempfile . '.index'
@@ -45,7 +45,7 @@ Describe gita#content#show
             \ ),
             \ ' brabrabra',
             \]
-      if s:Prelude.is_windows()
+      if Prelude.is_windows()
         " NOTE:
         " All '\' characters in content generated from 'git diff' are escaped in Windows
         " https://github.com/lambdalisue/gita/pull/85#issuecomment-183611682
@@ -61,6 +61,7 @@ Describe gita#content#show
             \ ' brabrabra',
             \])
     End
+
     It solves https://ci.appveyor.com/project/lambdalisue/gita/build/306
       let content = [
             \ 'diff --git a/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.index b/C:\\Users\\appveyor\\AppData\\Local\\Temp\\1\\VIUAF40.tmp.buffer',
