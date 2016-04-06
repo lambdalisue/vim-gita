@@ -12,7 +12,7 @@ function! s:action(candidates, options) abort
         \ '--',
         \] + map(
         \ copy(a:candidates),
-        \ 'gita#normalize#abspath(get(v:val, ''path2'', v:val.path))',
+        \ 'gita#normalize#abspath(git, get(v:val, ''path2'', v:val.path))',
         \)
   let args = filter(args, '!empty(v:val)')
   call gita#process#execute(git, args, { 'quiet': 1 })
