@@ -19,7 +19,7 @@ function! s:action_locationlist(candidates, options) abort
   call setloclist(0, s:build_qflist(a:candidates))
 endfunction
 
-function! gita#action#common#define(disable_mapping) abort
+function! gita#action#quickfix#define(disable_mapping) abort
   call gita#action#define('quickfix:quickfix', function('s:action_quickfix'), {
         \ 'alias': 'quickfix',
         \ 'description': 'Add candidates to quickfix',
