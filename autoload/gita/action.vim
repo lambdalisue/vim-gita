@@ -108,6 +108,7 @@ function! gita#action#define(name, fn, ...) abort
 endfunction
 
 function! gita#action#call(name, candidates) abort
+  call gita#util#doautocmd('User', 'GitaActionCalledPre:' . a:name)
   let action = gita#action#get_action(a:name)
   let candidates = filter(
         \ copy(a:candidates),
@@ -121,6 +122,7 @@ function! gita#action#call(name, candidates) abort
   else
     call call(action.fn, [get(candidates, 0, {}), action.options])
   endif
+  call gita#util#doautocmd('User', 'GitaActionCalledPost:' . a:name)
 endfunction
 
 function! gita#action#include(names, ...) abort
