@@ -1,28 +1,28 @@
-let s:V = vital#of('vital')
-let s:File = s:V.import('System.File')
-let s:Path = s:V.import('System.Filepath')
-let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-let s:file = s:Path.realpath('autoload/vital/__gita__/Git/Process.vim')
-
 Describe Git.Process
   Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let GitProcess = V.import('Git.Process')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git/Process.vim')
+          \)
+
     " Create a mock Git working tree
     let root = tempname()
-    let worktree = s:Path.join(root, 'i n s i d e')
-    let repository = s:Path.join(worktree, '.git')
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
     lockvar root
     lockvar worktree
     lockvar repository
     call mkdir(worktree, 'p')
     call system(printf('cd %s && git init', shellescape(worktree)))
   End
+
   After all
     " remove a temp directory
-    call s:File.rmdir(root, 'r')
-  End
-  Before
-    let GitProcess = vital#of('gita').import('Git.Process')
-    let sf = s:ScriptLocal.sfuncs(s:file)
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
   End
 
   Describe .get_config()
@@ -42,9 +42,11 @@ Describe Git.Process
     Before
       let _config = GitProcess.get_config()
     End
+
     After
       call GitProcess.set_config(_config)
     End
+
     It overwrites existing config with {config}
       call GitProcess.set_config({
             \ 'executable': 'hub',
@@ -56,6 +58,7 @@ Describe Git.Process
             \ 'arguments': [],
             \})
     End
+
     It ignores unknown attributes
       call GitProcess.set_config({
             \ 'executable': 'hub',
@@ -68,6 +71,7 @@ Describe Git.Process
             \ 'arguments': [],
             \})
     End
+
     It ignores missing attributes
       call GitProcess.set_config({
             \ 'executable': 'hub',
@@ -82,7 +86,6 @@ Describe Git.Process
 
   Describe .execute({git}, {args}[, {options}])
     It execute git command in {git.worktree} and return {result}
-      let Path = s:Path
       let git = { 'worktree': worktree }
       let result = GitProcess.execute(git, [
             \ 'rev-parse', '--show-toplevel',
@@ -96,7 +99,6 @@ Describe Git.Process
     End
 
     It execute git command in the current working directory and return {result} if empty {git} is specified
-      let Path = s:Path
       let git = {}
       let result = GitProcess.execute(git, [
             \ 'rev-parse', '--show-toplevel',
@@ -112,11 +114,12 @@ Describe Git.Process
 
   Describe .shell({git}, {args})
     It execute git command in {git.worktree} by :! command
-      let Path = s:Path
       let git = { 'worktree': worktree }
       let git = {}
       " NOTE:
-      " The stdout of :! could not be obtain by redir somehow
+      " The result of :! command directly print out to stdout so 'redir'
+      " could not be used for catching the result.
+      " Additionally the result will be printed out during unittest
       call GitProcess.shell(git, [
             \ 'rev-parse', '--show-toplevel',
             \])
@@ -124,5 +127,3 @@ Describe Git.Process
     End
   End
 End
-
-" :!git ''-c'' ''color.ui=false'' ''--no-pager'' ''-C'' ''/var/folders/f_/dypbhlxd4cqg63lb40ykq0580000gn/T/vkK8Wvy/20/i n s i d e'' ''rev-parse'' ''--show-toplevel''

@@ -1,24 +1,24 @@
-let s:V = vital#of('vital')
-let s:File = s:V.import('System.File')
-let s:Path = s:V.import('System.Filepath')
-
 Describe Git.Info
-  Before
-    let Git = vital#of('gita').import('Git')
-    let GitInfo = vital#of('gita').import('Git.Info')
+  Before all
+    let V = vital#of('vital')
+    let File = V.import('System.File')
+    let Path = V.import('System.Filepath')
+    let Git = V.import('Git')
+    let GitInfo = V.import('Git.Info')
+
     let git = Git.get('.')
   End
 
   Describe .get_head({git})
     It returns a HEAD
-      let content = readfile(s:Path.realpath('.git/HEAD'))
+      let content = readfile(Path.realpath('.git/HEAD'))
       Assert Equals(GitInfo.get_head(git), content[0])
     End
   End
 
   Describe .get_fetch_head({git})
     Before
-      let filename = s:Path.realpath('.git/FETCH_HEAD')
+      let filename = Path.realpath('.git/FETCH_HEAD')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -36,7 +36,7 @@ Describe Git.Info
 
   Describe .get_orig_head({git})
     Before
-      let filename = s:Path.realpath('.git/ORIG_HEAD')
+      let filename = Path.realpath('.git/ORIG_HEAD')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -54,7 +54,7 @@ Describe Git.Info
 
   Describe .get_merge_head({git})
     Before
-      let filename = s:Path.realpath('.git/MERGE_HEAD')
+      let filename = Path.realpath('.git/MERGE_HEAD')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -72,7 +72,7 @@ Describe Git.Info
 
   Describe .get_cherry_pick_head({git})
     Before
-      let filename = s:Path.realpath('.git/CHERRY_PICK_HEAD')
+      let filename = Path.realpath('.git/CHERRY_PICK_HEAD')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -90,7 +90,7 @@ Describe Git.Info
 
   Describe .get_revert_head({git})
     Before
-      let filename = s:Path.realpath('.git/REVERT_HEAD')
+      let filename = Path.realpath('.git/REVERT_HEAD')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -108,7 +108,7 @@ Describe Git.Info
 
   Describe .get_bisect_log({git})
     Before
-      let filename = s:Path.realpath('.git/BISECT_LOG')
+      let filename = Path.realpath('.git/BISECT_LOG')
       if !filereadable(filename)
         call writefile(['foobar'], filename)
       endif
@@ -126,7 +126,7 @@ Describe Git.Info
 
   Describe .get_rebase_merge_head({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-merge/head-name')
+      let filename = Path.realpath('.git/rebase-merge/head-name')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -136,7 +136,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-merge/head-name
@@ -147,7 +147,7 @@ Describe Git.Info
 
   Describe .get_rebase_merge_step({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-merge/msgnum')
+      let filename = Path.realpath('.git/rebase-merge/msgnum')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -157,7 +157,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-merge/msgnum
@@ -168,7 +168,7 @@ Describe Git.Info
 
   Describe .get_rebase_merge_total({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-merge/end')
+      let filename = Path.realpath('.git/rebase-merge/end')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -178,7 +178,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-merge/end
@@ -189,7 +189,7 @@ Describe Git.Info
 
   Describe .get_rebase_apply_head({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-apply/head-name')
+      let filename = Path.realpath('.git/rebase-apply/head-name')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -199,7 +199,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-apply/head-name
@@ -210,7 +210,7 @@ Describe Git.Info
 
   Describe .get_rebase_apply_step({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-apply/next')
+      let filename = Path.realpath('.git/rebase-apply/next')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -220,7 +220,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-apply/next
@@ -231,7 +231,7 @@ Describe Git.Info
 
   Describe .get_rebase_apply_total({git})
     Before
-      let filename = s:Path.realpath('.git/rebase-apply/last')
+      let filename = Path.realpath('.git/rebase-apply/last')
       if !isdirectory(fnamemodify(filename, ':h'))
         call mkdir(fnamemodify(filename, ':h'))
       endif
@@ -241,7 +241,7 @@ Describe Git.Info
     End
     After
       if readfile(filename) == ['foobar']
-        call s:File.rmdir(fnamemodify(filename, ':h'), 'r')
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
       endif
     End
     It returns a rebase-apply/last
@@ -252,7 +252,7 @@ Describe Git.Info
 
   Describe .get_commit_editmsg({git})
     Before
-      let filename = s:Path.realpath('.git/COMMIT_EDITMSG')
+      let filename = Path.realpath('.git/COMMIT_EDITMSG')
       if !filereadable(filename)
         call writefile(['foobar', 'hogehoge'], filename)
       endif
@@ -270,7 +270,7 @@ Describe Git.Info
 
   Describe .get_merge_msg({git})
     Before
-      let filename = s:Path.realpath('.git/MERGE_MSG')
+      let filename = Path.realpath('.git/MERGE_MSG')
       if !filereadable(filename)
         call writefile(['foobar', 'hogehoge'], filename)
       endif

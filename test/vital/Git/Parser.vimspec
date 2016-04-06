@@ -1,21 +1,23 @@
-let s:V = vital#of('vital')
-let s:Path = s:V.import('System.Filepath')
-
 Describe Git.Parser
-  Before
-    let GitParser = vital#of('gita').import('Git.Parser')
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let GitParser = V.import('Git.Parser')
     let blame_porcelain = readfile(
-          \ s:Path.realpath('test/vital/_testdata/Git/Parser/blame_porcelain.txt')
+          \ Path.realpath('test/vital/_testdata/Git/Parser/blame_porcelain.txt')
           \)
     let blame_incremental = readfile(
-          \ s:Path.realpath('test/vital/_testdata/Git/Parser/blame_incremental.txt')
+          \ Path.realpath('test/vital/_testdata/Git/Parser/blame_incremental.txt')
           \)
+  End
 
+  Before
     let g:VitalGitParserCalledWith = []
     function! VitalGitParserCallback(...) abort
       call add(g:VitalGitParserCalledWith, a:000)
     endfunction
   End
+
   After
     unlet g:VitalGitParserCalledWith
     delfunction VitalGitParserCallback

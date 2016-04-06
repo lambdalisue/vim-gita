@@ -1,17 +1,18 @@
-let s:V = vital#of('vital')
-let s:File = s:V.import('System.File')
-let s:Path = s:V.import('System.Filepath')
-let s:ScriptLocal = s:V.import('Vim.ScriptLocal')
-let s:file = s:Path.realpath('autoload/vital/__gita__/Git.vim')
-
 Describe Git
   Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let Git = V.import('Git')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git.vim')
+          \)
     " Create a mock Git working tree
     let root = tempname()
-    let worktree = s:Path.join(root, 'i n s i d e')
-    let repository = s:Path.join(worktree, '.git')
-    let inside = s:Path.join(worktree, 'f o o', 'b a r')
-    let outside = s:Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
+    let inside = Path.join(worktree, 'f o o', 'b a r')
+    let outside = Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
     lockvar root
     lockvar worktree
     lockvar repository
@@ -24,12 +25,8 @@ Describe Git
 
   After all
     " remote a temp directory
-    call s:File.rmdir(root, 'r')
-  End
-
-  Before
-    let Git = vital#of('gita').import('Git')
-    let sf = s:ScriptLocal.sfuncs(s:file)
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
   End
 
   After
@@ -53,9 +50,11 @@ Describe Git
     Before
       let _config = Git.get_config()
     End
+
     After
       call Git.set_config(_config)
     End
+
     It overwrites existing config with {config}
       call Git.set_config({
             \ 'instance_cache': { 'class': {} },
@@ -67,6 +66,7 @@ Describe Git
             \ 'repository_cache': { 'class': {} },
             \})
     End
+
     It ignores unknown attributes
       call Git.set_config({
             \ 'instance_cache': { 'class': {} },
@@ -79,6 +79,7 @@ Describe Git
             \ 'repository_cache': { 'class': {} },
             \})
     End
+
     It ignores missing attributes
       let default = Git.get_config()
       call Git.set_config({
@@ -96,6 +97,7 @@ Describe Git
     It should return a top directory path of the working directory
       Assert Equals(sf._find_worktree(inside), worktree)
     End
+
     It should return an empty string for a non git working directory
       Assert Equals(sf._find_worktree(outside), '')
     End
@@ -142,7 +144,7 @@ Describe Git
   Describe .readfile({git}, {path})
     It returns a content of a file in a git repository of {git}
       let git = Git.get('.')
-      let filename = s:Path.realpath('.git/description')
+      let filename = Path.realpath('.git/description')
       let content = Git.readfile(git, 'description')
       Assert Equals(content, readfile(filename))
     End
@@ -157,7 +159,7 @@ Describe Git
   Describe .readline({git}, {path})
     It returns a first line of a file in a git repository of {git}
       let git = Git.get('.')
-      let filename = s:Path.realpath('.git/description')
+      let filename = Path.realpath('.git/description')
       let content = Git.readline(git, 'description')
       Assert Equals(content, readfile(filename)[0])
     End
@@ -206,7 +208,6 @@ Describe Git
   Describe .getftime({git}, {path})
     It returns ftime of {path} in a git repository of {git}
       let git = Git.get('.')
-      let Path = s:Path
       Assert Equals(
             \ Git.getftime(git, 'description'),
             \ getftime(Path.realpath('.git/description'))
@@ -222,14 +223,14 @@ Describe Git
   Describe .get_relative_path({git}, {path})
     It returns a relative path of {path} in {git} repository
       let git = Git.get('.')
-      let abspath = fnamemodify(s:Path.realpath('autoload/gita.vim'), ':p')
-      let relpath = s:Path.realpath('autoload/gita.vim')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
+      let relpath = Path.realpath('autoload/gita.vim')
       Assert Equals(Git.get_relative_path(git, abspath), relpath)
     End
 
     It returns {path} if {path} is already a relative path
       let git = Git.get('.')
-      let relpath = s:Path.realpath('autoload/gita.vim')
+      let relpath = Path.realpath('autoload/gita.vim')
       Assert Equals(Git.get_relative_path(git, relpath), relpath)
       Assert Same(Git.get_relative_path(git, relpath), relpath)
     End
@@ -238,14 +239,14 @@ Describe Git
   Describe .get_absolute_path({git}, {path})
     It returns an absolute path of {path} in {git} repository
       let git = Git.get('.')
-      let abspath = fnamemodify(s:Path.realpath('autoload/gita.vim'), ':p')
-      let relpath = s:Path.realpath('autoload/gita.vim')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
+      let relpath = Path.realpath('autoload/gita.vim')
       Assert Equals(Git.get_absolute_path(git, relpath), abspath)
     End
 
     It returns {path} if {path} is already an absolute path
       let git = Git.get('.')
-      let abspath = fnamemodify(s:Path.realpath('autoload/gita.vim'), ':p')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
       Assert Equals(Git.get_absolute_path(git, abspath), abspath)
       Assert Same(Git.get_absolute_path(git, abspath), abspath)
     End
@@ -253,23 +254,23 @@ Describe Git
 
   Describe .get_cache_content({git}, {path}, {slug}[, {default}])
     It returns {default} if no cache content exists for {path} and {slug} in {git} repository
-      Skip Difficult to test an actual behavior
+      " TODO: Test
     End
+
     It returns a cached content for {path} and {slug} in {git} repository
-      Skip Difficult to test an actual behavior
+      " TODO: Test
     End
   End
 
   Describe .set_cache_content({git}, {path}, {slug}, {content})
     It returns cache {content} of {path} and {slug} in {git} with uptime
-      Skip Difficult to test an actual behavior
+      " TODO: Test
     End
   End
 
   Describe .get({path}[, {options}])
     It returns a git instance of a {path} belongs
       let git = Git.get('.')
-      let Path = s:Path
       Assert Equals(git.worktree, getcwd())
       Assert Equals(git.repository, Path.realpath(getcwd() . '/.git'))
     End
@@ -282,7 +283,7 @@ Describe Git
 
     It returns a cached git instance of a {path} belongs for worktree of {path}
       let git1 = Git.get('.')
-      let git2 = Git.get(s:Path.realpath('./autoload'))
+      let git2 = Git.get(Path.realpath('./autoload'))
       Assert Same(git1, git2)
     End
 
@@ -295,7 +296,7 @@ Describe Git
 
     It returns a fresh git instance of a {path} belongs for worktree of {path} if {options.force} is specified
       let git1 = Git.get('.')
-      let git2 = Git.get(s:Path.realpath('./autoload'), { 'force': 1 })
+      let git2 = Git.get(Path.realpath('./autoload'), { 'force': 1 })
       Assert Equals(git1, git2)
       Assert NotSame(git1, git2)
     End
