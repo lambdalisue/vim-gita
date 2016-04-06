@@ -45,14 +45,14 @@ function! gita#process#args_from_options(options, schemes) abort
           \ : len(key) == 1 ? '-%k%v' : '--%k%{=}v'
     call extend(args, s:translate(key, a:options, scheme))
   endfor
-  return filter(args, '!empty(v:val)')
+  return args
 endfunction
 
 function! gita#process#splitargs(args) abort
   let args = s:ArgumentParser.splitargs(a:args)
   let args = map(args, 's:strip_quotes(v:val)')
   let args = map(args, 's:String.unescape(v:val, '' '')')
-  return filter(args, '!empty(v:val)')
+  return args
 endfunction
 
 function! gita#process#execute(git, args, ...) abort
