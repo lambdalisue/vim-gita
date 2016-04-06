@@ -21,7 +21,7 @@ function! s:args_from_options(git, options) abort
         \ '--',
         \ gita#normalize#relpath(a:git, a:options.filename),
         \]
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! s:execute_command(options) abort

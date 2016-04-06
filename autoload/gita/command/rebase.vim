@@ -180,7 +180,7 @@ function! s:args_from_options(git, options) abort
         \ 'no-ff': 1,
         \})
   let args = ['rebase', '--verbose'] + args
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! gita#command#rebase#command(bang, range, args) abort

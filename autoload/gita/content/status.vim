@@ -16,7 +16,7 @@ function! s:args_from_options(git, options) abort
         \ 'ignored-submodules': 1,
         \})
   let args = ['status', '--verbose'] + args
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! s:execute_command(options) abort

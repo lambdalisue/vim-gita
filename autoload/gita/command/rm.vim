@@ -46,7 +46,7 @@ function! s:args_from_options(git, options) abort
         \ get(a:options, '__unknown__', []),
         \ 'gita#normalize#abspath(a:git, v:val)'
         \)
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! gita#command#rm#command(bang, range, args) abort

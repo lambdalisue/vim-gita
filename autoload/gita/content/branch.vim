@@ -35,7 +35,7 @@ function! s:args_from_options(git, options) abort
         \ '--no-color',
         \ '--no-abbrev',
         \] + args
-  return args
+  return filter(args, '!empty(v:val)')
 endfunction
 
 function! s:execute_command(options) abort
