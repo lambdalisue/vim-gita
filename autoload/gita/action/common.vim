@@ -71,19 +71,6 @@ function! s:action_help(candidate, options) abort
   echo join(s:build_help(action_holder), "\n")
 endfunction
 
-function! s:action_quickfix(candidates, options) abort
-  let git = gita#core#get()
-  let qflist = []
-  for candidate in a:candidates
-    call add(qflist, {
-          \ 'filename': gita#normalize#abspath(git, candidate.path),
-          \ 'lnum': candidate.selection[0],
-          \ 'text': candidate.content,
-          \})
-  endfor
-  call setqflist(qflist)
-endfunction
-
 function! s:action_choice(candidates, options) abort
   let action_holder = gita#action#get_book()
   let g:gita#action#common#_aliases = join(keys(action_holder.aliases), "\n")
@@ -141,12 +128,6 @@ function! gita#action#common#define(disable_mapping) abort
         \ 'mapping_mode': 'n',
         \ 'options': {},
         \})
-  call gita#action#define('common:quickfix', function('s:action_quickfix'), {
-        \ 'alias': 'quickfix',
-        \ 'description': 'Add to quickfix list',
-        \ 'requirements': ['path', 'selection', 'content'],
-        \ 'options': {},
-        \})
   if g:gita#develop
     call gita#action#define('common:echo', function('s:action_echo'), {
           \ 'alias': 'echo',
@@ -161,8 +142,6 @@ function! gita#action#common#define(disable_mapping) abort
   nmap <buffer><nowait> <C-l> <Plug>(gita-common-redraw)
   nmap <buffer><nowait> <Tab> <Plug>(gita-common-choice)
   vmap <buffer><nowait> <Tab> <Plug>(gita-common-choice)
-  nmap <buffer><nowait><expr> qq gita#action#smart_map('qq', '<Plug>(gita-common-quickfix)')
-  vmap <buffer><nowait><expr> qq gita#action#smart_map('qq', '<Plug>(gita-common-quickfix)')
 endfunction
 
 function! gita#action#common#_complete_alias(arglead, cmdline, cursorpos) abort

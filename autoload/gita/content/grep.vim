@@ -79,7 +79,7 @@ endfunction
 function! s:define_actions() abort
   call gita#action#attach(function('s:get_candidates'))
   call gita#action#include([
-        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame',
+        \ 'common', 'edit', 'show', 'diff', 'browse', 'blame', 'quickfix',
         \], g:gita#content#grep#disable_default_mappings)
 
   if g:gita#content#grep#disable_default_mappings
