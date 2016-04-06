@@ -220,35 +220,35 @@ Describe Git
     End
   End
 
-  Describe .get_relative_path({git}, {path})
+  Describe .relpath({git}, {path})
     It returns a relative path of {path} in {git} repository
       let git = Git.get('.')
       let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
       let relpath = Path.realpath('autoload/gita.vim')
-      Assert Equals(Git.get_relative_path(git, abspath), relpath)
+      Assert Equals(Git.relpath(git, abspath), relpath)
     End
 
     It returns {path} if {path} is already a relative path
       let git = Git.get('.')
       let relpath = Path.realpath('autoload/gita.vim')
-      Assert Equals(Git.get_relative_path(git, relpath), relpath)
-      Assert Same(Git.get_relative_path(git, relpath), relpath)
+      Assert Equals(Git.relpath(git, relpath), relpath)
+      Assert Same(Git.relpath(git, relpath), relpath)
     End
   End
 
-  Describe .get_absolute_path({git}, {path})
+  Describe .abspath({git}, {path})
     It returns an absolute path of {path} in {git} repository
       let git = Git.get('.')
       let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
       let relpath = Path.realpath('autoload/gita.vim')
-      Assert Equals(Git.get_absolute_path(git, relpath), abspath)
+      Assert Equals(Git.abspath(git, relpath), abspath)
     End
 
     It returns {path} if {path} is already an absolute path
       let git = Git.get('.')
       let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
-      Assert Equals(Git.get_absolute_path(git, abspath), abspath)
-      Assert Same(Git.get_absolute_path(git, abspath), abspath)
+      Assert Equals(Git.abspath(git, abspath), abspath)
+      Assert Same(Git.abspath(git, abspath), abspath)
     End
   End
 

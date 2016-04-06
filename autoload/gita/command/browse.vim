@@ -49,7 +49,7 @@ endfunction
 
 function! s:find_url(git, commit, filename, options) abort
   let relpath = s:Path.unixpath(
-        \ s:Git.get_relative_path(a:git, a:filename),
+        \ s:Git.relpath(a:git, a:filename),
         \)
   " normalize commit to figure out remote, commit, and remote_url
   let [commit1, commit2, remote, remote_url] = s:find_commit_meta(a:git, a:commit)

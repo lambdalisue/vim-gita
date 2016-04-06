@@ -15,7 +15,7 @@ function! s:open2(options) abort
         \}, a:options)
   let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
-  let filename = s:Path.unixpath(s:Git.get_relative_path(git, filename))
+  let filename = s:Path.unixpath(s:Git.relpath(git, filename))
   let roptions = {
         \ 'theirs': 1,
         \ 'filename': filename,
@@ -57,7 +57,7 @@ function! s:open3(options) abort
         \}, a:options)
   let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
-  let filename = s:Path.unixpath(s:Git.get_relative_path(git, filename))
+  let filename = s:Path.unixpath(s:Git.relpath(git, filename))
   let loptions = {
         \ 'ours': 1,
         \ 'filename': filename,

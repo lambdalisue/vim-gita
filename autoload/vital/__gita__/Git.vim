@@ -97,7 +97,7 @@ function! s:getftime(git, path) abort
 endfunction
 
 
-function! s:get_relative_path(git, path) abort
+function! s:relpath(git, path) abort
   let path = s:Path.realpath(a:path)
   if s:Path.is_relative(path)
     return path
@@ -110,7 +110,7 @@ function! s:get_relative_path(git, path) abort
   return substitute(expand(path), '^' . prefix, '', '')
 endfunction
 
-function! s:get_absolute_path(git, path) abort
+function! s:abspath(git, path) abort
   let path = s:Path.realpath(a:path)
   if s:Path.is_absolute(path)
     return path

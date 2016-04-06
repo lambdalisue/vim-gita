@@ -8,7 +8,7 @@ let s:GitTerm = s:V.import('Git.Term')
 " git requires an unix relative path from the repository often
 function! gita#normalize#relpath(git, path) abort
   let path = a:git.is_enabled
-        \ ? s:Git.get_relative_path(a:git, gita#meta#expand(a:path))
+        \ ? s:Git.relpath(a:git, gita#meta#expand(a:path))
         \ : s:Path.relpath(gita#meta#expand(a:path))
   return s:Path.unixpath(path)
 endfunction
@@ -17,7 +17,7 @@ endfunction
 " system requires a real absolute path often
 function! gita#normalize#abspath(git, path) abort
   let path = a:git.is_enabled
-        \ ? s:Git.get_absolute_path(a:git, gita#meta#expand(a:path))
+        \ ? s:Git.abspath(a:git, gita#meta#expand(a:path))
         \ : s:Path.abspath(gita#meta#expand(a:path))
   return s:Path.realpath(path)
 endfunction

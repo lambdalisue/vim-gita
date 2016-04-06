@@ -13,7 +13,7 @@ function! s:parse_bufname(bufinfo) abort
   endif
   let git = gita#core#get_or_fail()
   let a:bufinfo.commit = m[1]
-  let a:bufinfo.filename = s:Path.realpath(s:Git.get_absolute_path(git, m[2]))
+  let a:bufinfo.filename = s:Path.realpath(s:Git.abspath(git, m[2]))
   return a:bufinfo
 endfunction
 
@@ -102,7 +102,7 @@ function! gita#content#blame_view#build_bufname(options) abort
   let git = gita#core#get_or_fail()
   let treeish = printf('%s:%s',
         \ get(a:options, 'commit', ''),
-        \ s:Path.unixpath(s:Git.get_relative_path(git, a:options.filename)),
+        \ s:Path.unixpath(s:Git.relpath(git, a:options.filename)),
         \)
   return gita#content#build_bufname('blame-view', {
         \ 'treeish': treeish,
