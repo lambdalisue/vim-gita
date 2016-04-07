@@ -65,7 +65,7 @@ function! s:get_diff_content(git, content, filename) abort
     " and 0 means no differences
     let content = gita#process#execute(
           \ git,
-          \ ['diff', '--no-index', '--unified=0', '--', tempfile1, tempfile2],
+          \ ['diff', '--no-index', '--unified=1', '--', tempfile1, tempfile2],
           \ { 'quiet': 1, 'encode_output': 0, 'fail_silently': 1 }
           \)
     if empty(content) || len(content) < 4
