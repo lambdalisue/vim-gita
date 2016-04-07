@@ -80,6 +80,15 @@ Additionally, hitting `?` in manipulation windows (e.g. `gita-status`) shows act
 
 See `:help gita-usage` for more detail.
 
+### Status
+
+[![asciicast](https://asciinema.org/a/41576.png)](https://asciinema.org/a/41576)
+
+To check or modify current statuses of a git repository, use `:Gita status` command like above.
+
+The status of each modified files are shown a short format.
+If you are not familiar with short format, see `:help gita-usage-status-cheetsheet` or a manpage of git-status.
+
 
 Bundle libraries and build statuses
 -------------------------------------------------------------------------------
