@@ -1,0 +1,118 @@
+Describe gita#command#rebase
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let ProcessMock = V.import('System.Process.Mock')
+    let guard = Guard.store('g:gita#process#options')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/rebase.vim')
+          \)
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(ProcessMock)]
+          \}
+    " the line below is required to load requirements before :redir
+    silent Gita rebase
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      new
+      let options = {
+            \ 'onto': 'A',
+            \ 'continue': 1,
+            \ 'abort': 1,
+            \ 'keep-empty': 1,
+            \ 'skip': 1,
+            \ 'merge': 1,
+            \ 'strategy': ['A', 'B', 'C'],
+            \ 'strategy-option': 'A',
+            \ 'gpg-sign': 1,
+            \ 'stat': 1,
+            \ 'no-stat': 1,
+            \ 'no-verify': 1,
+            \ 'verify': 1,
+            \ 'C': 'A',
+            \ 'force-rebase': 1,
+            \ 'fork-point': 1,
+            \ 'no-fork-point': 1,
+            \ 'ignore-whitespace': 1,
+            \ 'whitespace': 1,
+            \ 'preserve-merges': 1,
+            \ 'exec': 'A',
+            \ 'root': 1,
+            \ 'autosquash': 1,
+            \ 'no-autosquash': 1,
+            \ 'autostash': 1,
+            \ 'no-autostash': 1,
+            \ 'no-ff': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'rebase',
+            \ '--verbose',
+            \ '-CA',
+            \ '--abort',
+            \ '--autosquash',
+            \ '--autostash',
+            \ '--continue',
+            \ '--exec=A',
+            \ '--force-rebase',
+            \ '--fork-point',
+            \ '--gpg-sign',
+            \ '--ignore-whitespace',
+            \ '--keep-empty',
+            \ '--merge',
+            \ '--no-autosquash',
+            \ '--no-autostash',
+            \ '--no-ff',
+            \ '--no-fork-point',
+            \ '--no-stat',
+            \ '--no-verify',
+            \ '--onto=A',
+            \ '--preserve-merges',
+            \ '--root',
+            \ '--skip',
+            \ '--stat',
+            \ '--strategy=A', '--strategy=B', '--strategy=C',
+            \ '--strategy-option=A',
+            \ '--verify',
+            \ '--whitespace',
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'rebase',
+            \ '--verbose',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    It executes 'git rebase --verbose' for 'Gita rebase'
+      redir => content
+        silent! execute 'Gita rebase'
+      redir END
+      Assert Match(content, '^\nOK: git .* rebase --verbose')
+    End
+
+    It executes 'git rebase --verbose --stat' for 'Gita rebase --stat'
+      redir => content
+        silent! execute 'Gita rebase --stat'
+      redir END
+      Assert Match(content, '^\nOK: git .* rebase --verbose --stat')
+    End
+  End
+End

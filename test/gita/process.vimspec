@@ -198,15 +198,12 @@ Describe gita#process
 
     It echos stdout content
       let git = { 'worktree': '' }
-      try
-        redir => content
-        call gita#process#execute(
+      redir => content
+        silent! call gita#process#execute(
               \ git,
               \ ['rev-parse', '--is-inside-work-tree']
               \)
-      finally
-        redir END
-      endtry
+      redir END
       Assert Equals(split(content, "\n"), [
             \ 'OK: git -c color.ui=false --no-pager rev-parse --is-inside-work-tree',
             \ 'true',
@@ -215,16 +212,13 @@ Describe gita#process
 
     It does not echo stdout content when quiet is specified
       let git = { 'worktree': '' }
-      try
-        redir => content
-        call gita#process#execute(
+      redir => content
+        silent! call gita#process#execute(
               \ git,
               \ ['rev-parse', '--is-inside-work-tree'],
               \ { 'quiet': 1 }
               \)
-      finally
-        redir END
-      endtry
+      redir END
       Assert Equals(split(content, "\n"), [])
     End
   End

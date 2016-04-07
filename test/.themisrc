@@ -23,3 +23,5 @@ for s:runtimepath in split(&runtimepath, ',')
   call themis#log('  ' . s:runtimepath)
 endfor
 call themis#log('***********************************************************')
+
+let g:gita#process#options = {}

@@ -158,6 +158,6 @@ function! gita#command#merge#complete(arglead, cmdline, cursorpos) abort
   return parser.complete(a:arglead, a:cmdline, a:cursorpos)
 endfunction
 
-call gita#define_variables('command#add', {
+call gita#define_variables('command#merge', {
       \ 'default_options': {},
       \})

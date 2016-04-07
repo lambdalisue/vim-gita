@@ -1,4 +1,4 @@
-Describe gita#command#add
+Describe gita#command#rm
   Before all
     let V = vital#of('vital')
     let Path = V.import('System.Filepath')
@@ -7,13 +7,13 @@ Describe gita#command#add
     let ProcessMock = V.import('System.Process.Mock')
     let guard = Guard.store('g:gita#process#options')
     let sf = ScriptLocal.sfuncs(
-          \ Path.realpath('autoload/gita/command/add.vim')
+          \ Path.realpath('autoload/gita/command/rm.vim')
           \)
     let g:gita#process#options = {
           \ 'clients': [deepcopy(ProcessMock)]
           \}
     " the line below is required to load requirements before :redir
-    silent Gita add
+    silent Gita rm
   End
 
   After all
@@ -26,13 +26,9 @@ Describe gita#command#add
       let options = {
             \ 'dry-run': 1,
             \ 'force': 1,
-            \ 'update': 1,
-            \ 'intent-to-add': 1,
-            \ 'all': 1,
-            \ 'ignore-removal': 1,
-            \ 'refresh': 1,
-            \ 'ignore-errors': 1,
-            \ 'ignore-missing': 1,
+            \ 'r': 1,
+            \ 'cached': 1,
+            \ 'ignore-unmatch': 1,
             \ '__unknown__': [
             \   '%',
             \   'a',
@@ -42,17 +38,12 @@ Describe gita#command#add
       let git = gita#core#get_or_fail()
       let ret = sf.args_from_options(git, options)
       Assert Equals(ret, [
-            \ 'add',
-            \ '--verbose',
-            \ '--all',
+            \ 'rm',
+            \ '--cached',
             \ '--dry-run',
             \ '--force',
-            \ '--ignore-errors',
-            \ '--ignore-missing',
-            \ '--ignore-removal',
-            \ '--intent-to-add',
-            \ '--refresh',
-            \ '--update',
+            \ '--ignore-unmatch',
+            \ '-r',
             \ '--',
             \ expand('%:p'),
             \ fnamemodify('.', ':p') . 'a',
@@ -67,40 +58,39 @@ Describe gita#command#add
       let git = gita#core#get_or_fail()
       let ret = sf.args_from_options(git, options)
       Assert Equals(ret, [
-            \ 'add',
-            \ '--verbose',
+            \ 'rm',
             \ '--',
             \])
     End
   End
 
   Describe #command({bang}, {range}, {args})
-    It executes 'git add --verbose --' for 'Gita add'
+    It executes 'git rm --' for 'Gita rm'
       redir => content
-        silent! execute 'Gita add'
+        silent! execute 'Gita rm'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose --')
+      Assert Match(content, '^\nOK: git .* rm --')
     End
 
-    It executes 'git add --verbose --force --' for 'Gita add --force'
+    It executes 'git rm --force --' for 'Gita rm --force'
       redir => content
-        silent! execute 'Gita add --force'
+        silent! execute 'Gita rm --force'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose --force --')
+      Assert Match(content, '^\nOK: git .* rm --force --')
     End
 
-    It executes 'git add --verbose -- .' for 'Gita add .'
+    It executes 'git rm -- .' for 'Gita rm .'
       redir => content
-        silent! execute 'Gita add .'
+        silent! execute 'Gita rm .'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose -- .')
+      Assert Match(content, '^\nOK: git .* rm -- .')
     End
 
-    It executes 'git add --verbose -- {path}' for 'Gita add %'
+    It executes 'git rm -- {path}' for 'Gita rm %'
       redir => content
-        silent! execute 'Gita add %'
+        silent! execute 'Gita rm %'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose -- ' . fnameescape(expand('%:p')))
+      Assert Match(content, '^\nOK: git .* rm -- ' . fnameescape(expand('%:p')))
     End
   End
 End

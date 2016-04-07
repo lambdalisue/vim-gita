@@ -40,10 +40,7 @@ function! s:args_from_options(git, options) abort
         \ 'separate-git-dir': 1,
         \ 'shared': 1,
         \})
-  let args = ['init'] + args + map(
-        \ get(a:options, '__unknown__', []),
-        \ 'gita#normalize#commit(a:git, v:val)'
-        \)
+  let args = ['init'] + args
   return filter(args, '!empty(v:val)')
 endfunction
 
@@ -55,7 +52,7 @@ function! gita#command#init#command(bang, range, args) abort
     return
   endif
   let options = extend(
-        \ copy(g:gita#command#merge#default_options),
+        \ copy(g:gita#command#init#default_options),
         \ options
         \)
   " NOTE:
