@@ -4,13 +4,12 @@ Describe gita#command#reset
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    let ProcessMock = V.import('System.Process.Mock')
     let guard = Guard.store('g:gita#process#options')
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/reset.vim')
           \)
     let g:gita#process#options = {
-          \ 'clients': [deepcopy(ProcessMock)]
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
           \}
     " the line below is required to load requirements before :redir
     silent Gita reset
