@@ -19,3 +19,4 @@ System.Process
 ProgressBar
 Vim.Buffer.Anchor
 Vim.Prompt
+System.Process.Mock
