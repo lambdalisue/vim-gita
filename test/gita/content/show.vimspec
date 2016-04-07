@@ -3,11 +3,25 @@ Describe gita#content#show
     let V = vital#of('vital')
     let Prelude = V.import('Prelude')
     let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
+    let ProcessMock = V.import('System.Process.Mock')
+    let guard = Guard.store('g:gita#process#options')
 
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/content/show.vim')
           \)
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Before
+    let mock = deepcopy(ProcessMock)
+    let g:gita#process#options = {
+          \ 'clients': [mock],
+          \}
   End
 
   Describe s:replace_filenames_in_diff({content}, {filename1}, {filename2}, {repl})
@@ -82,6 +96,83 @@ Describe gita#content#show
             \ '+++ b/autoload/gita.vim',
             \ ' brabrabra',
             \])
+    End
+  End
+
+  Describe s:get_diff_content({git}, {content}, {filename})
+    It returns a diff content between a {content} and a content of {filename} in the index
+      function! mock.execute(args, options) abort
+        let cmdline = join(a:args)
+        if cmdline =~# '^git .* show'
+          Assert Match(cmdline, '^git .* show :foobar.txt$')
+          return {
+                \ 'status': 0,
+                \ 'output': "A\nB\nC",
+                \}
+        else
+          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          return {
+                \ 'status': 0,
+                \ 'output': "A\nB\nC\nD\n",
+                \}
+        endif
+      endfunction
+      let git = gita#core#get()
+      Assert Equals(
+            \ sf.get_diff_content(git, ['A', 'BBB', 'C'], 'foobar.txt'),
+            \ ['A', 'B', 'C', 'D'],
+            \)
+    End
+
+    It returns a diff content even no content of {filename} found in the index
+      function! mock.execute(args, options) abort
+        let cmdline = join(a:args)
+        if cmdline =~# '^git .* show'
+          Assert Match(cmdline, '^git .* show :foobar.txt$')
+          return {
+                \ 'status': 128,
+                \ 'output': 'fatal: Path ''foobar.txt'' does not exist',
+                \}
+        else
+          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          return {
+                \ 'status': 0,
+                \ 'output': "A\nB\nC\nD\n",
+                \}
+        endif
+      endfunction
+      let git = gita#core#get()
+      Assert Equals(
+            \ sf.get_diff_content(git, ['A', 'BBB', 'C'], 'foobar.txt'),
+            \ ['A', 'B', 'C', 'D'],
+            \)
+    End
+
+    It throw an exception to tell there is no difference if the number of line of the diff content is less than 4
+      function! mock.execute(args, options) abort
+        let cmdline = join(a:args)
+        if cmdline =~# '^git .* show'
+          Assert Match(cmdline, '^git .* show :foobar.txt$')
+          return {
+                \ 'status': 128,
+                \ 'output': 'fatal: Path ''foobar.txt'' does not exist',
+                \}
+        else
+          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          return {
+                \ 'status': 0,
+                \ 'output': "",
+                \}
+        endif
+      endfunction
+      let git = gita#core#get()
+      Throws /No differences are detected/ sf.get_diff_content(git, ['A', 'B', 'C'], 'foobar.txt')
+    End
+  End
+
+  Describe s:build_bufname({options})
+    It builds a buffer name from {options}
+      " TODO: Test
     End
   End
 End

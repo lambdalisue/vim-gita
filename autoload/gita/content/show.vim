@@ -45,11 +45,17 @@ function! s:get_diff_content(git, content, filename) abort
   try
     " save contents to temporary files
     let git = gita#core#get_or_fail()
-    let content = gita#process#execute(
-          \ git,
-          \ ['show', ':' . filename],
-          \ { 'quiet': 1, 'encode_output': 0 }
-          \)
+    try
+      let content = gita#process#execute(
+            \ git,
+            \ ['show', ':' . filename],
+            \ { 'quiet': 1, 'encode_output': 0 }
+            \)
+    catch /vital: Git.Process: Fail/
+      " NOTE:
+      " the content of filename does not exist
+      let content = []
+    endtry
     call writefile(content, tempfile1)
     call writefile(a:content, tempfile2)
     " create a diff content between index_content and content
@@ -59,7 +65,7 @@ function! s:get_diff_content(git, content, filename) abort
     " and 0 means no differences
     let content = gita#process#execute(
           \ git,
-          \ ['diff', '--no-index', '--', tempfile1, tempfile2],
+          \ ['diff', '--no-index', '--unified=0', '--', tempfile1, tempfile2],
           \ { 'quiet': 1, 'encode_output': 0, 'fail_silently': 1 }
           \)
     if empty(content) || len(content) < 4
