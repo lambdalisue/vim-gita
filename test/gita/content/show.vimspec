@@ -110,7 +110,7 @@ Describe gita#content#show
                 \ 'output': "A\nB\nC",
                 \}
         else
-          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          Assert Match(cmdline, '^git .* diff --no-index --unified=1 -- .* .*$')
           return {
                 \ 'status': 0,
                 \ 'output': "A\nB\nC\nD\n",
@@ -134,7 +134,7 @@ Describe gita#content#show
                 \ 'output': 'fatal: Path ''foobar.txt'' does not exist',
                 \}
         else
-          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          Assert Match(cmdline, '^git .* diff --no-index --unified=1 -- .* .*$')
           return {
                 \ 'status': 0,
                 \ 'output': "A\nB\nC\nD\n",
@@ -158,7 +158,7 @@ Describe gita#content#show
                 \ 'output': 'fatal: Path ''foobar.txt'' does not exist',
                 \}
         else
-          Assert Match(cmdline, '^git .* diff --no-index --unified=0 -- .* .*$')
+          Assert Match(cmdline, '^git .* diff --no-index --unified=1 -- .* .*$')
           return {
                 \ 'status': 0,
                 \ 'output': "",
