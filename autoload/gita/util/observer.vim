@@ -1,26 +1,20 @@
 let s:registry = {}
-let s:reserved = {}
 
 function! s:is_attached() abort
   let bufnum = string(bufnr('%'))
-  return has_key(s:registry, bufnum)
-        \ && exists('#gita_internal_util_observer_attach')
+  return has_key(s:registry, bufnum) && exists('b:_gita_observer_attached')
 endfunction
 
-function! s:_on_BufWinEnter() abort
-  let bufnum = string(bufnr('%'))
-  if has_key(s:reserved, bufnum)
-    unlet s:reserved[bufnum]
-    call gita#util#observer#update()
-  endif
+function! s:_on_WinEnter() abort
+  augroup gita_internal_util_observer_attach
+    autocmd! * <buffer>
+  augroup END
+  call gita#util#observer#update()
 endfunction
 
 function! gita#util#observer#attach(...) abort
   let s:registry[bufnr('%')] = get(a:000, 0, 'edit')
-  augroup gita_internal_util_observer_attach
-    autocmd! * <buffer>
-    autocmd BufWinEnter <buffer> nested call s:_on_BufWinEnter()
-  augroup END
+  let b:_gita_observer_attached = 1
 endfunction
 
 function! gita#util#observer#update() abort
@@ -43,8 +37,18 @@ function! gita#util#observer#update_all() abort
     if winnum > 0 && getbufvar(str2nr(bufnum), '&autoread')
       execute printf('noautocmd keepjumps %dwincmd w', winnum)
       call gita#util#observer#update()
-    elseif bufexists(str2nr(bufnum))
-      let s:reserved[bufnum] = 1
+    elseif bufexists(str2nr(bufnum)) && getbufvar(str2nr(bufnum), '&autoread')
+      augroup gita_internal_util_observer_attach
+        execute printf('autocmd! * <buffer=%s>', bufnum)
+        execute printf(
+              \ 'autocmd WinEnter <buffer=%s> nested call s:_on_WinEnter()',
+              \ bufnum
+              \)
+        execute printf(
+              \ 'autocmd BufWinEnter <buffer=%s> nested call s:_on_WinEnter()',
+              \ bufnum
+              \)
+      augroup END
     else
       unlet s:registry[bufnum]
     endif
