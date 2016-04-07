@@ -16,22 +16,17 @@ function! s:open2(options) abort
   let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
   let filename = s:Path.unixpath(s:Git.relpath(git, filename))
+  let vertical = matchstr(&diffopt, 'vertical')
   let roptions = {
+        \ 'silent': 1,
         \ 'theirs': 1,
         \ 'filename': filename,
-        \}
-  let vertical = matchstr(&diffopt, 'vertical')
-  let opener = empty(options.opener)
-        \ ? g:gita#content#chaperone#default_opener
-        \ : options.opener
-  call gita#content#show#open(extend(roptions, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': 'chaperone2_rhs',
         \ 'selection': options.selection,
-        \}))
-  call gita#util#diffthis()
-
-  call gita#content#show#open({
+        \}
+  let loptions = {
+        \ 'silent': 1,
         \ 'worktree': 1,
         \ 'filename': filename,
         \ 'opener': vertical ==# 'vertical'
@@ -39,8 +34,11 @@ function! s:open2(options) abort
         \   : 'leftabove split',
         \ 'window': 'chaperone2_lhs',
         \ 'selection': options.selection,
-        \})
-  " Remove conflict markers and contents of theirs if exists
+        \}
+  call gita#content#show#open(roptions)
+  call gita#util#diffthis()
+
+  call gita#content#show#open(loptions)
   call gita#util#buffer#edit_content(
         \ s:GitParser.strip_theirs(getline(1, '$'))
         \)
@@ -52,33 +50,23 @@ endfunction
 function! s:open3(options) abort
   let options = extend({
         \ 'filename': '',
-        \ 'opener': '',
+        \ 'opener': 'tabedit',
         \ 'selection': [],
         \}, a:options)
   let git = gita#core#get_or_fail()
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
   let filename = s:Path.unixpath(s:Git.relpath(git, filename))
-  let loptions = {
-        \ 'ours': 1,
-        \ 'filename': filename,
-        \}
+  let vertical = matchstr(&diffopt, 'vertical')
   let roptions = {
+        \ 'silent': 1,
         \ 'theirs': 1,
         \ 'filename': filename,
-        \}
-  let vertical = matchstr(&diffopt, 'vertical')
-  let opener = empty(options.opener)
-        \ ? g:gita#content#chaperone#default_opener
-        \ : options.opener
-  call gita#content#show#open(extend(roptions, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': 'chaperone3_rhs',
         \ 'selection': options.selection,
-        \}))
-  call gita#util#diffthis()
-  let rhs_bufnum = bufnr('%')
-
-  call gita#content#show#open({
+        \}
+  let coptions = {
+        \ 'silent': 1,
         \ 'worktree': 1,
         \ 'filename': filename,
         \ 'opener': vertical ==# 'vertical'
@@ -86,8 +74,22 @@ function! s:open3(options) abort
         \   : 'leftabove split',
         \ 'window': 'chaperone3_chs',
         \ 'selection': options.selection,
-        \})
-  " Remove conflict markers and contents if exists
+        \}
+  let loptions = {
+        \ 'silent': 1,
+        \ 'ours': 1,
+        \ 'filename': filename,
+        \ 'opener': vertical ==# 'vertical'
+        \   ? 'leftabove vertical split'
+        \   : 'leftabove split',
+        \ 'window': 'chaperone3_lhs',
+        \ 'selection': options.selection,
+        \}
+  call gita#content#show#open(roptions)
+  call gita#util#diffthis()
+  let rhs_bufnum = bufnr('%')
+
+  call gita#content#show#open(coptions)
   call gita#util#buffer#edit_content(
         \ s:GitParser.strip_conflict(getline(1, '$'))
         \)
@@ -95,13 +97,7 @@ function! s:open3(options) abort
   call gita#util#diffthis()
   let chs_bufnum = bufnr('%')
 
-  call gita#content#show#open(extend(loptions, {
-        \ 'opener': vertical ==# 'vertical'
-        \   ? 'leftabove vertical split'
-        \   : 'leftabove split',
-        \ 'window': 'chaperone3_lhs',
-        \ 'selection': options.selection,
-        \}))
+  call gita#content#show#open(loptions)
   call gita#util#diffthis()
   let lhs_bufnum = bufnr('%')
 
@@ -156,7 +152,6 @@ function! gita#content#chaperone#open(...) abort
 endfunction
 
 call gita#define_variables('content#chaperone', {
-      \ 'default_opener': 'tabedit',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,
       \})

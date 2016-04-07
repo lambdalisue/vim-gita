@@ -5,9 +5,6 @@ function! s:open1(options) abort
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
-  let options.opener = empty(options.opener)
-        \ ? g:gita#content#patch#default_opener
-        \ : options.opener
   if options.reverse
     let options.cached = 1
   endif
@@ -21,47 +18,35 @@ function! s:open2(options) abort
   let options = extend({
         \ 'reverse': 0,
         \ 'filename': '',
-        \ 'anchor': 0,
         \ 'opener': '',
         \ 'selection': [],
         \}, a:options)
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
-  if options.reverse
-    let loptions = {
-          \ 'commit': 'HEAD',
-          \ 'filename': filename,
-          \}
-    let roptions = {
-          \ 'patch': 1,
-          \ 'filename': filename,
-          \}
-  else
-    let loptions = {
-          \ 'patch': 1,
-          \ 'filename': filename,
-          \}
-    let roptions = {
-          \ 'filename': filename,
-          \ 'worktree': 1,
-          \}
-  endif
   let vertical = matchstr(&diffopt, 'vertical')
-  let opener = empty(options.opener)
-        \ ? g:gita#content#patch#default_opener
-        \ : options.opener
-  call gita#content#show#open(extend(roptions, {
-        \ 'opener': opener,
+  let roptions = {
+        \ 'silent': 1,
+        \ 'patch': options.reverse,
+        \ 'worktree': !options.reverse,
+        \ 'filename': filename,
+        \ 'opener': options.opener,
         \ 'window': 'patch2_rhs',
         \ 'selection': options.selection,
-        \}))
-  call gita#util#diffthis()
-  call gita#content#show#open(extend(loptions, {
+        \}
+  let loptions = {
+        \ 'silent': 1,
+        \ 'commit': options.reverse ? 'HEAD' : '',
+        \ 'patch':  !options.reverse,
+        \ 'filename': filename,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
         \ 'window': 'patch2_lhs',
         \ 'selection': options.selection,
-        \}))
+        \}
+  call gita#content#show#open(roptions)
+  call gita#util#diffthis()
+
+  call gita#content#show#open(loptions)
   call gita#util#diffthis()
   diffupdate
   if options.reverse
@@ -72,52 +57,48 @@ endfunction
 function! s:open3(options) abort
   let options = extend({
         \ 'filename': '',
-        \ 'anchor': 0,
-        \ 'opener': '',
+        \ 'opener': 'tabedit',
         \ 'selection': [],
         \}, a:options)
   let filename = empty(options.filename) ? gita#meta#expand('%') : options.filename
-  let loptions = {
-        \ 'commit': 'HEAD',
-        \ 'filename': filename,
-        \}
-  let coptions = {
-        \ 'patch': 1,
-        \ 'filename': filename,
-        \}
+  let vertical = matchstr(&diffopt, 'vertical')
   let roptions = {
+        \ 'silent': 1,
         \ 'filename': filename,
         \ 'worktree': 1,
-        \}
-  let vertical = matchstr(&diffopt, 'vertical')
-  let opener = empty(options.opener)
-        \ ? g:gita#content#patch#default_opener
-        \ : options.opener
-  call gita#content#show#open(extend(roptions, {
-        \ 'opener': opener,
+        \ 'opener': options.opener,
         \ 'window': 'patch3_rhs',
         \ 'selection': options.selection,
-        \}))
-  call gita#util#diffthis()
-  let rhs_bufnum = bufnr('%')
-
-  call gita#content#show#open(extend(coptions, {
+        \}
+  let coptions = {
+        \ 'silent': 1,
+        \ 'patch': 1,
+        \ 'filename': filename,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
         \ 'window': 'patch3_chs',
         \ 'selection': options.selection,
-        \}))
-  call gita#util#diffthis()
-  let chs_bufnum = bufnr('%')
-
-  call gita#content#show#open(extend(loptions, {
+        \}
+  let loptions = {
+        \ 'silent': 1,
+        \ 'commit': 'HEAD',
+        \ 'filename': filename,
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'
         \   : 'leftabove split',
         \ 'window': 'patch3_lhs',
         \ 'selection': options.selection,
-        \}))
+        \}
+  call gita#content#show#open(roptions)
+  call gita#util#diffthis()
+  let rhs_bufnum = bufnr('%')
+
+  call gita#content#show#open(coptions)
+  call gita#util#diffthis()
+  let chs_bufnum = bufnr('%')
+
+  call gita#content#show#open(loptions)
   call gita#util#diffthis()
   let lhs_bufnum = bufnr('%')
 
@@ -173,7 +154,6 @@ function! gita#content#patch#open(options) abort
 endfunction
 
 call gita#define_variables('content#patch', {
-      \ 'default_opener': 'tabedit',
       \ 'default_method': 'three',
       \ 'disable_default_mappings': 0,
       \})

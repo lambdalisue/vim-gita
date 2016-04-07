@@ -259,25 +259,28 @@ function! s:open2(options) abort
         \ ? gita#meta#expand('%')
         \ : options.filename
   let [lhs, rhs] = s:split_commit(options.commit, options)
+  let vertical = matchstr(&diffopt, 'vertical')
   let loptions = {
+        \ 'silent': 1,
         \ 'patch': !options.reverse && options.patch,
         \ 'commit': lhs,
         \ 'filename': filename,
         \ 'worktree': lhs ==# s:WORKTREE,
         \}
   let roptions = {
+        \ 'silent': 1,
         \ 'patch': options.reverse && options.patch,
         \ 'commit': rhs,
         \ 'filename': filename,
         \ 'worktree': rhs ==# s:WORKTREE,
         \}
-  let vertical = matchstr(&diffopt, 'vertical')
   call gita#content#show#open(extend(options.reverse ? loptions : roptions, {
         \ 'opener': options.opener,
         \ 'window': 'diff2_rhs',
         \ 'selection': options.selection,
         \}))
   call gita#util#diffthis()
+
   call gita#content#show#open(extend(options.reverse ? roptions : loptions, {
         \ 'opener': vertical ==# 'vertical'
         \   ? 'leftabove vertical split'

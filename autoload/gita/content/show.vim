@@ -89,6 +89,7 @@ function! s:build_bufname(options) abort
   let options = extend({
         \ 'commit': '',
         \ 'filename': '',
+        \ 'silent': 0,
         \ 'patch': 0,
         \ 'worktree': 0,
         \ 'ancestors': 0,
@@ -120,6 +121,7 @@ function! s:build_bufname(options) abort
     endif
     return gita#content#build_bufname('show', {
           \ 'extra_options': [
+          \   options.silent ? 'silent': '',
           \   options.patch ? 'patch' : '',
           \ ],
           \ 'treeish': treeish,
@@ -168,10 +170,24 @@ endfunction
 function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
   let args = s:args_from_options(git, a:options)
-  return gita#process#execute(git, args, {
-        \ 'quiet': 1,
-        \ 'encode_output': 0,
-        \})
+  if get(a:options, 'silent')
+    try
+      return gita#process#execute(git, args, {
+            \ 'quiet': 1,
+            \ 'encode_output': 0,
+            \})
+    catch /vital: Git.Process: Fail/
+      " NOTE:
+      " diff-2/3, patch-2/3 may request content which does not exist so
+      " return an empty content in that case
+      return []
+    endtry
+  else
+    return gita#process#execute(git, args, {
+          \ 'quiet': 1,
+          \ 'encode_output': 0,
+          \})
+  endif
 endfunction
 
 function! s:on_BufReadCmd(options) abort
