@@ -4,13 +4,12 @@ Describe gita#command#merge
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    let ProcessMock = V.import('System.Process.Mock')
     let guard = Guard.store('g:gita#process#options')
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/merge.vim')
           \)
     let g:gita#process#options = {
-          \ 'clients': [deepcopy(ProcessMock)]
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
           \}
     " the line below is required to load requirements before :redir
     silent Gita merge
@@ -94,16 +93,30 @@ Describe gita#command#merge
   Describe #command({bang}, {range}, {args})
     It executes 'git merge --no-edit --verbose' for 'Gita merge'
       redir => content
-        silent! execute 'Gita merge'
+        silent! verbose execute 'Gita merge'
       redir END
-      Assert Match(content, '^\nOK: git .* merge --no-edit --verbose')
+      Assert Match(content, 'git .* merge --no-edit --verbose')
     End
 
     It executes 'git merge --no-edit --verbose --stat' for 'Gita merge --stat'
       redir => content
-        silent! execute 'Gita merge --stat'
+        silent! verbose execute 'Gita merge --stat'
       redir END
-      Assert Match(content, '^\nOK: git .* merge --no-edit --verbose --stat')
+      Assert Match(content, 'git .* merge --no-edit --verbose --stat')
+    End
+
+    It executes 'git merge --no-edit --verbose --log=10 --stat' for 'Gita merge --stat --log=10'
+      redir => content
+        silent! verbose execute 'Gita merge --stat --log=10'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose --log=10 --stat')
+    End
+
+    It executes 'git merge --no-edit --verbose develop' for 'Gita merge develop'
+      redir => content
+        silent! verbose execute 'Gita merge develop'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose develop')
     End
   End
 End

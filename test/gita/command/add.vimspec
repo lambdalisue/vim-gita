@@ -1,16 +1,16 @@
 Describe gita#command#add
   Before all
     let V = vital#of('vital')
+    let String = V.import('Data.String')
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    let ProcessMock = V.import('System.Process.Mock')
     let guard = Guard.store('g:gita#process#options')
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/add.vim')
           \)
     let g:gita#process#options = {
-          \ 'clients': [deepcopy(ProcessMock)]
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
           \}
     " the line below is required to load requirements before :redir
     silent Gita add
@@ -77,30 +77,32 @@ Describe gita#command#add
   Describe #command({bang}, {range}, {args})
     It executes 'git add --verbose --' for 'Gita add'
       redir => content
-        silent! execute 'Gita add'
+        silent! verbose execute 'Gita add'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose --')
-    End
-
-    It executes 'git add --verbose --force --' for 'Gita add --force'
-      redir => content
-        silent! execute 'Gita add --force'
-      redir END
-      Assert Match(content, '^\nOK: git .* add --verbose --force --')
+      Assert Match(content, 'git .* add --verbose --')
     End
 
     It executes 'git add --verbose -- .' for 'Gita add .'
       redir => content
-        silent! execute 'Gita add .'
+        silent! verbose execute 'Gita add .'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose -- .')
+      Assert Match(content, 'git .* add --verbose -- .')
     End
 
     It executes 'git add --verbose -- {path}' for 'Gita add %'
       redir => content
-        silent! execute 'Gita add %'
+        silent! verbose execute 'Gita add %'
       redir END
-      Assert Match(content, '^\nOK: git .* add --verbose -- ' . fnameescape(expand('%:p')))
+      let path = String.escape_pattern(fnameescape(expand('%:p')))
+      Assert Match(content, 'git .* add --verbose -- ' . path)
+    End
+
+    It executes 'git add --verbose --force -- {path}' for 'Gita add --force %'
+      redir => content
+        silent! verbose execute 'Gita add --force %'
+      redir END
+      let path = String.escape_pattern(fnameescape(expand('%:p')))
+      Assert Match(content, 'git .* add --verbose --force -- ' . path)
     End
   End
 End

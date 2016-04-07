@@ -69,16 +69,24 @@ Describe gita#command#reset
   Describe #command({bang}, {range}, {args})
     It executes 'git reset --' for 'Gita reset'
       redir => content
-        silent! execute 'Gita reset'
+        silent! verbose execute 'Gita reset'
       redir END
-      Assert Match(content, '^\nOK: git .* reset --')
+      Assert Match(content, 'git .* reset --')
     End
 
     It executes 'git reset --hard HEAD --' for 'Gita reset --hard HEAD'
       redir => content
-        silent! execute 'Gita reset --hard HEAD'
+        silent! verbose execute 'Gita reset --hard HEAD'
       redir END
-      Assert Match(content, '^\nOK: git .* reset --hard HEAD --')
+      Assert Match(content, 'git .* reset --hard HEAD --')
+    End
+
+    It executes 'git reset -- {path}' for 'Gita reset %'
+      redir => content
+        silent! verbose execute 'Gita reset %'
+      redir END
+      let path = Path.unixpath(fnameescape(expand('%')))
+      Assert Match(content, 'git .* reset -- ' . path)
     End
   End
 End
