@@ -116,6 +116,17 @@ See `:help gita-usage-chaperone` for more detail.
 
 [![asciicast](https://asciinema.org/a/12436gcrwmuf169s2ze6eedpi.png)](https://asciinema.org/a/12436gcrwmuf169s2ze6eedpi)
 
+### Changes
+
+[![asciicast](https://asciinema.org/a/41583.png)](https://asciinema.org/a/41583)
+
+### Search (grep)
+
+[![asciicast](https://asciinema.org/a/51mvst9wu3s411bb2ahjvhyk8.png)](https://asciinema.org/a/51mvst9wu3s411bb2ahjvhyk8)
+
+### Blame
+
+[![asciicast](https://asciinema.org/a/41585.png)](https://asciinema.org/a/41585)
 
 Bundle libraries and build statuses
 -------------------------------------------------------------------------------
