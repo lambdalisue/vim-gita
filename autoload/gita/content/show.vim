@@ -110,7 +110,7 @@ function! s:build_bufname(options) abort
     let git = gita#core#get_or_fail()
     if options.ancestors || options.ours || options.theirs
       let treeish = printf(':%d:%s',
-            \ options.ancestors ? 0 : options.ours ? 1 : 2,
+            \ options.ancestors ? 1 : options.ours ? 2 : 3,
             \ gita#normalize#relpath(git, options.filename),
             \)
     else
@@ -137,9 +137,9 @@ function! s:parse_bufname(bufinfo) abort
           \ a:bufinfo.bufname, '<rev>:<filename> or :<n>:<filename>',
           \))
   endif
-  let a:bufinfo.ancestors = m[1] =~# '^:0'
-  let a:bufinfo.ours = m[1] =~# '^:1'
-  let a:bufinfo.theirs = m[1] =~# '^:2'
+  let a:bufinfo.ancestors = m[1] =~# '^:1'
+  let a:bufinfo.ours = m[1] =~# '^:2'
+  let a:bufinfo.theirs = m[1] =~# '^:3'
   let a:bufinfo.commit = substitute(m[1], '^:\d\+', '', '')
   let a:bufinfo.filename = m[2]
   return a:bufinfo
@@ -155,7 +155,7 @@ function! s:args_from_options(git, options) abort
         \}, a:options)
   if options.ancestors || options.ours || options.theirs
     let treeish = printf(':%d:%s',
-          \ options.ancestors ? 0 : options.ours ? 1 : 2,
+          \ options.ancestors ? 1 : options.ours ? 2 : 3,
           \ gita#normalize#relpath(a:git, options.filename),
           \)
   else
