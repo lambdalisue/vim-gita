@@ -82,12 +82,26 @@ See `:help gita-usage` for more detail.
 
 ### Status
 
-[![asciicast](https://asciinema.org/a/41576.png)](https://asciinema.org/a/41576)
-
-To check or modify current statuses of a git repository, use `:Gita status` command like above.
+To check or modify current statuses of a git repository, use `:Gita status` command like below.
 
 The status of each modified files are shown a short format.
 If you are not familiar with short format, see `:help gita-usage-status-cheetsheet` or a manpage of git-status.
+
+[![asciicast](https://asciinema.org/a/41576.png)](https://asciinema.org/a/41576)
+
+### Patch
+
+To partially stage or unstage changes (like `git add -p` or `git reset -p`), use `:Gita patch` command on a corresponding file buffer like below.
+It opens three vimdiff windows which indicates a contents of
+
+1. HEAD (`gita://<refname>:show/HEAD:<filename>`)
+2. Index (`gita://<refname>:show:patch/:<filename>`)
+3. Working tree (`<filename>`)
+
+In INDEX window, all changes saved is patched to the index of the repository.
+See `:help gita-usage-patch` for more detail.
+
+[![asciicast](https://asciinema.org/a/41579.png)](https://asciinema.org/a/41579)
 
 
 Bundle libraries and build statuses
