@@ -103,6 +103,19 @@ See `:help gita-usage-patch` for more detail.
 
 [![asciicast](https://asciinema.org/a/41579.png)](https://asciinema.org/a/41579)
 
+### Conflict
+
+To solve conflicts, use `:Gita chaperone` command on a conflicted file buffer like below.
+It opens three buffers which indicate a content of
+
+1. OURS (`gita://<refname>:show/:2:<filename>`)
+2. WORKTREE (`<filename>`)
+3. THEIRS (`gita://<refname>:show/:3:<filename>`)
+
+See `:help gita-usage-chaperone` for more detail.
+
+[![asciicast](https://asciinema.org/a/12436gcrwmuf169s2ze6eedpi.png)](https://asciinema.org/a/12436gcrwmuf169s2ze6eedpi)
+
 
 Bundle libraries and build statuses
 -------------------------------------------------------------------------------
