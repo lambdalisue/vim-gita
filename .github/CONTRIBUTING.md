@@ -33,7 +33,6 @@ If you understand that and still want to contribute, please follow the coding ru
     - Exception: names of autocmd should be camel case (e.g. `GitaStatusModifiedPre`)
 - Any files in `autoload/vital` should not be modified
     - Contribute to [vim-jp/vital.vim](https://github.com/vim-jp/vital.vim) directly
-- Gita commands should not be used, use actions or call `gita#process#execute` directly
 
 Then PR to `develop` branch which stands for preparing a next release.
 
