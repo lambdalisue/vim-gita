@@ -1,0 +1,92 @@
+Describe gita#command#reset
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let guard = Guard.store('g:gita#process#options')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/reset.vim')
+          \)
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \}
+    " the line below is required to load requirements before :redir
+    silent Gita reset
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      new foobar.txt
+      let options = {
+            \ 'mixed': 1,
+            \ 'soft': 1,
+            \ 'hard': 1,
+            \ 'merge': 1,
+            \ 'keep': 1,
+            \ 'commit': 'HEAD',
+            \ '__unknown__': [
+            \   '%',
+            \   'a',
+            \   'b',
+            \ ],
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'reset',
+            \ '--hard',
+            \ '--keep',
+            \ '--merge',
+            \ '--mixed',
+            \ '--soft',
+            \ 'HEAD',
+            \ '--',
+            \ expand('%'),
+            \ 'a',
+            \ 'b',
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'reset',
+            \ '--',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    It executes 'git reset --' for 'Gita reset'
+      redir => content
+        silent! verbose execute 'Gita reset'
+      redir END
+      Assert Match(content, 'git .* reset --')
+    End
+
+    It executes 'git reset --hard HEAD --' for 'Gita reset --hard HEAD'
+      redir => content
+        silent! verbose execute 'Gita reset --hard HEAD'
+      redir END
+      Assert Match(content, 'git .* reset --hard HEAD --')
+    End
+
+    It executes 'git reset -- {path}' for 'Gita reset %'
+      redir => content
+        silent! verbose execute 'Gita reset %'
+      redir END
+      let path = Path.unixpath(fnameescape(expand('%')))
+      Assert Match(content, 'git .* reset -- ' . path)
+    End
+  End
+End
+

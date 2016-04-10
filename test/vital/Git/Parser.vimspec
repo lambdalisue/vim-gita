@@ -1,0 +1,1013 @@
+Describe Git.Parser
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let GitParser = V.import('Git.Parser')
+    let blame_porcelain = readfile(
+          \ Path.realpath('test/vital/_testdata/Git/Parser/blame_porcelain.txt')
+          \)
+    let blame_incremental = readfile(
+          \ Path.realpath('test/vital/_testdata/Git/Parser/blame_incremental.txt')
+          \)
+  End
+
+  Before
+    let g:VitalGitParserCalledWith = []
+    function! VitalGitParserCallback(...) abort
+      call add(g:VitalGitParserCalledWith, a:000)
+    endfunction
+  End
+
+  After
+    unlet g:VitalGitParserCalledWith
+    delfunction VitalGitParserCallback
+  End
+
+  Describe .parse_status_record({line})
+    It should be able to parse '## master'
+      let record = '## master'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': '',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master'
+      let record = '## master...origin/master'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [ahead 2]'
+      let record = '## master...origin/master [ahead 2]'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse '## master...origin/master [behind 2]'
+      let record = '## master...origin/master [behind 2]'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'current_branch': 'master',
+            \ 'remote_branch': 'origin/master',
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should be able to parse 'M  foo/bar/hoge.vim'
+      let record = 'M  foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'M',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'M ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse ' M foo/bar/hoge.vim'
+      let record = ' M foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': ' ',
+            \ 'worktree': 'M',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': ' M',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 1,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU foo/bar/hoge.vim'
+      let record = 'UU foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU "f o o/bar/hoge.vim"'
+      let record = 'UU "f o o/bar/hoge.vim"'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'UU test file'
+      let record = 'UU test file'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'U',
+            \ 'worktree': 'U',
+            \ 'path': 'test file',
+            \ 'record': record,
+            \ 'sign': 'UU',
+            \ 'is_conflicted': 1,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let record = 'R  foo/bar/hoge.vim -> foo/bar/piyo.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'path2': 'foo/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let record = 'R  "f o o/bar/hoge.vim" -> "f o o/bar/piyo.vim"'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'R',
+            \ 'worktree': ' ',
+            \ 'path': 'f o o/bar/hoge.vim',
+            \ 'path2': 'f o o/bar/piyo.vim',
+            \ 'record': record,
+            \ 'sign': 'R ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse 'T  foo/bar/hoge.vim'
+      let record = 'T  foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': 'T',
+            \ 'worktree': ' ',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': 'T ',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 1,
+            \ 'is_unstaged': 0,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+    It should be able to parse ' T foo/bar/hoge.vim'
+      let record = ' T foo/bar/hoge.vim'
+      let result = GitParser.parse_status_record(record)
+      let expected = {
+            \ 'index': ' ',
+            \ 'worktree': 'T',
+            \ 'path': 'foo/bar/hoge.vim',
+            \ 'record': record,
+            \ 'sign': ' T',
+            \ 'is_conflicted': 0,
+            \ 'is_staged': 0,
+            \ 'is_unstaged': 1,
+            \ 'is_untracked': 0,
+            \ 'is_ignored': 0,
+            \}
+      Assert Equals(result, expected)
+    End
+  End
+
+  Describe .parse_status({status})
+    It should parse formatted status text ('git status --porcelain')
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = GitParser.parse_status(status, { 'flatten': 0 })
+      let expected = {
+            \ 'conflicted': [
+            \   {
+            \     'index': 'U',
+            \     'worktree': 'U',
+            \     'path': 'foo/bar/hoge3.vim',
+            \     'record': 'UU foo/bar/hoge3.vim',
+            \     'sign': 'UU',
+            \     'is_conflicted': 1,
+            \     'is_staged': 0,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \ 'staged': [
+            \   {
+            \     'index': 'M',
+            \     'worktree': ' ',
+            \     'path': 'foo/bar/hoge2.vim',
+            \     'record': 'M  foo/bar/hoge2.vim',
+            \     'sign': 'M ',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 0,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'R',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge4.vim',
+            \     'path2': 'foo/bar/hoge5.vim',
+            \     'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \     'sign': 'RM',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \ 'unstaged': [
+            \   {
+            \     'index': ' ',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge1.vim',
+            \     'record': ' M foo/bar/hoge1.vim',
+            \     'sign': ' M',
+            \     'is_conflicted': 0,
+            \     'is_staged': 0,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \   {
+            \     'index': 'R',
+            \     'worktree': 'M',
+            \     'path': 'foo/bar/hoge4.vim',
+            \     'path2': 'foo/bar/hoge5.vim',
+            \     'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \     'sign': 'RM',
+            \     'is_conflicted': 0,
+            \     'is_staged': 1,
+            \     'is_unstaged': 1,
+            \     'is_untracked': 0,
+            \     'is_ignored': 0,
+            \   },
+            \ ],
+            \ 'untracked': [
+            \ ],
+            \ 'ignored': [
+            \ ],
+            \}
+      Assert Equals(result, expected)
+    End
+
+    It should parse formatted status text ('git status --porcelain') and return flatten list
+      let status = join([
+            \ ' M foo/bar/hoge1.vim',
+            \ 'M  foo/bar/hoge2.vim',
+            \ 'UU foo/bar/hoge3.vim',
+            \ 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \], "\n")
+      let result = GitParser.parse_status(status, { 'flatten': 1 })
+      let expected = [
+            \ {
+            \   'index': ' ',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge1.vim',
+            \   'record': ' M foo/bar/hoge1.vim',
+            \   'sign': ' M',
+            \   'is_conflicted': 0,
+            \   'is_staged': 0,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'M',
+            \   'worktree': ' ',
+            \   'path': 'foo/bar/hoge2.vim',
+            \   'record': 'M  foo/bar/hoge2.vim',
+            \   'sign': 'M ',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'U',
+            \   'worktree': 'U',
+            \   'path': 'foo/bar/hoge3.vim',
+            \   'record': 'UU foo/bar/hoge3.vim',
+            \   'sign': 'UU',
+            \   'is_conflicted': 1,
+            \   'is_staged': 0,
+            \   'is_unstaged': 0,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \ {
+            \   'index': 'R',
+            \   'worktree': 'M',
+            \   'path': 'foo/bar/hoge4.vim',
+            \   'path2': 'foo/bar/hoge5.vim',
+            \   'record': 'RM foo/bar/hoge4.vim -> foo/bar/hoge5.vim',
+            \   'sign': 'RM',
+            \   'is_conflicted': 0,
+            \   'is_staged': 1,
+            \   'is_unstaged': 1,
+            \   'is_untracked': 0,
+            \   'is_ignored': 0,
+            \ },
+            \]
+      Assert Equals(result, expected)
+    End
+  End
+
+  Describe .parse_blame({blame}[, {progressbar}])
+    " Blame content of the following
+    " ebcc55bee6ed0237ff86e6dfe7364ab166791de1/autoload/gita/interface/status.vim
+    It should parse a blame output and return chunks (porcelain) without Python
+      let blameobj = GitParser.parse_blame(blame_porcelain, {
+            \ 'python': 0,
+            \})
+      Assert KeyExists(blameobj, 'revisions')
+      Assert KeyExists(blameobj, 'chunks')
+      Assert KeyExists(blameobj, 'has_content')
+      Assert Equals(blameobj.has_content, 1)
+      Assert Equals(len(blameobj.revisions), 3)
+      Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426187381',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426188804',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Building status interface',
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426194280',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426194280',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Add commit interface',
+            \ 'previous': join([
+            \   '656465cef4559417a88e92f5235c4c43476fe963',
+            \   'autoload/gita/interface/status.vim',
+            \ ]),
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426194460',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426210134',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Update syntax highlight',
+            \ 'previous': join([
+            \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+            \   'autoload/gita/interface/status.vim',
+            \ ]),
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(len(blameobj.chunks), 12)
+      let chunk = blameobj.chunks[0]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 0)
+      Assert Equals(chunk.nlines, 169)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 1,
+            \ 'final': 1,
+            \})
+      Assert Equals(len(chunk.contents), 169)
+      let chunk = blameobj.chunks[1]
+      Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+      Assert Equals(chunk.index, 1)
+      Assert Equals(chunk.nlines, 6)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 170,
+            \ 'final': 170,
+            \})
+      Assert Equals(len(chunk.contents), 6)
+      let chunk = blameobj.chunks[2]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 2)
+      Assert Equals(chunk.nlines, 27)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 176,
+            \ 'final': 176,
+            \})
+      Assert Equals(len(chunk.contents), 27)
+      let chunk = blameobj.chunks[3]
+      Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+      Assert Equals(chunk.index, 3)
+      Assert Equals(chunk.nlines, 1)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 203,
+            \ 'final': 203,
+            \})
+      Assert Equals(len(chunk.contents), 1)
+      let chunk = blameobj.chunks[-1]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 11)
+      Assert Equals(chunk.nlines, 37)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 254,
+            \ 'final': 258,
+            \})
+      Assert Equals(len(chunk.contents), 37)
+    End
+    It should parse a blame output and return chunks (incremental) without Python
+      let blameobj = GitParser.parse_blame(blame_incremental, {
+            \ 'python': 0,
+            \})
+      Assert KeyExists(blameobj, 'revisions')
+      Assert KeyExists(blameobj, 'chunks')
+      Assert KeyExists(blameobj, 'has_content')
+      Assert Equals(blameobj.has_content, 0)
+      Assert Equals(len(blameobj.revisions), 3)
+      Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426187381',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426188804',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Building status interface',
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426194280',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426194280',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Add commit interface',
+            \ 'previous': join([
+            \   '656465cef4559417a88e92f5235c4c43476fe963',
+            \   'autoload/gita/interface/status.vim',
+            \ ]),
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+            \ 'author': 'lambdalisue',
+            \ 'author_mail': '<lambdalisue@hashnote.net>',
+            \ 'author_time': '1426194460',
+            \ 'author_tz': '+0900',
+            \ 'committer': 'lambdalisue',
+            \ 'committer_mail': '<lambdalisue@hashnote.net>',
+            \ 'committer_time': '1426210134',
+            \ 'committer_tz': '+0900',
+            \ 'summary': 'Update syntax highlight',
+            \ 'previous': join([
+            \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+            \   'autoload/gita/interface/status.vim',
+            \ ]),
+            \ 'filename': 'autoload/gita/interface/status.vim',
+            \})
+      Assert Equals(len(blameobj.chunks), 12)
+      let chunk = blameobj.chunks[0]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 0)
+      Assert Equals(chunk.nlines, 169)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 1,
+            \ 'final': 1,
+            \})
+      Assert KeyNotExists(chunk, 'content')
+      let chunk = blameobj.chunks[1]
+      Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+      Assert Equals(chunk.index, 1)
+      Assert Equals(chunk.nlines, 6)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 170,
+            \ 'final': 170,
+            \})
+      Assert KeyNotExists(chunk, 'content')
+      let chunk = blameobj.chunks[2]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 2)
+      Assert Equals(chunk.nlines, 27)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 176,
+            \ 'final': 176,
+            \})
+      Assert KeyNotExists(chunk, 'content')
+      let chunk = blameobj.chunks[3]
+      Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+      Assert Equals(chunk.index, 3)
+      Assert Equals(chunk.nlines, 1)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 203,
+            \ 'final': 203,
+            \})
+      Assert KeyNotExists(chunk, 'content')
+      let chunk = blameobj.chunks[-1]
+      Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+      Assert Equals(chunk.index, 11)
+      Assert Equals(chunk.nlines, 37)
+      Assert Equals(chunk.linenum, {
+            \ 'original': 254,
+            \ 'final': 258,
+            \})
+      Assert KeyNotExists(chunk, 'content')
+    End
+    if has('python') || has('python3')
+      It should parse a blame output and return chunks (porcelain) with Python
+        let blameobj = GitParser.parse_blame(blame_porcelain, {
+              \ 'python': 1,
+              \})
+        Assert KeyExists(blameobj, 'revisions')
+        Assert KeyExists(blameobj, 'chunks')
+        Assert KeyExists(blameobj, 'has_content')
+        Assert Equals(blameobj.has_content, 1)
+        Assert Equals(len(blameobj.revisions), 3)
+        Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426187381',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426188804',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Building status interface',
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194280',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426194280',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Add commit interface',
+              \ 'previous': join([
+              \   '656465cef4559417a88e92f5235c4c43476fe963',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194460',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426210134',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Update syntax highlight',
+              \ 'previous': join([
+              \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(len(blameobj.chunks), 12)
+        let chunk = blameobj.chunks[0]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 0)
+        Assert Equals(chunk.nlines, 169)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 1,
+              \ 'final': 1,
+              \})
+        Assert Equals(len(chunk.contents), 169)
+        let chunk = blameobj.chunks[1]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 1)
+        Assert Equals(chunk.nlines, 6)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 170,
+              \ 'final': 170,
+              \})
+        Assert Equals(len(chunk.contents), 6)
+        let chunk = blameobj.chunks[2]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 2)
+        Assert Equals(chunk.nlines, 27)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 176,
+              \ 'final': 176,
+              \})
+        Assert Equals(len(chunk.contents), 27)
+        let chunk = blameobj.chunks[3]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 3)
+        Assert Equals(chunk.nlines, 1)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 203,
+              \ 'final': 203,
+              \})
+        Assert Equals(len(chunk.contents), 1)
+        let chunk = blameobj.chunks[-1]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 11)
+        Assert Equals(chunk.nlines, 37)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 254,
+              \ 'final': 258,
+              \})
+        Assert Equals(len(chunk.contents), 37)
+      End
+      It should parse a blame output and return chunks (incremental) with Python
+        let blameobj = GitParser.parse_blame(blame_incremental, {
+              \ 'python': 1,
+              \})
+        Assert KeyExists(blameobj, 'revisions')
+        Assert KeyExists(blameobj, 'chunks')
+        Assert KeyExists(blameobj, 'has_content')
+        Assert Equals(blameobj.has_content, 0)
+        Assert Equals(len(blameobj.revisions), 3)
+        Assert Equals(blameobj.revisions['656465cef4559417a88e92f5235c4c43476fe963'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426187381',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426188804',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Building status interface',
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['0b0569a9114e4748b1368b168f2c7b8eda25d9c8'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194280',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426194280',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Add commit interface',
+              \ 'previous': join([
+              \   '656465cef4559417a88e92f5235c4c43476fe963',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(blameobj.revisions['ebcc55bee6ed0237ff86e6dfe7364ab166791de1'], {
+              \ 'author': 'lambdalisue',
+              \ 'author_mail': '<lambdalisue@hashnote.net>',
+              \ 'author_time': '1426194460',
+              \ 'author_tz': '+0900',
+              \ 'committer': 'lambdalisue',
+              \ 'committer_mail': '<lambdalisue@hashnote.net>',
+              \ 'committer_time': '1426210134',
+              \ 'committer_tz': '+0900',
+              \ 'summary': 'Update syntax highlight',
+              \ 'previous': join([
+              \   '0b0569a9114e4748b1368b168f2c7b8eda25d9c8',
+              \   'autoload/gita/interface/status.vim',
+              \ ]),
+              \ 'filename': 'autoload/gita/interface/status.vim',
+              \})
+        Assert Equals(len(blameobj.chunks), 12)
+        let chunk = blameobj.chunks[0]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 0)
+        Assert Equals(chunk.nlines, 169)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 1,
+              \ 'final': 1,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[1]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 1)
+        Assert Equals(chunk.nlines, 6)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 170,
+              \ 'final': 170,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[2]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 2)
+        Assert Equals(chunk.nlines, 27)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 176,
+              \ 'final': 176,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[3]
+        Assert Equals(chunk.revision, '0b0569a9114e4748b1368b168f2c7b8eda25d9c8')
+        Assert Equals(chunk.index, 3)
+        Assert Equals(chunk.nlines, 1)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 203,
+              \ 'final': 203,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+        let chunk = blameobj.chunks[-1]
+        Assert Equals(chunk.revision, '656465cef4559417a88e92f5235c4c43476fe963')
+        Assert Equals(chunk.index, 11)
+        Assert Equals(chunk.nlines, 37)
+        Assert Equals(chunk.linenum, {
+              \ 'original': 254,
+              \ 'final': 258,
+              \})
+        Assert KeyNotExists(chunk, 'content')
+      End
+    endif
+  End
+
+  Describe .has_ours_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ 'Bar',
+            \ '>>>>>>> This looks like Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_ours_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_ours_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .has_theirs_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< This looks like Ours marker',
+            \ 'Foo',
+            \ 'World',
+            \]
+      let ret = GitParser.has_theirs_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_theirs_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .has_conflict_makrer({buflines})
+    It should return 0 if the {buflines} does not contain <<<<<<< xxxxxx nor >>>>>>> xxxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '======= Separator?',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 0)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx and >>>>>>> xxxxxxx
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+
+    It should return 1 if the {buflines} does contain <<<<<<< xxxxxx, in case if user forgot to remove the marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+
+    It should return 1 if the {buflines} does contain >>>>>>> xxxxxxx, in case if user forgot to remove the marker
+      let buflines = [
+            \ 'Hello',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let ret = GitParser.has_conflict_marker(buflines)
+      Assert Equals(ret, 1)
+    End
+  End
+
+  Describe .strip_ours({buflines})
+    It should strip a region specified by Ours marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'Bar',
+            \ 'World',
+            \]
+      let ret = GitParser.strip_ours(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .strip_theirs({buflines})
+    It should strip a region specified by Theirs marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'Foo',
+            \ 'World',
+            \]
+      let ret = GitParser.strip_theirs(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .strip_conflict({buflines})
+    It should strip a region specified by Ours/Theirs marker
+      let buflines = [
+            \ 'Hello',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \ 'World',
+            \ '<<<<<<< Ours marker',
+            \ 'Foo',
+            \ 'Hoge',
+            \ '======= Separator',
+            \ 'Bar',
+            \ '>>>>>>> Theirs marker',
+            \]
+      let exp = [
+            \ 'Hello',
+            \ 'World',
+            \ '',
+            \]
+      let ret = GitParser.strip_conflict(buflines)
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .parse_branch_record({line})
+    It returns a candidate for '* master'
+      let branch = GitParser.parse_branch_record('* master')
+      Assert Equals(branch.name, 'master')
+      Assert Equals(branch.remote, '')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 0)
+      Assert Equals(branch.is_selected, 1)
+    End
+    It returns a candidate for '  develop'
+      let branch = GitParser.parse_branch_record('  develop')
+      Assert Equals(branch.name, 'develop')
+      Assert Equals(branch.remote, '')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 0)
+      Assert Equals(branch.is_selected, 0)
+    End
+    It returns a candidate for '  remotes/origin/HEAD -> origin/master'
+      let branch = GitParser.parse_branch_record(
+            \ '  remotes/origin/HEAD -> origin/master'
+            \)
+      Assert Equals(branch.name, 'origin/HEAD')
+      Assert Equals(branch.remote, 'origin')
+      Assert Equals(branch.linkto, 'origin/master')
+      Assert Equals(branch.is_remote, 1)
+      Assert Equals(branch.is_selected, 0)
+    End
+    It returns a candidate for '  remotes/origin/master'
+      let branch = GitParser.parse_branch_record(
+            \ '  remotes/origin/master'
+            \)
+      Assert Equals(branch.name, 'origin/master')
+      Assert Equals(branch.remote, 'origin')
+      Assert Equals(branch.linkto, '')
+      Assert Equals(branch.is_remote, 1)
+      Assert Equals(branch.is_selected, 0)
+    End
+  End
+
+  Describe .parse_match_record({line})
+    It returns a candidate for 'README.md:5:foobar'
+      let match = GitParser.parse_match_record(
+            \ 'README.md:5:foobar',
+            \)
+      Assert Equals(match.commit, '')
+      Assert Equals(match.path, 'README.md')
+      Assert Equals(match.selection, [5])
+      Assert Equals(match.content, 'foobar')
+    End
+
+    It returns a candidate for 'HEAD:README.md:5:foobar'
+      let match = GitParser.parse_match_record(
+            \ 'HEAD:README.md:5:foobar',
+            \)
+      Assert Equals(match.commit, 'HEAD')
+      Assert Equals(match.path, 'README.md')
+      Assert Equals(match.selection, [5])
+      Assert Equals(match.content, 'foobar')
+    End
+  End
+End

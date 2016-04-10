@@ -1,0 +1,129 @@
+Describe Git.Process
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let GitProcess = V.import('Git.Process')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git/Process.vim')
+          \)
+
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    call mkdir(worktree, 'p')
+    call system(printf('cd %s && git init', shellescape(worktree)))
+  End
+
+  After all
+    " remove a temp directory
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
+  End
+
+  Describe .get_config()
+    It returns a copy of a config dictionary
+      let config = GitProcess.get_config()
+      Assert IsDict(config)
+      Assert KeyExists(config, 'executable')
+      Assert KeyExists(config, 'arguments')
+
+      let config2 = GitProcess.get_config()
+      Assert Equals(config, config2)
+      Assert NotSame(config, config2)
+    End
+  End
+
+  Describe .set_config({config})
+    Before
+      let _config = GitProcess.get_config()
+    End
+
+    After
+      call GitProcess.set_config(_config)
+    End
+
+    It overwrites existing config with {config}
+      call GitProcess.set_config({
+            \ 'executable': 'hub',
+            \ 'arguments': [],
+            \})
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
+            \ 'executable': 'hub',
+            \ 'arguments': [],
+            \})
+    End
+
+    It ignores unknown attributes
+      call GitProcess.set_config({
+            \ 'executable': 'hub',
+            \ 'arguments': [],
+            \ 'unknown_attribute': 'bar',
+            \})
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
+            \ 'executable': 'hub',
+            \ 'arguments': [],
+            \})
+    End
+
+    It ignores missing attributes
+      call GitProcess.set_config({
+            \ 'executable': 'hub',
+            \})
+      let config = GitProcess.get_config()
+      Assert Equals(config, {
+            \ 'executable': 'hub',
+            \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
+            \})
+    End
+  End
+
+  Describe .execute({git}, {args}[, {options}])
+    It execute git command in {git.worktree} and return {result}
+      let git = { 'worktree': worktree }
+      let result = GitProcess.execute(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(result.success, 1, result.output)
+      " NOTE:
+      " git rev-parse --show-toplevel returns an UNIX path even in Windows
+      " NOTE:
+      " A temporary directory is symlinked in Mac OS X
+      Assert Equals(result.content, [Path.unixpath(resolve(worktree))])
+    End
+
+    It execute git command in the current working directory and return {result} if empty {git} is specified
+      let git = {}
+      let result = GitProcess.execute(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(result.success, 1, result.output)
+      " NOTE:
+      " git rev-parse --show-toplevel returns an UNIX path even in Windows
+      " NOTE:
+      " A temporary directory is symlinked in Mac OS X
+      Assert Equals(result.content, [Path.unixpath(resolve(getcwd()))])
+    End
+  End
+
+  Describe .shell({git}, {args})
+    It execute git command in {git.worktree} by :! command
+      let git = { 'worktree': worktree }
+      let git = {}
+      " NOTE:
+      " The result of :! command directly print out to stdout so 'redir'
+      " could not be used for catching the result.
+      " Additionally the result will be printed out during unittest
+      call GitProcess.shell(git, [
+            \ 'rev-parse', '--show-toplevel',
+            \])
+      Assert Equals(v:shell_error, 0)
+    End
+  End
+End

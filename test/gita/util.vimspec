@@ -1,0 +1,103 @@
+Describe gita#util
+  Context #clip({content})
+    It should assign {content} to @" register
+      let @" = ""
+      call gita#util#clip('foo')
+      Assert Equals(@", 'foo')
+    End
+
+    if has('clipboard')
+      It should assign {content} to clipboard register
+        call gita#util#clip('foo')
+        Assert Equals(getreg(v:register), 'foo')
+      End
+    endif
+  End
+
+  Describe #doautocmd({name}[, {pattern})
+    After
+      augroup gita_test_util_doautocmd
+        autocmd! *
+      augroup END
+      silent! unlet g:_gita_test_util_doautocmd
+    End
+
+    It calls {name} autocmd
+      augroup gita_test_util_doautocmd
+        autocmd! *
+        autocmd BufReadPre * let g:_gita_test_util_doautocmd = 1
+      augroup END
+      Assert False(exists('g:_gita_test_util_doautocmd'))
+      call gita#util#doautocmd('BufReadPre')
+      Assert True(g:_gita_test_util_doautocmd)
+    End
+
+    It calls {name} autocmd with {pattern}
+      augroup gita_test_util_doautocmd
+        autocmd! *
+        autocmd User gita_test_util_doautocmd let g:_gita_test_util_doautocmd = 1
+      augroup END
+      Assert False(exists('g:_gita_test_util_doautocmd'))
+      call gita#util#doautocmd('User', 'gita_test_util_doautocmd')
+      Assert True(g:_gita_test_util_doautocmd)
+    End
+
+    It does not show 'No matching autocommands' warning even the {name} autocmd is not registered
+      augroup gita_test_util_doautocmd
+        autocmd! *
+        autocmd BufReadPre foo:* let g:_gita_test_util_doautocmd = 1
+      augroup END
+      " exists('#BufReadPre') returns 1 while BufReadPre foo:* is registered
+      Assert True(exists('#BufReadPre'))
+      " But a builtin doautocmd shows 'No matching autocommands' warning while
+      " a current buffer does not match with the registered pattern.
+      try
+        redir => content
+        doautocmd BufReadPre
+      finally
+        redir END
+      endtry
+      Assert Equals(split(content, "\n"), ['No matching autocommands'])
+      " But gita#util#doautocmd does not call autocmd in this case
+      try
+        redir => content
+        call gita#util#doautocmd('BufReadPre')
+      finally
+        redir END
+      endtry
+      Assert Equals(split(content, "\n"), [])
+      " The registered autocmd should not be called
+      Assert False(exists('g:_gita_test_util_doautocmd'))
+    End
+  End
+
+  Describe #diffthis()
+    After
+      bwipe!
+    End
+
+    It turns &diff of the current buffer 'on'
+      Assert False(&diff)
+      call gita#util#diffthis()
+      Assert True(&diff)
+    End
+
+    It registers <Plug>(gita-C-l) and <C-l> mapping
+      Assert Equals(maparg('<Plug>(gita-C-l)', 'n'), '')
+      Assert Equals(maparg('<C-l>', 'n'), '')
+      call gita#util#diffthis()
+      Assert NotEquals(maparg('<Plug>(gita-C-l)', 'n'), '')
+      Assert Equals(maparg('<C-l>', 'n'), '<Plug>(gita-C-l)')
+    End
+
+    " NOTE: Test autocmd
+  End
+
+  Describe #syncbind()
+    " NOTE: Test behavior (but how...)
+  End
+
+  Describe #handle_exception([{exception}])
+    " NOTE: Test?
+  End
+End

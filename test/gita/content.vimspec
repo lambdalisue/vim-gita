@@ -1,0 +1,211 @@
+Describe gita#content
+  Describe #build_bufname({content_type}, {options})
+    It returns gita://<refname>:show/HEAD:README.md
+      let options = {
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('show', options)
+      Assert Match(ret, '^gita://.*:show/HEAD:README.md$')
+    End
+
+    It returns gita://<refname>:diff:cached/HEAD:README.md
+      let options = {
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('diff', options)
+      Assert Match(ret, '^gita://.*:diff:cached/HEAD:README.md$')
+    End
+
+    It returns gita://<refname>:diff:cached:patch/HEAD:README.md
+      let options = {
+            \ 'extra_options': [
+            \   'cached', 'patch',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \}
+      let ret = gita#content#build_bufname('diff', options)
+      Assert Match(ret, '^gita://.*:diff:cached:patch/HEAD:README.md$')
+    End
+
+    It returns gita:<refname>:status
+      let options = {
+            \ 'nofile': 1,
+            \}
+      let ret = gita#content#build_bufname('status', options)
+      Assert Match(ret, '^gita:.*:status$')
+    End
+
+    It returns gita:<refname>:commit:amend
+      let options = {
+            \ 'nofile': 1,
+            \ 'extra_options': [
+            \   'amend',
+            \ ],
+            \}
+      let ret = gita#content#build_bufname('commit', options)
+      Assert Match(ret, '^gita:.*:commit:amend$')
+    End
+
+    It returns gita:<refname>:diff-ls:cached:origin/HEAD
+      let options = {
+            \ 'nofile': 1,
+            \ 'extra_options': [
+            \   'cached', 'origin/HEAD',
+            \ ],
+            \}
+      let ret = gita#content#build_bufname('diff-ls', options)
+      Assert Match(ret, '^gita:.*:diff-ls:cached:origin/HEAD$')
+    End
+  End
+
+  Describe #parse_bufname({bufname})
+    It throws an exception if {bufname} does not follow schemes defined
+      Throws /A buffer name "foo" does not follow a correct gita buffer name pattern/
+            \ gita#content#parse_bufname('foo')
+    End
+
+    It prases gita://<refname>:<content_type>:<extra_options>/<treeish> type names
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached:reverse/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff:cached:reverse/HEAD:README.md',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached', 'reverse',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff:cached/HEAD:README.md',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff:cached/:README.md',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': ':README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff:cached/HEAD',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': 'HEAD',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff:cached/')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff:cached/',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [
+            \   'cached',
+            \ ],
+            \ 'treeish': '',
+            \})
+    End
+
+    It prases gita://<refname>:<content_type>/<treeish> type names
+      let ret = gita#content#parse_bufname('gita://gita:diff/HEAD:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff/HEAD:README.md',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': 'HEAD:README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff/:README.md')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff/:README.md',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': ':README.md',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff/HEAD',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': 'HEAD',
+            \})
+
+      let ret = gita#content#parse_bufname('gita://gita:diff/')
+      Assert Equals(ret, {
+            \ 'nofile': 0,
+            \ 'bufname': 'gita://gita:diff/',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff',
+            \ 'extra_options': [],
+            \ 'treeish': '',
+            \})
+    End
+
+    It prases gita:<refname>:<content_type>:<extra_options> type names
+      let ret = gita#content#parse_bufname('gita:gita:commit:amend')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:gita:commit:amend',
+            \ 'refname': 'gita',
+            \ 'content_type': 'commit',
+            \ 'extra_options': ['amend'],
+            \})
+
+      let ret = gita#content#parse_bufname('gita:gita:diff-ls:origin/HEAD')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:gita:diff-ls:origin/HEAD',
+            \ 'refname': 'gita',
+            \ 'content_type': 'diff-ls',
+            \ 'extra_options': ['origin/HEAD'],
+            \})
+    End
+
+    It prases gita:<refname>:<content_type> type names
+      let ret = gita#content#parse_bufname('gita:gita:status')
+      Assert Equals(ret, {
+            \ 'nofile': 1,
+            \ 'bufname': 'gita:gita:status',
+            \ 'refname': 'gita',
+            \ 'content_type': 'status',
+            \ 'extra_options': [],
+            \})
+    End
+  End
+
+  Describe #autocmd({name})
+    It executes {name} autocmd of a corresponding content of the current buffer
+      " NOTE: Test (but how...)
+    End
+  End
+End

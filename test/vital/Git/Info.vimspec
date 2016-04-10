@@ -1,0 +1,288 @@
+Describe Git.Info
+  Before all
+    let V = vital#of('vital')
+    let File = V.import('System.File')
+    let Path = V.import('System.Filepath')
+    let Git = V.import('Git')
+    let GitInfo = V.import('Git.Info')
+
+    let git = Git.get('.')
+  End
+
+  Describe .get_head({git})
+    It returns a HEAD
+      let content = readfile(Path.realpath('.git/HEAD'))
+      Assert Equals(GitInfo.get_head(git), content[0])
+    End
+  End
+
+  Describe .get_fetch_head({git})
+    Before
+      let filename = Path.realpath('.git/FETCH_HEAD')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a FETCH_HEAD
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_fetch_head(git), content[0])
+    End
+  End
+
+  Describe .get_orig_head({git})
+    Before
+      let filename = Path.realpath('.git/ORIG_HEAD')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a ORIG_HEAD
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_orig_head(git), content[0])
+    End
+  End
+
+  Describe .get_merge_head({git})
+    Before
+      let filename = Path.realpath('.git/MERGE_HEAD')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a MERGE_HEAD
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_merge_head(git), content[0])
+    End
+  End
+
+  Describe .get_cherry_pick_head({git})
+    Before
+      let filename = Path.realpath('.git/CHERRY_PICK_HEAD')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a CHERRY_PICK_HEAD
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_cherry_pick_head(git), content[0])
+    End
+  End
+
+  Describe .get_revert_head({git})
+    Before
+      let filename = Path.realpath('.git/REVERT_HEAD')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a REVERT_HEAD
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_revert_head(git), content[0])
+    End
+  End
+
+  Describe .get_bisect_log({git})
+    Before
+      let filename = Path.realpath('.git/BISECT_LOG')
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call delete(filename)
+      endif
+    End
+    It returns a BISECT_LOG
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_bisect_log(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_merge_head({git})
+    Before
+      let filename = Path.realpath('.git/rebase-merge/head-name')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-merge/head-name
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_merge_head(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_merge_step({git})
+    Before
+      let filename = Path.realpath('.git/rebase-merge/msgnum')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-merge/msgnum
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_merge_step(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_merge_total({git})
+    Before
+      let filename = Path.realpath('.git/rebase-merge/end')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-merge/end
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_merge_total(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_apply_head({git})
+    Before
+      let filename = Path.realpath('.git/rebase-apply/head-name')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-apply/head-name
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_apply_head(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_apply_step({git})
+    Before
+      let filename = Path.realpath('.git/rebase-apply/next')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-apply/next
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_apply_step(git), content[0])
+    End
+  End
+
+  Describe .get_rebase_apply_total({git})
+    Before
+      let filename = Path.realpath('.git/rebase-apply/last')
+      if !isdirectory(fnamemodify(filename, ':h'))
+        call mkdir(fnamemodify(filename, ':h'))
+      endif
+      if !filereadable(filename)
+        call writefile(['foobar'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar']
+        call File.rmdir(fnamemodify(filename, ':h'), 'r')
+      endif
+    End
+    It returns a rebase-apply/last
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_rebase_apply_total(git), content[0])
+    End
+  End
+
+  Describe .get_commit_editmsg({git})
+    Before
+      let filename = Path.realpath('.git/COMMIT_EDITMSG')
+      if !filereadable(filename)
+        call writefile(['foobar', 'hogehoge'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar', 'hogehoge']
+        call delete(filename)
+      endif
+    End
+    It returns a COMMIT_EDITMSG
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_commit_editmsg(git), content)
+    End
+  End
+
+  Describe .get_merge_msg({git})
+    Before
+      let filename = Path.realpath('.git/MERGE_MSG')
+      if !filereadable(filename)
+        call writefile(['foobar', 'hogehoge'], filename)
+      endif
+    End
+    After
+      if readfile(filename) == ['foobar', 'hogehoge']
+        call delete(filename)
+      endif
+    End
+    It returns a MERGE_MSG
+      let content = readfile(filename)
+      Assert Equals(GitInfo.get_merge_msg(git), content)
+    End
+  End
+End

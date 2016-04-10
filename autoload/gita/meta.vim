@@ -1,34 +1,64 @@
-let s:save_cpoptions = &cpoptions
-set cpoptions&vim
+let s:V = vital#of('gita')
+let s:Prelude = s:V.import('Prelude')
+let s:Compat = s:V.import('Vim.Compat')
+let s:Path = s:V.import('System.Filepath')
+let s:NAME = '_gita_meta'
 
-function! s:get_meta(expr) abort " {{{
-  let meta = gita#compat#getwinvar(bufwinnr(a:expr), '_gita_meta', {})
-  let meta = empty(meta)
-        \ ? gita#compat#getbufvar(a:expr, '_gita_meta', {})
-        \ : meta
-  if !empty(getwinvar(bufwinnr(a:expr), '_gita_meta'))
-    call setwinvar(bufwinnr(a:expr), '_gita_meta', meta)
-  else
-    call setbufvar(a:expr, '_gita_meta', meta)
+function! s:get_meta_instance(bufnum) abort
+  let meta = s:Compat.getbufvar(a:bufnum, s:NAME, {})
+  if bufexists(a:bufnum)
+    call setbufvar(a:bufnum, s:NAME, meta)
   endif
   return meta
-endfunction " }}}
+endfunction
 
-function! gita#meta#get(name, ...) abort " {{{
-  let expr = get(a:000, 1, '%')
-  let meta = s:get_meta(expr)
-  return get(meta, a:name, get(a:000, 0, ''))
-endfunction " }}}
-function! gita#meta#set(name, value, ...) abort " {{{
+function! gita#meta#get(name, ...) abort
+  let default = get(a:000, 0, '')
+  let expr    = get(a:000, 1, '%')
+  let meta    = s:get_meta_instance(bufnr(expr))
+  return get(meta, a:name, default)
+endfunction
+
+function! gita#meta#get_for(content_type, name, ...) abort
+  let default = get(a:000, 0, '')
+  let expr    = get(a:000, 1, '%')
+  if gita#meta#get('content_type', '', expr) !~# a:content_type
+    return default
+  endif
+  return call('gita#meta#get', [a:name, default, expr])
+endfunction
+
+function! gita#meta#set(name, value, ...) abort
   let expr = get(a:000, 0, '%')
-  let meta = s:get_meta(expr)
+  let meta = s:get_meta_instance(bufnr(expr))
   let meta[a:name] = a:value
-endfunction " }}}
-function! gita#meta#extend(meta, ...) abort " {{{
-  let expr = get(a:000, 0, '%')
-  let meta = s:get_meta(expr)
-  call extend(meta, a:meta)
-endfunction " }}}
+endfunction
 
-let &cpoptions = s:save_cpoptions
-" vim:set et ts=2 sts=2 sw=2 tw=0 fdm=marker:
+function! gita#meta#remove(name, ...) abort
+  let expr = get(a:000, 0, '%')
+  let meta = s:get_meta_instance(bufnr(expr))
+  if has_key(meta, a:name)
+    unlet meta[a:name]
+  endif
+endfunction
+
+function! gita#meta#clear(...) abort
+  let expr = get(a:000, 0, '%')
+  call setbufvar(expr, s:NAME, {})
+endfunction
+
+function! gita#meta#expand(expr) abort
+  if empty(a:expr)
+    return ''
+  endif
+  let meta_filename = gita#meta#get('filename', '', a:expr)
+  if s:Prelude.is_string(a:expr)
+    let real_filename = expand(a:expr . ':p')
+    let real_filename = real_filename ==# a:expr . ':p'
+          \ ? a:expr
+          \ : real_filename
+  else
+    let real_filename = fnamemodify(bufname(a:expr), ':p')
+  endif
+  return empty(meta_filename) ? real_filename : meta_filename
+endfunction

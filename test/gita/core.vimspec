@@ -1,0 +1,341 @@
+Describe gita#core
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+
+    let scriptfile = Path.realpath('autoload/gita/core.vim')
+    let sf = ScriptLocal.sfuncs(scriptfile)
+    let sv = ScriptLocal.svars(scriptfile)
+
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
+    let inside = Path.join(worktree, 'f o o', 'b a r')
+    let outside = Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    lockvar inside
+    lockvar outside
+    call mkdir(repository, 'p')
+    call mkdir(inside, 'p')
+    call mkdir(outside, 'p')
+  End
+
+  After all
+    " remote a temp directory
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
+  End
+
+  Before
+    let guard = Guard.store(
+          \ ['references', sv],
+          \)
+    let saved_getcwd = getcwd()
+    execute printf('cd %s', fnameescape(root))
+  End
+
+  After
+    call guard.restore()
+    execute printf('cd %s', fnameescape(saved_getcwd))
+    windo bwipeout!
+  End
+
+  Describe s:get_available_refname({refname})
+    It returns {refname} if there is no confliction
+      let git = { 'worktree': getcwd() }
+      let refname = 'foo'
+      Assert Equals(sf.get_available_refname(refname, git), refname)
+      Assert Same(sf.get_available_refname(refname, git), refname)
+    End
+
+    It returns {refname} if a conflicted git instance has same worktree
+      let git = { 'worktree': getcwd() }
+      let refname = 'foo'
+      let sv.references['foo'] = copy(git)
+      Assert Equals(sf.get_available_refname(refname, git), refname)
+      Assert Same(sf.get_available_refname(refname, git), refname)
+    End
+
+    It returns {refname}~<N> if a conflicted git instance has differenct worktree
+      let git = { 'worktree': getcwd() }
+      let refname = 'foo'
+      let sv.references['foo'] = { 'worktree': 'foo' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~1')
+
+      let sv.references['foo~1'] = { 'worktree': 'bar' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~2')
+
+      let sv.references['foo~2'] = { 'worktree': 'hoge' }
+      Assert Equals(sf.get_available_refname(refname, git), refname . '~3')
+    End
+  End
+
+  Describe s:is_expired({expr}, {refinfo})
+    It returns 1 if a git instance cached as {refinfo.refname} is reserved to be expired
+      let sv.references = {
+            \ 'foo': { 'is_expired': 1 },
+            \}
+      let refinfo = {
+            \ 'refname': 'foo',
+            \ 'bufname': 'foobar',
+            \ 'cwd': getcwd()
+            \}
+      Assert Equals(sf.is_expired('%', refinfo), 1)
+    End
+
+    Context in file-like buffer
+      It returns 1 if buffer name has changed from bufname in {refinfo}
+        let refinfo = { 'bufname': 'foo', 'cwd': getcwd() }
+        file bar
+        for buftype in ['', 'nowrite', 'acwrite']
+          execute printf('setlocal buftype=%s', buftype)
+          Assert Equals(sf.is_expired('%', refinfo), 1)
+        endfor
+      End
+
+      It returns 0 if buffer name is equal to bufname in {refinfo}
+        let refinfo = { 'bufname': 'foo', 'cwd': getcwd() }
+        file foo
+        for buftype in ['', 'nowrite', 'acwrite']
+          execute printf('setlocal buftype=%s', buftype)
+          Assert Equals(sf.is_expired('%', refinfo), 0)
+        endfor
+      End
+    End
+
+    Context in non-file buffer
+      It returns 1 if cwd has changed from cwd in {refinfo}
+        let refinfo = { 'bufname': 'foo', 'cwd': 'somewhere' }
+        for buftype in ['nofile', 'quickfix', 'help']
+          Assert Equals(sf.is_expired('%', refinfo), 1)
+        endfor
+      End
+
+      It returns 0 if cwd is equal to cwd in {refinfo}
+        let refinfo = { 'bufname': 'foo', 'cwd': getcwd() }
+        for buftype in ['nofile', 'quickfix', 'help']
+          Assert Equals(sf.is_expired('%', refinfo), 1)
+        endfor
+      End
+    End
+  End
+
+  Describe #get([{expr}, {options}])
+    Context A file buffer in a git repository
+      Before
+        execute printf('cd %s', fnameescape(inside))
+        let bufname = 'foo.txt'
+        execute printf('new %s', bufname)
+      End
+
+      It returns a git instance
+        let git = gita#core#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+      End
+
+      It returns a same git instance
+        let git1 = gita#core#get(bufname)
+        let git2 = gita#core#get(bufname)
+        Assert Same(git1, git2)
+      End
+
+      It returns a same git instance for a same repository
+        let git1 = gita#core#get(bufname)
+        execute printf('file %s', bufname . '.mod')
+        let git2 = gita#core#get(bufname . '.mod')
+        Assert Same(git1, git2)
+      End
+    End
+
+    Context A file buffer in a non git repository
+      Before
+        execute printf('cd %s', fnameescape(inside))
+        let bufname = 'foo.txt'
+        execute printf('new %s', bufname)
+      End
+
+      It returns a git instance while cwd is in a git repository
+        let git = gita#core#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+      End
+
+      It returns a git instance but not enabled if cwd is not in a git repository
+        execute printf('cd %s', fnameescape(outside))
+        let git = gita#core#get(bufname)
+        Assert Equals(git.is_enabled, 0)
+      End
+
+      It returns a same git instance
+        let git1 = gita#core#get(bufname)
+        let git2 = gita#core#get(bufname)
+        Assert Same(git1, git2)
+      End
+
+      It does not return a same git instance if bufname has changed
+        let git1 = gita#core#get(bufname)
+        execute printf('file %s', bufname . '.mod')
+        let git2 = gita#core#get(bufname . '.mod')
+        Assert Same(git1, git2)
+      End
+    End
+
+    Context A non file buffer
+      Before
+        execute printf('cd %s', fnameescape(inside))
+        let bufname = 'non-file'
+        execute printf('new %s', bufname)
+        setlocal buftype=nofile
+      End
+
+      It returns a git instance while cwd is in a git repository
+        let git = gita#core#get(bufname)
+        Assert Equals(git.is_enabled, 1)
+      End
+
+      It returns a git instance but not enabled if cwd is not in a git repository
+        execute printf('cd %s', fnameescape(outside))
+        let git = gita#core#get(bufname)
+        Assert Equals(git.is_enabled, 0)
+      End
+
+      It returns a same git instance
+        let git1 = gita#core#get(bufname)
+        let git2 = gita#core#get(bufname)
+        Assert Same(git1, git2)
+      End
+
+      It does not return a same git instance if a current working directory has changed
+        let git1 = gita#core#get(bufname)
+        execute printf('cd %s', fnameescape(outside))
+        let git2 = gita#core#get(bufname)
+        Assert NotSame(git1, git2)
+      End
+    End
+
+    Context A gita buffer
+      It throw an exception if {refname} of the buffer name does not exists in cache
+        file gita://unknown
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+        file gita://unknown/foo
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+        file gita://unknown:foo
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+        file gita:unknown
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+        file gita:unknown/foo
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+        file gita:unknown:foo
+        Throws /No repository reference for unknown is found/ gita#core#get('%')
+      End
+
+      It returns a cached git instance for {refname}
+        let git = { 'is_enabled': 1 }
+        let sv.references['foo'] = git
+        file gita://foo
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+        file gita://foo/bar
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+        file gita://foo:bar
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+        file gita:foo
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+        file gita:foo/bar
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+        file gita:foo:bar
+        Assert Equals(gita#core#get('%'), git)
+        Assert Same(gita#core#get('%'), git)
+      End
+    End
+  End
+
+  Describe #get_or_fail([{expr}, {options}])
+    It throws an exception if git instance is not enabled
+      let git = { 'is_enabled': 0 }
+      let sv.references['foo'] = git
+      file gita:foo
+      Throws /No git repository of/ gita#core#get_or_fail('%')
+    End
+
+    It returns a git instance if it is enabled
+      let git = { 'is_enabled': 1 }
+      let sv.references['foo'] = git
+      file gita:foo
+      Assert Equals(gita#core#get_or_fail('%'), git)
+      Assert Same(gita#core#get_or_fail('%'), git)
+    End
+  End
+
+  Describe #expire([{expr}])
+    It reserve git as expired
+      let git = { 'is_enabled': 1 }
+      let sv.references['foo'] = git
+      let refinfo = { 'git': git, 'bufname': bufname('%'), 'cwd': getcwd() }
+      Assert Equals(sf.is_expired('%', refinfo), 0)
+      file gita:foo
+      call gita#core#expire('%')
+      Assert Equals(sf.is_expired('%', refinfo), 1)
+    End
+  End
+
+  Describe #get_refinfo([{expr}])
+    It returns an empty dictionary if the buffer does not have refinfo
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo, {})
+    End
+
+    It returns a deep copy dictionary of a refinfo dictionary of the buffer
+      let sv.references = {
+            \ 'foo': {
+            \   'is_enabled': 1,
+            \   'worktree': 'foo',
+            \   'repository': 'bar',
+            \   'repository_name': 'foobar',
+            \   'repository_cache': {},
+            \ },
+            \}
+      let b:_gita_refinfo = {
+            \ 'refname': 'foo',
+            \ 'bufname': 'bar',
+            \ 'cwd': 'hoge',
+            \}
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo.refname, 'foo')
+      Assert Equals(refinfo.bufname, 'bar')
+      Assert Equals(refinfo.cwd, 'hoge')
+      Assert KeyExists(refinfo, 'git')
+
+      Assert KeyExists(refinfo.git, 'is_enabled')
+      Assert KeyExists(refinfo.git, 'worktree')
+      Assert KeyExists(refinfo.git, 'repository')
+      Assert KeyExists(refinfo.git, 'repository_name')
+      Assert KeyExists(refinfo.git, 'repository_cache')
+      Assert Equals(refinfo.git.is_enabled, 1)
+      Assert Equals(refinfo.git.worktree, 'foo')
+      Assert Equals(refinfo.git.repository, 'bar')
+      Assert Equals(refinfo.git.repository_name, 'foobar')
+
+      " refinfo is a deep copy
+      let refinfo.refname = 'piyo'
+      let refinfo.bufname = 'puyo'
+      let refinfo.cwd = 'poyo'
+      let refinfo.git.worktree = 'hoge'
+
+      let refinfo = gita#core#get_refinfo()
+      Assert Equals(refinfo.refname, 'foo')
+      Assert Equals(refinfo.bufname, 'bar')
+      Assert Equals(refinfo.cwd, 'hoge')
+
+      Assert Equals(refinfo.git.worktree, 'foo')
+    End
+  End
+End

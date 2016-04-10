@@ -1,14 +1,19 @@
 if exists('b:current_syntax')
   finish
 endif
+let b:current_syntax = 'gita-diff-ls'
 
-let s:save_cpo = &cpo
-set cpo&vim
+highlight default link GitaComment Comment
+highlight default link GitaAdded   Special
+highlight default link GitaDeleted Constant
+highlight default link GitaDiffZero Comment
 
 syntax clear
-call gita#features#diff_ls#define_highlights()
-call gita#features#diff_ls#define_syntax()
-
-let b:current_syntax = "gita-diff-ls"
-let &cpo = s:save_cpo
-"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
+syntax match GitaComment    /\%^.*$/
+syntax match GitaDiffLs        /^.\{-} +\d\+\s\+-\d\+\s\++*-*$/
+      \ contains=GitaDiffLsSuffix
+syntax match GitaDiffLsSuffix  /+\d\+\s\+-\d\+\s\++*-*$/
+      \ contains=GitaAdded,GitaDeleted,GitaDiffZero
+syntax match GitaAdded   /+[0-9+]*/ contained
+syntax match GitaDeleted /-[0-9-]*/ contained
+syntax match GitaDiffZero /[+-]0/ contained

@@ -1,0 +1,361 @@
+let s:V = vital#of('vital')
+let s:GitInfo = s:V.import('Git.Info')
+let s:git_version = s:GitInfo.get_git_version()
+let s:major_version = str2nr(matchstr(s:git_version, '^\d\+'))
+let s:minor_version = str2float(matchstr(s:git_version, '^\d\+\.\zs\d\+\.\d\+'))
+let s:support_atmark_alias =
+      \ s:major_version >= 2 ||
+      \ (s:major_version == 1 && s:minor_version >= 8.5)
+
+Describe Git.Term
+  Before all
+    let V = s:V
+    let GitTerm = V.import('Git.Term')
+  End
+
+  Describe .split_commitish({commitish}[, {options}])
+    It splits an empty {commitish}
+      Assert Equals(
+            \ GitTerm.split_commitish('', {}),
+            \ ['', ''],
+            \)
+    End
+
+    It splits {commitish} of <refname>@{<date>}
+      Assert Equals(
+            \ GitTerm.split_commitish('master@{yesterday}', {}),
+            \ ['master', '@{yesterday}'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD@{5 minutes ago}', {}),
+            \ ['HEAD', '@{5 minutes ago}'],
+            \)
+    End
+
+    It splits {commitish} of <refname>@{<n>}
+      Assert Equals(
+            \ GitTerm.split_commitish('master@{1}', {}),
+            \ ['master', '@{1}'],
+            \)
+    End
+
+    It splits {commitish} of @{<n>}, @{-<n>}
+      Assert Equals(
+            \ GitTerm.split_commitish('@{1}', {}),
+            \ ['', '@{1}'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('@{-1}', {}),
+            \ ['', '@{-1}'],
+            \)
+    End
+
+    It splits {commitish} of <branchname>@{upstream}, @{u}
+      Assert Equals(
+            \ GitTerm.split_commitish('develop@{upstream}', {}),
+            \ ['develop', '@{upstream}'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('@{u}', {}),
+            \ ['', '@{u}'],
+            \)
+    End
+
+    It splits {commitish} of <rev>^<n>
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD^', {}),
+            \ ['HEAD', '^'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('v1.5.1^0', {}),
+            \ ['v1.5.1', '^0'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('develop^^', {}),
+            \ ['develop', '^^'],
+            \)
+    End
+
+    It splits {commitish} of <rev>~<n>
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD~', {}),
+            \ ['HEAD', '~'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('master~3', {}),
+            \ ['master', '~3'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('develop~~', {}),
+            \ ['develop', '~~'],
+            \)
+    End
+
+    It splits {commitish} of <rev>^{<type>}, <rev>^{}
+      Assert Equals(
+            \ GitTerm.split_commitish('v0.99.8^{commit}', {}),
+            \ ['v0.99.8', '^{commit}'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_commitish('v0.99.8^{}', {}),
+            \ ['v0.99.8', '^{}'],
+            \)
+    End
+
+    It splits {commitish} of <rev>^{/<text>}
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD^{/fix nasty bug}', {}),
+            \ ['HEAD', '^{/fix nasty bug}'],
+            \)
+    End
+
+    It splits {commitish} of <rev>:/<text>
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD:/fix nasty bug', {}),
+            \ ['HEAD', ':/fix nasty bug'],
+            \)
+    End
+
+    It splits {commitish} of <refname>
+      Assert Equals(
+            \ GitTerm.split_commitish('HEAD', {}),
+            \ ['HEAD', ''],
+            \)
+    End
+
+    It throws an exception when failed to split
+      Throws /no space, tilde \~, caret \^, or colon : are allowed/
+            \ GitTerm.split_commitish('H:E:A:D', {})
+    End
+  End
+
+  Describe .split_treeish({treeish}[, {options}])
+    It splits an empty {treeish}
+      Assert Equals(
+            \ GitTerm.split_treeish('', {}),
+            \ ['', ''],
+            \)
+    End
+
+    It splits {treeish} of <rev>:<path>
+      Assert Equals(
+            \ GitTerm.split_treeish('HEAD:README.md', {}),
+            \ ['HEAD', 'README.md'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_treeish('develop^:autoload/gita/core.vim', {}),
+            \ ['develop^', 'autoload/gita/core.vim'],
+            \)
+    End
+
+    It splits {treeish} of :<n>:<path>
+      Assert Equals(
+            \ GitTerm.split_treeish(':0:README.md', {}),
+            \ ['', 'README.md'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_treeish(':3:autoload/gita/core.vim', {}),
+            \ ['', 'autoload/gita/core.vim'],
+            \)
+    End
+
+    It splits {treeish} of :
+      Assert Equals(
+            \ GitTerm.split_treeish(':', {}),
+            \ ['', ''],
+            \)
+    End
+
+    It throws an exception when failed to split
+      Throws /no space, tilde \~, caret \^, or colon : are allowed/
+            \ GitTerm.split_treeish('H E A D:README.md', {})
+    End
+  End
+
+  Describe .split_range({range}[, {options}])
+    It splits an empty {range}
+      Assert Equals(
+            \ GitTerm.split_range('', {}),
+            \ ['', ''],
+            \)
+    End
+
+    It splits {range} of <rev1>...<rev2>
+      Assert Equals(
+            \ GitTerm.split_range('HEAD~4...develop', {}),
+            \ ['HEAD~4', 'develop'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_range('...develop', {}),
+            \ ['', 'develop'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_range('HEAD...', {}),
+            \ ['HEAD', ''],
+            \)
+    End
+
+    It splits {range} of <rev1>..<rev2>
+      Assert Equals(
+            \ GitTerm.split_range('HEAD~4..develop', {}),
+            \ ['HEAD~4', 'develop'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_range('..develop', {}),
+            \ ['', 'develop'],
+            \)
+      Assert Equals(
+            \ GitTerm.split_range('HEAD..', {}),
+            \ ['HEAD', ''],
+            \)
+    End
+
+    It throws an exception when failed to split
+      Throws /no space, tilde \~, caret \^, or colon : are allowed/
+            \ GitTerm.split_range('H E A D...master', {})
+      Throws /no space, tilde \~, caret \^, or colon : are allowed/
+            \ GitTerm.split_range('HEAD...m a s t e r', {})
+    End
+  End
+
+  Describe .validate_commit({commit}[, {options}])
+    It fails when {commit} begin with a dot or end with the sequence .lock
+      Throws /no slash-separated component can begin with/
+            \ GitTerm.validate_commit('foo/.bar', {})
+      Throws /no slash-separated component can begin with/
+            \ GitTerm.validate_commit('foo/bar.lock', {})
+    End
+
+    It fails when {commit} contains two consective dots ..
+      Throws /no two consective dots/
+            \ GitTerm.validate_commit('foo..bar', {})
+    End
+
+    It fails when {commit} contains space, tilde ~, caret ^, or colon :
+      Throws /no space, tilde \~, caret ^, or colon : are allowed/
+            \ GitTerm.validate_commit('foo bar', {})
+      Throws /no space, tilde \~, caret ^, or colon : are allowed/
+            \ GitTerm.validate_commit('foo~bar', {})
+      Throws /no space, tilde \~, caret ^, or colon : are allowed/
+            \ GitTerm.validate_commit('foo^bar', {})
+      Throws /no space, tilde \~, caret ^, or colon : are allowed/
+            \ GitTerm.validate_commit('foo:bar', {})
+    End
+
+    It fails when {commit} contains question ?, asterisk *, or open bracket [
+      Throws /no question ?, asterisk \*, or open bracket \[/
+            \ GitTerm.validate_commit('foo?bar', {})
+      Throws /no question ?, asterisk \*, or open bracket \[/
+            \ GitTerm.validate_commit('foo*bar', {})
+      Throws /no question ?, asterisk \*, or open bracket \[/
+            \ GitTerm.validate_commit('foo[bar', {})
+    End
+
+    It does not fail when {commit} contains asterisk * but 'refspec-pattern' is specified
+      call GitTerm.validate_commit('foo*bar', {'refspec-pattern': 1})
+    End
+
+    It fails when {commit} begin or end with a slash /, or contain multiple consective slashes
+      Throw /cannot begin or end with a slash \//
+            \ GitTerm.validate_commit('/foobar', {})
+      Throw /cannot begin or end with a slash \//
+            \ GitTerm.validate_commit('foobar/', {})
+      Throw /cannot begin or end with a slash \//
+            \ GitTerm.validate_commit('foo//bar', {})
+    End
+
+    It does not fail when {commit} contains invalid slashes but 'normalize' is specified
+      call GitTerm.validate_commit('/foobar', {'normalize': 1})
+      call GitTerm.validate_commit('foobar/', {'normalize': 1})
+      call GitTerm.validate_commit('foo//bar', {'normalize': 1})
+      " 'print' is for backward compatiblity
+      call GitTerm.validate_commit('/foobar', {'print': 1})
+      call GitTerm.validate_commit('foobar/', {'print': 1})
+      call GitTerm.validate_commit('foo//bar', {'print': 1})
+    End
+
+    It fails when {commit} ends with a dot
+      Throws /cannot end with a dot/
+            \ GitTerm.validate_commit('foobar.', {})
+    End
+
+    It fails when {commit} contains a sequence @{
+      Throws /cannot contain a sequence/
+            \ GitTerm.validate_commit('foo@{bar', {})
+    End
+
+    if !s:support_atmark_alias
+      It fails when {commit} is a single character @
+        Throws /cannot be a single character @/
+              \ GitTerm.validate_commit('@', {})
+      End
+    endif
+
+    It fails when {commit} contains a backslash
+      Throws /cannot contain a backslash/
+            \ GitTerm.validate_commit('\', {})
+    End
+  End
+
+  Describe .validate_commitish({commitish}[, {options}])
+    It does not fail if {commitish} is <refname>@{<date>|<n>|upstream|u}
+      call GitTerm.validate_commitish('master@{yesterday}', {})
+      call GitTerm.validate_commitish('HEAD@{5 minutes ago}', {})
+      call GitTerm.validate_commitish('master@{1}', {})
+      call GitTerm.validate_commitish('@{1}', {})
+      call GitTerm.validate_commitish('@{-1}', {})
+      call GitTerm.validate_commitish('develop@{upstream}', {})
+      call GitTerm.validate_commitish('@{u}', {})
+    End
+
+    It does not fail if {commitish} is <rev>^<n>
+      call GitTerm.validate_commitish('HEAD^', {})
+      call GitTerm.validate_commitish('v1.5.1^0', {})
+      call GitTerm.validate_commitish('develop^^', {})
+    End
+
+    It does not fail if {commitish} is <rev>~<n>
+      call GitTerm.validate_commitish('HEAD~', {})
+      call GitTerm.validate_commitish('master~3', {})
+      call GitTerm.validate_commitish('develop~~', {})
+    End
+
+    It does not fail if {commitish} is @~<n>
+      call GitTerm.validate_commitish('@~', {})
+      call GitTerm.validate_commitish('@~3', {})
+      call GitTerm.validate_commitish('@~~', {})
+    End
+
+    It does not fail if {commitish} is <rev>^{<type}, <rev>^{}
+      call GitTerm.validate_commitish('v0.99.8^{commit}', {})
+      call GitTerm.validate_commitish('v0.99.8^{}', {})
+    End
+
+    It does not fail if {commitish} is <rev>^{/<text>}, <ref>:/<text>
+      call GitTerm.validate_commitish('HEAD^{/fix nasty bug}', {})
+      call GitTerm.validate_commitish('HEAD:/fix nasty bug', {})
+    End
+  End
+
+  Describe .validate_treeish({treeish}[, {options}])
+    It does not fail if {treeish} is <rev>:<path>
+      call GitTerm.validate_treeish('HEAD:README.md', {})
+      call GitTerm.validate_treeish('master:autoload/gita/core.vim', {})
+    End
+
+    It does not fail if {treeish} is :<n>:<path>
+      call GitTerm.validate_treeish(':0:README.md', {})
+      call GitTerm.validate_treeish(':3:autoload/gita/core.vim', {})
+    End
+  End
+
+  Describe .validate_range({range}[, {options}])
+    It does not fail if {range} is <rev1>...<rev2>
+      call GitTerm.validate_range('HEAD~4...develop', {})
+    End
+
+    It does not fail if {treeish} is <rev1>..<rev2>
+      call GitTerm.validate_range('HEAD~4..develop', {})
+    End
+  End
+End

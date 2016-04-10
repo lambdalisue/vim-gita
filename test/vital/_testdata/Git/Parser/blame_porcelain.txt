@@ -1,0 +1,620 @@
+656465cef4559417a88e92f5235c4c43476fe963 1 1 169
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426187381
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426188804
+committer-tz +0900
+summary Building status interface
+filename autoload/gita/interface/status.vim
+	"******************************************************************************
+656465cef4559417a88e92f5235c4c43476fe963 2 2
+	" gita status interface
+656465cef4559417a88e92f5235c4c43476fe963 3 3
+	"
+656465cef4559417a88e92f5235c4c43476fe963 4 4
+	" Author:   Alisue <lambdalisue@hashnote.net>
+656465cef4559417a88e92f5235c4c43476fe963 5 5
+	" URL:      http://hashnote.net/
+656465cef4559417a88e92f5235c4c43476fe963 6 6
+	" License:  MIT license
+656465cef4559417a88e92f5235c4c43476fe963 7 7
+	" (C) 2015, Alisue, hashnote.net
+656465cef4559417a88e92f5235c4c43476fe963 8 8
+	"******************************************************************************
+656465cef4559417a88e92f5235c4c43476fe963 9 9
+	let s:save_cpo = &cpo
+656465cef4559417a88e92f5235c4c43476fe963 10 10
+	set cpo&vim
+656465cef4559417a88e92f5235c4c43476fe963 11 11
+	
+656465cef4559417a88e92f5235c4c43476fe963 12 12
+	
+656465cef4559417a88e92f5235c4c43476fe963 13 13
+	function! s:get_buffer_name(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 14 14
+	  return 'gita' . s:consts.DELIMITER . gita#utils#vital#Path().join(a:000)
+656465cef4559417a88e92f5235c4c43476fe963 15 15
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 16 16
+	function! s:get_header_lines() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 17 17
+	  let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 18 18
+	  let local_branch = Git.get_branch_name()
+656465cef4559417a88e92f5235c4c43476fe963 19 19
+	  let remote_branch = Git.get_remote_branch_name()
+656465cef4559417a88e92f5235c4c43476fe963 20 20
+	  let incoming = Git.count_incoming()
+656465cef4559417a88e92f5235c4c43476fe963 21 21
+	  let outgoing = Git.count_outgoing()
+656465cef4559417a88e92f5235c4c43476fe963 22 22
+	
+656465cef4559417a88e92f5235c4c43476fe963 23 23
+	  let lines = ['# On branch ' . local_branch]
+656465cef4559417a88e92f5235c4c43476fe963 24 24
+	  if incoming > 0 && outgoing > 0
+656465cef4559417a88e92f5235c4c43476fe963 25 25
+	    call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 26 26
+	          \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 27 27
+	          \   '# This branch is %d commit(s) ahead of and %d commit(s) behind %s',
+656465cef4559417a88e92f5235c4c43476fe963 28 28
+	          \   outgoing, incoming, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 29 29
+	          \ ))
+656465cef4559417a88e92f5235c4c43476fe963 30 30
+	  elseif incoming > 0
+656465cef4559417a88e92f5235c4c43476fe963 31 31
+	    call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 32 32
+	          \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 33 33
+	          \   '# This branch is %d commit(s) behind %s',
+656465cef4559417a88e92f5235c4c43476fe963 34 34
+	          \   incoming, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 35 35
+	          \ ))
+656465cef4559417a88e92f5235c4c43476fe963 36 36
+	  elseif outgoing > 0
+656465cef4559417a88e92f5235c4c43476fe963 37 37
+	    call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 38 38
+	          \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 39 39
+	          \   '# This branch is %d commit(s) ahead of %s',
+656465cef4559417a88e92f5235c4c43476fe963 40 40
+	          \   outgoing, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 41 41
+	          \ ))
+656465cef4559417a88e92f5235c4c43476fe963 42 42
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 43 43
+	  return lines
+656465cef4559417a88e92f5235c4c43476fe963 44 44
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 45 45
+	function! s:action(action, ...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 46 46
+	  if &filetype !=# s:consts.FILETYPE
+656465cef4559417a88e92f5235c4c43476fe963 47 47
+	    return
+656465cef4559417a88e92f5235c4c43476fe963 48 48
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 49 49
+	  let settings = extend(b:settings, {
+656465cef4559417a88e92f5235c4c43476fe963 50 50
+	        \ 'action_opener': get(a:000, 0, b:settings.action_opener),
+656465cef4559417a88e92f5235c4c43476fe963 51 51
+	        \})
+656465cef4559417a88e92f5235c4c43476fe963 52 52
+	  let linelinks = b:linelinks
+656465cef4559417a88e92f5235c4c43476fe963 53 53
+	  let status = get(linelinks, line('.') - 1, {})
+656465cef4559417a88e92f5235c4c43476fe963 54 54
+	  if empty(status)
+656465cef4559417a88e92f5235c4c43476fe963 55 55
+	    return
+656465cef4559417a88e92f5235c4c43476fe963 56 56
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 57 57
+	  call call('s:action_' . a:action, [status, settings])
+656465cef4559417a88e92f5235c4c43476fe963 58 58
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 59 59
+	function! s:action_update(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 60 60
+	  call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 61 61
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 62 62
+	function! s:action_toggle(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 63 63
+	  let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 64 64
+	  if a:status.is_unstaged || a:status.is_untracked
+656465cef4559417a88e92f5235c4c43476fe963 65 65
+	    call Git.add(a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 66 66
+	  elseif a:status.is_staged
+656465cef4559417a88e92f5235c4c43476fe963 67 67
+	    call Git.rm(a:status.path, ['--cached'])
+656465cef4559417a88e92f5235c4c43476fe963 68 68
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 69 69
+	  call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 70 70
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 71 71
+	function! s:action_diff(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 72 72
+	  echo "Not implemented yet"
+656465cef4559417a88e92f5235c4c43476fe963 73 73
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 74 74
+	function! s:action_clear(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 75 75
+	  let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 76 76
+	  if a:status.is_untracked
+656465cef4559417a88e92f5235c4c43476fe963 77 77
+	    redraw
+656465cef4559417a88e92f5235c4c43476fe963 78 78
+	    echohl GitaWarning
+656465cef4559417a88e92f5235c4c43476fe963 79 79
+	    echo  'Remove the untracked "' . a:status.path . '":'
+656465cef4559417a88e92f5235c4c43476fe963 80 80
+	    echohl None
+656465cef4559417a88e92f5235c4c43476fe963 81 81
+	    echo  'This operation will remove the untracked file and could not be reverted.'
+656465cef4559417a88e92f5235c4c43476fe963 82 82
+	    echohl GitaQuestion
+656465cef4559417a88e92f5235c4c43476fe963 83 83
+	    let a = gita#utils#input_yesno(
+656465cef4559417a88e92f5235c4c43476fe963 84 84
+	          \ 'Are you sure that you want to remove the untracked file?')
+656465cef4559417a88e92f5235c4c43476fe963 85 85
+	    echohl None
+656465cef4559417a88e92f5235c4c43476fe963 86 86
+	    if a
+656465cef4559417a88e92f5235c4c43476fe963 87 87
+	      call delete(a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 88 88
+	    endif
+656465cef4559417a88e92f5235c4c43476fe963 89 89
+	  else
+656465cef4559417a88e92f5235c4c43476fe963 90 90
+	    redraw
+656465cef4559417a88e92f5235c4c43476fe963 91 91
+	    echohl GitaWarning
+656465cef4559417a88e92f5235c4c43476fe963 92 92
+	    echo  'Discard the local changes on "' . a:status.path . '":'
+656465cef4559417a88e92f5235c4c43476fe963 93 93
+	    echohl None
+656465cef4559417a88e92f5235c4c43476fe963 94 94
+	    echo  'This operation will discard the local changes on the file and revert it to the latest commit.'
+656465cef4559417a88e92f5235c4c43476fe963 95 95
+	    echohl GitaQuestion
+656465cef4559417a88e92f5235c4c43476fe963 96 96
+	    let a = gita#utils#input_yesno(
+656465cef4559417a88e92f5235c4c43476fe963 97 97
+	          \ 'Are you sure that you want to discard the local changes?')
+656465cef4559417a88e92f5235c4c43476fe963 98 98
+	    echohl None
+656465cef4559417a88e92f5235c4c43476fe963 99 99
+	    if a
+656465cef4559417a88e92f5235c4c43476fe963 100 100
+	      call Git.checkout(a:status.path, ['HEAD'])
+656465cef4559417a88e92f5235c4c43476fe963 101 101
+	    endif
+656465cef4559417a88e92f5235c4c43476fe963 102 102
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 103 103
+	  call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 104 104
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 105 105
+	function! s:action_open(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 106 106
+	  let opener = get(
+656465cef4559417a88e92f5235c4c43476fe963 107 107
+	        \ a:settings.openers,
+656465cef4559417a88e92f5235c4c43476fe963 108 108
+	        \ a:settings.action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 109 109
+	        \ a:settings.action_opener
+656465cef4559417a88e92f5235c4c43476fe963 110 110
+	        \)
+656465cef4559417a88e92f5235c4c43476fe963 111 111
+	  let bufname = get(a:status, 'path2', a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 112 112
+	  let bufnum = bufnr(bufname)
+656465cef4559417a88e92f5235c4c43476fe963 113 113
+	  let winnum = bufwinnr(bufnum)
+656465cef4559417a88e92f5235c4c43476fe963 114 114
+	
+656465cef4559417a88e92f5235c4c43476fe963 115 115
+	  if winnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 116 116
+	    let previous_winnum = bufwinnr(get(a:settings, 'previous_bufnum'))
+656465cef4559417a88e92f5235c4c43476fe963 117 117
+	    if previous_winnum != -1
+656465cef4559417a88e92f5235c4c43476fe963 118 118
+	      execute previous_winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 119 119
+	    else
+656465cef4559417a88e92f5235c4c43476fe963 120 120
+	      execute 'wincmd p'
+656465cef4559417a88e92f5235c4c43476fe963 121 121
+	    endif
+656465cef4559417a88e92f5235c4c43476fe963 122 122
+	    call gita#utils#vital#Buffer().open(bufname, opener)
+656465cef4559417a88e92f5235c4c43476fe963 123 123
+	  else
+656465cef4559417a88e92f5235c4c43476fe963 124 124
+	    execute winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 125 125
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 126 126
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 127 127
+	function! s:action_browse(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 128 128
+	  echo "Not implemented yet"
+656465cef4559417a88e92f5235c4c43476fe963 129 129
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 130 130
+	
+656465cef4559417a88e92f5235c4c43476fe963 131 131
+	function! gita#interface#status#show(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 132 132
+	  let bufname = s:get_buffer_name('status')
+656465cef4559417a88e92f5235c4c43476fe963 133 133
+	  let settings = extend({
+656465cef4559417a88e92f5235c4c43476fe963 134 134
+	        \ 'opener': g:gita#interface#status#opener,
+656465cef4559417a88e92f5235c4c43476fe963 135 135
+	        \ 'action_opener': g:gita#interface#status#action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 136 136
+	        \ 'openers': g:gita#interface#status#openers,
+656465cef4559417a88e92f5235c4c43476fe963 137 137
+	        \}, get(a:000, 0, {}))
+656465cef4559417a88e92f5235c4c43476fe963 138 138
+	
+656465cef4559417a88e92f5235c4c43476fe963 139 139
+	  let opener = get(settings.openers, settings.opener, settings.opener)
+656465cef4559417a88e92f5235c4c43476fe963 140 140
+	  let bufnum = bufnr(bufname)
+656465cef4559417a88e92f5235c4c43476fe963 141 141
+	  let winnum = bufwinnr(bufnum)
+656465cef4559417a88e92f5235c4c43476fe963 142 142
+	  let previous_bufnum = bufnr('')
+656465cef4559417a88e92f5235c4c43476fe963 143 143
+	  if winnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 144 144
+	    call gita#utils#vital#Buffer().open(bufname, opener)
+656465cef4559417a88e92f5235c4c43476fe963 145 145
+	    if bufnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 146 146
+	      " initialize list window
+656465cef4559417a88e92f5235c4c43476fe963 147 147
+	      setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+656465cef4559417a88e92f5235c4c43476fe963 148 148
+	      setlocal cursorline
+656465cef4559417a88e92f5235c4c43476fe963 149 149
+	      execute "setfiletype" s:consts.FILETYPE
+656465cef4559417a88e92f5235c4c43476fe963 150 150
+	
+656465cef4559417a88e92f5235c4c43476fe963 151 151
+	      noremap <silent><buffer> <Plug>(gita-status-action-update)     :call <SID>action('update')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 152 152
+	      noremap <silent><buffer> <Plug>(gita-status-action-toggle)     :call <SID>action('toggle')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 153 153
+	      noremap <silent><buffer> <Plug>(gita-status-action-diff)       :call <SID>action('diff')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 154 154
+	      noremap <silent><buffer> <Plug>(gita-status-action-clear)      :call <SID>action('clear')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 155 155
+	      noremap <silent><buffer> <Plug>(gita-status-action-browse)     :call <SID>action('browse')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 156 156
+	      noremap <silent><buffer> <Plug>(gita-status-action-open)       :call <SID>action('open')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 157 157
+	      noremap <silent><buffer> <Plug>(gita-status-action-edit)       :call <SID>action('open', 'edit')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 158 158
+	      noremap <silent><buffer> <Plug>(gita-status-action-split)      :call <SID>action('open', 'split')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 159 159
+	      noremap <silent><buffer> <Plug>(gita-status-action-vsplit)     :call <SID>action('open', 'vsplit')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 160 160
+	      noremap <silent><buffer> <Plug>(gita-status-action-tabnew)     :call <SID>action('open', 'tabnew')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 161 161
+	      noremap <silent><buffer> <Plug>(gita-status-action-open-left)  :call <SID>action('open', 'left')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 162 162
+	      noremap <silent><buffer> <Plug>(gita-status-action-open-right) :call <SID>action('open', 'right')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 163 163
+	      noremap <silent><buffer> <Plug>(gita-status-action-open-above) :call <SID>action('open', 'above')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 164 164
+	      noremap <silent><buffer> <Plug>(gita-status-action-open-below) :call <SID>action('open', 'below')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 165 165
+	
+656465cef4559417a88e92f5235c4c43476fe963 166 166
+	      if get(g:, 'gita#interface#status#enable_default_keymaps', 1)
+656465cef4559417a88e92f5235c4c43476fe963 167 167
+	        nmap <buffer> <F1>   :<C-u>help gita-status-default-mappings<CR>
+656465cef4559417a88e92f5235c4c43476fe963 168 168
+	        nmap <buffer> <C-l>  <Plug>(gita-status-action-update)
+656465cef4559417a88e92f5235c4c43476fe963 169 169
+	        nmap <buffer> -      <Plug>(gita-status-action-toggle)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 170 170 6
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426194280
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426194280
+committer-tz +0900
+summary Add commit interface
+previous 656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim
+filename autoload/gita/interface/status.vim
+	        nmap <buffer> <C-c>  <Plug>(gita-status-action-clear)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 171 171
+	        nmap <buffer> <C-e>  <Plug>(gita-status-action-open)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 172 172
+	        nmap <buffer> <C-d>  <Plug>(gita-status-action-diff)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 173 173
+	        nmap <buffer> <C-s>  <Plug>(gita-status-action-split)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 174 174
+	        nmap <buffer> <C-v>  <Plug>(gita-status-action-vsplit)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 175 175
+	        nmap <buffer> <C-b>  <Plug>(gita-status-action-browse)
+656465cef4559417a88e92f5235c4c43476fe963 176 176 27
+	        nmap <buffer> <CR>   <Plug>(gita-status-action-open)
+656465cef4559417a88e92f5235c4c43476fe963 177 177
+	        nmap <buffer> <S-CR> <Plug>(gita-status-action-diff)
+656465cef4559417a88e92f5235c4c43476fe963 178 178
+	        nmap <buffer> q      :<C-u>q<CR>
+656465cef4559417a88e92f5235c4c43476fe963 179 179
+	        vmap <buffer> -      <Plug>(gita-status-action-toggle)
+656465cef4559417a88e92f5235c4c43476fe963 180 180
+	      endif
+656465cef4559417a88e92f5235c4c43476fe963 181 181
+	      " load contents
+656465cef4559417a88e92f5235c4c43476fe963 182 182
+	      call gita#interface#status#update(settings)
+656465cef4559417a88e92f5235c4c43476fe963 183 183
+	    endif
+656465cef4559417a88e92f5235c4c43476fe963 184 184
+	  else
+656465cef4559417a88e92f5235c4c43476fe963 185 185
+	    " focus window
+656465cef4559417a88e92f5235c4c43476fe963 186 186
+	    execute winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 187 187
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 188 188
+	  if bufnum != previous_bufnum
+656465cef4559417a88e92f5235c4c43476fe963 189 189
+	    let settings = get(b:, 'settings', {})
+656465cef4559417a88e92f5235c4c43476fe963 190 190
+	    let settings.previous_bufnum = previous_bufnum
+656465cef4559417a88e92f5235c4c43476fe963 191 191
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 192 192
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 193 193
+	function! gita#interface#status#update(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 194 194
+	  let bufname = s:get_buffer_name('status')
+656465cef4559417a88e92f5235c4c43476fe963 195 195
+	  let settings = extend({
+656465cef4559417a88e92f5235c4c43476fe963 196 196
+	        \ 'opener': g:gita#interface#status#opener,
+656465cef4559417a88e92f5235c4c43476fe963 197 197
+	        \ 'action_opener': g:gita#interface#status#action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 198 198
+	        \ 'openers': g:gita#interface#status#openers,
+656465cef4559417a88e92f5235c4c43476fe963 199 199
+	        \}, get(a:000, 0, gita#utils#getbufvar(bufname, 'settings', {})))
+656465cef4559417a88e92f5235c4c43476fe963 200 200
+	  " this function should be called on the gita:status window
+656465cef4559417a88e92f5235c4c43476fe963 201 201
+	  if bufname !=# expand('%')
+656465cef4559417a88e92f5235c4c43476fe963 202 202
+	    call gita#utils#call_on_buffer(bufname,
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 203 203 1
+	          \ function('gita#interface#status#update'),
+656465cef4559417a88e92f5235c4c43476fe963 204 204 18
+	          \ settings)
+656465cef4559417a88e92f5235c4c43476fe963 205 205
+	    return
+656465cef4559417a88e92f5235c4c43476fe963 206 206
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 207 207
+	
+656465cef4559417a88e92f5235c4c43476fe963 208 208
+	  let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 209 209
+	  let statuslist = Git.get_status()
+656465cef4559417a88e92f5235c4c43476fe963 210 210
+	  if empty(statuslist) || empty(statuslist.all)
+656465cef4559417a88e92f5235c4c43476fe963 211 211
+	    bw!
+656465cef4559417a88e92f5235c4c43476fe963 212 212
+	    return
+656465cef4559417a88e92f5235c4c43476fe963 213 213
+	  endif
+656465cef4559417a88e92f5235c4c43476fe963 214 214
+	
+656465cef4559417a88e92f5235c4c43476fe963 215 215
+	  " put gist lines and links
+656465cef4559417a88e92f5235c4c43476fe963 216 216
+	  let lines = s:get_header_lines()
+656465cef4559417a88e92f5235c4c43476fe963 217 217
+	  let linelinks = []
+656465cef4559417a88e92f5235c4c43476fe963 218 218
+	  for line in lines
+656465cef4559417a88e92f5235c4c43476fe963 219 219
+	    call add(linelinks, {})
+656465cef4559417a88e92f5235c4c43476fe963 220 220
+	  endfor
+656465cef4559417a88e92f5235c4c43476fe963 221 221
+	  for status in statuslist.all
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 222 222 1
+	    call add(lines, status.record)
+656465cef4559417a88e92f5235c4c43476fe963 223 223 23
+	    call add(linelinks, status)
+656465cef4559417a88e92f5235c4c43476fe963 224 224
+	  endfor
+656465cef4559417a88e92f5235c4c43476fe963 225 225
+	
+656465cef4559417a88e92f5235c4c43476fe963 226 226
+	  " remove entire content and rewriet the lines
+656465cef4559417a88e92f5235c4c43476fe963 227 227
+	  setlocal modifiable
+656465cef4559417a88e92f5235c4c43476fe963 228 228
+	  let save_cur = getpos(".")
+656465cef4559417a88e92f5235c4c43476fe963 229 229
+	  silent %delete _
+656465cef4559417a88e92f5235c4c43476fe963 230 230
+	  call setline(1, split(join(lines, "\n"), "\n"))
+656465cef4559417a88e92f5235c4c43476fe963 231 231
+	  call setpos('.', save_cur)
+656465cef4559417a88e92f5235c4c43476fe963 232 232
+	  setlocal nomodifiable
+656465cef4559417a88e92f5235c4c43476fe963 233 233
+	  setlocal nomodified
+656465cef4559417a88e92f5235c4c43476fe963 234 234
+	
+656465cef4559417a88e92f5235c4c43476fe963 235 235
+	  " store variables to the buffer
+656465cef4559417a88e92f5235c4c43476fe963 236 236
+	  let b:settings = settings
+656465cef4559417a88e92f5235c4c43476fe963 237 237
+	  let b:linelinks = linelinks
+656465cef4559417a88e92f5235c4c43476fe963 238 238
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 239 239
+	function! gita#interface#status#define_highlights() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 240 240
+	  highlight default link GitaStatusComment      Comment
+656465cef4559417a88e92f5235c4c43476fe963 241 241
+	  highlight default link GitaStatusConflicted   ErrorMsg
+656465cef4559417a88e92f5235c4c43476fe963 242 242
+	  highlight default link GitaStatusUnstaged     WarningMsg
+656465cef4559417a88e92f5235c4c43476fe963 243 243
+	  highlight default link GitaStatusStaged       Question
+656465cef4559417a88e92f5235c4c43476fe963 244 244
+	  highlight default link GitaStatusUntracked    WarningMsg
+656465cef4559417a88e92f5235c4c43476fe963 245 245
+	  highlight default link GitaStatusIgnored      Question
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 246 246 1
+author lambdalisue
+author-mail <lambdalisue@hashnote.net>
+author-time 1426194460
+author-tz +0900
+committer lambdalisue
+committer-mail <lambdalisue@hashnote.net>
+committer-time 1426210134
+committer-tz +0900
+summary Update syntax highlight
+previous 0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim
+filename autoload/gita/interface/status.vim
+	  highlight default link GitaStatusBranch       Title
+656465cef4559417a88e92f5235c4c43476fe963 246 247 3
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 247 248
+	function! gita#interface#status#define_syntax() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 248 249
+	  execute 'syntax match GitaStatusComment    /\v^#.*/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 249 250 5
+	  execute 'syntax match GitaStatusConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 250 251
+	  execute 'syntax match GitaStatusUnstaged   /\v^%([ MARC][MD]|DM)\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 251 252
+	  execute 'syntax match GitaStatusStaged     /\v^[MADRC]\s\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 252 253
+	  execute 'syntax match GitaStatusUntracked  /\v^\?\?\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 253 254
+	  execute 'syntax match GitaStatusIgnored    /\v^!!\s.*\ze/'
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 255 255 3
+	  " Branch name
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 256 256
+	  execute 'syntax match GitaStatusComment /\v^# On branch/ contained'
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 257 257
+	  execute 'syntax match GitaStatusBranch  /\v^# On branch .*$/hs=s+12 contains=GitaStatusComment'
+656465cef4559417a88e92f5235c4c43476fe963 254 258 37
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 255 259
+	
+656465cef4559417a88e92f5235c4c43476fe963 256 260
+	let s:consts = {}
+656465cef4559417a88e92f5235c4c43476fe963 257 261
+	let s:consts.DELIMITER = has('unix') ? ':' : '_'
+656465cef4559417a88e92f5235c4c43476fe963 258 262
+	let s:consts.FILETYPE = 'gita-status'
+656465cef4559417a88e92f5235c4c43476fe963 259 263
+	
+656465cef4559417a88e92f5235c4c43476fe963 260 264
+	" Variables {{{
+656465cef4559417a88e92f5235c4c43476fe963 261 265
+	let s:default_openers = {
+656465cef4559417a88e92f5235c4c43476fe963 262 266
+	      \ 'edit': 'edit',
+656465cef4559417a88e92f5235c4c43476fe963 263 267
+	      \ 'tabnew': 'tabnew',
+656465cef4559417a88e92f5235c4c43476fe963 264 268
+	      \ 'split': 'rightbelow split',
+656465cef4559417a88e92f5235c4c43476fe963 265 269
+	      \ 'vsplit': 'rightbelow vsplit',
+656465cef4559417a88e92f5235c4c43476fe963 266 270
+	      \ 'left': 'topleft vsplit', 
+656465cef4559417a88e92f5235c4c43476fe963 267 271
+	      \ 'right': 'rightbelow vsplit', 
+656465cef4559417a88e92f5235c4c43476fe963 268 272
+	      \ 'above': 'topleft split', 
+656465cef4559417a88e92f5235c4c43476fe963 269 273
+	      \ 'below': 'rightbelow split', 
+656465cef4559417a88e92f5235c4c43476fe963 270 274
+	      \}
+656465cef4559417a88e92f5235c4c43476fe963 271 275
+	let s:settings = {
+656465cef4559417a88e92f5235c4c43476fe963 272 276
+	      \ 'opener': '"topleft 20 split +set\\ winfixheight"',
+656465cef4559417a88e92f5235c4c43476fe963 273 277
+	      \ 'action_opener': '"edit"',
+656465cef4559417a88e92f5235c4c43476fe963 274 278
+	      \ 'enable_default_keymaps': 1,
+656465cef4559417a88e92f5235c4c43476fe963 275 279
+	      \}
+656465cef4559417a88e92f5235c4c43476fe963 276 280
+	function! s:init() " {{{
+656465cef4559417a88e92f5235c4c43476fe963 277 281
+	  for [key, value] in items(s:settings)
+656465cef4559417a88e92f5235c4c43476fe963 278 282
+	    if !exists('g:gita#interface#status#' . key)
+656465cef4559417a88e92f5235c4c43476fe963 279 283
+	      execute 'let g:gita#interface#status#' . key . ' = ' . value
+656465cef4559417a88e92f5235c4c43476fe963 280 284
+	    endif
+656465cef4559417a88e92f5235c4c43476fe963 281 285
+	  endfor
+656465cef4559417a88e92f5235c4c43476fe963 282 286
+	  let g:gita#interface#status#openers = extend(s:default_openers,
+656465cef4559417a88e92f5235c4c43476fe963 283 287
+	        \ get(g:, 'gita#interface#status#openers', {}))
+656465cef4559417a88e92f5235c4c43476fe963 284 288
+	endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 285 289
+	call s:init()
+656465cef4559417a88e92f5235c4c43476fe963 286 290
+	" }}}
+656465cef4559417a88e92f5235c4c43476fe963 287 291
+	
+656465cef4559417a88e92f5235c4c43476fe963 288 292
+	let &cpo = s:save_cpo
+656465cef4559417a88e92f5235c4c43476fe963 289 293
+	unlet s:save_cpo
+656465cef4559417a88e92f5235c4c43476fe963 290 294
+	"vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker

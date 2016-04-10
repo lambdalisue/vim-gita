@@ -1,0 +1,124 @@
+Describe gita#command#merge
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let guard = Guard.store('g:gita#process#options')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/merge.vim')
+          \)
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \}
+    " the line below is required to load requirements before :redir
+    silent Gita merge
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      new
+      let options = {
+            \ 'stat': 1,
+            \ 'no-stat': 1,
+            \ 'log': '10',
+            \ 'no-log': 1,
+            \ 'squash': 1,
+            \ 'no-squash': 1,
+            \ 'commit': 1,
+            \ 'no-commit': 1,
+            \ 'ff': 1,
+            \ 'no-ff': 1,
+            \ 'ff-only': 1,
+            \ 'rerere-autoupdate': 1,
+            \ 'no-rerere-autoupdate': 1,
+            \ 'verify-signatures': 1,
+            \ 'no-verify-signatures': 1,
+            \ 'strategy': ['A', 'B', 'C'],
+            \ 'strategy-option': 'A',
+            \ 'abort': 1,
+            \ 'gpg-sign': 1,
+            \ '__unknown__': [
+            \   'a',
+            \   'b',
+            \ ],
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'merge',
+            \ '--no-edit',
+            \ '--verbose',
+            \ '--abort',
+            \ '--commit',
+            \ '--ff',
+            \ '--ff-only',
+            \ '--gpg-sign',
+            \ '--log=10',
+            \ '--no-commit',
+            \ '--no-ff',
+            \ '--no-log',
+            \ '--no-rerere-autoupdate',
+            \ '--no-squash',
+            \ '--no-stat',
+            \ '--no-verify-signatures',
+            \ '--rerere-autoupdate',
+            \ '--squash',
+            \ '--stat',
+            \ '--strategy=A', '--strategy=B', '--strategy=C',
+            \ '--strategy-option=A',
+            \ '--verify-signatures',
+            \ 'a', 'b',
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'merge',
+            \ '--no-edit',
+            \ '--verbose',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    It executes 'git merge --no-edit --verbose' for 'Gita merge'
+      redir => content
+        silent! verbose execute 'Gita merge'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose')
+    End
+
+    It executes 'git merge --no-edit --verbose --stat' for 'Gita merge --stat'
+      redir => content
+        silent! verbose execute 'Gita merge --stat'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose --stat')
+    End
+
+    It executes 'git merge --no-edit --verbose --log=10 --stat' for 'Gita merge --stat --log=10'
+      redir => content
+        silent! verbose execute 'Gita merge --stat --log=10'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose --log=10 --stat')
+    End
+
+    It executes 'git merge --no-edit --verbose develop' for 'Gita merge develop'
+      redir => content
+        silent! verbose execute 'Gita merge develop'
+      redir END
+      Assert Match(content, 'git .* merge --no-edit --verbose develop')
+    End
+  End
+End
+
+

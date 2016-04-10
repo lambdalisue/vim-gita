@@ -1,0 +1,97 @@
+Describe gita#command#rm
+  Before all
+    let V = vital#of('vital')
+    let String = V.import('Data.String')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let guard = Guard.store('g:gita#process#options')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/rm.vim')
+          \)
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \}
+    " the line below is required to load requirements before :redir
+    silent Gita rm
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      new foobar.txt
+      let options = {
+            \ 'dry-run': 1,
+            \ 'force': 1,
+            \ 'r': 1,
+            \ 'cached': 1,
+            \ 'ignore-unmatch': 1,
+            \ '__unknown__': [
+            \   '%',
+            \   'a',
+            \   'b',
+            \ ],
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'rm',
+            \ '--cached',
+            \ '--dry-run',
+            \ '--force',
+            \ '--ignore-unmatch',
+            \ '-r',
+            \ '--',
+            \ expand('%:p'),
+            \ fnamemodify('.', ':p') . 'a',
+            \ fnamemodify('.', ':p') . 'b',
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'rm',
+            \ '--',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    It executes 'git rm --' for 'Gita rm'
+      redir => content
+        silent! verbose execute 'Gita rm'
+      redir END
+      Assert Match(content, 'git .* rm --')
+    End
+
+    It executes 'git rm --force --' for 'Gita rm --force'
+      redir => content
+        silent! verbose execute 'Gita rm --force'
+      redir END
+      Assert Match(content, 'git .* rm --force --')
+    End
+
+    It executes 'git rm -- .' for 'Gita rm .'
+      redir => content
+        silent! verbose execute 'Gita rm .'
+      redir END
+      Assert Match(content, 'git .* rm -- .')
+    End
+
+    It executes 'git rm -- {path}' for 'Gita rm %'
+      redir => content
+        silent! verbose execute 'Gita rm %'
+      redir END
+      let path = String.escape_pattern(fnameescape(expand('%:p')))
+      Assert Match(content, 'git .* rm -- ' . path)
+    End
+  End
+End

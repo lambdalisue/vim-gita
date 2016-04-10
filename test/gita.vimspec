@@ -1,179 +1,96 @@
 Describe gita
-  Before
-    Init
-    let P = Import('System.Filepath')
+  Before all
+    let V = vital#of('vital')
+    let Guard = V.import('Vim.Guard')
   End
 
-  Context #new([{expr}])
-    Context A file buffer in a git repository
-      Before
-        WorkonInside
-        let bufname = P.join(g:gita#test#inside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It should return a gita instance
-        let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a different gita instance
-        let gita1 = gita#new(bufname)
-        let gita2 = gita#new(bufname)
-        Assert NotSame(gita1, gita2)
-      End
-    End
-
-    Context A file buffer in a non git repository
-      Before
-        WorkonInside
-        let bufname = P.join(g:gita#test#outside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It should return a gita instance while cwd is in a git repository
-        let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a gita instance but not enabled if cwd is not in a git repository
-        WorkonOutside
-        let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 0)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a different gita instance always
-        let gita1 = gita#new(bufname)
-        let gita2 = gita#new(bufname)
-        Assert NotSame(gita1, gita2)
-      End
-    End
-
-    Context A non file buffer
-      Before
-        WorkonInside
-        let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
-        setlocal buftype=nofile
-      End
-      It should return a gita instance while cwd is in a git repository
-        let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a gita instance obut not enabled if cwd is not in a git repository
-        WorkonOutside
-        let gita = gita#new(bufname)
-        Assert Equals(gita.enabled, 0)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
+  Describe #vital()
+    It returns a Vital instance
+      let instance = gita#vital()
+      Assert KeyExists(instance, 'import')
     End
   End
 
-  Context #get([{expr}])
-    Context A file buffer in a git repository
-      Before
-        WorkonInside
-        let bufname = P.join(g:gita#test#inside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It should return a gita instance
-        let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a same gita instance
-        let gita1 = gita#get(bufname)
-        let gita2 = gita#get(bufname)
-        Assert Same(gita1, gita2)
-      End
-      It should not return a same gita instance if bufname has changed
-        let gita1 = gita#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
-        let gita2 = gita#get(bufname . '.mod')
-        Assert NotSame(gita1, gita2)
-        Assert Equals(gita1.bufnum, gita2.bufnum)
-      End
+  Describe #throw({msg})
+    It throw an exception with a prefix
+      Throws /^gita: foo$/ gita#throw('foo')
+    End
+  End
+
+  Describe #trigger_modified()
+    After
+      augroup gita_test_gita
+        autocmd! *
+      augroup END
+      unlet g:_gita_test_gita_called
     End
 
-    Context A file buffer in a non git repository
-      Before
-        WorkonInside
-        let bufname = P.join(g:gita#test#outside, 'foo.txt')
-        silent execute printf('new %s', bufname)
-      End
-      It should return a gita instance while cwd is in a git repository
-        let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a gita instance but not enabled if cwd is not in a git repository
-        WorkonOutside
-        let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 0)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a same gita instance
-        let gita1 = gita#get(bufname)
-        let gita2 = gita#get(bufname)
-        Assert Same(gita1, gita2)
-      End
-      It should not return a same gita instance if bufname has changed
-        let gita1 = gita#get(bufname)
-        silent execute printf('file %s', bufname . '.mod')
-        let gita2 = gita#get(bufname . '.mod')
-        Assert NotSame(gita1, gita2)
-        Assert Equals(gita1.bufnum, gita2.bufnum)
-      End
+    It call #User#GitaStatusModifiedPre and then #User#GitaStatusModifiedPost autocmd
+      augroup gita_test_gita
+        autocmd! *
+        autocmd User GitaStatusModifiedPre  call add(g:_gita_test_gita_called, 'Pre')
+        autocmd User GitaStatusModifiedPost call add(g:_gita_test_gita_called, 'Post')
+      augroup END
+      let g:_gita_test_gita_called = []
+
+      call gita#trigger_modified()
+      Assert Equals(g:_gita_test_gita_called, ['Pre', 'Post'])
+    End
+  End
+
+  Describe #define_variables({prefix}, {defaults})
+    Before
+      let guard = Guard.store(
+            \ 'g:gita#foo',
+            \ 'g:gita#bar',
+            \ 'g:gita#hello#foo',
+            \ 'g:gita#hello#bar',
+            \)
     End
 
-    Context A non file buffer
-      Before
-        WorkonInside
-        let bufname = 'non-file'
-        silent execute printf('new %s', bufname)
-        setlocal buftype=nofile
-      End
-      It should return a gita instance while cwd is in a git repository
-        let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 1)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a gita instance but not enabled if cwd is not in a git repository
-        WorkonOutside
-        let gita = gita#get(bufname)
-        Assert Equals(gita.enabled, 0)
-        Assert Equals(gita.bufname, bufname(bufname))
-        Assert Equals(gita.bufnum, bufnr(bufname))
-        Assert Equals(gita.cwd, getcwd())
-      End
-      It should return a same gita instance
-        let gita1 = gita#get(bufname)
-        let gita2 = gita#get(bufname)
-        Assert Same(gita1, gita2)
-      End
-      It should not return a same gita instance if a current working directory has changed
-        let gita1 = gita#get(bufname)
-        WorkonOutside
-        let gita2 = gita#get(bufname)
-        Assert NotSame(gita1, gita2)
-      End
+    After
+      call guard.restore()
+    End
+
+    It define 'g:gita#{key}' variables when {prefix} is empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gita#define_variables('', defaults)
+      Assert exists('g:gita#foo')
+      Assert exists('g:gita#bar')
+
+      Assert Equals(g:gita#foo, defaults.foo)
+      Assert Equals(g:gita#bar, defaults.bar)
+    End
+
+    It define 'g:gita#{prefix}#{key}' variables when {prefix} is NOT empty
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let ret = gita#define_variables('hello', defaults)
+      Assert exists('g:gita#hello#foo')
+      Assert exists('g:gita#hello#bar')
+
+      Assert Equals(g:gita#hello#foo, defaults.foo)
+      Assert Equals(g:gita#hello#bar, defaults.bar)
+    End
+
+    It won't overwrite the existing variables
+      let defaults = {
+            \ 'foo': 'bar',
+            \ 'bar': 0,
+            \}
+      let g:gita#foo = 'hello'
+      let g:gita#bar = 1
+      let ret = gita#define_variables('', defaults)
+      Assert exists('g:gita#foo')
+      Assert exists('g:gita#bar')
+
+      Assert Equals(g:gita#foo, 'hello')
+      Assert Equals(g:gita#bar, 1)
     End
   End
 End

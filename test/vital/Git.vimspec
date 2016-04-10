@@ -1,0 +1,314 @@
+Describe Git
+  Before all
+    let V = vital#of('vital')
+    let Path = V.import('System.Filepath')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let Git = V.import('Git')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git.vim')
+          \)
+    " Create a mock Git working tree
+    let root = tempname()
+    let worktree = Path.join(root, 'i n s i d e')
+    let repository = Path.join(worktree, '.git')
+    let inside = Path.join(worktree, 'f o o', 'b a r')
+    let outside = Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
+    lockvar root
+    lockvar worktree
+    lockvar repository
+    lockvar inside
+    lockvar outside
+    call mkdir(repository, 'p')
+    call mkdir(inside, 'p')
+    call mkdir(outside, 'p')
+  End
+
+  After all
+    " remote a temp directory
+    let File = V.import('System.File')
+    call File.rmdir(root, 'r')
+  End
+
+  After
+    call Git.clear()
+  End
+
+  Describe .get_config()
+    It returns a copy of a config dictionary
+      let config = Git.get_config()
+      Assert IsDict(config)
+      Assert KeyExists(config, 'instance_cache')
+      Assert KeyExists(config, 'repository_cache')
+
+      let config2 = Git.get_config()
+      Assert Equals(config, config2)
+      Assert NotSame(config, config2)
+    End
+  End
+
+  Describe .set_config({config})
+    Before
+      let _config = Git.get_config()
+    End
+
+    After
+      call Git.set_config(_config)
+    End
+
+    It overwrites existing config with {config}
+      call Git.set_config({
+            \ 'instance_cache': { 'class': {} },
+            \ 'repository_cache': { 'class': {} },
+            \})
+      let config = Git.get_config()
+      Assert Equals(config, {
+            \ 'instance_cache': { 'class': {} },
+            \ 'repository_cache': { 'class': {} },
+            \})
+    End
+
+    It ignores unknown attributes
+      call Git.set_config({
+            \ 'instance_cache': { 'class': {} },
+            \ 'repository_cache': { 'class': {} },
+            \ 'unknown_attribute': 'bar',
+            \})
+      let config = Git.get_config()
+      Assert Equals(config, {
+            \ 'instance_cache': { 'class': {} },
+            \ 'repository_cache': { 'class': {} },
+            \})
+    End
+
+    It ignores missing attributes
+      let default = Git.get_config()
+      call Git.set_config({
+            \ 'instance_cache': { 'class': {} },
+            \})
+      let config = Git.get_config()
+      Assert Equals(config, {
+            \ 'instance_cache': { 'class': {} },
+            \ 'repository_cache': default.repository_cache,
+            \})
+    End
+  End
+
+  Describe s:_find_worktree({path})
+    It should return a top directory path of the working directory
+      Assert Equals(sf._find_worktree(inside), worktree)
+    End
+
+    It should return an empty string for a non git working directory
+      Assert Equals(sf._find_worktree(outside), '')
+    End
+  End
+
+  Describe s:_find_repository({worktree})
+    It should return a '.git' directory path of the working directory
+      Assert Equals(sf._find_repository(worktree), repository)
+    End
+
+    It should return an empty string for a non git working directory
+      Assert Equals(sf._find_repository(outside), '')
+    End
+  End
+
+  Describe s:_find({path})
+    It should return a dictionary which contains 'worktree' and 'repository'
+      let path = inside
+      let ret = sf._find(path)
+      let exp = {
+            \ 'worktree': worktree,
+            \ 'repository': repository,
+            \}
+      Assert IsDict(ret)
+      Assert HasKey(ret, 'worktree')
+      Assert HasKey(ret, 'repository')
+      Assert Equals(ret, exp)
+    End
+
+    It should return an empty dictionary for a non git working tree
+      let path = outside
+      let ret = sf._find(path)
+      let exp = {
+            \ 'worktree': '',
+            \ 'repository': '',
+            \}
+      Assert IsDict(ret)
+      Assert HasKey(ret, 'worktree')
+      Assert HasKey(ret, 'repository')
+      Assert Equals(ret, exp)
+    End
+  End
+
+  Describe .readfile({git}, {path})
+    It returns a content of a file in a git repository of {git}
+      let git = Git.get('.')
+      let filename = Path.realpath('.git/description')
+      let content = Git.readfile(git, 'description')
+      Assert Equals(content, readfile(filename))
+    End
+
+    It return an empty list if {path} does not exist
+      let git = Git.get('.')
+      let content = Git.readfile(git, 'a-file-does-not-exist')
+      Assert Equals(content, [])
+    End
+  End
+
+  Describe .readline({git}, {path})
+    It returns a first line of a file in a git repository of {git}
+      let git = Git.get('.')
+      let filename = Path.realpath('.git/description')
+      let content = Git.readline(git, 'description')
+      Assert Equals(content, readfile(filename)[0])
+    End
+
+    It return an empty string if {path} does not exist
+      let git = Git.get('.')
+      let content = Git.readline(git, 'a-file-does-not-exist')
+      Assert Equals(content, '')
+    End
+  End
+
+  Describe .filereadable({git}, {path})
+    It returns 1 if {path} in a git repository of {git} is readable
+      let git = Git.get('.')
+      Assert True(Git.filereadable(git, 'description'))
+    End
+
+    It return 0 if {path} in a git repository of {git} is unreadable
+      let git = Git.get('.')
+      Assert False(Git.filereadable(git, 'refs'))
+    End
+
+    It return 0 if {path} in a git repository of {git} is missing
+      let git = Git.get('.')
+      Assert False(Git.filereadable(git, 'a-file-does-not-exist'))
+    End
+  End
+
+  Describe .isdirectory({git}, {path})
+    It returns 1 if {path} in a git repository of {git} is a directory
+      let git = Git.get('.')
+      Assert True(Git.isdirectory(git, 'refs'))
+    End
+
+    It return 0 if {path} in a git repository of {git} is not a directory
+      let git = Git.get('.')
+      Assert False(Git.isdirectory(git, 'description'))
+    End
+
+    It return 0 if {path} in a git repository of {git} is missing
+      let git = Git.get('.')
+      Assert False(Git.isdirectory(git, 'a-file-does-not-exist'))
+    End
+  End
+
+  Describe .getftime({git}, {path})
+    It returns ftime of {path} in a git repository of {git}
+      let git = Git.get('.')
+      Assert Equals(
+            \ Git.getftime(git, 'description'),
+            \ getftime(Path.realpath('.git/description'))
+            \)
+    End
+
+    It return -1 if {path} in a git repository of {git} is missing
+      let git = Git.get('.')
+      Assert Equals(Git.getftime(git, 'a-file-does-not-exist'), -1)
+    End
+  End
+
+  Describe .relpath({git}, {path})
+    It returns a relative path of {path} in {git} repository
+      let git = Git.get('.')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
+      let relpath = Path.realpath('autoload/gita.vim')
+      Assert Equals(Git.relpath(git, abspath), relpath)
+    End
+
+    It returns {path} if {path} is already a relative path
+      let git = Git.get('.')
+      let relpath = Path.realpath('autoload/gita.vim')
+      Assert Equals(Git.relpath(git, relpath), relpath)
+      Assert Same(Git.relpath(git, relpath), relpath)
+    End
+  End
+
+  Describe .abspath({git}, {path})
+    It returns an absolute path of {path} in {git} repository
+      let git = Git.get('.')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
+      let relpath = Path.realpath('autoload/gita.vim')
+      Assert Equals(Git.abspath(git, relpath), abspath)
+    End
+
+    It returns {path} if {path} is already an absolute path
+      let git = Git.get('.')
+      let abspath = fnamemodify(Path.realpath('autoload/gita.vim'), ':p')
+      Assert Equals(Git.abspath(git, abspath), abspath)
+      Assert Same(Git.abspath(git, abspath), abspath)
+    End
+  End
+
+  Describe .get_cache_content({git}, {path}, {slug}[, {default}])
+    It returns {default} if no cache content exists for {path} and {slug} in {git} repository
+      " TODO: Test
+    End
+
+    It returns a cached content for {path} and {slug} in {git} repository
+      " TODO: Test
+    End
+  End
+
+  Describe .set_cache_content({git}, {path}, {slug}, {content})
+    It returns cache {content} of {path} and {slug} in {git} with uptime
+      " TODO: Test
+    End
+  End
+
+  Describe .get({path}[, {options}])
+    It returns a git instance of a {path} belongs
+      let git = Git.get('.')
+      Assert Equals(git.worktree, getcwd())
+      Assert Equals(git.repository, Path.realpath(getcwd() . '/.git'))
+    End
+
+    It returns a cached git instance of a {path} belongs for {path}
+      let git1 = Git.get('.')
+      let git2 = Git.get('.')
+      Assert Same(git1, git2)
+    End
+
+    It returns a cached git instance of a {path} belongs for worktree of {path}
+      let git1 = Git.get('.')
+      let git2 = Git.get(Path.realpath('./autoload'))
+      Assert Same(git1, git2)
+    End
+
+    It returns a fresh git instance of a {path} belongs for {path} if {options.force} is specified
+      let git1 = Git.get('.')
+      let git2 = Git.get('.', { 'force': 1 })
+      Assert Equals(git1, git2)
+      Assert NotSame(git1, git2)
+    End
+
+    It returns a fresh git instance of a {path} belongs for worktree of {path} if {options.force} is specified
+      let git1 = Git.get('.')
+      let git2 = Git.get(Path.realpath('./autoload'), { 'force': 1 })
+      Assert Equals(git1, git2)
+      Assert NotSame(git1, git2)
+    End
+  End
+
+  Describe .clear()
+    It clears an instance cache
+      let git1 = Git.get('.')
+      call Git.clear()
+      let git2 = Git.get('.')
+      Assert Equals(git1, git2)
+      Assert NotSame(git1, git2)
+    End
+  End
+End

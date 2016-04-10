@@ -1,0 +1,83 @@
+Describe gita#command#init
+  Before all
+    let V = vital#of('vital')
+    let String = V.import('Data.String')
+    let Path = V.import('System.Filepath')
+    let Guard = V.import('Vim.Guard')
+    let ScriptLocal = V.import('Vim.ScriptLocal')
+    let guard = Guard.store('g:gita#process#options')
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/init.vim')
+          \)
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \}
+    " the line below is required to load requirements before :redir
+    silent Gita init
+  End
+
+  After all
+    call guard.restore()
+  End
+
+  Describe s:args_from_options({git}, {options})
+    It returns a {args} List of {options}
+      new foobar.txt
+      let options = {
+            \ 'bare': 1,
+            \ 'template': expand('%:p:h'),
+            \ 'separate-git-dir': expand('%:p:h'),
+            \ 'shared': 'all',
+            \ '__unknown__': [
+            \   '%',
+            \   'a',
+            \   'b',
+            \ ],
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'init',
+            \ '--bare',
+            \ '--separate-git-dir=' . expand('%:p:h'),
+            \ '--shared=all',
+            \ '--template=' . expand('%:p:h'),
+            \])
+    End
+
+    It ignores unknown attributes in {options}
+      let options = {
+            \ 'foobar': 1,
+            \}
+      let git = gita#core#get_or_fail()
+      let ret = sf.args_from_options(git, options)
+      Assert Equals(ret, [
+            \ 'init',
+            \])
+    End
+  End
+
+  Describe #command({bang}, {range}, {args})
+    It executes 'git init' for 'Gita init'
+      redir => content
+        silent! verbose execute 'Gita init'
+      redir END
+      Assert Match(content, 'git .* init')
+    End
+
+    It executes 'git init --bare' for 'Gita init --bare'
+      redir => content
+        silent! verbose execute 'Gita init --bare'
+      redir END
+      Assert Match(content, 'git .* init --bare')
+    End
+
+    It executes 'git init --template=.' for 'Gita init --template=.'
+      redir => content
+        silent! verbose execute 'Gita init --template=.'
+      redir END
+      Assert Match(content, 'git .* init --template=.')
+    End
+  End
+End
+

@@ -1,0 +1,294 @@
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   1 (lambdalisue 1426187381 +0900   1) "******************************************************************************
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   2 (lambdalisue 1426187381 +0900   2) " vim-gita status interface
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   3 (lambdalisue 1426187381 +0900   3) "
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   4 (lambdalisue 1426187381 +0900   4) " Author:   Alisue <lambdalisue@hashnote.net>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   5 (lambdalisue 1426187381 +0900   5) " URL:      http://hashnote.net/
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   6 (lambdalisue 1426187381 +0900   6) " License:  MIT license
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   7 (lambdalisue 1426187381 +0900   7) " (C) 2015, Alisue, hashnote.net
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   8 (lambdalisue 1426187381 +0900   8) "******************************************************************************
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim   9 (lambdalisue 1426187381 +0900   9) let s:save_cpo = &cpo
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  10 (lambdalisue 1426187381 +0900  10) set cpo&vim
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  11 (lambdalisue 1426187381 +0900  11) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  12 (lambdalisue 1426187381 +0900  12) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  13 (lambdalisue 1426187381 +0900  13) function! s:get_buffer_name(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  14 (lambdalisue 1426187381 +0900  14)   return 'gita' . s:consts.DELIMITER . gita#utils#vital#Path().join(a:000)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  15 (lambdalisue 1426187381 +0900  15) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  16 (lambdalisue 1426187381 +0900  16) function! s:get_header_lines() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  17 (lambdalisue 1426187381 +0900  17)   let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  18 (lambdalisue 1426187381 +0900  18)   let local_branch = Git.get_branch_name()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  19 (lambdalisue 1426187381 +0900  19)   let remote_branch = Git.get_remote_branch_name()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  20 (lambdalisue 1426187381 +0900  20)   let incoming = Git.count_incoming()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  21 (lambdalisue 1426187381 +0900  21)   let outgoing = Git.count_outgoing()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  22 (lambdalisue 1426187381 +0900  22) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  23 (lambdalisue 1426187381 +0900  23)   let lines = ['# On branch ' . local_branch]
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  24 (lambdalisue 1426187381 +0900  24)   if incoming > 0 && outgoing > 0
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  25 (lambdalisue 1426187381 +0900  25)     call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  26 (lambdalisue 1426187381 +0900  26)           \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  27 (lambdalisue 1426187381 +0900  27)           \   '# This branch is %d commit(s) ahead of and %d commit(s) behind %s',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  28 (lambdalisue 1426187381 +0900  28)           \   outgoing, incoming, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  29 (lambdalisue 1426187381 +0900  29)           \ ))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  30 (lambdalisue 1426187381 +0900  30)   elseif incoming > 0
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  31 (lambdalisue 1426187381 +0900  31)     call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  32 (lambdalisue 1426187381 +0900  32)           \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  33 (lambdalisue 1426187381 +0900  33)           \   '# This branch is %d commit(s) behind %s',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  34 (lambdalisue 1426187381 +0900  34)           \   incoming, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  35 (lambdalisue 1426187381 +0900  35)           \ ))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  36 (lambdalisue 1426187381 +0900  36)   elseif outgoing > 0
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  37 (lambdalisue 1426187381 +0900  37)     call add(lines,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  38 (lambdalisue 1426187381 +0900  38)           \ printf(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  39 (lambdalisue 1426187381 +0900  39)           \   '# This branch is %d commit(s) ahead of %s',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  40 (lambdalisue 1426187381 +0900  40)           \   outgoing, remote_branch
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  41 (lambdalisue 1426187381 +0900  41)           \ ))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  42 (lambdalisue 1426187381 +0900  42)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  43 (lambdalisue 1426187381 +0900  43)   return lines
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  44 (lambdalisue 1426187381 +0900  44) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  45 (lambdalisue 1426187381 +0900  45) function! s:action(action, ...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  46 (lambdalisue 1426187381 +0900  46)   if &filetype !=# s:consts.FILETYPE
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  47 (lambdalisue 1426187381 +0900  47)     return
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  48 (lambdalisue 1426187381 +0900  48)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  49 (lambdalisue 1426187381 +0900  49)   let settings = extend(b:settings, {
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  50 (lambdalisue 1426187381 +0900  50)         \ 'action_opener': get(a:000, 0, b:settings.action_opener),
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  51 (lambdalisue 1426187381 +0900  51)         \})
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  52 (lambdalisue 1426187381 +0900  52)   let linelinks = b:linelinks
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  53 (lambdalisue 1426187381 +0900  53)   let status = get(linelinks, line('.') - 1, {})
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  54 (lambdalisue 1426187381 +0900  54)   if empty(status)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  55 (lambdalisue 1426187381 +0900  55)     return
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  56 (lambdalisue 1426187381 +0900  56)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  57 (lambdalisue 1426187381 +0900  57)   call call('s:action_' . a:action, [status, settings])
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  58 (lambdalisue 1426187381 +0900  58) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  59 (lambdalisue 1426187381 +0900  59) function! s:action_update(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  60 (lambdalisue 1426187381 +0900  60)   call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  61 (lambdalisue 1426187381 +0900  61) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  62 (lambdalisue 1426187381 +0900  62) function! s:action_toggle(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  63 (lambdalisue 1426187381 +0900  63)   let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  64 (lambdalisue 1426187381 +0900  64)   if a:status.is_unstaged || a:status.is_untracked
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  65 (lambdalisue 1426187381 +0900  65)     call Git.add(a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  66 (lambdalisue 1426187381 +0900  66)   elseif a:status.is_staged
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  67 (lambdalisue 1426187381 +0900  67)     call Git.rm(a:status.path, ['--cached'])
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  68 (lambdalisue 1426187381 +0900  68)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  69 (lambdalisue 1426187381 +0900  69)   call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  70 (lambdalisue 1426187381 +0900  70) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  71 (lambdalisue 1426187381 +0900  71) function! s:action_diff(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  72 (lambdalisue 1426187381 +0900  72)   echo "Not implemented yet"
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  73 (lambdalisue 1426187381 +0900  73) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  74 (lambdalisue 1426187381 +0900  74) function! s:action_clear(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  75 (lambdalisue 1426187381 +0900  75)   let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  76 (lambdalisue 1426187381 +0900  76)   if a:status.is_untracked
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  77 (lambdalisue 1426187381 +0900  77)     redraw
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  78 (lambdalisue 1426187381 +0900  78)     echohl GitaWarning
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  79 (lambdalisue 1426187381 +0900  79)     echo  'Remove the untracked "' . a:status.path . '":'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  80 (lambdalisue 1426187381 +0900  80)     echohl None
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  81 (lambdalisue 1426187381 +0900  81)     echo  'This operation will remove the untracked file and could not be reverted.'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  82 (lambdalisue 1426187381 +0900  82)     echohl GitaQuestion
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  83 (lambdalisue 1426187381 +0900  83)     let a = gita#utils#input_yesno(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  84 (lambdalisue 1426187381 +0900  84)           \ 'Are you sure that you want to remove the untracked file?')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  85 (lambdalisue 1426187381 +0900  85)     echohl None
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  86 (lambdalisue 1426187381 +0900  86)     if a
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  87 (lambdalisue 1426187381 +0900  87)       call delete(a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  88 (lambdalisue 1426187381 +0900  88)     endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  89 (lambdalisue 1426187381 +0900  89)   else
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  90 (lambdalisue 1426187381 +0900  90)     redraw
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  91 (lambdalisue 1426187381 +0900  91)     echohl GitaWarning
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  92 (lambdalisue 1426187381 +0900  92)     echo  'Discard the local changes on "' . a:status.path . '":'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  93 (lambdalisue 1426187381 +0900  93)     echohl None
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  94 (lambdalisue 1426187381 +0900  94)     echo  'This operation will discard the local changes on the file and revert it to the latest commit.'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  95 (lambdalisue 1426187381 +0900  95)     echohl GitaQuestion
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  96 (lambdalisue 1426187381 +0900  96)     let a = gita#utils#input_yesno(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  97 (lambdalisue 1426187381 +0900  97)           \ 'Are you sure that you want to discard the local changes?')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  98 (lambdalisue 1426187381 +0900  98)     echohl None
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim  99 (lambdalisue 1426187381 +0900  99)     if a
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 100 (lambdalisue 1426187381 +0900 100)       call Git.checkout(a:status.path, ['HEAD'])
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 101 (lambdalisue 1426187381 +0900 101)     endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 102 (lambdalisue 1426187381 +0900 102)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 103 (lambdalisue 1426187381 +0900 103)   call gita#interface#status#update()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 104 (lambdalisue 1426187381 +0900 104) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 105 (lambdalisue 1426187381 +0900 105) function! s:action_open(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 106 (lambdalisue 1426187381 +0900 106)   let opener = get(
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 107 (lambdalisue 1426187381 +0900 107)         \ a:settings.openers,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 108 (lambdalisue 1426187381 +0900 108)         \ a:settings.action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 109 (lambdalisue 1426187381 +0900 109)         \ a:settings.action_opener
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 110 (lambdalisue 1426187381 +0900 110)         \)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 111 (lambdalisue 1426187381 +0900 111)   let bufname = get(a:status, 'path2', a:status.path)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 112 (lambdalisue 1426187381 +0900 112)   let bufnum = bufnr(bufname)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 113 (lambdalisue 1426187381 +0900 113)   let winnum = bufwinnr(bufnum)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 114 (lambdalisue 1426187381 +0900 114) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 115 (lambdalisue 1426187381 +0900 115)   if winnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 116 (lambdalisue 1426187381 +0900 116)     let previous_winnum = bufwinnr(get(a:settings, 'previous_bufnum'))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 117 (lambdalisue 1426187381 +0900 117)     if previous_winnum != -1
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 118 (lambdalisue 1426187381 +0900 118)       execute previous_winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 119 (lambdalisue 1426187381 +0900 119)     else
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 120 (lambdalisue 1426187381 +0900 120)       execute 'wincmd p'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 121 (lambdalisue 1426187381 +0900 121)     endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 122 (lambdalisue 1426187381 +0900 122)     call gita#utils#vital#Buffer().open(bufname, opener)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 123 (lambdalisue 1426187381 +0900 123)   else
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 124 (lambdalisue 1426187381 +0900 124)     execute winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 125 (lambdalisue 1426187381 +0900 125)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 126 (lambdalisue 1426187381 +0900 126) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 127 (lambdalisue 1426187381 +0900 127) function! s:action_browse(status, settings) " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 128 (lambdalisue 1426187381 +0900 128)   echo "Not implemented yet"
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 129 (lambdalisue 1426187381 +0900 129) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 130 (lambdalisue 1426187381 +0900 130) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 131 (lambdalisue 1426187381 +0900 131) function! gita#interface#status#show(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 132 (lambdalisue 1426187381 +0900 132)   let bufname = s:get_buffer_name('status')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 133 (lambdalisue 1426187381 +0900 133)   let settings = extend({
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 134 (lambdalisue 1426187381 +0900 134)         \ 'opener': g:gita#interface#status#opener,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 135 (lambdalisue 1426187381 +0900 135)         \ 'action_opener': g:gita#interface#status#action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 136 (lambdalisue 1426187381 +0900 136)         \ 'openers': g:gita#interface#status#openers,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 137 (lambdalisue 1426187381 +0900 137)         \}, get(a:000, 0, {}))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 138 (lambdalisue 1426187381 +0900 138) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 139 (lambdalisue 1426187381 +0900 139)   let opener = get(settings.openers, settings.opener, settings.opener)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 140 (lambdalisue 1426187381 +0900 140)   let bufnum = bufnr(bufname)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 141 (lambdalisue 1426187381 +0900 141)   let winnum = bufwinnr(bufnum)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 142 (lambdalisue 1426187381 +0900 142)   let previous_bufnum = bufnr('')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 143 (lambdalisue 1426187381 +0900 143)   if winnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 144 (lambdalisue 1426187381 +0900 144)     call gita#utils#vital#Buffer().open(bufname, opener)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 145 (lambdalisue 1426187381 +0900 145)     if bufnum == -1
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 146 (lambdalisue 1426187381 +0900 146)       " initialize list window
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 147 (lambdalisue 1426187381 +0900 147)       setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 148 (lambdalisue 1426187381 +0900 148)       setlocal cursorline
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 149 (lambdalisue 1426187381 +0900 149)       execute "setfiletype" s:consts.FILETYPE
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 150 (lambdalisue 1426187381 +0900 150) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 151 (lambdalisue 1426187381 +0900 151)       noremap <silent><buffer> <Plug>(gita-status-action-update)     :call <SID>action('update')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 152 (lambdalisue 1426187381 +0900 152)       noremap <silent><buffer> <Plug>(gita-status-action-toggle)     :call <SID>action('toggle')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 153 (lambdalisue 1426187381 +0900 153)       noremap <silent><buffer> <Plug>(gita-status-action-diff)       :call <SID>action('diff')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 154 (lambdalisue 1426187381 +0900 154)       noremap <silent><buffer> <Plug>(gita-status-action-clear)      :call <SID>action('clear')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 155 (lambdalisue 1426187381 +0900 155)       noremap <silent><buffer> <Plug>(gita-status-action-browse)     :call <SID>action('browse')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 156 (lambdalisue 1426187381 +0900 156)       noremap <silent><buffer> <Plug>(gita-status-action-open)       :call <SID>action('open')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 157 (lambdalisue 1426187381 +0900 157)       noremap <silent><buffer> <Plug>(gita-status-action-edit)       :call <SID>action('open', 'edit')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 158 (lambdalisue 1426187381 +0900 158)       noremap <silent><buffer> <Plug>(gita-status-action-split)      :call <SID>action('open', 'split')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 159 (lambdalisue 1426187381 +0900 159)       noremap <silent><buffer> <Plug>(gita-status-action-vsplit)     :call <SID>action('open', 'vsplit')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 160 (lambdalisue 1426187381 +0900 160)       noremap <silent><buffer> <Plug>(gita-status-action-tabnew)     :call <SID>action('open', 'tabnew')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 161 (lambdalisue 1426187381 +0900 161)       noremap <silent><buffer> <Plug>(gita-status-action-open-left)  :call <SID>action('open', 'left')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 162 (lambdalisue 1426187381 +0900 162)       noremap <silent><buffer> <Plug>(gita-status-action-open-right) :call <SID>action('open', 'right')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 163 (lambdalisue 1426187381 +0900 163)       noremap <silent><buffer> <Plug>(gita-status-action-open-above) :call <SID>action('open', 'above')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 164 (lambdalisue 1426187381 +0900 164)       noremap <silent><buffer> <Plug>(gita-status-action-open-below) :call <SID>action('open', 'below')<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 165 (lambdalisue 1426187381 +0900 165) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 166 (lambdalisue 1426187381 +0900 166)       if get(g:, 'gita#interface#status#enable_default_keymaps', 1)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 167 (lambdalisue 1426187381 +0900 167)         nmap <buffer> <F1>   :<C-u>help vim-gita-status-default-mappings<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 168 (lambdalisue 1426187381 +0900 168)         nmap <buffer> <C-l>  <Plug>(gita-status-action-update)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 169 (lambdalisue 1426187381 +0900 169)         nmap <buffer> -      <Plug>(gita-status-action-toggle)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 170 (lambdalisue 1426194280 +0900 170)         nmap <buffer> <C-c>  <Plug>(gita-status-action-clear)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 171 (lambdalisue 1426194280 +0900 171)         nmap <buffer> <C-e>  <Plug>(gita-status-action-open)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 172 (lambdalisue 1426194280 +0900 172)         nmap <buffer> <C-d>  <Plug>(gita-status-action-diff)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 173 (lambdalisue 1426194280 +0900 173)         nmap <buffer> <C-s>  <Plug>(gita-status-action-split)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 174 (lambdalisue 1426194280 +0900 174)         nmap <buffer> <C-v>  <Plug>(gita-status-action-vsplit)
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 175 (lambdalisue 1426194280 +0900 175)         nmap <buffer> <C-b>  <Plug>(gita-status-action-browse)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 176 (lambdalisue 1426187381 +0900 176)         nmap <buffer> <CR>   <Plug>(gita-status-action-open)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 177 (lambdalisue 1426187381 +0900 177)         nmap <buffer> <S-CR> <Plug>(gita-status-action-diff)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 178 (lambdalisue 1426187381 +0900 178)         nmap <buffer> q      :<C-u>q<CR>
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 179 (lambdalisue 1426187381 +0900 179)         vmap <buffer> -      <Plug>(gita-status-action-toggle)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 180 (lambdalisue 1426187381 +0900 180)       endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 181 (lambdalisue 1426187381 +0900 181)       " load contents
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 182 (lambdalisue 1426187381 +0900 182)       call gita#interface#status#update(settings)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 183 (lambdalisue 1426187381 +0900 183)     endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 184 (lambdalisue 1426187381 +0900 184)   else
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 185 (lambdalisue 1426187381 +0900 185)     " focus window
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 186 (lambdalisue 1426187381 +0900 186)     execute winnum . 'wincmd w'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 187 (lambdalisue 1426187381 +0900 187)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 188 (lambdalisue 1426187381 +0900 188)   if bufnum != previous_bufnum
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 189 (lambdalisue 1426187381 +0900 189)     let settings = get(b:, 'settings', {})
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 190 (lambdalisue 1426187381 +0900 190)     let settings.previous_bufnum = previous_bufnum
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 191 (lambdalisue 1426187381 +0900 191)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 192 (lambdalisue 1426187381 +0900 192) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 193 (lambdalisue 1426187381 +0900 193) function! gita#interface#status#update(...) abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 194 (lambdalisue 1426187381 +0900 194)   let bufname = s:get_buffer_name('status')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 195 (lambdalisue 1426187381 +0900 195)   let settings = extend({
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 196 (lambdalisue 1426187381 +0900 196)         \ 'opener': g:gita#interface#status#opener,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 197 (lambdalisue 1426187381 +0900 197)         \ 'action_opener': g:gita#interface#status#action_opener,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 198 (lambdalisue 1426187381 +0900 198)         \ 'openers': g:gita#interface#status#openers,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 199 (lambdalisue 1426187381 +0900 199)         \}, get(a:000, 0, gita#utils#getbufvar(bufname, 'settings', {})))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 200 (lambdalisue 1426187381 +0900 200)   " this function should be called on the gita:status window
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 201 (lambdalisue 1426187381 +0900 201)   if bufname !=# expand('%')
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 202 (lambdalisue 1426187381 +0900 202)     call gita#utils#call_on_buffer(bufname,
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 203 (lambdalisue 1426194280 +0900 203)           \ function('gita#interface#status#update'),
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 204 (lambdalisue 1426187381 +0900 204)           \ settings)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 205 (lambdalisue 1426187381 +0900 205)     return
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 206 (lambdalisue 1426187381 +0900 206)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 207 (lambdalisue 1426187381 +0900 207) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 208 (lambdalisue 1426187381 +0900 208)   let Git = gita#utils#vital#Git()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 209 (lambdalisue 1426187381 +0900 209)   let statuslist = Git.get_status()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 210 (lambdalisue 1426187381 +0900 210)   if empty(statuslist) || empty(statuslist.all)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 211 (lambdalisue 1426187381 +0900 211)     bw!
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 212 (lambdalisue 1426187381 +0900 212)     return
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 213 (lambdalisue 1426187381 +0900 213)   endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 214 (lambdalisue 1426187381 +0900 214) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 215 (lambdalisue 1426187381 +0900 215)   " put gist lines and links
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 216 (lambdalisue 1426187381 +0900 216)   let lines = s:get_header_lines()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 217 (lambdalisue 1426187381 +0900 217)   let linelinks = []
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 218 (lambdalisue 1426187381 +0900 218)   for line in lines
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 219 (lambdalisue 1426187381 +0900 219)     call add(linelinks, {})
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 220 (lambdalisue 1426187381 +0900 220)   endfor
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 221 (lambdalisue 1426187381 +0900 221)   for status in statuslist.all
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 222 (lambdalisue 1426194280 +0900 222)     call add(lines, status.record)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 223 (lambdalisue 1426187381 +0900 223)     call add(linelinks, status)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 224 (lambdalisue 1426187381 +0900 224)   endfor
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 225 (lambdalisue 1426187381 +0900 225) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 226 (lambdalisue 1426187381 +0900 226)   " remove entire content and rewriet the lines
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 227 (lambdalisue 1426187381 +0900 227)   setlocal modifiable
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 228 (lambdalisue 1426187381 +0900 228)   let save_cur = getpos(".")
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 229 (lambdalisue 1426187381 +0900 229)   silent %delete _
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 230 (lambdalisue 1426187381 +0900 230)   call setline(1, split(join(lines, "\n"), "\n"))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 231 (lambdalisue 1426187381 +0900 231)   call setpos('.', save_cur)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 232 (lambdalisue 1426187381 +0900 232)   setlocal nomodifiable
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 233 (lambdalisue 1426187381 +0900 233)   setlocal nomodified
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 234 (lambdalisue 1426187381 +0900 234) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 235 (lambdalisue 1426187381 +0900 235)   " store variables to the buffer
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 236 (lambdalisue 1426187381 +0900 236)   let b:settings = settings
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 237 (lambdalisue 1426187381 +0900 237)   let b:linelinks = linelinks
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 238 (lambdalisue 1426187381 +0900 238) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 239 (lambdalisue 1426187381 +0900 239) function! gita#interface#status#define_highlights() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 240 (lambdalisue 1426187381 +0900 240)   highlight default link GitaStatusComment      Comment
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 241 (lambdalisue 1426187381 +0900 241)   highlight default link GitaStatusConflicted   ErrorMsg
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 242 (lambdalisue 1426187381 +0900 242)   highlight default link GitaStatusUnstaged     WarningMsg
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 243 (lambdalisue 1426187381 +0900 243)   highlight default link GitaStatusStaged       Question
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 244 (lambdalisue 1426187381 +0900 244)   highlight default link GitaStatusUntracked    WarningMsg
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 245 (lambdalisue 1426187381 +0900 245)   highlight default link GitaStatusIgnored      Question
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 autoload/gita/interface/status.vim 246 (lambdalisue 1426194460 +0900 246)   highlight default link GitaStatusBranch       Title
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 246 (lambdalisue 1426187381 +0900 247) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 247 (lambdalisue 1426187381 +0900 248) function! gita#interface#status#define_syntax() abort " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 248 (lambdalisue 1426187381 +0900 249)   execute 'syntax match GitaStatusComment    /\v^#.*/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 249 (lambdalisue 1426194280 +0900 250)   execute 'syntax match GitaStatusConflicted /\v^%(DD|AU|UD|UA|DU|AA|UU)\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 250 (lambdalisue 1426194280 +0900 251)   execute 'syntax match GitaStatusUnstaged   /\v^%([ MARC][MD]|DM)\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 251 (lambdalisue 1426194280 +0900 252)   execute 'syntax match GitaStatusStaged     /\v^[MADRC]\s\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 252 (lambdalisue 1426194280 +0900 253)   execute 'syntax match GitaStatusUntracked  /\v^\?\?\s.*\ze/'
+0b0569a9114e4748b1368b168f2c7b8eda25d9c8 autoload/gita/interface/status.vim 253 (lambdalisue 1426194280 +0900 254)   execute 'syntax match GitaStatusIgnored    /\v^!!\s.*\ze/'
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 autoload/gita/interface/status.vim 255 (lambdalisue 1426194460 +0900 255)   " Branch name
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 autoload/gita/interface/status.vim 256 (lambdalisue 1426194460 +0900 256)   execute 'syntax match GitaStatusComment /\v^# On branch/ contained'
+ebcc55bee6ed0237ff86e6dfe7364ab166791de1 autoload/gita/interface/status.vim 257 (lambdalisue 1426194460 +0900 257)   execute 'syntax match GitaStatusBranch  /\v^# On branch .*$/hs=s+12 contains=GitaStatusComment'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 254 (lambdalisue 1426187381 +0900 258) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 255 (lambdalisue 1426187381 +0900 259) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 256 (lambdalisue 1426187381 +0900 260) let s:consts = {}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 257 (lambdalisue 1426187381 +0900 261) let s:consts.DELIMITER = has('unix') ? ':' : '_'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 258 (lambdalisue 1426187381 +0900 262) let s:consts.FILETYPE = 'gita-status'
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 259 (lambdalisue 1426187381 +0900 263) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 260 (lambdalisue 1426187381 +0900 264) " Variables {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 261 (lambdalisue 1426187381 +0900 265) let s:default_openers = {
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 262 (lambdalisue 1426187381 +0900 266)       \ 'edit': 'edit',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 263 (lambdalisue 1426187381 +0900 267)       \ 'tabnew': 'tabnew',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 264 (lambdalisue 1426187381 +0900 268)       \ 'split': 'rightbelow split',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 265 (lambdalisue 1426187381 +0900 269)       \ 'vsplit': 'rightbelow vsplit',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 266 (lambdalisue 1426187381 +0900 270)       \ 'left': 'topleft vsplit', 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 267 (lambdalisue 1426187381 +0900 271)       \ 'right': 'rightbelow vsplit', 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 268 (lambdalisue 1426187381 +0900 272)       \ 'above': 'topleft split', 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 269 (lambdalisue 1426187381 +0900 273)       \ 'below': 'rightbelow split', 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 270 (lambdalisue 1426187381 +0900 274)       \}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 271 (lambdalisue 1426187381 +0900 275) let s:settings = {
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 272 (lambdalisue 1426187381 +0900 276)       \ 'opener': '"topleft 20 split +set\\ winfixheight"',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 273 (lambdalisue 1426187381 +0900 277)       \ 'action_opener': '"edit"',
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 274 (lambdalisue 1426187381 +0900 278)       \ 'enable_default_keymaps': 1,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 275 (lambdalisue 1426187381 +0900 279)       \}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 276 (lambdalisue 1426187381 +0900 280) function! s:init() " {{{
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 277 (lambdalisue 1426187381 +0900 281)   for [key, value] in items(s:settings)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 278 (lambdalisue 1426187381 +0900 282)     if !exists('g:gita#interface#status#' . key)
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 279 (lambdalisue 1426187381 +0900 283)       execute 'let g:gita#interface#status#' . key . ' = ' . value
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 280 (lambdalisue 1426187381 +0900 284)     endif
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 281 (lambdalisue 1426187381 +0900 285)   endfor
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 282 (lambdalisue 1426187381 +0900 286)   let g:gita#interface#status#openers = extend(s:default_openers,
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 283 (lambdalisue 1426187381 +0900 287)         \ get(g:, 'gita#interface#status#openers', {}))
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 284 (lambdalisue 1426187381 +0900 288) endfunction " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 285 (lambdalisue 1426187381 +0900 289) call s:init()
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 286 (lambdalisue 1426187381 +0900 290) " }}}
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 287 (lambdalisue 1426187381 +0900 291) 
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 288 (lambdalisue 1426187381 +0900 292) let &cpo = s:save_cpo
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 289 (lambdalisue 1426187381 +0900 293) unlet s:save_cpo
+656465cef4559417a88e92f5235c4c43476fe963 autoload/gita/interface/status.vim 290 (lambdalisue 1426187381 +0900 294) "vim: sts=2 sw=2 smarttab et ai textwidth=0 fdm=marker
