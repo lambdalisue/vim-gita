@@ -47,7 +47,7 @@ function! s:execute_command(options) abort
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \ 'fail_silently': 1,
-        \})
+        \}).content
   return filter(content, '!empty(v:val)')
 endfunction
 

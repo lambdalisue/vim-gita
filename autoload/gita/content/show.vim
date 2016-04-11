@@ -50,7 +50,7 @@ function! s:get_diff_content(git, content, filename) abort
             \ git,
             \ ['show', ':' . filename],
             \ { 'quiet': 1, 'encode_output': 0 }
-            \)
+            \).content
     catch /vital: Git.Process: Fail/
       " NOTE:
       " the content of filename does not exist
@@ -67,7 +67,7 @@ function! s:get_diff_content(git, content, filename) abort
           \ git,
           \ ['diff', '--no-index', '--unified=1', '--', tempfile1, tempfile2],
           \ { 'quiet': 1, 'encode_output': 0, 'fail_silently': 1 }
-          \)
+          \).content
     if empty(content) || len(content) < 4
       " fail or no differences. Assume that there are no differences
       call s:Prompt.debug(content)
@@ -175,7 +175,7 @@ function! s:execute_command(options) abort
       return gita#process#execute(git, args, {
             \ 'quiet': 1,
             \ 'encode_output': 0,
-            \})
+            \}).content
     catch /vital: Git.Process: Fail/
       " NOTE:
       " diff-2/3, patch-2/3 may request content which does not exist so
@@ -186,7 +186,7 @@ function! s:execute_command(options) abort
     return gita#process#execute(git, args, {
           \ 'quiet': 1,
           \ 'encode_output': 0,
-          \})
+          \}).content
   endif
 endfunction
 

@@ -27,11 +27,11 @@ function! s:execute_command(options) abort
         \ '--no-column',
         \ '--untracked-files',
         \]
-  let content = gita#process#execute(git, args, {
+  let result = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
         \})
-  return filter(content, '!empty(v:val)')
+  return filter(result.content, '!empty(v:val)')
 endfunction
 
 function! s:define_actions() abort

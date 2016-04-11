@@ -34,7 +34,7 @@ function! s:execute_command(options) abort
     let content = gita#process#execute(git, args, {
           \ 'quiet': 1,
           \ 'encode_output': 0,
-          \})
+          \}).content
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
     let blameobj = s:get_blameobj(
@@ -77,7 +77,7 @@ function! s:get_blameobj(content, commit, filename) abort
         let blameobj.file_content = gita#process#execute(git, args, {
               \ 'quiet': 1,
               \ 'encode_output': 0,
-              \})
+              \}).content
       endif
     endif
     return blameobj

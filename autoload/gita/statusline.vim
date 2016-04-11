@@ -277,7 +277,7 @@ function! gita#statusline#get_status_count(git) abort
             \ git,
             \ ['status', '--porcelain', '--ignore-submodules'],
             \ { 'quiet': 1 },
-            \))
+            \).content)
       let status_count.conflicted = len(result.conflicted)
       let status_count.unstaged = len(result.unstaged)
       let status_count.staged = len(result.staged)

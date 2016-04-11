@@ -77,7 +77,7 @@ function! gita#process#execute(git, args, ...) abort
           \))
     echo join(result.content, "\n")
   endif
-  return result.content
+  return result
 endfunction
 
 function! gita#process#shell(git, args) abort

@@ -179,11 +179,11 @@ Describe gita#process
   Describe #execute({git}, {args}[, {options}])
     It executes a {args} and return stdout content
       let git = gita#core#get_or_fail()
-      let content = gita#process#execute(
+      let result = gita#process#execute(
             \ git,
             \ ['rev-parse', '--is-inside-work-tree']
             \)
-      Assert Equals(content, ['true'])
+      Assert Equals(result.content, ['true'])
     End
 
     It throw an exception when the command exit with error
