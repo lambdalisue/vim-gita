@@ -12,18 +12,15 @@ install:
   - '7z x -o%TEMP% %TEMP%\vim.zip > nul'
   - ps: $Env:THEMIS_VIM = (Get-ChildItem $Env:TEMP | Select-Object -First 1).FullName + '\vim.exe'
 
-  - 'git -c advice.detachedHead=false clone https://github.com/Shougo/vimproc.vim --quiet --branch ver.9.2 --depth 1 %TEMP%\vimproc'
-  - 'git -c advice.detachedHead=false clone https://github.com/vim-jp/vital.vim --quiet --depth 1 %TEMP%\vital'
+  - 'git --depth 1 clone https://github.com/vim-jp/vital.vim %TEMP%\vital'
+  - 'git --depth 1 --branch v1.5.1 clone https://github.com/thinca/vim-themis %TEMP%\vim-themis'
+  - 'git --depth 1 --branch ver.9.2 clone https://github.com/Shougo/vimproc.vim %TEMP%\vimproc'
   - 'appveyor DownloadFile https://github.com/Shougo/vimproc.vim/releases/download/ver.9.2/vimproc_win64.dll -FileName %TEMP%\vimproc\lib\vimproc_win64.dll'
 
-  - 'git -c advice.detachedHead=false clone https://github.com/thinca/vim-themis --quiet --depth 1 %TEMP%\vim-themis'
   - 'reg copy HKLM\SOFTWARE\Python\PythonCore\2.7 HKLM\SOFTWARE\Python\PythonCore\2.7-32 /s /reg:32'
   - 'reg copy HKLM\SOFTWARE\Python\PythonCore\2.7 HKLM\SOFTWARE\Python\PythonCore\2.7-32 /s /reg:64'
 build: off
 test_script:
-  #- 'chcp 65001'
-  #- 'chcp'
-  #- 'set LANG=ja_JP.UTF-8'
-  #- 'locale'
   - '%THEMIS_VIM% --version'
+  - '%TEMP%\vim-themis\bin\themis.bat -v'
   - '%TEMP%\vim-themis\bin\themis.bat --runtimepath %TEMP%\vimproc --runtimepath %TEMP%\vital --reporter dot'
