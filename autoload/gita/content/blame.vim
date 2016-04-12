@@ -271,11 +271,14 @@ function! gita#content#blame#open(options) abort
   call gita#util#buffer#open(bufname, {
         \ 'opener': options.opener,
         \ 'window': options.window,
-        \ 'selection': options.selection,
         \})
   setlocal scrollbind
   call gita#util#syncbind()
   call gita#content#blame#define_highlights()
+  call gita#content#blame#select(
+        \ gita#content#blame#retrieve(options),
+        \ options.selection
+        \)
 endfunction
 
 function! gita#content#blame#define_highlights() abort
