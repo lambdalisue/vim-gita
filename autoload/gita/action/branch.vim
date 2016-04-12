@@ -8,6 +8,7 @@ function! s:action_checkout(candidate, options) abort
   if a:candidate.is_remote
     let name = substitute(a:candidate.name, '^origin/', '', '')
     let args = [
+          \ 'checkout',
           \ '-b' . name,
           \ empty(options.track) ? '' : '--track',
           \ a:candidate.name,
@@ -16,7 +17,7 @@ function! s:action_checkout(candidate, options) abort
     let args = [a:candidate.name]
   endif
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, ['checkout'] + args, { 'quiet': 1 })
+  call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#trigger_modified()
 endfunction
 
@@ -38,7 +39,7 @@ function! s:action_rename(candidate, options) abort
         \ newname,
         \]
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
+  call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#trigger_modified()
 endfunction
 
@@ -52,7 +53,7 @@ function! s:action_delete(candidate, options) abort
         \ a:candidate.name,
         \]
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, ['branch'] + args, { 'quiet': 1 })
+  call gita#process#execute(git, args, { 'quiet': 1 })
   call gita#trigger_modified()
 endfunction
 
