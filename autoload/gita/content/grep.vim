@@ -72,7 +72,7 @@ function! s:execute_command(options) abort
   let content = gita#process#execute(git, args, {
         \ 'quiet': 1,
         \ 'encode_output': 0,
-        \})
+        \}).content
   return filter(content, '!empty(v:val)')
 endfunction
 

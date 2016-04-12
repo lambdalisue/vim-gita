@@ -6,32 +6,32 @@ let s:Git = s:V.import('Git')
 
 function! s:get_available_branches(git, args) abort
   let args = ['branch', '--no-color', '--list'] + a:args
-  let content = gita#process#execute(a:git, args, {
+  let result = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
-  let content = filter(content, 'v:val !~# ''HEAD''')
+  let content = filter(result.content, 'v:val !~# ''HEAD''')
   return map(content, 'matchstr(v:val, "^..\\zs.*$")')
 endfunction
 
 function! s:get_available_commits(git, args) abort
   let args = ['log', '--pretty=%h'] + a:args
-  let content = gita#process#execute(a:git, args, {
+  let result = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
-  return content
+  return result.content
 endfunction
 
 function! s:get_available_filenames(git, args) abort
   let args = [
         \ 'ls-files', '--full-name',
         \] + a:args
-  let content = gita#process#execute(a:git, args, {
+  let result = gita#process#execute(a:git, args, {
         \ 'quiet': 1,
         \ 'fail_silently': 1,
         \})
-  let content = map(content, 'fnamemodify(v:val, '':~:.'')')
+  let content = map(result.content, 'fnamemodify(v:val, '':~:.'')')
   return content
 endfunction
 

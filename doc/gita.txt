@@ -910,6 +910,9 @@ COMMANDS				*gita-interface-commands*
 	Open a diff buffer to compare differences.
 	See :Gita diff -h for available {options}.
 
+	When no {path} is specified, it show a diff of the repository with
+	unified diff.
+
 	When --split is specified, it open two buffers to compare difference
 	rather than using unified-diff style (|vimdiff| style).
 
@@ -921,8 +924,6 @@ COMMANDS				*gita-interface-commands*
 	the N is a start line number and the M is a end line number.
 
 	When {commit} is omitted, an index is used.
-	When {path} is omitted, a corresponding filename of the current path
-	will be used.
 
 	A split direction could be controlled by |vertical| prefix like:
 >
@@ -1028,14 +1029,13 @@ COMMANDS				*gita-interface-commands*
 
 					*:Gita-show*
 :Gita show [-h/--help]
-	[-r/--repository] [-w/--worktree]
-	[-1/--ancestor] [-2/--ours] [-3/--theris]
+	[-w/--worktree] [-1/--ancestor] [-2/--ours] [-3/--theris]
 	[--opener={opener}] [--selection={selection}]
 	[{commit}] [-- {path}]
 
 	Open a buffer of a corresponding content.
 
-	When --repository is specified, it show a current status of the
+	When no {path} is specified, it show a current status of the
 	repository with unified diff.
 
 	When --worktree is specified, it open a corresponding file in the
@@ -1050,9 +1050,6 @@ COMMANDS				*gita-interface-commands*
 	A {selection} is used to specify line numbers to move.
 	A format of the {selection} is --selection=N or --selection=N-M where
 	the N is a start line number and the M is a end line number.
-
-	If {path} is omitted, a corresponding filename of the current
-	buffer will be used.
 
 	Note that even when 'autoread' option is 1, it DOES NOT automatically
 	reload content when the repository status change. Users requires to

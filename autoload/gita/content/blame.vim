@@ -34,7 +34,7 @@ function! s:execute_command(options) abort
     let content = gita#process#execute(git, args, {
           \ 'quiet': 1,
           \ 'encode_output': 0,
-          \})
+          \}).content
     setlocal statusline=Parsing\ blame\ content\ [2/3]\ ...
     redrawstatus
     let blameobj = s:get_blameobj(
@@ -77,7 +77,7 @@ function! s:get_blameobj(content, commit, filename) abort
         let blameobj.file_content = gita#process#execute(git, args, {
               \ 'quiet': 1,
               \ 'encode_output': 0,
-              \})
+              \}).content
       endif
     endif
     return blameobj
@@ -271,11 +271,14 @@ function! gita#content#blame#open(options) abort
   call gita#util#buffer#open(bufname, {
         \ 'opener': options.opener,
         \ 'window': options.window,
-        \ 'selection': options.selection,
         \})
   setlocal scrollbind
   call gita#util#syncbind()
   call gita#content#blame#define_highlights()
+  call gita#content#blame#select(
+        \ gita#content#blame#retrieve(options),
+        \ options.selection
+        \)
 endfunction
 
 function! gita#content#blame#define_highlights() abort

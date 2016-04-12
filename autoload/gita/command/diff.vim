@@ -257,9 +257,11 @@ function! gita#command#diff#command(bang, range, args) abort
         \ options
         \)
   call gita#util#option#assign_commit(options)
-  call gita#util#option#assign_filename(options)
   call gita#util#option#assign_selection(options)
   call gita#util#option#assign_opener(options)
+  if !empty(options.__unknown__)
+    let options.filename = options.__unknown__[0]
+  endif
   call gita#content#diff#open(options)
 endfunction
 
