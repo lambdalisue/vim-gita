@@ -11,29 +11,24 @@ function! s:get_parser() abort
           \ 'complete_unknown': function('gita#util#complete#filename'),
           \})
     call s:parser.add_argument(
-          \ '--repository', '-r',
-          \ 'show a summary of the repository instead of a file content', {
-          \   'conflicts': ['worktree', 'ancestor', 'ours', 'theirs'],
-          \})
-    call s:parser.add_argument(
           \ '--worktree', '-w',
           \ 'open a content of a file in working tree', {
-          \   'conflicts': ['repository', 'ancestor', 'ours', 'theirs'],
+          \   'conflicts': ['ancestor', 'ours', 'theirs'],
           \})
     call s:parser.add_argument(
           \ '--ancestors', '-1',
           \ 'open a content of a file in a common ancestor during merge', {
-          \   'conflicts': ['repository', 'worktree', 'ours', 'theirs'],
+          \   'conflicts': ['worktree', 'ours', 'theirs'],
           \})
     call s:parser.add_argument(
           \ '--ours', '-2',
           \ 'open a content of a file in our side during merge', {
-          \   'conflicts': ['repository', 'worktree', 'ancestors', 'theirs'],
+          \   'conflicts': ['worktree', 'ancestors', 'theirs'],
           \})
     call s:parser.add_argument(
           \ '--theirs', '-3',
           \ 'open a content of a file in thier side during merge', {
-          \   'conflicts': ['repository', 'worktree', 'ancestors', 'ours'],
+          \   'conflicts': ['worktree', 'ancestors', 'ours'],
           \})
     call s:parser.add_argument(
           \ '--opener', '-o',
@@ -61,13 +56,6 @@ function! s:get_parser() abort
           \], {
           \   'complete': function('gita#util#complete#commitish'),
           \})
-    function! s:parser.hooks.post_validate(options) abort
-      if get(a:options, 'repository')
-        let a:options.filename = ''
-        unlet a:options.repository
-      endif
-    endfunction
-    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
@@ -83,9 +71,11 @@ function! gita#command#show#command(bang, range, args) abort
         \ options
         \)
   call gita#util#option#assign_commit(options)
-  call gita#util#option#assign_filename(options)
   call gita#util#option#assign_selection(options)
   call gita#util#option#assign_opener(options)
+  if !empty(options.__unknown__)
+    let options.filename = options.__unknown__[0]
+  endif
   call gita#content#show#open(options)
 endfunction
 
