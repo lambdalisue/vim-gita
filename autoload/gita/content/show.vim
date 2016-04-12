@@ -164,7 +164,10 @@ function! s:args_from_options(git, options) abort
           \ gita#normalize#relpath(a:git, options.filename),
           \)
   endif
-  return ['show', treeish]
+  let treeish = empty(options.filename)
+        \ ? substitute(treeish, ':$', '', '')
+        \ : treeish
+  return filter(['show', treeish], '!empty(v:val)')
 endfunction
 
 function! s:execute_command(options) abort
