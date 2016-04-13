@@ -14,7 +14,7 @@ function! s:action_checkout(candidate, options) abort
           \ a:candidate.name,
           \]
   else
-    let args = [a:candidate.name]
+    let args = ['checkout', a:candidate.name]
   endif
   let git = gita#core#get_or_fail()
   call gita#process#execute(git, args, { 'quiet': 1 })
