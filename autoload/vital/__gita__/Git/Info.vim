@@ -225,7 +225,7 @@ endfunction
 function! s:get_remote_branch(git) abort
   let config = s:get_repository_config(a:git)
   if empty(config)
-    return { 'name': '', 'hash': '', 'url': '' }
+    return { 'remote': '', 'name': '', 'hash': '', 'url': '' }
   endif
   let local = s:get_local_branch(a:git)
   let merge = s:get_branch_merge(config, local.name)
