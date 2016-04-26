@@ -26,7 +26,7 @@ before_script:
   - git clone --depth 1 https://github.com/vim-jp/vital.vim      /tmp/vital
   - git clone --depth 1 https://github.com/syngan/vim-vimlint    /tmp/vim-vimlint
   - git clone --depth 1 https://github.com/ynkdir/vim-vimlparser /tmp/vim-vimlparser
-  - git clone --branch v1.5.2.1dev --depth 1 https://github.com/thinca/vim-themis     /tmp/vim-themis
+  - git clone --depth 1 https://github.com/thinca/vim-themis     /tmp/vim-themis
   - (cd /tmp/vimproc && make)
 
 script:

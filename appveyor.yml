@@ -19,7 +19,7 @@ install:
       $Env:THEMIS_VIM = $vim + (Get-ChildItem $vim).Name + '\vim.exe'
 
   - 'git clone --depth 1 https://github.com/vim-jp/vital.vim %TEMP%\vital'
-  - 'git clone --depth 1 --branch v1.5.2.1dev https://github.com/thinca/vim-themis %TEMP%\vim-themis'
+  - 'git clone --depth 1 https://github.com/thinca/vim-themis %TEMP%\vim-themis'
   - 'git clone --depth 1 --branch ver.9.2 https://github.com/Shougo/vimproc.vim %TEMP%\vimproc'
   - 'appveyor DownloadFile https://github.com/Shougo/vimproc.vim/releases/download/ver.9.2/vimproc_win64.dll -FileName %TEMP%\vimproc\lib\vimproc_win64.dll'
 
