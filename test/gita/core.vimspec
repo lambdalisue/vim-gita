@@ -4,10 +4,7 @@ Describe gita#core
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-
     let scriptfile = Path.realpath('autoload/gita/core.vim')
-    let sf = ScriptLocal.sfuncs(scriptfile)
-    let sv = ScriptLocal.svars(scriptfile)
 
     " Create a mock Git working tree
     let root = tempname()
@@ -32,6 +29,8 @@ Describe gita#core
   End
 
   Before
+    let sf = ScriptLocal.sfuncs(scriptfile)
+    let sv = ScriptLocal.svars(scriptfile)
     let guard = Guard.store(
           \ ['references', sv],
           \)

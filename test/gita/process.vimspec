@@ -3,6 +3,9 @@ Describe gita#process
     let V = vital#of('vital')
     let Path = V.import('System.Filepath')
     let ScriptLocal = V.import('Vim.ScriptLocal')
+  End
+
+  Before
     let sf = ScriptLocal.sfuncs(Path.realpath('autoload/gita/process.vim'))
   End
 
