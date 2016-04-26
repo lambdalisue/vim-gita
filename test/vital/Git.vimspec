@@ -4,9 +4,6 @@ Describe Git
     let Path = V.import('System.Filepath')
     let ScriptLocal = V.import('Vim.ScriptLocal')
     let Git = V.import('Git')
-    let sf = ScriptLocal.sfuncs(
-          \ Path.realpath('autoload/vital/__gita__/Git.vim')
-          \)
     " Create a mock Git working tree
     let root = tempname()
     let worktree = Path.join(root, 'i n s i d e')
@@ -27,6 +24,12 @@ Describe Git
     " remote a temp directory
     let File = V.import('System.File')
     call File.rmdir(root, 'r')
+  End
+
+  Before
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git.vim')
+          \)
   End
 
   After
