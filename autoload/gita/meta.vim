@@ -54,8 +54,8 @@ function! gita#meta#expand(expr) abort
   let meta_filename = gita#meta#get('filename', '', a:expr)
   if s:Prelude.is_string(a:expr)
     let real_filename = expand(a:expr . ':p')
-    let real_filename = real_filename ==# a:expr . ':p'
-          \ ? a:expr
+    let real_filename = real_filename ==# expand(a:expr) . ':p'
+          \ ? expand(a:expr)
           \ : real_filename
   else
     let real_filename = fnamemodify(bufname(a:expr), ':p')
