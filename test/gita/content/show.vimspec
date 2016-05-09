@@ -6,7 +6,7 @@ Describe gita#content#show
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
     let ProcessMock = V.import('System.Process.Mock')
-    let guard = Guard.store('g:gita#process#options')
+    let guard = Guard.store(['g:gita#process#options'])
 
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/content/show.vim')

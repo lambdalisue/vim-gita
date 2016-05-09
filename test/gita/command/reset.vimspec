@@ -4,7 +4,7 @@ Describe gita#command#reset
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    let guard = Guard.store('g:gita#process#options')
+    let guard = Guard.store(['g:gita#process#options'])
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/reset.vim')
           \)

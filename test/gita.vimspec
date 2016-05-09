@@ -40,12 +40,12 @@ Describe gita
 
   Describe #define_variables({prefix}, {defaults})
     Before
-      let guard = Guard.store(
+      let guard = Guard.store([
             \ 'g:gita#foo',
             \ 'g:gita#bar',
             \ 'g:gita#hello#foo',
             \ 'g:gita#hello#bar',
-            \)
+            \])
     End
 
     After
