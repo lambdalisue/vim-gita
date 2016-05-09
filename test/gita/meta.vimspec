@@ -1,7 +1,10 @@
+let s:V = vital#of('vital')
+let s:Prelude = s:V.import('Prelude')
+
 Describe gita#meta
   Before
-    let V = vital#of('vital')
-    let Path = V.import('System.Filepath')
+    let Path = s:V.import('System.Filepath')
+    let Guard = s:V.import('Vim.Guard')
   End
 
   After
@@ -134,6 +137,34 @@ Describe gita#meta
       file foobar
       Assert Equals(gita#meta#expand('foobar'), 'foobar')
     End
+
+    if s:Prelude.is_windows()
+      Before
+        let guard = Guard.store(['&shellslash'])
+      End
+
+      After
+        call guard.restore()
+      End
+
+      It return a correct REAL path in Windows with noshellslash
+        set noshellslash
+        let ret = gita#meta#expand('C:\Windows\Foo\Bar.txt')
+        Assert Equals(ret, 'C:\Windows\Foo\Bar.txt')
+
+        let ret = gita#meta#expand('C:/Windows/Foo/Bar.txt')
+        Assert Equals(ret, 'C:\Windows\Foo\Bar.txt')
+      End
+
+      It return a correct REAL path in Windows with shellslash
+        set shellslash
+        let ret = gita#meta#expand('C:\Windows\Foo\Bar.txt')
+        Assert Equals(ret, 'C:/Windows/Foo/Bar.txt')
+
+        let ret = gita#meta#expand('C:/Windows/Foo/Bar.txt')
+        Assert Equals(ret, 'C:/Windows/Foo/Bar.txt')
+      End
+    endif
   End
 End
 
