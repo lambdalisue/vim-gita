@@ -6,22 +6,21 @@ Describe gita#content#show
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
     let ProcessMock = V.import('System.Process.Mock')
-    let guard = Guard.store(['g:gita#process#options'])
-
-    let sf = ScriptLocal.sfuncs(
-          \ Path.realpath('autoload/gita/content/show.vim')
-          \)
-  End
-
-  After all
-    call guard.restore()
   End
 
   Before
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/content/show.vim')
+          \)
+    let guard = Guard.store(['g:gita#process#options'])
     let mock = deepcopy(ProcessMock)
     let g:gita#process#options = {
           \ 'clients': [mock],
           \}
+  End
+
+  After
+    call guard.restore()
   End
 
   Describe s:replace_filenames_in_diff({content}, {filename1}, {filename2}, {repl})

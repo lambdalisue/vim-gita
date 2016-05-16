@@ -5,18 +5,21 @@ Describe gita#command#rm
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    let guard = Guard.store(['g:gita#process#options'])
-    let sf = ScriptLocal.sfuncs(
-          \ Path.realpath('autoload/gita/command/rm.vim')
-          \)
-    let g:gita#process#options = {
-          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
-          \}
     " the line below is required to load requirements before :redir
     silent Gita rm
   End
 
-  After all
+  Before
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/gita/command/rm.vim')
+          \)
+    let guard = Guard.store(['g:gita#process#options'])
+    let g:gita#process#options = {
+          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \}
+  End
+
+  After
     call guard.restore()
   End
 

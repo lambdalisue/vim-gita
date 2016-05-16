@@ -4,9 +4,6 @@ Describe Git.Process
     let Path = V.import('System.Filepath')
     let ScriptLocal = V.import('Vim.ScriptLocal')
     let GitProcess = V.import('Git.Process')
-    let sf = ScriptLocal.sfuncs(
-          \ Path.realpath('autoload/vital/__gita__/Git/Process.vim')
-          \)
 
     " Create a mock Git working tree
     let root = tempname()
@@ -23,6 +20,12 @@ Describe Git.Process
     " remove a temp directory
     let File = V.import('System.File')
     call File.rmdir(root, 'r')
+  End
+
+  Before
+    let sf = ScriptLocal.sfuncs(
+          \ Path.realpath('autoload/vital/__gita__/Git/Process.vim')
+          \)
   End
 
   Describe .get_config()

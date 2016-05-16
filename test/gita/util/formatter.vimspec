@@ -3,6 +3,9 @@ Describe gita#util#formatter
     let V = vital#of('vital')
     let Path = V.import('System.Filepath')
     let ScriptLocal = V.import('Vim.ScriptLocal')
+  End
+
+  Before
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/util/formatter.vim')
           \)
