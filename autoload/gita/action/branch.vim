@@ -79,6 +79,17 @@ function! s:action_delete(candidate, options) abort
   call gita#trigger_modified()
 endfunction
 
+function! s:action_refresh(candidate, options) abort
+  let args = [
+        \ 'remote',
+        \ 'update',
+        \ '--prune',
+        \]
+  let git = gita#core#get_or_fail()
+  call gita#process#execute(git, args)
+  call gita#trigger_modified()
+endfunction
+
 function! gita#action#branch#define(disable_mapping) abort
   call gita#action#define('branch:checkout', function('s:action_checkout'), {
         \ 'description': 'Checkout a branch',
@@ -115,6 +126,11 @@ function! gita#action#branch#define(disable_mapping) abort
         \ 'mapping_mode': 'n',
         \ 'requirements': ['name'],
         \ 'options': { 'force': 1 },
+        \})
+  call gita#action#define('branch:refresh', function('s:action_refresh'), {
+        \ 'description': 'Rebuild a list of branches in all remotes',
+        \ 'mapping_mode': 'n',
+        \ 'options': {},
         \})
   if a:disable_mapping
     return
