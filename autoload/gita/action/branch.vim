@@ -25,12 +25,16 @@ function! s:action_rename(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
+  if a:candidate.is_remote
+    call gita#throw('Attention: Renaming a remote branch is not supported.')
+  endif
+
   let newname = s:Prompt.ask(
         \ printf('Please input a new branch name of "%s": ', a:candidate.name),
         \ a:candidate.name,
         \)
   if empty(newname)
-    call gita#throw('Cancel')
+    call gita#throw('Cancel: Canceled by user')
   endif
   let args = [
         \ 'branch',
@@ -39,7 +43,7 @@ function! s:action_rename(candidate, options) abort
         \ newname,
         \]
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, args, { 'quiet': 1 })
+  call gita#process#execute(git, args)
   call gita#trigger_modified()
 endfunction
 
@@ -47,13 +51,31 @@ function! s:action_delete(candidate, options) abort
   let options = extend({
         \ 'force': 0,
         \}, a:options)
-  let args = [
-        \ 'branch',
-        \ options.force ? '-D' : '--delete',
-        \ a:candidate.name,
-        \]
+  if a:candidate.is_remote
+    if !options.force
+      if !s:Prompt.confirm(printf(
+            \ 'Are you sure that you want to delete a remote branch "%s" on "%s"?: ',
+            \ a:candidate.name,
+            \ a:candidate.remote,
+            \))
+        call gita#throw('Cancel: Canceled by user')
+      endif
+    endif
+    let args = [
+          \ 'push',
+          \ '--delete',
+          \ a:candidate.remote,
+          \ matchstr(a:candidate.name, '[^/]\+/\zs.*$'),
+          \]
+  else
+    let args = [
+          \ 'branch',
+          \ options.force ? '-D' : '--delete',
+          \ a:candidate.name,
+          \]
+  endif
   let git = gita#core#get_or_fail()
-  call gita#process#execute(git, args, { 'quiet': 1 })
+  call gita#process#execute(git, args)
   call gita#trigger_modified()
 endfunction
 

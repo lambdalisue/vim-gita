@@ -26,7 +26,7 @@ endfunction
 
 function! s:execute_command(options) abort
   let git = gita#core#get_or_fail()
-  let guard = s:Guard.store('&l:statusline')
+  let guard = s:Guard.store(['&l:statusline'])
   try
     setlocal statusline=Retriving\ blame\ content\ [1/3]\ ...
     redrawstatus

@@ -12,7 +12,7 @@ Describe gita#command#rebase
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/rebase.vim')
           \)
-    let guard = Guard.store('g:gita#process#options')
+    let guard = Guard.store(['g:gita#process#options'])
     let g:gita#process#options = {
           \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
           \}

@@ -12,7 +12,7 @@ Describe gita#content#show
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/content/show.vim')
           \)
-    let guard = Guard.store('g:gita#process#options')
+    let guard = Guard.store(['g:gita#process#options'])
     let mock = deepcopy(ProcessMock)
     let g:gita#process#options = {
           \ 'clients': [mock],

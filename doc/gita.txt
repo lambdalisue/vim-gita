@@ -1,6 +1,6 @@
 *gita.txt*				A git manipulation plugin
 
-Version: 0.1.0-beta
+Version: 0.1.1
 Author:  Alisue <lambdalisue@hashnote.net>		*gita-author*
 Support: Vim 7.4 and above
 License: MIT license
@@ -794,10 +794,6 @@ COMMANDS				*gita-interface-commands*
 	If {filename} is omitted, a corresponding filename of the current
 	buffer is used.
 
-	Note that even when 'autoread' option is 1, it DOES NOT automatically
-	reload content when the repository status change. Users requires to
-	execute |:edit| or |:edit!| command to reload content.
-
 					*:Gita-branch*
 :Gita branch [-h/--help]
 	[--opener={opener}] [--selection={selection}] {options}
@@ -812,10 +808,6 @@ COMMANDS				*gita-interface-commands*
 	A {selection} is used to specify line numbers to move.
 	A format of the {selection} is --selection=N or --selection=N-M where
 	the N is a start line number and the M is a end line number.
-
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-browse*
 :Gita browse [-h/--help]
@@ -851,10 +843,6 @@ COMMANDS				*gita-interface-commands*
 	to pattern variable.
 	See |g:gita#command#browse#extra_translation_patterns| for detail.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
-
 					*:Gita-chaperone*
 :Gita chaperone [-h/--help]
 	[--opener={opener}] [--selection={selection}]
@@ -880,10 +868,6 @@ COMMANDS				*gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
-
 					*:Gita-commit*
 :Gita commit [-h/--help] [--opener={opener}] {options} [-- {path}...]
 
@@ -896,10 +880,6 @@ COMMANDS				*gita-interface-commands*
 
 	If {path}(s) is/are specified, it filter candidates to the
 	specified {path}(s).
-
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-diff*
 :Gita diff [-h/--help]
@@ -931,10 +911,6 @@ COMMANDS				*gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	Note that even when 'autoread' option is 1, it DOES NOT automatically
-	reload content when the repository status change. Users requires to
-	execute |:edit| or |:edit!| command to reload content.
-
 					*Gita-diff-ls*
 :Gita diff-ls [-h/--help] [--opener={opener}] [{commit}]
 
@@ -946,10 +922,6 @@ COMMANDS				*gita-interface-commands*
 
 	When {commit} is omitted, an index is used.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
-
 					*:Gita-grep*
 :Gita grep [-h/--help] {options} [--opener={opener}] {patterns}
 
@@ -959,10 +931,6 @@ COMMANDS				*gita-interface-commands*
 
 	A {opener} is used to open a new buffer.
 	See |g:gita#content#grep#default_opener| for the default opener.
-
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
 
 					*Gita-ls-files*
 :Gita ls-files [-h/--help] {options} [--opener={opener}] [-- {path}...]
@@ -977,10 +945,6 @@ COMMANDS				*gita-interface-commands*
 	When {path}(s) is/are specified, the result will be filetred by
 	{path}(s).
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
-
 					*:Gita-ls-tree*
 :Gita ls-tree [-h/--help] [--opener={opener}] {commit} [-- {path}...]
 
@@ -992,10 +956,6 @@ COMMANDS				*gita-interface-commands*
 
 	When {path}(s) is/are specified, the result will be filetred by
 	{path}(s).
-
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
 
 					*:Gita-patch*
 :Gita patch [-h/--help]
@@ -1023,10 +983,6 @@ COMMANDS				*gita-interface-commands*
 <
 	Or if you want to always split vertically, add vertical to |diffopt|.
 
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
-
 					*:Gita-show*
 :Gita show [-h/--help]
 	[-w/--worktree] [-1/--ancestor] [-2/--ours] [-3/--theris]
@@ -1051,10 +1007,6 @@ COMMANDS				*gita-interface-commands*
 	A format of the {selection} is --selection=N or --selection=N-M where
 	the N is a start line number and the M is a end line number.
 
-	Note that even when 'autoread' option is 1, it DOES NOT automatically
-	reload content when the repository status change. Users requires to
-	execute |:edit| or |:edit!| command to reload content.
-
 					*:Gita-status*
 :Gita status [-h/--help] [--opener={opener}] {options} [-- {path}...]
 
@@ -1067,10 +1019,6 @@ COMMANDS				*gita-interface-commands*
 
 	If {path}(s) is/are specified, it filter candidates to the
 	specified {path}(s).
-
-	Note that when 'autoread' option is 1, it automatically reload content
-	when the repository status has changed. Otherwise users requires to
-	execute |:edit| or |:edit!| command manually to reload content.
 
 ------------------------------------------------------------------------------
 FUNCTIONS					*gita-interface-functions*
