@@ -5,17 +5,19 @@ Describe gita#command#add
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
-    " the line below is required to load requirements before :redir
-    silent Gita add
+    let ProcessMock = V.import('System.Process.Mock')
   End
 
   Before
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/add.vim')
           \)
-    let guard = Guard.store(['g:gita#process#options'])
+    let guard = Guard.store([
+          \ 'g:gita#process#options',
+          \ 'g:gita#command#add#default_options',
+          \])
     let g:gita#process#options = {
-          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \ 'clients': [deepcopy(ProcessMock)],
           \}
   End
 
@@ -77,35 +79,111 @@ Describe gita#command#add
     End
   End
 
+  Describe #execute({git}, {options})
+    let prefix = ['add', '--verbose']
+
+    It executes 'add --verbose --' for options: {}
+      let git = gita#core#get_or_fail()
+      let result = gita#command#add#execute(git, {})
+      Assert Equals(result.args[-3:], prefix + ['--'])
+    End
+
+    It executes 'add --verbose -- foobar.txt' for options: {'__unknown__': ['foobar.txt']}
+      let git = gita#core#get_or_fail()
+      let result = gita#command#add#execute(git, {
+            \ '__unknown__': ['foobar.txt'],
+            \})
+      Assert Equals(result.args[-4:], prefix + [
+            \ '--', fnamemodify('foobar.txt', ':p'),
+            \])
+    End
+
+    It executes 'add --verbose -- {cwd}' for options: {'__unknown__': ['.']}
+      let git = gita#core#get_or_fail()
+      let result = gita#command#add#execute(git, {
+            \ '__unknown__': ['.'],
+            \})
+      Assert Equals(result.args[-4:], prefix + [
+            \ '--', fnamemodify('.', ':p') . '.',
+            \])
+    End
+
+    It executes 'add --verbose -- {path}' for options: {'__unknown__': ['%']}
+      let git = gita#core#get_or_fail()
+      let result = gita#command#add#execute(git, {
+            \ '__unknown__': ['%'],
+            \})
+      Assert Equals(result.args[-4:], prefix + [
+            \ '--', expand('%:p'),
+            \])
+    End
+
+    It executes 'add --verbose --force -- {path}' for options: {'force': 1, '__unknown__': ['%']}
+      let git = gita#core#get_or_fail()
+      let result = gita#command#add#execute(git, {
+            \ 'force': 1,
+            \ '__unknown__': ['%'],
+            \})
+      Assert Equals(result.args[-5:], prefix + [
+            \ '--force', '--', expand('%:p'),
+            \])
+    End
+  End
+
   Describe #command({bang}, {range}, {args})
-    It executes 'git add --verbose --' for 'Gita add'
-      redir => content
-        silent! verbose execute 'Gita add'
-      redir END
-      Assert Match(content, 'git .* add --verbose --')
+    let prefix = ['add', '--verbose']
+
+    It shows a help and do nothing if -h/--help is specified
+      silent let result = gita#command#add#command('', [0, 0], ['-h'])
+      Assert Equals(result, {})
+
+      silent let result = gita#command#add#command('', [0, 0], ['--help'])
+      Assert Equals(result, {})
     End
 
-    It executes 'git add --verbose -- .' for 'Gita add .'
-      redir => content
-        silent! verbose execute 'Gita add .'
-      redir END
-      Assert Match(content, 'git .* add --verbose -- .')
+    It executes a command with default options
+      silent let result = gita#command#add#command('', [0, 0], [])
+      Assert Equals(result.args[-3:], prefix + ['--'])
+
+      let g:gita#command#add#default_options = {
+            \ 'dry-run': 1,
+            \ 'force': 1,
+            \}
+      silent let result = gita#command#add#command('', [0, 0], [])
+      Assert Equals(result.args[-5:], prefix + ['--dry-run', '--force', '--'])
     End
 
-    It executes 'git add --verbose -- {path}' for 'Gita add %'
-      redir => content
-        silent! verbose execute 'Gita add %'
-      redir END
-      let path = String.escape_pattern(fnameescape(expand('%:p')))
-      Assert Match(content, 'git .* add --verbose -- ' . path)
-    End
+    It triggers modified
+      augroup vim-gita-temporary
+        autocmd! *
+        autocmd User GitaStatusModifiedPre let g:GitaStatusModifiedPreCalled = 1
+        autocmd User GitaStatusModifiedPost let g:GitaStatusModifiedPostCalled = 1
+      augroup END
 
-    It executes 'git add --verbose --force -- {path}' for 'Gita add --force %'
-      redir => content
-        silent! verbose execute 'Gita add --force %'
-      redir END
-      let path = String.escape_pattern(fnameescape(expand('%:p')))
-      Assert Match(content, 'git .* add --verbose --force -- ' . path)
+      let g:GitaStatusModifiedPreCalled = 0
+      let g:GitaStatusModifiedPostCalled = 0
+      silent let result = gita#command#add#command('', [0, 0], [])
+      Assert True(g:GitaStatusModifiedPreCalled)
+      Assert True(g:GitaStatusModifiedPostCalled)
+
+      " modified should not be triggered with -n/--dry-run option
+      let g:GitaStatusModifiedPreCalled = 0
+      let g:GitaStatusModifiedPostCalled = 0
+      silent let result = gita#command#add#command('', [0, 0], ['-n'])
+      Assert False(g:GitaStatusModifiedPreCalled)
+      Assert False(g:GitaStatusModifiedPostCalled)
+
+      let g:GitaStatusModifiedPreCalled = 0
+      let g:GitaStatusModifiedPostCalled = 0
+      silent let result = gita#command#add#command('', [0, 0], ['--dry-run'])
+      Assert False(g:GitaStatusModifiedPreCalled)
+      Assert False(g:GitaStatusModifiedPostCalled)
+
+      unlet g:GitaStatusModifiedPreCalled
+      unlet g:GitaStatusModifiedPostCalled
+      augroup vim-gita-temporary
+        autocmd! *
+      augroup END
     End
   End
 End
