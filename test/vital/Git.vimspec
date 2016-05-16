@@ -10,14 +10,33 @@ Describe Git
     let repository = Path.join(worktree, '.git')
     let inside = Path.join(worktree, 'f o o', 'b a r')
     let outside = Path.join(root, 'o u t s i d e', 'f o o', 'b a r')
+    let connect = Path.join(root, 'c o n n e c t', 'b a r')
     lockvar root
     lockvar worktree
     lockvar repository
     lockvar inside
     lockvar outside
+    lockvar connect
     call mkdir(repository, 'p')
     call mkdir(inside, 'p')
     call mkdir(outside, 'p')
+    call mkdir(connect, 'p')
+    call mkdir(Path.join(repository, 'worktrees', 'connect'), 'p')
+    call mkdir(Path.join(repository, 'refs'), 'p')
+    call mkdir(Path.join(repository, 'worktrees', 'connect', 'logs'), 'p')
+
+    call writefile(
+          \ ['A pseudo git repository for test'],
+          \ Path.join(repository, 'description'),
+          \)
+    call writefile(
+          \ ['gitdir: ' . Path.join(repository, 'worktrees', 'connect')],
+          \ Path.join(connect, '.git'),
+          \)
+    call writefile(
+          \ ['../..'],
+          \ Path.join(repository, 'worktrees', 'connect', 'commondir'),
+          \)
   End
 
   After all
@@ -117,43 +136,78 @@ Describe Git
   End
 
   Describe s:_find({path})
-    It should return a dictionary which contains 'worktree' and 'repository'
+    It should return a dictionary which contains 'worktree', 'repository', and 'commondir'
       let path = inside
       let ret = sf._find(path)
       let exp = {
             \ 'worktree': worktree,
             \ 'repository': repository,
+            \ 'commondir': '',
             \}
       Assert IsDict(ret)
       Assert HasKey(ret, 'worktree')
       Assert HasKey(ret, 'repository')
+      Assert HasKey(ret, 'commondir')
       Assert Equals(ret, exp)
     End
 
-    It should return an empty dictionary for a non git working tree
+    It should return a dictionary which contains 'worktree', 'repository', and 'commondir' (link)
+      let path = connect
+      let ret = sf._find(path)
+      let exp = {
+            \ 'worktree': connect,
+            \ 'repository': Path.join(repository, 'worktrees', 'connect'),
+            \ 'commondir': repository,
+            \}
+      Assert IsDict(ret)
+      Assert HasKey(ret, 'worktree')
+      Assert HasKey(ret, 'repository')
+      Assert HasKey(ret, 'commondir')
+      Assert Equals(ret, exp)
+    End
+
+    It should return a dictionary with empty values for a non git working tree
       let path = outside
       let ret = sf._find(path)
       let exp = {
             \ 'worktree': '',
             \ 'repository': '',
+            \ 'commondir': '',
             \}
       Assert IsDict(ret)
       Assert HasKey(ret, 'worktree')
       Assert HasKey(ret, 'repository')
+      Assert HasKey(ret, 'commondir')
       Assert Equals(ret, exp)
     End
   End
 
   Describe .readfile({git}, {path})
     It returns a content of a file in a git repository of {git}
-      let git = Git.get('.')
-      let filename = Path.realpath('.git/description')
+      let git = Git.get(inside)
+      let filename = Path.realpath(Path.join(repository, 'description'))
+      let content = Git.readfile(git, 'description')
+      Assert Equals(content, readfile(filename))
+    End
+
+    It returns a content of a file in a git repository of {git} (link)
+      let git = Git.get(connect)
+
+      " A file which exists in a repository
+      let filename = Path.realpath(
+            \ Path.join(repository, 'worktrees', 'connect', 'commondir')
+            \)
+      let content = Git.readfile(git, 'commondir')
+      Assert Equals(content, readfile(filename))
+
+      " A file which exists in a commondir
+      let filename = Path.realpath(Path.join(repository, 'description'))
       let content = Git.readfile(git, 'description')
       Assert Equals(content, readfile(filename))
     End
 
     It return an empty list if {path} does not exist
-      let git = Git.get('.')
+      let git = Git.get(inside)
       let content = Git.readfile(git, 'a-file-does-not-exist')
       Assert Equals(content, [])
     End
@@ -161,14 +215,30 @@ Describe Git
 
   Describe .readline({git}, {path})
     It returns a first line of a file in a git repository of {git}
-      let git = Git.get('.')
-      let filename = Path.realpath('.git/description')
+      let git = Git.get(inside)
+      let filename = Path.realpath(Path.join(repository, 'description'))
+      let content = Git.readline(git, 'description')
+      Assert Equals(content, readfile(filename)[0])
+    End
+
+    It returns a first line of a file in a git repository of {git} (link)
+      let git = Git.get(connect)
+
+      " A file which exists in a repository
+      let filename = Path.realpath(
+            \ Path.join(repository, 'worktrees', 'connect', 'commondir')
+            \)
+      let content = Git.readline(git, 'commondir')
+      Assert Equals(content, readfile(filename)[0])
+
+      " A file which exists in a commondir
+      let filename = Path.realpath(Path.join(repository, 'description'))
       let content = Git.readline(git, 'description')
       Assert Equals(content, readfile(filename)[0])
     End
 
     It return an empty string if {path} does not exist
-      let git = Git.get('.')
+      let git = Git.get(inside)
       let content = Git.readline(git, 'a-file-does-not-exist')
       Assert Equals(content, '')
     End
@@ -176,49 +246,79 @@ Describe Git
 
   Describe .filereadable({git}, {path})
     It returns 1 if {path} in a git repository of {git} is readable
-      let git = Git.get('.')
+      let git = Git.get(inside)
+      Assert True(Git.filereadable(git, 'description'))
+    End
+
+    It returns 1 if {path} in a git repository of {git} is readable (link)
+      let git = Git.get(connect)
+      " A file which exists in a repository
+      Assert True(Git.filereadable(git, 'commondir'))
+      " A file which exists in a commondir
       Assert True(Git.filereadable(git, 'description'))
     End
 
     It return 0 if {path} in a git repository of {git} is unreadable
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert False(Git.filereadable(git, 'refs'))
     End
 
     It return 0 if {path} in a git repository of {git} is missing
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert False(Git.filereadable(git, 'a-file-does-not-exist'))
     End
   End
 
   Describe .isdirectory({git}, {path})
     It returns 1 if {path} in a git repository of {git} is a directory
-      let git = Git.get('.')
+      let git = Git.get(inside)
+      Assert True(Git.isdirectory(git, 'refs'))
+    End
+
+    It returns 1 if {path} in a git repository of {git} is a directory (link)
+      let git = Git.get(connect)
+      " A directory which exists in a repository
+      Assert True(Git.isdirectory(git, 'logs'))
+      " A directory which exists in a commondir
       Assert True(Git.isdirectory(git, 'refs'))
     End
 
     It return 0 if {path} in a git repository of {git} is not a directory
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert False(Git.isdirectory(git, 'description'))
     End
 
     It return 0 if {path} in a git repository of {git} is missing
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert False(Git.isdirectory(git, 'a-file-does-not-exist'))
     End
   End
 
   Describe .getftime({git}, {path})
     It returns ftime of {path} in a git repository of {git}
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert Equals(
             \ Git.getftime(git, 'description'),
-            \ getftime(Path.realpath('.git/description'))
+            \ getftime(Path.realpath(Path.join(repository, 'description')))
+            \)
+    End
+
+    It returns ftime of {path} in a git repository of {git} (link)
+      let git = Git.get(connect)
+      " A file which exists in a repository
+      Assert Equals(
+            \ Git.getftime(git, 'commondir'),
+            \ getftime(Path.realpath(Path.join(repository, 'worktrees', 'connect', 'commondir')))
+            \)
+      " A file which exists in a commondir
+      Assert Equals(
+            \ Git.getftime(git, 'description'),
+            \ getftime(Path.realpath(Path.join(repository, 'description')))
             \)
     End
 
     It return -1 if {path} in a git repository of {git} is missing
-      let git = Git.get('.')
+      let git = Git.get(inside)
       Assert Equals(Git.getftime(git, 'a-file-does-not-exist'), -1)
     End
   End
@@ -273,33 +373,41 @@ Describe Git
 
   Describe .get({path}[, {options}])
     It returns a git instance of a {path} belongs
-      let git = Git.get('.')
-      Assert Equals(git.worktree, getcwd())
-      Assert Equals(git.repository, Path.realpath(getcwd() . '/.git'))
+      let git = Git.get(inside)
+      Assert Equals(git.worktree, worktree)
+      Assert Equals(git.repository, repository)
+      Assert Equals(git.commondir, '')
+    End
+
+    It returns a git instance of a {path} belongs (link)
+      let git = Git.get(connect)
+      Assert Equals(git.worktree, connect)
+      Assert Equals(git.repository, Path.join(repository, 'worktrees', 'connect'))
+      Assert Equals(git.commondir, repository)
     End
 
     It returns a cached git instance of a {path} belongs for {path}
-      let git1 = Git.get('.')
-      let git2 = Git.get('.')
+      let git1 = Git.get(inside)
+      let git2 = Git.get(inside)
       Assert Same(git1, git2)
     End
 
     It returns a cached git instance of a {path} belongs for worktree of {path}
-      let git1 = Git.get('.')
-      let git2 = Git.get(Path.realpath('./autoload'))
+      let git1 = Git.get(worktree)
+      let git2 = Git.get(inside)
       Assert Same(git1, git2)
     End
 
     It returns a fresh git instance of a {path} belongs for {path} if {options.force} is specified
-      let git1 = Git.get('.')
-      let git2 = Git.get('.', { 'force': 1 })
+      let git1 = Git.get(inside)
+      let git2 = Git.get(inside, { 'force': 1 })
       Assert Equals(git1, git2)
       Assert NotSame(git1, git2)
     End
 
     It returns a fresh git instance of a {path} belongs for worktree of {path} if {options.force} is specified
-      let git1 = Git.get('.')
-      let git2 = Git.get(Path.realpath('./autoload'), { 'force': 1 })
+      let git1 = Git.get(worktree)
+      let git2 = Git.get(inside, { 'force': 1 })
       Assert Equals(git1, git2)
       Assert NotSame(git1, git2)
     End

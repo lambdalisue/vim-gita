@@ -61,10 +61,11 @@ endfunction
 
 
 function! s:readfile(git, path) abort
-  let path = s:Path.join(
-        \ a:git.repository,
-        \ s:Path.relpath(s:Path.realpath(a:path)),
-        \)
+  let relpath = s:Path.relpath(s:Path.realpath(a:path))
+  let path = s:Path.join(a:git.repository, relpath)
+  let path = !filereadable(path) && !empty(a:git.commondir)
+        \ ? s:Path.join(a:git.commondir, relpath)
+        \ : path
   return filereadable(path) ? readfile(path) : []
 endfunction
 
@@ -73,26 +74,29 @@ function! s:readline(git, path) abort
 endfunction
 
 function! s:filereadable(git, path) abort
-  let path = s:Path.join(
-        \ a:git.repository,
-        \ s:Path.relpath(s:Path.realpath(a:path)),
-        \)
+  let relpath = s:Path.relpath(s:Path.realpath(a:path))
+  let path = s:Path.join(a:git.repository, relpath)
+  let path = !filereadable(path) && !empty(a:git.commondir)
+        \ ? s:Path.join(a:git.commondir, relpath)
+        \ : path
   return filereadable(path)
 endfunction
 
 function! s:isdirectory(git, path) abort
-  let path = s:Path.join(
-        \ a:git.repository,
-        \ s:Path.relpath(s:Path.realpath(a:path)),
-        \)
+  let relpath = s:Path.relpath(s:Path.realpath(a:path))
+  let path = s:Path.join(a:git.repository, relpath)
+  let path = !isdirectory(path) && !empty(a:git.commondir)
+        \ ? s:Path.join(a:git.commondir, relpath)
+        \ : path
   return isdirectory(path)
 endfunction
 
 function! s:getftime(git, path) abort
-  let path = s:Path.join(
-        \ a:git.repository,
-        \ s:Path.relpath(s:Path.realpath(a:path)),
-        \)
+  let relpath = s:Path.relpath(s:Path.realpath(a:path))
+  let path = s:Path.join(a:git.repository, relpath)
+  let path = !filereadable(path) && !isdirectory(path) && !empty(a:git.commondir)
+        \ ? s:Path.join(a:git.commondir, relpath)
+        \ : path
   return getftime(path)
 endfunction
 
@@ -183,9 +187,16 @@ function! s:_find(path) abort
   let worktree = s:_find_worktree(dirpath)
   let repository = strlen(worktree) ? s:_find_repository(worktree) : ''
   let meta = {
-        \ 'worktree': worktree,
-        \ 'repository': repository,
+        \ 'worktree': simplify(worktree),
+        \ 'repository': simplify(repository),
         \}
+  " Check if the repository is a pseudo repository or original one
+  if filereadable(s:Path.join(repository, 'commondir'))
+    let commondir = readfile(s:Path.join(repository, 'commondir'))[0]
+    let meta.commondir = simplify(s:Path.join(repository, commondir))
+  else
+    let meta.commondir = ''
+  endif
   return meta
 endfunction
 
@@ -197,12 +208,14 @@ function! s:new(meta) abort
     let git.repository = ''
     let git.repository_name = ''
     let git.repository_cache = s:DummyCache.new()
+    let git.commondir = ''
   else
     let git.is_enabled = 1
     let git.worktree = a:meta.worktree
     let git.repository = a:meta.repository
     let git.repository_name = fnamemodify(a:meta.worktree, ':t')
     let git.repository_cache = s:_get_repository_cache()
+    let git.commondir = a:meta.commondir
   endif
   return git
 endfunction

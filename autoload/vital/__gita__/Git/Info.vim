@@ -128,9 +128,9 @@ endfunction
 
 " *** Time consuming *********************************************************
 function! s:get_repository_config(git) abort
-  let filename = s:Path.join(a:git.repository, 'config')
-  if filereadable(filename)
-    return s:INI.parse_file(filename)
+  let content = s:Git.readfile(a:git, 'config')
+  if !empty(content)
+    return s:INI.parse(join(content, "\n"))
   endif
   return {}
 endfunction
