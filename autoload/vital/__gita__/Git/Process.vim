@@ -51,12 +51,22 @@ function! s:execute(git, args, ...) abort
   return s:Process.execute(args, options)
 endfunction
 
-" shell({git}, {args})
-function! s:shell(git, args) abort
+" shell({git}, {args}[, {options}])
+function! s:shell(git, args, ...) abort
+  let options = extend({
+        \ 'quiet': 0,
+        \}, get(a:000, 0, {}))
   let worktree = empty(a:git) ? '' : get(a:git, 'worktree', '')
   let args = (empty(worktree) ? [] : ['-C', worktree]) + a:args
   let args = s:config.arguments + args
   let args = map(args, 'shellescape(v:val)')
+  if options.quiet
+    " NOTE:
+    " interaction mode could not be used with 'quiet' option
+    let args += s:Prelude.is_windows()
+          \ ? ['>', 'nul']
+          \ : ['>', '/dev/null']
+  endif
   execute '!' . s:config.executable . ' ' . join(args)
 endfunction
 

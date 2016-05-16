@@ -123,9 +123,7 @@ Describe Git.Process
       " The result of :! command directly print out to stdout so 'redir'
       " could not be used for catching the result.
       " Additionally the result will be printed out during unittest
-      call GitProcess.shell(git, [
-            \ 'rev-parse', '--show-toplevel',
-            \])
+      call GitProcess.shell(git, ['rev-parse', '--show-toplevel'], {'quiet': 1})
       Assert Equals(v:shell_error, 0)
     End
   End
