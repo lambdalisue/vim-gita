@@ -50,12 +50,14 @@ function! s:get_for_external(expr, options) abort
         \ 'force': 0,
         \}, a:options)
   let refinfo = gita#core#get_refinfo(a:expr)
-  if !empty(refinfo) && !options.force && !s:is_expired(a:expr, refinfo)
+  if !options.force && !empty(refinfo) && !s:is_expired(a:expr, refinfo)
     return empty(refinfo.refname)
           \ ? s:Git.new({'worktree': ''})
           \ : s:references[refinfo.refname]
   endif
-  return s:new_for_external(a:expr, a:options)
+  " force a new git instance if git.is_expired is directly specified
+  let options.force = get(get(refinfo, 'git', {}), 'is_expired') ? 1 : options.force
+  return s:new_for_external(a:expr, options)
 endfunction
 
 function! s:new_for_external(expr, options) abort

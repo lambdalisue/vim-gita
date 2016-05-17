@@ -147,6 +147,15 @@ Describe gita#core
         let git2 = gita#core#get(bufname . '.mod')
         Assert Same(git1, git2)
       End
+
+      It returns a different git instance if gita#core#expire() has called
+        let git1 = gita#core#get(bufname)
+        call gita#core#expire()
+        let git2 = gita#core#get(bufname)
+        let git3 = gita#core#get(bufname)
+        Assert NotSame(git1, git2)
+        Assert Same(git2, git3)
+      End
     End
 
     Context A file buffer in a non git repository
