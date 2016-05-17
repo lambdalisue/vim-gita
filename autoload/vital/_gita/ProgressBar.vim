@@ -68,14 +68,14 @@ function! s:new(maxvalue, ...) abort
   lockvar instance.method
   if instance.method ==# 'statusline'
     let instance._guard = s:Guard.store(
-          \ '&l:statusline',
+          \ ['&l:statusline'],
           \)
   elseif instance.method ==# 'echo'
-    let instance._guard = s:Guard.store(
+    let instance._guard = s:Guard.store([
           \ '&more',
           \ '&showcmd',
           \ '&ruler',
-          \)
+          \])
     set nomore
     set noshowcmd
     set noruler
