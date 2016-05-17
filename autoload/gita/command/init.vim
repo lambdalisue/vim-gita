@@ -44,12 +44,18 @@ function! s:args_from_options(git, options) abort
   return filter(args, '!empty(v:val)')
 endfunction
 
+function! gita#command#init#execute(git, options) abort
+  let args = s:args_from_options(a:git, a:options)
+  let result = gita#process#execute(a:git, args)
+  return result
+endfunction
+
 function! gita#command#init#command(bang, range, args) abort
   let git = gita#core#get()
   let parser = s:get_parser()
   let options = parser.parse(a:bang, a:range, a:args)
   if empty(options)
-    return
+    return {}
   endif
   let options = extend(
         \ copy(g:gita#command#init#default_options),
@@ -58,10 +64,10 @@ function! gita#command#init#command(bang, range, args) abort
   " NOTE:
   " init command might be executed in non git repository
   let git = gita#core#get()
-  let args = s:args_from_options(git, options)
-  call gita#process#execute(git, args)
+  let result = gita#command#init#execute(git, options)
   call gita#core#expire()
   call gita#trigger_modified()
+  return result
 endfunction
 
 function! gita#command#init#complete(arglead, cmdline, cursorpos) abort

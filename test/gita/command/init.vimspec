@@ -5,6 +5,7 @@ Describe gita#command#init
     let Path = V.import('System.Filepath')
     let Guard = V.import('Vim.Guard')
     let ScriptLocal = V.import('Vim.ScriptLocal')
+    let ProcessMock = V.import('System.Process.Mock')
     " the line below is required to load requirements before :redir
     silent Gita init
   End
@@ -13,9 +14,12 @@ Describe gita#command#init
     let sf = ScriptLocal.sfuncs(
           \ Path.realpath('autoload/gita/command/init.vim')
           \)
-    let guard = Guard.store(['g:gita#process#options'])
+    let guard = Guard.store([
+          \ 'g:gita#process#options',
+          \ 'g:gita#command#init#default_options',
+          \])
     let g:gita#process#options = {
-          \ 'clients': [deepcopy(V.import('System.Process.Mock'))],
+          \ 'clients': [deepcopy(ProcessMock)],
           \}
   End
 
@@ -60,26 +64,77 @@ Describe gita#command#init
     End
   End
 
+  Describe #execute({git}, {options})
+    let prefix = ['init']
+
+    It executes 'init' for options: {}
+      let git = gita#core#get()
+      let result = gita#command#init#execute(git, {})
+      Assert Equals(result.args[-1:], prefix + [])
+    End
+
+    It executes 'init --bare' for options: {'bare': 1}
+      let git = gita#core#get()
+      let result = gita#command#init#execute(git, {'bare': 1})
+      Assert Equals(result.args[-2:], prefix + ['--bare'])
+    End
+
+    It executes 'init --template=.' for options: {'template': '.'}
+      let git = gita#core#get()
+      let result = gita#command#init#execute(git, {'template': '.'})
+      Assert Equals(result.args[-2:], prefix + ['--template=.'])
+    End
+  End
+
   Describe #command({bang}, {range}, {args})
-    It executes 'git init' for 'Gita init'
-      redir => content
-        silent! verbose execute 'Gita init'
-      redir END
-      Assert Match(content, 'git .* init')
+    let prefix = ['init']
+
+    It shows a help and do nothing if -h/--help is specified
+      silent let result = gita#command#init#command('', [0, 0], ['-h'])
+      Assert Equals(result, {})
+
+      silent let result = gita#command#init#command('', [0, 0], ['--help'])
+      Assert Equals(result, {})
     End
 
-    It executes 'git init --bare' for 'Gita init --bare'
-      redir => content
-        silent! verbose execute 'Gita init --bare'
-      redir END
-      Assert Match(content, 'git .* init --bare')
+    It executes a command with default options
+      silent let result = gita#command#init#command('', [0, 0], [])
+      Assert Equals(result.args[-1:], prefix)
+
+      let g:gita#command#init#default_options = {
+            \ 'bare': 1,
+            \ 'shared': 1,
+            \}
+      silent let result = gita#command#init#command('', [0, 0], [])
+      Assert Equals(result.args[-3:], prefix + ['--bare', '--shared'])
     End
 
-    It executes 'git init --template=.' for 'Gita init --template=.'
-      redir => content
-        silent! verbose execute 'Gita init --template=.'
-      redir END
-      Assert Match(content, 'git .* init --template=.')
+    It triggers modified
+      augroup vim-gita-temporary
+        autocmd! *
+        autocmd User GitaStatusModifiedPre let g:GitaStatusModifiedPreCalled = 1
+        autocmd User GitaStatusModifiedPost let g:GitaStatusModifiedPostCalled = 1
+      augroup END
+
+      let g:GitaStatusModifiedPreCalled = 0
+      let g:GitaStatusModifiedPostCalled = 0
+      silent let result = gita#command#add#command('', [0, 0], [])
+      Assert True(g:GitaStatusModifiedPreCalled)
+      Assert True(g:GitaStatusModifiedPostCalled)
+
+      unlet g:GitaStatusModifiedPreCalled
+      unlet g:GitaStatusModifiedPostCalled
+      augroup vim-gita-temporary
+        autocmd! *
+      augroup END
+    End
+
+    It expire a current git instance binded to the buffer
+      let git = gita#core#get()
+      Assert False(get(git, 'is_expired'))
+
+      silent let result = gita#command#init#command('', [0, 0], [])
+      Assert True(git.is_expired)
     End
   End
 End
