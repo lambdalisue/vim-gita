@@ -1,5 +1,6 @@
 let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
+let s:Guard = s:V.import('Vim.Guard')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 
@@ -83,6 +84,9 @@ function! s:on_BufEnter() abort
   let options = gita#meta#get_for('^blame-navi$', 'options')
   let bufname = gita#content#blame_view#build_bufname(options)
   let bufnum  = bufnr(bufname)
+  " Force the following requirements
+  setlocal nowrap nofoldenable foldcolumn=0 colorcolumn=0
+  setlocal nonumber norelativenumber nolist
   if bufnum > -1 || bufwinnr(bufnum) > -1
     " force to follow same linnum as the partner
     let winnum = winnr()
@@ -100,19 +104,26 @@ function! s:on_BufWinEnter() abort
   let bufname = gita#content#blame_view#build_bufname(options)
   let bufnum  = bufnr(bufname)
   if bufnum == -1 || bufwinnr(bufnum) == -1
-    let opener = bufnum == -1
+    let opener = bufwinnr(bufnum) == -1
           \ ? printf(
           \   'rightbelow %d vsplit',
           \   winwidth(0) - g:gita#content#blame#navigator_width - 1
           \ )
           \ : 'edit'
-    call gita#util#cascade#set('blame-view', options)
-    call gita#util#buffer#open(bufname, {
-          \ 'opener': opener,
-          \ 'window': 'blame_view',
-          \ 'selection': [line('.')],
-          \})
-    setlocal scrollbind
+    set scrollbind
+    try
+      let guard = s:Guard.store(['&eventignore'])
+      set eventignore+=BufWinEnter
+      call gita#util#cascade#set('blame-view', options)
+      call gita#util#buffer#open(bufname, {
+            \ 'opener': opener,
+            \ 'window': 'blame_view',
+            \ 'selection': [line('.')],
+            \})
+    finally
+      call guard.restore()
+    endtry
+    set scrollbind
   endif
 endfunction
 
