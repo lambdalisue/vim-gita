@@ -79,8 +79,9 @@ function! gita#util#diffthis() abort
   augroup gita_internal_util_diffthis
     autocmd! * <buffer>
     autocmd BufWinLeave <buffer> call s:diffoff()
-    autocmd BufHidden <buffer> call s:diffoff()
+    autocmd BufHidden   <buffer> call s:diffoff()
   augroup END
+  diffoff
   diffthis
   keepjump normal! zM
 endfunction
