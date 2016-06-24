@@ -57,6 +57,9 @@ Use your favorite Vim plugin manager such as [junegunn/vim-plug] or [Shougo/dein
 " Plug.vim
 Plug 'lambdalisue/vim-gita'
 
+"Plug.vim (lazy)
+Plug 'lambdalisue/vim-gita', {'on': ['Gita']}
+
 " dein.vim
 call dein#add('lambdalisue/vim-gita')
 
