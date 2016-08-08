@@ -116,13 +116,13 @@ function! gita#action#branch#define(disable_mapping) abort
         \ 'options': { 'force': 1 },
         \})
   call gita#action#define('branch:delete', function('s:action_delete'), {
-        \ 'description': 'Rename a branch',
+        \ 'description': 'Delete a branch',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['name'],
         \ 'options': {},
         \})
   call gita#action#define('branch:delete:force', function('s:action_delete'), {
-        \ 'description': 'Rename a branch',
+        \ 'description': 'Delete a branch',
         \ 'mapping_mode': 'n',
         \ 'requirements': ['name'],
         \ 'options': { 'force': 1 },
