@@ -510,13 +510,15 @@ function! s:parse_match_record(line, ...) abort
 endfunction
 
 function! s:parse_match(content, ...) abort
-  let options = get(a:000, 0, {})
+  let options = get(a:000, 0, {
+        \ 'line_length_threshold': 1000,
+        \})
   let content = s:Prelude.is_string(a:content)
         \ ? split(a:content, '\r\?\n', 1)
         \ : a:content
   let matches = []
   for line in content
-    if empty(line)
+    if empty(line) || len(line) > options.line_length_threshold
       continue
     endif
     let match = s:parse_match_record(line, options)
