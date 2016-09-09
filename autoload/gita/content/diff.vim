@@ -175,8 +175,8 @@ function! s:on_BufReadCmd(options) abort
     setlocal buftype=nowrite
     setlocal readonly
   endif
-  setlocal filetype=diff
   call gita#util#doautocmd('BufReadPost')
+  setlocal filetype=diff
 endfunction
 
 function! s:on_FileReadCmd(options) abort
