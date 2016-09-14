@@ -12,15 +12,20 @@ let s:GitTerm = s:V.import('Git.Term')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:args_from_options(git, options) abort
+  let args = gita#process#args_from_options(a:options, {
+        \ 'w': 1,
+        \})
   let args = [
         \ 'blame',
         \ g:gita#content#blame#use_porcelain_instead
         \   ? '--porcelain'
         \   : '--incremental',
+        \] + args + [
         \ gita#normalize#commit(a:git, get(a:options, 'commit', '')),
         \ '--',
         \ gita#normalize#relpath(a:git, a:options.filename),
         \]
+  echomsg string(args)
   return filter(args, '!empty(v:val)')
 endfunction
 
