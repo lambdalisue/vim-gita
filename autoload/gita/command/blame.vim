@@ -19,6 +19,10 @@ function! s:get_parser() abort
           \   'pattern': '^\%(\d\+\|\d\+-\d\+\)$',
           \})
     call s:parser.add_argument(
+          \ '--ignore-whitespace', '-w',
+          \ 'ignore whitespace when comparing.', {
+          \})
+    call s:parser.add_argument(
           \ 'commit', [
           \   'A commit which you want to blame.',
           \   'If nothing is specified, it show a blame of HEAD.',
@@ -33,6 +37,13 @@ function! s:get_parser() abort
           \ ], {
           \   'complete': function('gita#util#complete#filename'),
           \ })
+    function! s:parser.hooks.post_validate(options) abort
+      if get(a:options, 'ignore-whitespace')
+        let a:options.w = 1
+        unlet a:options['ignore-whitespace']
+      endif
+    endfunction
+    call s:parser.hooks.validate()
   endif
   return s:parser
 endfunction
