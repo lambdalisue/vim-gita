@@ -14,5 +14,6 @@ function! gita#action#status#define(disable_mapping) abort
   let content_type = gita#meta#get('content_type')
   if content_type ==# 'commit'
     nmap <buffer><nowait> <C-^> <Plug>(gita-status-open)
+    nmap <buffer><nowait> <C-6> <Plug>(gita-status-open)
   endif
 endfunction

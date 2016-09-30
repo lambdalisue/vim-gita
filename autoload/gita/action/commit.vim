@@ -27,5 +27,6 @@ function! gita#action#commit#define(disable_mapping) abort
     nmap <buffer><nowait> <C-c><C-a> <Plug>(gita-commit-open-amend)
   elseif content_type ==# 'status'
     nmap <buffer><nowait> <C-^> <Plug>(gita-commit-open)
+    nmap <buffer><nowait> <C-6> <Plug>(gita-commit-open)
   endif
 endfunction
