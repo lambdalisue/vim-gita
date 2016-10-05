@@ -82,7 +82,6 @@ function! s:on_BufWinEnter() abort
   let options = gita#meta#get_for('^blame-view$', 'options')
   let bufname = gita#content#blame_navi#build_bufname(options)
   let bufnum  = bufnr(bufname)
-  echomsg printf('view: BufWinEnter %d %d', bufname, bufwinnr(bufnum))
   if bufnum == -1 || bufwinnr(bufnum) == -1
     let opener = bufwinnr(bufnum) == -1
           \ ? printf(

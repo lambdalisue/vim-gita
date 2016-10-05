@@ -25,7 +25,6 @@ function! s:args_from_options(git, options) abort
         \ '--',
         \ gita#normalize#relpath(a:git, a:options.filename),
         \]
-  echomsg string(args)
   return filter(args, '!empty(v:val)')
 endfunction
 
