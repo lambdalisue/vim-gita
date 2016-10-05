@@ -1,6 +1,6 @@
 *gita.txt*				A git manipulation plugin
 
-Version: 0.1.4
+Version: 0.1.5
 Author:  Alisue <lambdalisue@hashnote.net>		*gita-author*
 Support: Vim 7.4 and above
 License: MIT license
