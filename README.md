@@ -49,12 +49,6 @@ You may notice that this behavior is quite useful when you temporary open a file
 
 Additionally, gita aggressively uses cache mechanisms to improve its' performance. You would notice huge performance improvement if you are currently using `system()` to show git repository informations in statusline such as a current branch name or the number of modified files.
 
-Do you like it? Buy me a coffee ;-)
-
-<a href="https://flattr.com/submit/auto?fid=6p91jn&url=https%3A%2F%2Fgithub.com%2Flambdalisue%2Fvim-gita" target="_blank">
-    <img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0">
-</a>
-
 Install
 -------------------------------------------------------------------------------
 Use your favorite Vim plugin manager such as [junegunn/vim-plug] or [Shougo/dein.vim] like:
