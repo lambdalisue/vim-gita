@@ -95,7 +95,7 @@ function! s:on_BufReadCmd(options) abort
   " the following options are required so overwrite everytime
   setlocal filetype=gita-branch
   setlocal buftype=nofile nobuflisted
-  setlocal nohidden
+  setlocal bufhidden=wipe
   setlocal nomodifiable
   call gita#content#branch#redraw()
   call gita#util#doautocmd('BufReadPost')

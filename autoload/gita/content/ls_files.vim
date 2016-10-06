@@ -119,7 +119,7 @@ function! s:on_BufReadCmd(options) abort
   " the following options are required so overwrite everytime
   setlocal filetype=gita-ls-files
   setlocal buftype=nofile nobuflisted
-  setlocal nohidden
+  setlocal bufhidden=wipe
   setlocal nomodifiable
   call gita#content#ls_files#redraw()
   call gita#util#doautocmd('BufReadPost')
