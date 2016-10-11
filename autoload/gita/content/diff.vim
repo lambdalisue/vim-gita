@@ -230,6 +230,7 @@ function! s:on_FileWriteCmd(options) abort
 endfunction
 
 function! s:open1(options) abort
+  silent windo diffoff
   let options = extend({
         \ 'opener': '',
         \ 'window': '',
@@ -245,6 +246,7 @@ function! s:open1(options) abort
 endfunction
 
 function! s:open2(options) abort
+  silent windo diffoff
   let options = extend({
         \ 'patch': 0,
         \ 'cached': 0,

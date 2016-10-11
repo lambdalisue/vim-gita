@@ -15,6 +15,7 @@ function! s:open1(options) abort
 endfunction
 
 function! s:open2(options) abort
+  silent windo diffoff
   let options = extend({
         \ 'reverse': 0,
         \ 'filename': '',
@@ -55,6 +56,7 @@ function! s:open2(options) abort
 endfunction
 
 function! s:open3(options) abort
+  silent windo diffoff
   let options = extend({
         \ 'filename': '',
         \ 'opener': 'tabedit',
