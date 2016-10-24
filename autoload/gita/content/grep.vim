@@ -202,6 +202,6 @@ function! gita#content#grep#autocmd(name, bufinfo) abort
 endfunction
 
 call gita#define_variables('content#grep', {
-      \ 'primary_action_mapping': '<Plug>(gita-show)',
+      \ 'primary_action_mapping': '<Plug>(gita-edit)',
       \ 'disable_default_mappings': 0,
       \})
