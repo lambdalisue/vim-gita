@@ -205,7 +205,7 @@ function! s:on_BufReadCmd(options) abort
   " the following options are required so overwrite everytime
   setlocal filetype=gita-commit
   setlocal buftype=acwrite nobuflisted
-  setlocal modifiable
+  setlocal modifiable nomodeline
   call gita#content#commit#redraw()
   call gita#util#doautocmd('BufReadPost')
 endfunction
