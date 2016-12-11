@@ -215,6 +215,7 @@ function! s:on_BufReadCmd(options) abort
     setlocal buftype=nowrite
     setlocal readonly
   endif
+  setlocal nobuflisted
   call gita#util#doautocmd('BufReadPost')
 endfunction
 

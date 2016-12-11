@@ -176,6 +176,7 @@ function! s:on_BufReadCmd(options) abort
     setlocal readonly
   endif
   call gita#util#doautocmd('BufReadPost')
+  setlocal nobuflisted
   setlocal filetype=diff
 endfunction
 
