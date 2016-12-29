@@ -4,7 +4,12 @@ endif
 let b:did_ftplugin = 1
 
 setlocal winfixheight
-setlocal cursorline
-setlocal nolist nospell
+if &cursorline
+  setlocal cursorline
+endif
+if !&spell
+  setlocal nospell
+endif
+setlocal nolist 
 setlocal nowrap nofoldenable
 setlocal foldcolumn=0 colorcolumn=0
