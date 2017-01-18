@@ -2,7 +2,7 @@ scriptencoding utf8
 let s:V = gita#vital()
 let s:Path = s:V.import('System.Filepath')
 let s:Cache = s:V.import('System.Cache.Memory')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
@@ -210,7 +210,7 @@ function! gita#statusline#format(format) abort
 endfunction
 function! gita#statusline#preset(name) abort
   if !has_key(s:preset, a:name)
-    call s:Prompt.error(printf(
+    call s:Console.error(printf(
           \ 'gita: statusline: A preset "%s" is not found.',
           \ a:name,
           \))

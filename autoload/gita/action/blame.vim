@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 
 let s:history = []
@@ -90,7 +90,7 @@ function! s:action_previous_chunk(candidate, options) abort
   let blamemeta = gita#meta#get_for('^blame-', 'blamemeta')
   let chunks = blamemeta.chunks
   if a:candidate.index <= 0
-    call s:Prompt.warn('This is a first chunk')
+    call s:Console.warn('This is a first chunk')
     return
   endif
   let prev_chunk = chunks[a:candidate.index - 1]
@@ -101,7 +101,7 @@ function! s:action_next_chunk(candidate, options) abort
   let blamemeta = gita#meta#get_for('^blame-', 'blamemeta')
   let chunks = blamemeta.chunks
   if a:candidate.index >= len(chunks) - 1
-    call s:Prompt.warn('This is a last chunk')
+    call s:Console.warn('This is a last chunk')
     return
   endif
   let next_chunk = chunks[a:candidate.index + 1]
@@ -110,7 +110,7 @@ endfunction
 
 function! s:call_pseudo_command() abort range
   let prefix = a:firstline == a:lastline ? '' : "'<,'>"
-  let ret = s:Prompt.input('None', ':', prefix)
+  let ret = s:Console.input('None', ':', prefix)
   redraw | echo
   if ret =~# '\v^[0-9]+$'
     let blamemeta = gita#meta#get_for('^blame-', 'blamemeta')
@@ -119,7 +119,7 @@ function! s:call_pseudo_command() abort range
     try
       execute ret
     catch /^Vim.\{-}:/
-      call s:Prompt.error(substitute(v:exception, '^Vim.\{-}:', '', ''))
+      call s:Console.error(substitute(v:exception, '^Vim.\{-}:', '', ''))
     endtry
   endif
 endfunction

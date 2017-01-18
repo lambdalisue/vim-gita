@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! gita#content#build_bufname(content_type, options) abort
   let options = extend({
@@ -90,11 +90,11 @@ function! gita#content#autocmd(name) abort
           \)
     call call(funcname, [a:name, bufinfo])
   catch /^Vim\%((\a\+)\)\=:E117/
-    call s:Prompt.warn(printf(
+    call s:Console.warn(printf(
           \ 'gita: "%s" in "%s" is not supported',
           \ a:name, expand('<afile>'),
           \))
-    call s:Prompt.debug(v:exception)
+    call s:Console.debug(v:exception)
   catch /^\%(vital: Git[:.]\|gita:\)/
     call gita#util#handle_exception()
   endtry

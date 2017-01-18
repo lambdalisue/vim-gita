@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:Git = s:V.import('Git')
 
 function! s:get_available_branches(git, args) abort
@@ -46,8 +46,8 @@ function! gita#util#complete#branch(arglead, cmdline, cursorpos, ...) abort
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -63,8 +63,8 @@ function! gita#util#complete#local_branch(arglead, cmdline, cursorpos, ...) abor
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -80,8 +80,8 @@ function! gita#util#complete#remote_branch(arglead, cmdline, cursorpos, ...) abo
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -97,8 +97,8 @@ function! gita#util#complete#commit(arglead, cmdline, cursorpos, ...) abort
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -115,8 +115,8 @@ function! gita#util#complete#commitish(arglead, cmdline, cursorpos, ...) abort
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -132,8 +132,8 @@ function! gita#util#complete#cached_filename(arglead, cmdline, cursorpos, ...) a
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -149,8 +149,8 @@ function! gita#util#complete#deleted_filename(arglead, cmdline, cursorpos, ...) 
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -166,8 +166,8 @@ function! gita#util#complete#modified_filename(arglead, cmdline, cursorpos, ...)
     endif
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -180,8 +180,8 @@ function! gita#util#complete#others_filename(arglead, cmdline, cursorpos, ...) a
           \])
     return candidates
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -194,8 +194,8 @@ function! gita#util#complete#unstaged_filename(arglead, cmdline, cursorpos, ...)
           \])
     return candidates
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction
@@ -208,8 +208,8 @@ function! gita#util#complete#filename(arglead, cmdline, cursorpos, ...) abort
           \])
     return filter(copy(candidates), 'v:val =~# ''^'' . a:arglead')
   catch
-    call s:Prompt.debug(v:exception)
-    call s:Prompt.debug(v:throwpoint)
+    call s:Console.debug(v:exception)
+    call s:Console.debug(v:throwpoint)
     return ''
   endtry
 endfunction

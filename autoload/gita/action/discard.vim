@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:File = s:V.import('System.File')
 let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! s:action(candidates, options) abort
   let options = extend({
@@ -11,7 +11,7 @@ function! s:action(candidates, options) abort
   let checkout_candidates = []
   for candidate in a:candidates
     if candidate.is_conflicted
-      call s:Prompt.warn(printf(
+      call s:Console.warn(printf(
             \ 'A conflicted file "%s" cannot be discarded. Resolve conflict first.',
             \ s:Path.relpath(candidate.path),
             \))
@@ -23,7 +23,7 @@ function! s:action(candidates, options) abort
     endif
   endfor
   if !options.force
-    call s:Prompt.attention(
+    call s:Console.warn(
           \ 'A discard action will discard all local changes on the working tree',
           \ 'and the operation is irreversible, mean that you have no chance to',
           \ 'revert the operation.',
@@ -32,7 +32,7 @@ function! s:action(candidates, options) abort
     for candidate in extend(copy(delete_candidates), checkout_candidates)
       echo '- ' . s:Path.relpath(candidate.path)
     endfor
-    if !s:Prompt.confirm('Are you sure to discard the changes?')
+    if !s:Console.confirm('Are you sure to discard the changes?')
       call gita#throw('Cancel: The operation has canceled by user')
     endif
   endif

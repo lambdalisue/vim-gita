@@ -3,13 +3,13 @@
 " Do not mofidify the code nor insert new lines before '" ___vital___'
 if v:version > 703 || v:version == 703 && has('patch1170')
   function! vital#_gita#Vim#Buffer#Anchor#import() abort
-    return map({'focus': '', '_vital_depends': '', 'is_suitable': '', 'get_config': '', 'find_suitable': '', 'set_config': '', 'is_available': '', 'attach': '', '_vital_loaded': ''},  'function("s:" . v:key)')
+    return map({'focus': '', '_vital_depends': '', 'is_suitable': '', 'get_config': '', 'focus_if_available': '', 'find_suitable': '', 'set_config': '', 'is_available': '', 'attach': '', '_vital_loaded': ''},  'function("s:" . v:key)')
   endfunction
 else
   function! s:_SID() abort
     return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze__SID$')
   endfunction
-  execute join(['function! vital#_gita#Vim#Buffer#Anchor#import() abort', printf("return map({'focus': '', '_vital_depends': '', 'is_suitable': '', 'get_config': '', 'find_suitable': '', 'set_config': '', 'is_available': '', 'attach': '', '_vital_loaded': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
+  execute join(['function! vital#_gita#Vim#Buffer#Anchor#import() abort', printf("return map({'focus': '', '_vital_depends': '', 'is_suitable': '', 'get_config': '', 'focus_if_available': '', 'find_suitable': '', 'set_config': '', 'is_available': '', 'attach': '', '_vital_loaded': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
   delfunction s:_SID
 endif
 " ___vital___
@@ -48,15 +48,15 @@ function! s:set_config(config) abort
 endfunction
 
 function! s:is_available(opener) abort
-  if a:opener =~# '\%(^\|\W\)\%(pta\|ptag\)!\?\%(\W\|$\)'
+  if a:opener =~# '\<p\%[tag]!\?\>'
     return 0
-  elseif a:opener =~# '\%(^\|\W\)\%(ped\|pedi\|pedit\)!\?\%(\W\|$\)'
+  elseif a:opener =~# '\<ped\%[it]!\?\>'
     return 0
-  elseif a:opener =~# '\%(^\|\W\)\%(ps\|pse\|psea\|psear\|psearc\|psearch\)!\?\%(\W\|$\)'
+  elseif a:opener =~# '\<ps\%[earch]!\?\>'
     return 0
-  elseif a:opener =~# '\%(^\|\W\)\%(tabe\|tabed\|tabedi\|tabedit\|tabnew\)\%(\W\|$\)'
+  elseif a:opener =~# '\<\%(tabe\%[dit]\|tabnew\)\>'
     return 0
-  elseif a:opener =~# '\%(^\|\W\)\%(tabf\|tabfi\|tabfin\|tabfind\)\%(\W\|$\)'
+  elseif a:opener =~# '\<tabf\%[ind]\>'
     return 0
   endif
   return 1
@@ -82,13 +82,14 @@ function! s:is_suitable(winnum) abort
 endfunction
 
 function! s:find_suitable(winnum, ...) abort
+  let winnum = max([1, a:winnum])
   if winnr('$') == 1
     return 1
   endif
   let is_reverse = get(a:000, 0, 0)
   let rangeset = is_reverse
-        \ ? [reverse(range(1, a:winnum)), reverse(range(a:winnum + 1, winnr('$')))]
-        \ : [range(a:winnum, winnr('$')), range(1, a:winnum - 1)]
+        \ ? [reverse(range(1, winnum)), reverse(range(winnum + 1, winnr('$')))]
+        \ : [range(winnum, winnr('$')), range(1, winnum - 1)]
   " find a suitable window in rightbelow from a previous window
   for winnum in rangeset[0]
     if s:is_suitable(winnum)
@@ -106,6 +107,9 @@ function! s:find_suitable(winnum, ...) abort
 endfunction
 
 function! s:focus(...) abort
+  if s:is_suitable(winnr())
+    return
+  endif
   " find suitable window from the previous window
   let previous_winnum = winnr('#')
   let suitable_winnum = s:find_suitable(previous_winnum, get(a:000, 0, 0))
@@ -113,6 +117,12 @@ function! s:focus(...) abort
         \ ? previous_winnum
         \ : suitable_winnum
   silent execute printf('keepjumps %dwincmd w', suitable_winnum)
+endfunction
+
+function! s:focus_if_available(opener, ...) abort
+  if s:is_available(a:opener)
+    call call('s:focus', a:000)
+  endif
 endfunction
 
 function! s:attach() abort
@@ -124,16 +134,16 @@ function! s:attach() abort
 endfunction
 
 function! s:_on_WinLeave() abort
-  let g:_vital_vim_buffer_anchor_winleave = winnr('$')
+  let s:_vital_vim_buffer_anchor_winleave = winnr('$')
 endfunction
 
 function! s:_on_WinEnter() abort
-  if exists('g:_vital_vim_buffer_anchor_winleave')
-    let nwin = g:_vital_vim_buffer_anchor_winleave
+  if exists('s:_vital_vim_buffer_anchor_winleave')
+    let nwin = s:_vital_vim_buffer_anchor_winleave
     if winnr('$') < nwin
       call s:focus(1)
     endif
-    unlet g:_vital_vim_buffer_anchor_winleave
+    unlet s:_vital_vim_buffer_anchor_winleave
   endif
 endfunction
 

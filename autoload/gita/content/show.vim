@@ -2,7 +2,7 @@ let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:String = s:V.import('Data.String')
 let s:Path = s:V.import('System.Filepath')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:Git = s:V.import('Git')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitTerm = s:V.import('Git.Term')
@@ -70,7 +70,7 @@ function! s:get_diff_content(git, content, filename) abort
           \).content
     if empty(content) || len(content) < 4
       " fail or no differences. Assume that there are no differences
-      call s:Prompt.debug(content)
+      call s:Console.debug(content)
       call gita#throw('Attention: No differences are detected')
     endif
     return s:replace_filenames_in_diff(

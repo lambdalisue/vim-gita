@@ -1,13 +1,13 @@
 let s:V = gita#vital()
 let s:String = s:V.import('Data.String')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:Git = s:V.import('Git')
 let s:GitParser = s:V.import('Git.Parser')
 
 function! s:assign_pattern(options) abort
   if empty(get(a:options, 'patterns'))
-    let pattern = s:Prompt.ask('Please input a grep pattern: ')
+    let pattern = s:Console.ask('Please input a grep pattern: ')
     if empty(pattern)
       call gita#throw('Cancel')
     endif

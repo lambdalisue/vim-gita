@@ -3,7 +3,7 @@ let s:Prelude = s:V.import('Prelude')
 let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:String = s:V.import('Data.String')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -71,7 +71,7 @@ function! gita#process#execute(git, args, ...) abort
   if !options.fail_silently && !result.success
     call s:GitProcess.throw(result)
   elseif !options.quiet
-    call s:Prompt.title(printf('%s: %s',
+    call s:Console.info(printf('%s: %s',
           \ result.success ? 'OK' : 'Fail',
           \ join(result.args),
           \))

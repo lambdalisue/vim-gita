@@ -67,9 +67,9 @@ function! s:new(maxvalue, ...) abort
   lockvar instance.fillbar
   lockvar instance.method
   if instance.method ==# 'statusline'
-    let instance._guard = s:Guard.store(
-          \ ['&l:statusline'],
-          \)
+    let instance._guard = s:Guard.store([
+          \ '&l:statusline',
+          \])
   elseif instance.method ==# 'echo'
     let instance._guard = s:Guard.store([
           \ '&more',

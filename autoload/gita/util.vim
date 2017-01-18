@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:File = s:V.import('System.File')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! s:diffoff() abort
   if !&diff
@@ -107,10 +107,10 @@ function! gita#util#handle_exception() abort
         \]
   for pattern in known_attention_patterns
     if v:exception =~# pattern
-      call s:Prompt.attention(
-            \ 'gita:',
+      call s:Console.warn(printf(
+            \ 'gita:%s',
             \ substitute(v:exception, pattern, '', ''),
-            \)
+            \))
       return
     endif
   endfor
@@ -120,13 +120,13 @@ function! gita#util#handle_exception() abort
         \]
   for pattern in known_warning_patterns
     if v:exception =~# pattern
-      call s:Prompt.warn(
-            \ 'gita:',
+      call s:Console.warn(printf(
+            \ 'gita:%s',
             \ substitute(v:exception, pattern, '', ''),
-            \)
+            \))
       return
     endif
   endfor
-  call s:Prompt.error(v:exception)
-  call s:Prompt.debug(v:throwpoint)
+  call s:Console.error(v:exception)
+  call s:Console.debug(v:throwpoint)
 endfunction

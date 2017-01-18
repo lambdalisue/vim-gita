@@ -3,13 +3,13 @@
 " Do not mofidify the code nor insert new lines before '" ___vital___'
 if v:version > 703 || v:version == 703 && has('patch1170')
   function! vital#_gita#Vim#BufferManager#import() abort
-    return map({'_vital_depends': '', 'is_cmdwin': '', 'open': '', 'new': '', '_vital_loaded': ''},  'function("s:" . v:key)')
+    return map({'_vital_depends': '', 'new': '', '_vital_loaded': ''},  'function("s:" . v:key)')
   endfunction
 else
   function! s:_SID() abort
     return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze__SID$')
   endfunction
-  execute join(['function! vital#_gita#Vim#BufferManager#import() abort', printf("return map({'_vital_depends': '', 'is_cmdwin': '', 'open': '', 'new': '', '_vital_loaded': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
+  execute join(['function! vital#_gita#Vim#BufferManager#import() abort', printf("return map({'_vital_depends': '', 'new': '', '_vital_loaded': ''}, \"function('<SNR>%s_' . v:key)\")", s:_SID()), 'endfunction'], "\n")
   delfunction s:_SID
 endif
 " ___vital___
@@ -172,21 +172,6 @@ function! s:new(...) abort
   return deepcopy(s:Manager)
   \.config(a:0 ? s:_config(a:1) : {})
   \.user_config(2 <= a:0 ? a:2 : {})
-endfunction
-
-function! s:open(buffer, opener) abort
-  call s:_deprecated('open')
-  return s:B.open(a:buffer, a:opener)
-endfunction
-
-function! s:_deprecated(fname) abort
-  echomsg printf('Vital.Vim.BufferManager.%s is deprecated! Please use Vital.Vim.Buffer.%s instead.',
-        \ a:fname, a:fname)
-endfunction
-
-function! s:is_cmdwin() abort
-  call s:_deprecated('is_cmdwin')
-  return s:B.is_cmdwin()
 endfunction
 
 function! s:_make_config(manager, configs) abort

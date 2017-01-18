@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:List = s:V.import('Data.List')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:BufferAnchor = s:V.import('Vim.Buffer.Anchor')
 let s:GitInfo = s:V.import('Git.Info')
 let s:GitParser = s:V.import('Git.Parser')
@@ -172,7 +172,7 @@ function! s:commit_commitmsg() abort
 endfunction
 
 function! s:commit_commitmsg_confirm() abort
-  if !&modified && s:Prompt.confirm('Do you want to commit changes?', 'y')
+  if !&modified && s:Console.confirm('Do you want to commit changes?', 'y')
     call s:commit_commitmsg()
   endif
 endfunction

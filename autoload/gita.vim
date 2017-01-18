@@ -1,5 +1,5 @@
 let s:V = vital#of('gita')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! gita#vital() abort
   return s:V
@@ -32,6 +32,4 @@ call gita#define_variables('', {
       \ 'complete_threshold': 100,
       \})
 
-call s:Prompt.set_config({
-      \ 'batch': g:gita#test,
-      \})
+let s:Console.batch = g:gita#test

@@ -1,6 +1,6 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! gita#util#option#cascade(content_type, options, ...) abort
   let options = get(a:000, 0, {})

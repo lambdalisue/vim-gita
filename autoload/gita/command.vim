@@ -1,7 +1,7 @@
 let s:V = gita#vital()
 let s:Prelude = s:V.import('Prelude')
 let s:Dict = s:V.import('Data.Dict')
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
 function! s:complete_action(arglead, cmdline, cursorpos, ...) abort
@@ -144,8 +144,8 @@ function! gita#command#complete(arglead, cmdline, cursorpos) abort
       return gita#util#complete#filename(a:arglead, cmdline, a:cursorpos)
     catch /^\%(vital: Git[:.]\|gita:\)/
       " fail silently
-      call s:Prompt.debug(v:exception)
-      call s:Prompt.debug(v:throwpoint)
+      call s:Console.debug(v:exception)
+      call s:Console.debug(v:throwpoint)
       return []
     endtry
   endif

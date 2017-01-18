@@ -143,13 +143,13 @@ Status   | Name    | Description
 [![Build Status](https://travis-ci.org/lambdalisue/vital-Vim-Buffer-Anchor.svg)](https://travis-ci.org/lambdalisue/vital-Vim-Buffer-Anchor) | [lambdalisue/vital-Vim-Buffer-Anchor][] | An anchor buffer library
 [![Build Status](https://travis-ci.org/lambdalisue/vital-ArgumentParser.svg)](https://travis-ci.org/lambdalisue/vital-ArgumentParser) | [lambdalisue/vital-ArgumentParser][] | An argument parser library
 [![Build Status](https://travis-ci.org/lambdalisue/vital-ProgressBar.svg)](https://travis-ci.org/lambdalisue/vital-ProgressBar) | [lambdalisue/vital-ProgressBar][] | A progress bar library
-[![Build Status](https://travis-ci.org/lambdalisue/vital-Vim-Prompt.svg)](https://travis-ci.org/lambdalisue/vital-Vim-Prompt) | [lambdalisue/vital-Vim-Prompt][] | A prompt library
+[![Build Status](https://travis-ci.org/lambdalisue/vital-Vim-Console.svg)](https://travis-ci.org/lambdalisue/vital-Vim-Console) | [lambdalisue/vital-Vim-Console][] | A console library
 
 [vim-jp/vital.vim]:                    https://github.com/vim-jp/vital.vim
 [lambdalisue/vital-Vim-Buffer-Anchor]: https://github.com/lambdalisue/vital-Vim-Buffer-Anchor
 [lambdalisue/vital-ArgumentParser]:    https://github.com/lambdalisue/vital-ArgumentParser
 [lambdalisue/vital-ProgressBar]:       https://github.com/lambdalisue/vital-ProgressBar
-[lambdalisue/vital-Vim-Prompt]:        https://github.com/lambdalisue/vital-Vim-Prompt
+[lambdalisue/vital-Vim-Console]:       https://github.com/lambdalisue/vital-Vim-Console
 
 
 License

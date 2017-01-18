@@ -1,5 +1,5 @@
 gita
-64a8be0c1fbfbf944043fb22f16bab8c28756459
+133a560a793af5a42016d2f97bc734416b11334c
 
 Prelude
 Vim.Compat
@@ -18,5 +18,5 @@ Vim.Python
 System.Process
 ProgressBar
 Vim.Buffer.Anchor
-Vim.Prompt
+Vim.Console
 System.Process.Mock

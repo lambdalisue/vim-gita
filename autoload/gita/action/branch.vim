@@ -1,5 +1,5 @@
 let s:V = gita#vital()
-let s:Prompt = s:V.import('Vim.Prompt')
+let s:Console = s:V.import('Vim.Console')
 
 function! s:action_checkout(candidate, options) abort
   let options = extend({
@@ -29,7 +29,7 @@ function! s:action_rename(candidate, options) abort
     call gita#throw('Attention: Renaming a remote branch is not supported.')
   endif
 
-  let newname = s:Prompt.ask(
+  let newname = s:Console.ask(
         \ printf('Please input a new branch name of "%s": ', a:candidate.name),
         \ a:candidate.name,
         \)
@@ -53,7 +53,7 @@ function! s:action_delete(candidate, options) abort
         \}, a:options)
   if a:candidate.is_remote
     if !options.force
-      if !s:Prompt.confirm(printf(
+      if !s:Console.confirm(printf(
             \ 'Are you sure that you want to delete a remote branch "%s" on "%s"?: ',
             \ a:candidate.name,
             \ a:candidate.remote,
