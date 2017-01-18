@@ -20,4 +20,3 @@ ProgressBar
 Vim.Buffer.Anchor
 Vim.Console
 System.Process.Mock
-System.Process.Job
