@@ -1182,6 +1182,18 @@ g:gita#process#options
 	Vital.System.Process module.
 	Default: {}
 
+			*g:gita#process#clients*
+g:gita#process#clients
+
+	A default clients of Vital.System.Process.
+	Use this option only when you are asked to do or know well about
+	Vital.System.Process module.
+	Default: [
+		'System.Process.Job',
+		'System.Process.Vimproc'
+		'System.Process.System'
+	]
+
 			*g:gita#action#index#prefer_unstage*
 g:gita#action#index#prefer_unstage
 

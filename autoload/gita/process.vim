@@ -4,6 +4,7 @@ let s:List = s:V.import('Data.List')
 let s:Dict = s:V.import('Data.Dict')
 let s:String = s:V.import('Data.String')
 let s:Console = s:V.import('Vim.Console')
+let s:Process = s:V.import('System.Process')
 let s:GitProcess = s:V.import('Git.Process')
 let s:ArgumentParser = s:V.import('ArgumentParser')
 
@@ -63,6 +64,7 @@ function! gita#process#execute(git, args, ...) abort
   let options = extend({
         \ 'quiet': 0,
         \ 'fail_silently': 0,
+        \ 'clients': g:gita#process#clients,
         \}, get(a:000, 0, {}))
   let options = extend(copy(g:gita#process#options), options)
   let result = s:GitProcess.execute(a:git, a:args, s:Dict.omit(options, [
@@ -92,4 +94,12 @@ call gita#define_variables('process', {
       \ 'executable': 'git',
       \ 'arguments': ['-c', 'color.ui=false', '--no-pager'],
       \ 'options': {},
+      \ 'clients': [
+      \   'System.Process.Job',
+      \   'System.Process.Vimproc',
+      \   'System.Process.System',
+      \ ]
       \})
+
+" Enable System.Process.Job
+call s:Process.register('System.Process.Job')

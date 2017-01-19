@@ -58,6 +58,7 @@ function! s:execute(args, options) abort
     return {
           \ 'status': 0,
           \ 'job': job,
+          \ 'output': '',
           \}
   else
     let status = job.wait(a:options.timeout == 0 ? v:null : a:options.timeout)
@@ -85,10 +86,4 @@ function! s:stream.on_stderr(job, msg, event) abort
   let leading = get(self._content, -1, '')
   silent! call remove(self._content, -1)
   call extend(self._content, [leading . get(a:msg, 0, '')] + a:msg[1:])
-endfunction
-
-function! s:stream.on_exit(job, msg, event) abort
-  if empty(get(self._content, -1, ''))
-    silent! call remove(self._content, -1)
-  endif
 endfunction
