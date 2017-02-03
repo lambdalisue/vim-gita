@@ -99,7 +99,7 @@ else
 
   function! s:_job_callback(event, options, channel, ...) abort
     let raw = get(a:000, 0, '')
-    let msg = type(raw) == v:t_string ? split(raw, '\n', 1) : raw
+    let msg = type(raw) == v:t_string ? split(raw, '\r\?\n', 1) : raw
     call call(
           \ a:options['on_' . a:event],
           \ [a:channel, msg, a:event],
@@ -107,18 +107,19 @@ else
           \)
   endfunction
 
-  function! s:_ch_read_and_call_callbacks(job) abort
-    let status = ch_status(a:job.__channel)
-    if status ==# 'open' || status ==# 'buffered'
-      let stdout = ch_read(a:job.__channel)
-      let stderr = ch_read(a:job.__channel, {'part': 'err'})
-      if has_key(a:job, 'on_stdout') && !empty(stdout)
-        call s:_job_callback('stdout', a:job, a:job.__job, stdout)
+  function! s:_ch_read_and_call_callbacks(job, name, ...) abort
+    let options = get(a:000, 0, {})
+    let status = ch_status(a:job.__channel, options)
+    while status ==# 'open' || status ==# 'buffered'
+      if status ==# 'buffered'
+        call s:_job_callback(
+              \ a:name, a:job, a:job.__job,
+              \ ch_read(a:job.__channel, options)
+              \)
       endif
-      if has_key(a:job, 'on_stderr') && !empty(stderr)
-        call s:_job_callback('stderr', a:job, a:job.__job, stderr)
-      endif
-    endif
+      sleep 1m
+      let status = ch_status(a:job.__channel, options)
+    endwhile
   endfunction
 
   " Instance -------------------------------------------------------------------
@@ -141,6 +142,9 @@ else
   endfunction
 
   function! s:job.wait(...) abort
+    if !has('patch-8.0.0027')
+      throw 'vital: System.Job: Vim 8.0.0026 and earlier is not supported.'
+    endif
     let timeout = get(a:000, 0, v:null)
     let timeout = timeout is# v:null ? v:null : timeout / 1000.0
     let start_time = reltime()
@@ -150,10 +154,16 @@ else
         if status ==# 'fail'
           return -3
         elseif status ==# 'dead'
-          call s:_ch_read_and_call_callbacks(self)
+          if has_key(self, 'on_stdout')
+            call s:_ch_read_and_call_callbacks(self, 'stdout')
+          endif
+          if has_key(self, 'on_stderr')
+            call s:_ch_read_and_call_callbacks(self, 'stderr', {'part': 'err'})
+          endif
           let info = job_info(self.__job)
           return info.exitval
         endif
+        sleep 1m
       endwhile
     catch /^Vim:Interrupt$/
       call self.stop()

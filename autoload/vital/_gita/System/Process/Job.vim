@@ -26,7 +26,7 @@ endfunction
 function! s:is_available() abort
   if has('nvim')
     return 1
-  elseif exists('*job_start')
+  elseif has('patch-8.0.0027')
     return 1
   endif
   return 0
