@@ -10,7 +10,7 @@
 [![Doc](https://img.shields.io/badge/doc-%3Ah%20gita-orange.svg?style=flat-square)](doc/gita.txt)
 [![Powered by vital.vim](https://img.shields.io/badge/powered%20by-vital.vim-80273f.svg?style=flat-square)](https://github.com/vim-jp/vital.vim)
 
-**Note: vim-gita is in &beta; release. There might be critical bugs.**
+**The development of vim-gita has closed. Users should check [lambdalisue/gina.vim](https://github.com/lambdalisue/gina.vim) which is a new impleomentation of vim-gita by using `job` features of Vim 8 or Neovim**
 
 *gita* is a git manipulation plugin which allow users to perform daily git operation within Vim's live session.
 

@@ -30,6 +30,20 @@ call gita#define_variables('', {
       \ 'test': 0,
       \ 'develop': 0,
       \ 'complete_threshold': 100,
+      \ 'suppress_warning': 0,
       \})
 
 let s:Console.batch = g:gita#test
+
+if !g:gita#suppress_warning && !exists('s:has_announced')
+  let s:has_announced = 1
+  echohl WarningMsg
+  redraw
+  echomsg '****************************************************************************************'
+  echomsg 'The development of lambdalisue/vim-gita moved into lambdalisue/gina.vim.'
+  echomsg '----------------------------------------------------------------------------------------'
+  echomsg 'Check https://github.com/lambdalisue/gina.vim which is a new implementation of vim-gita'
+  echomsg 'To suppress this warning, add "let g:gita#suppress_warning = 1" to user .vimrc'
+  echomsg '****************************************************************************************'
+  echohl None
+endif
