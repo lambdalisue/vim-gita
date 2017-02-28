@@ -118,8 +118,13 @@ function! s:open3(options) abort
         \ 'nnoremap <silent><buffer> <Plug>(gita-diffput) :diffput %d<BAR>diffupdate<CR>',
         \ chs_bufnum,
         \)
+  execute printf(
+        \ 'nnoremap <silent><buffer> <Plug>(gita-diffget) :diffget %d<BAR>diffupdate<CR>',
+        \ chs_bufnum,
+        \)
   if !g:gita#content#patch#disable_default_mappings
     nmap <buffer> dp <Plug>(gita-diffput)
+    nmap <buffer> do <Plug>(gita-diffget)
   endif
 
   execute printf('keepjumps %dwincmd w', bufwinnr(chs_bufnum))
